@@ -5,8 +5,15 @@ import { ROUTES } from '@/shared/constants/routes';
 import styles from './Footer.module.css';
 
 const Footer: React.FC = () => {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <footer className={styles.footer}>
+      <div className={styles.backToTop} onClick={scrollToTop}>
+        Back to Top
+      </div>
       <div className={styles.container}>
         <div className={styles.grid}>
           <div className={styles.col}>
@@ -16,7 +23,7 @@ const Footer: React.FC = () => {
               &copy; {new Date().getFullYear()} {appConfig.appName}. All rights reserved.
             </p>
           </div>
-          
+
           <div className={styles.col}>
             <h4 className={styles.title}>For Buyers</h4>
             <ul className={styles.list}>

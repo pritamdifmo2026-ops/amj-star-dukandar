@@ -17,7 +17,7 @@ const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  
+
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
 
   if (isLoading) {
@@ -60,12 +60,12 @@ const ProductDetail: React.FC = () => {
   return (
     <div className={styles.page}>
       <Navbar />
-      
+
       <main className={styles.main}>
         <div className={styles.container}>
           <button className={styles.backBtn} onClick={() => navigate(-1)}>
             <ArrowLeft size={20} />
-            <span>Back to results</span>
+            <span>Back</span>
           </button>
 
           <div className={styles.layout}>
@@ -95,7 +95,7 @@ const ProductDetail: React.FC = () => {
               </div>
 
               <h1 className={styles.title}>{product.name}</h1>
-              
+
               <div className={styles.ratingRow}>
                 <div className={styles.stars}>
                   {[...Array(5)].map((_, i) => (

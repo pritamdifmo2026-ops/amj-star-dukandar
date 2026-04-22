@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants/routes';
 import styles from './Hero.module.css';
 
+import heroImage from '@/assets/images/image.png';
+
 const Hero: React.FC = () => {
   return (
     <section className={styles.hero}>
@@ -12,7 +14,7 @@ const Hero: React.FC = () => {
             India's Largest B2B <span className={styles.highlight}>Wholesale Market</span>
           </h1>
           <p className={styles.subtitle}>
-            Connect with verified suppliers, manufacturers, and wholesalers. 
+            Connect with verified suppliers, manufacturers, and wholesalers.
             Get the best prices for your business in bulk.
           </p>
           <div className={styles.actions}>
@@ -41,12 +43,7 @@ const Hero: React.FC = () => {
           </div>
         </div>
         <div className={styles.imageWrap}>
-          {/* Using a solid color or gradient placeholder to avoid AI-generated look */}
-          <div className={styles.placeholderImage}>
-            <div className={styles.placeholderContent}>
-              <span className={styles.tag}>Trusted by 1M+ Businesses</span>
-            </div>
-          </div>
+          <img src={heroImage} alt="B2B Marketplace" className={styles.heroImage} />
         </div>
       </div>
     </section>

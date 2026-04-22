@@ -34,6 +34,7 @@
   font-size: var(--font-size-sm);
   font-weight: 500;
   cursor: pointer;
+  margin-top: var(--space-4);
   margin-bottom: var(--space-6);
   padding: 0;
   transition: color 0.15s;
@@ -45,9 +46,10 @@
 
 .layout {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: var(--space-12);
-  margin-bottom: var(--space-16);
+  grid-template-columns: 0.8fr 1.2fr;
+  /* Image takes less space */
+  gap: var(--space-8);
+  margin-bottom: var(--space-12);
 }
 
 /* Image Section */
@@ -137,11 +139,12 @@
 }
 
 .title {
-  font-size: var(--font-size-3xl);
+  font-size: var(--font-size-2xl);
+  /* Smaller title */
   font-weight: 800;
   color: var(--color-secondary);
   line-height: 1.2;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .ratingRow {
@@ -164,9 +167,10 @@
 
 .priceCard {
   background: var(--color-bg);
-  padding: var(--space-6);
+  padding: var(--space-4);
+  /* Tighter padding */
   border-radius: var(--radius-md);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
   border-left: 4px solid var(--color-primary);
 }
 
@@ -183,7 +187,8 @@
 }
 
 .priceValue {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
+  /* Smaller price */
   font-weight: 800;
   color: var(--color-primary);
 }
@@ -289,6 +294,7 @@
 .descriptionSection {
   border-top: 1px solid var(--color-border);
   padding-top: var(--space-12);
+  margin-bottom: 80px;
 }
 
 .descTitle {

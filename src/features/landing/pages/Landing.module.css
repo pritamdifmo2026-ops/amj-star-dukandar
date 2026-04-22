@@ -15,7 +15,8 @@
 /* Global Section Spacing - IndiaMART Style */
 .categoryHub {
   padding: var(--space-16) 0;
-  margin-bottom: var(--space-20); /* Large margin to separate from next section */
+  margin-bottom: var(--space-20);
+  /* Large margin to separate from next section */
   background: #fff;
 }
 
@@ -27,7 +28,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-12); /* More space below header */
+  margin-bottom: var(--space-12);
+  /* More space below header */
   border-left: 6px solid var(--color-primary);
   padding-left: var(--space-4);
 }
@@ -39,7 +41,8 @@
 }
 
 .viewAll {
-  color: #0066c0; /* Professional link blue */
+  color: #0066c0;
+  /* Professional link blue */
   font-weight: 500;
   font-size: var(--font-size-sm);
   text-decoration: none;
@@ -47,20 +50,23 @@
 }
 
 .viewAll:hover {
-  color: #c45500; /* Amazon-style orange on hover */
+  color: #c45500;
+  /* Amazon-style orange on hover */
   text-decoration: underline;
 }
 
 .productGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-10); /* More space between cards */
+  gap: var(--space-10);
+  /* More space between cards */
 }
 
 /* Middle Navigation (Browse by Industry) */
 .middleNavigation {
   padding: var(--space-16) 0;
-  margin: var(--space-20) 0; /* Margin top and bottom */
+  margin: var(--space-20) 0;
+  /* Margin top and bottom */
   background: #fff;
 }
 
@@ -74,7 +80,8 @@
 
 .categoryStrip {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Wraps naturally like Amazon */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* Wraps naturally like Amazon */
   gap: var(--space-8);
 }
 
@@ -107,12 +114,12 @@
   font-size: var(--font-size-base);
 }
 
-/* Features Section - De-glued */
+/* Features Section - Clean Standard Look */
 .featuresSection {
-  margin-top: var(--space-24); /* Large margin from products above */
-  padding: var(--space-24) 0;
-  background: #f8fafc;
-  color: var(--color-secondary);
+  padding: var(--space-20) 0 var(--space-24);
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  margin-bottom: 80px;
 }
 
 .featuresGrid {
@@ -157,13 +164,15 @@
   .categoryStrip {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
-  
+
   .featuresGrid {
     grid-template-columns: 1fr;
     gap: var(--space-10);
   }
-  
-  .categoryHub, .middleNavigation, .featuresSection {
+
+  .categoryHub,
+  .middleNavigation,
+  .featuresSection {
     padding: var(--space-12) 0;
     margin-bottom: var(--space-12);
   }
@@ -173,7 +182,7 @@
   .sectionTitle {
     font-size: var(--font-size-xl);
   }
-  
+
   .sectionTitleCenter {
     font-size: var(--font-size-2xl);
   }

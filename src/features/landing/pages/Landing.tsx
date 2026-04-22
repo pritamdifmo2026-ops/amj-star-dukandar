@@ -36,13 +36,53 @@ const Landing: React.FC = () => {
           <div className={styles.container}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>Electronics Hub</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=Electronics`} className={styles.viewAll}>
+              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Electronics')}`} className={styles.viewAll}>
                 See more
               </Link>
             </div>
             <div className={styles.productGrid}>
               {MOCK_PRODUCTS
                 .filter(p => p.category === 'Electronics')
+                .slice(0, 4)
+                .map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Category: Daily Essentials Bulk */}
+        <section className={styles.categoryHub}>
+          <div className={styles.container}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Daily Essentials Bulk</h2>
+              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Bulk Essentials')}`} className={styles.viewAll}>
+                See more
+              </Link>
+            </div>
+            <div className={styles.productGrid}>
+              {MOCK_PRODUCTS
+                .filter(p => p.category === 'Bulk Essentials')
+                .slice(0, 4)
+                .map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Category: Bulk Textiles & Fabrics */}
+        <section className={styles.categoryHub}>
+          <div className={styles.container}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Bulk Textiles & Fabrics</h2>
+              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Bulk Textiles')}`} className={styles.viewAll}>
+                See more
+              </Link>
+            </div>
+            <div className={styles.productGrid}>
+              {MOCK_PRODUCTS
+                .filter(p => p.category === 'Bulk Textiles')
                 .slice(0, 4)
                 .map(product => (
                   <ProductCard key={product.id} product={product} />
@@ -76,7 +116,7 @@ const Landing: React.FC = () => {
           <div className={styles.container}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>Textiles & Apparel</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=Textiles`} className={styles.viewAll}>
+              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Textiles')}`} className={styles.viewAll}>
                 See more
               </Link>
             </div>
@@ -96,7 +136,7 @@ const Landing: React.FC = () => {
           <div className={styles.container}>
             <div className={styles.sectionHeader}>
               <h2 className={styles.sectionTitle}>Industrial Machinery</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=Machinery`} className={styles.viewAll}>
+              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Machinery')}`} className={styles.viewAll}>
                 See more
               </Link>
             </div>
@@ -111,9 +151,32 @@ const Landing: React.FC = () => {
           </div>
         </section>
 
+        {/* Category: Food & Beverages */}
+        <section className={styles.categoryHub}>
+          <div className={styles.container}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Food & Beverages</h2>
+              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Food & Beverages')}`} className={styles.viewAll}>
+                See more
+              </Link>
+            </div>
+            <div className={styles.productGrid}>
+              {MOCK_PRODUCTS
+                .filter(p => p.category === 'Food & Beverages')
+                .slice(0, 4)
+                .map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+            </div>
+          </div>
+        </section>
+
         {/* Features Section */}
         <section className={styles.featuresSection}>
           <div className={styles.container}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Why Choose AMJ Star?</h2>
+            </div>
             <div className={styles.featuresGrid}>
               <div className={styles.featureBox}>
                 <div className={styles.featureIcon}><ShieldCheck size={32} /></div>
