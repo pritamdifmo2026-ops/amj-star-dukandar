@@ -1,4 +1,3 @@
-import React from 'react';
 import type { RouteObject } from 'react-router-dom';
 import MainLayout from '@/shared/layout/MainLayout';
 import { ROUTES } from '@/shared/constants/routes';

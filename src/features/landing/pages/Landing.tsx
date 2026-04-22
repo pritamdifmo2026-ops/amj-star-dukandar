@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Truck, BadgeCheck, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import Footer from '../components/Footer';
 import ProductCard from '@/features/product/components/ProductCard';
-import { useProducts } from '@/features/product/hooks/useProducts';
 import { ROUTES } from '@/shared/constants/routes';
 import { MOCK_PRODUCTS } from '@/api/mocks/products';
 import styles from './Landing.module.css';
@@ -19,11 +18,6 @@ const CATEGORIES = [
 ];
 
 const Landing: React.FC = () => {
-  // Fetching products for different sections
-  const { data: electronics } = useProducts({ category: 'Electronics', pageSize: 4 });
-  const { data: textiles } = useProducts({ category: 'Textiles', pageSize: 4 });
-  const { data: machinery } = useProducts({ category: 'Machinery', pageSize: 4 });
-
   return (
     <div className={styles.landing}>
       <Navbar />

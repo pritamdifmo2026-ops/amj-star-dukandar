@@ -1,9 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '@/store/slices/cart.slice';
-import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { ROUTES } from '@/shared/constants/routes';
 import type { Product } from '../types';
 import Button from '@/shared/components/ui/Button';

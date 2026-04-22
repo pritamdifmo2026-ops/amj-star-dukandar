@@ -1,4 +1,3 @@
-import React from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants/routes';
 import AuthLayout from '@/shared/layout/AuthLayout';

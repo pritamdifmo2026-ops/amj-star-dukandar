@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Filter, Search as SearchIcon, SlidersHorizontal } from 'lucide-react';
+import { Filter, SlidersHorizontal } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
 import Loader from '@/shared/components/feedback/Loader';
