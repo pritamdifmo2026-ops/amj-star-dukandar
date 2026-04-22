@@ -1,0 +1,180 @@
+.landing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+/* Global Section Spacing - IndiaMART Style */
+.categoryHub {
+  padding: var(--space-16) 0;
+  margin-bottom: var(--space-20); /* Large margin to separate from next section */
+  background: #fff;
+}
+
+.categoryHub:nth-of-type(even) {
+  background: #fafafa;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-12); /* More space below header */
+  border-left: 6px solid var(--color-primary);
+  padding-left: var(--space-4);
+}
+
+.sectionTitle {
+  font-size: var(--font-size-2xl);
+  font-weight: 800;
+  color: var(--color-secondary);
+}
+
+.viewAll {
+  color: #0066c0; /* Professional link blue */
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+  transition: color 0.2s, text-decoration 0.2s;
+}
+
+.viewAll:hover {
+  color: #c45500; /* Amazon-style orange on hover */
+  text-decoration: underline;
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-10); /* More space between cards */
+}
+
+/* Middle Navigation (Browse by Industry) */
+.middleNavigation {
+  padding: var(--space-16) 0;
+  margin: var(--space-20) 0; /* Margin top and bottom */
+  background: #fff;
+}
+
+.sectionTitleCenter {
+  text-align: center;
+  font-size: var(--font-size-3xl);
+  font-weight: 800;
+  color: var(--color-secondary);
+  margin-bottom: var(--space-16);
+}
+
+.categoryStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Wraps naturally like Amazon */
+  gap: var(--space-8);
+}
+
+.industryCard {
+  background: var(--bg-color);
+  padding: var(--space-10) var(--space-4);
+  border-radius: var(--radius-md);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  transition: transform 0.3s, box-shadow 0.3s;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.industryCard:hover {
+  transform: translateY(-10px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-primary);
+}
+
+.industryIcon {
+  font-size: 48px;
+}
+
+.industryName {
+  font-weight: 800;
+  color: var(--color-secondary);
+  font-size: var(--font-size-base);
+}
+
+/* Features Section - De-glued */
+.featuresSection {
+  margin-top: var(--space-24); /* Large margin from products above */
+  padding: var(--space-24) 0;
+  background: #f8fafc;
+  color: var(--color-secondary);
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-12);
+}
+
+.featureBox {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.featureIcon {
+  width: 80px;
+  height: 80px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.featureBox h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+.featureBox p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+}
+
+@media (max-width: 1024px) {
+  .categoryStrip {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+  
+  .featuresGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-10);
+  }
+  
+  .categoryHub, .middleNavigation, .featuresSection {
+    padding: var(--space-12) 0;
+    margin-bottom: var(--space-12);
+  }
+}
+
+@media (max-width: 576px) {
+  .sectionTitle {
+    font-size: var(--font-size-xl);
+  }
+  
+  .sectionTitleCenter {
+    font-size: var(--font-size-2xl);
+  }
+}

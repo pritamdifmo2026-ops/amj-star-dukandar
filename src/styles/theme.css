@@ -1,0 +1,56 @@
+:root {
+  /* Brand */
+  --color-primary: #d94f00;
+  --color-primary-dark: #b84200;
+  --color-primary-light: #f26522;
+  --color-secondary: #1a3c5e;
+  --color-secondary-light: #254d76;
+
+  /* Neutral */
+  --color-bg: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-border: #d9d9d9;
+  --color-border-light: #ececec;
+
+  /* Text */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #555555;
+  --color-text-muted: #888888;
+  --color-text-inverse: #ffffff;
+
+  /* Feedback */
+  --color-success: #2e7d32;
+  --color-error: #c62828;
+  --color-warning: #f57f17;
+  --color-info: #0277bd;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Noto Sans', sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Layout */
+  --container-max: 1200px;
+  --header-height: 60px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+}

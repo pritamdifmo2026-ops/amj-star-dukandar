@@ -1,0 +1,110 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 100%;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border-color: #eee;
+}
+
+.imageWrap {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #fff; /* Pure white like Amazon */
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.body {
+  padding: var(--space-4);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.category {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.name {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: #111; /* Amazon style dark text */
+  line-height: 1.4;
+  margin-bottom: 4px;
+  /* Multi-line ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.priceRow {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.price {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  color: var(--color-secondary); /* Brand Blue */
+  display: flex;
+  align-items: baseline;
+}
+
+.price::before {
+  content: "₹";
+  font-size: 14px;
+  margin-right: 2px;
+  font-weight: 600;
+}
+
+.moq {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.supplier {
+  font-size: 13px;
+  color: #565959; /* Amazon gray text */
+  margin-top: 8px;
+}
+
+.footer {
+  padding: 0 var(--space-4) var(--space-6);
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 576px) {
+  .price {
+    font-size: var(--font-size-lg);
+  }
+}
