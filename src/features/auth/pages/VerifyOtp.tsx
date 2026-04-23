@@ -43,15 +43,15 @@ const VerifyOtp: React.FC = () => {
         localStorage.removeItem('temp_phone');
         
         // Update Redux state
-        const role = response.role || 'buyer';
+        const role = response.user?.role || 'buyer';
         dispatch(setCredentials({ 
           token: response.token, 
           user: { id: 'temp-id', name: 'User', email: '', role, phone } 
         }));
         
         // Redirect based on role
-        if (role === 'supplier') navigate('/supplier');
-        else if (role === 'reseller') navigate('/reseller');
+        if (role === 'supplier') navigate('/supplier/dashboard');
+        else if (role === 'reseller') navigate('/reseller/dashboard');
         else navigate('/');
       }
     } catch (err: any) {

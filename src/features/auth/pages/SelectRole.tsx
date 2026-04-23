@@ -39,8 +39,8 @@ const SelectRole: React.FC = () => {
         user: { id: 'temp-id', name: 'User', email: '', role }
       }));
 
-      if (role === 'supplier') navigate('/supplier');
-      else if (role === 'reseller') navigate('/reseller');
+      if (role === 'supplier') navigate('/supplier/dashboard');
+      else if (role === 'reseller') navigate('/reseller/dashboard');
       else navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to set role. Please try again.');

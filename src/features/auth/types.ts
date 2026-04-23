@@ -16,8 +16,8 @@ export interface SelectRolePayload {
 
 export interface AuthResponse {
   token: string;
-  isNewUser: boolean;
-  role?: UserRole;
+  isNewUser?: boolean;
+  user?: AuthUser;
 }
 
 export interface AuthUser {
