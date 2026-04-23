@@ -169,7 +169,7 @@ const Landing: React.FC = () => {
         <section className={styles.featuresSection}>
           <div className={styles.container}>
             <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Why Choose AMJ Star?</h2>
+              <h2 className={styles.sectionTitle}>Why Choose AMJStar?</h2>
             </div>
             <div className={styles.featuresGrid}>
               <div className={styles.featureBox}>

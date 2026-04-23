@@ -34,7 +34,7 @@ const Navbar: React.FC = () => {
             <Phone size={12} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
           </span>
           <div className={styles.topLinks}>
-            <a href="#" className={styles.topLink}>Sell on AMJ Star</a>
+            <a href="#" className={styles.topLink}>Sell on AMJStar</a>
             <span className={styles.sep}>|</span>
             <a href="#" className={styles.topLink}>Help Center</a>
           </div>
@@ -46,7 +46,7 @@ const Navbar: React.FC = () => {
         <div className={styles.container}>
           {/* Logo */}
           <Link to={ROUTES.HOME} className={styles.logo}>
-            <span className={styles.logoMain}>AMJ Star</span>
+            <span className={styles.logoMain}>AMJStar</span>
             <span className={styles.logoSub}>Dukandar</span>
           </Link>
 
