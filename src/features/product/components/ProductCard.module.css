@@ -11,6 +11,7 @@
   height: 100%;
   max-width: 280px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .card:hover {
@@ -107,7 +108,29 @@
 }
 
 @media (max-width: 576px) {
+  .card {
+    max-width: none;
+  }
+  .body {
+    padding: 4px var(--space-2);
+  }
+  .name {
+    font-size: 13px;
+  }
   .price {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
+  }
+  .price::before {
+    font-size: 12px;
+  }
+  .moq, .supplier {
+    font-size: 11px;
+  }
+  .footer {
+    padding: 0 var(--space-2) var(--space-2);
+  }
+  .cartBtn {
+    font-size: 11px;
+    padding: 6px 8px;
   }
 }

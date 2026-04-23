@@ -2,6 +2,8 @@ import type { RouteObject } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants/routes';
 import AuthLayout from '@/shared/layout/AuthLayout';
 import Login from '@/features/auth/pages/Login';
+import VerifyOtp from '@/features/auth/pages/VerifyOtp';
+import SelectRole from '@/features/auth/pages/SelectRole';
 import Register from '@/features/auth/pages/Register';
 import Landing from '@/features/landing/pages/Landing';
 import ProductList from '@/features/product/pages/ProductList';
@@ -19,6 +21,14 @@ export const publicRoutes: RouteObject[] = [
       {
         path: ROUTES.LOGIN,
         element: <Login />,
+      },
+      {
+        path: ROUTES.VERIFY_OTP,
+        element: <VerifyOtp />,
+      },
+      {
+        path: ROUTES.SELECT_ROLE,
+        element: <SelectRole />,
       },
       {
         path: ROUTES.REGISTER,

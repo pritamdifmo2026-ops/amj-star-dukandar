@@ -1,27 +1,27 @@
-// Auth feature types
+export type UserRole = 'buyer' | 'supplier' | 'reseller' | 'admin';
 
-export interface LoginPayload {
-  email: string;
-  password: string;
+export interface SendOtpPayload {
+  phone: string;
 }
 
-export interface RegisterPayload {
-  name: string;
-  email: string;
-  password: string;
+export interface VerifyOtpPayload {
   phone: string;
-  role: 'reseller' | 'supplier';
+  otp: string;
+}
+
+export interface SelectRolePayload {
+  role: UserRole;
+  token: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  isNewUser: boolean;
+  role?: UserRole;
 }
 
 export interface AuthUser {
   id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'supplier' | 'reseller';
-  phone?: string;
-}
-
-export interface AuthResponse {
-  user: AuthUser;
-  token: string;
+  phone: string;
+  role: UserRole;
 }

@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router-dom';
 import MainLayout from '@/shared/layout/MainLayout';
 import { ROUTES } from '@/shared/constants/routes';
+import ProtectedRoute from '@/shared/components/ProtectedRoute';
 
 export const protectedRoutes: RouteObject[] = [
   {
@@ -8,15 +9,27 @@ export const protectedRoutes: RouteObject[] = [
     children: [
       {
         path: ROUTES.RESELLER_DASHBOARD,
-        element: <div>Reseller Dashboard (Coming Soon)</div>,
+        element: (
+          <ProtectedRoute allowedRoles={['reseller']}>
+            <div>Reseller Dashboard (Coming Soon)</div>
+          </ProtectedRoute>
+        ),
       },
       {
         path: ROUTES.SUPPLIER_DASHBOARD,
-        element: <div>Supplier Dashboard (Coming Soon)</div>,
+        element: (
+          <ProtectedRoute allowedRoles={['supplier']}>
+            <div>Supplier Dashboard (Coming Soon)</div>
+          </ProtectedRoute>
+        ),
       },
       {
         path: ROUTES.ADMIN_DASHBOARD,
-        element: <div>Admin Dashboard (Coming Soon)</div>,
+        element: (
+          <ProtectedRoute allowedRoles={['admin']}>
+            <div>Admin Dashboard (Coming Soon)</div>
+          </ProtectedRoute>
+        ),
       },
       {
         path: ROUTES.RESELLER_CART,

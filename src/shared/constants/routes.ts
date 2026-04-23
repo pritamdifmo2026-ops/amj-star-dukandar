@@ -3,6 +3,8 @@ export const ROUTES = {
 
   // Auth
   LOGIN: '/login',
+  VERIFY_OTP: '/verify-otp',
+  SELECT_ROLE: '/select-role',
   REGISTER: '/register',
 
   // Reseller
