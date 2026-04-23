@@ -18,7 +18,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   try {
     // Basic JWT decoding to get user role
     const payloadBase64 = token.split('.')[1];
-    const payload = JSON.parse(atob(payloadBase64));
+    // Fix Base64Url encoding issues for standard atob
+    const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonPayload);
     const userRole = payload.role;
 
     if (allowedRoles && !allowedRoles.includes(userRole)) {

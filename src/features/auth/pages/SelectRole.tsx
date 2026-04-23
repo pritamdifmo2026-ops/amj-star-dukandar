@@ -6,11 +6,10 @@ import { setToken } from '@/shared/utils/auth';
 import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/auth.slice';
 import type { UserRole } from '../types';
-import styles from '../components/Auth.module.css';
+import styles from './SelectRole.module.css';
 
 const SelectRole: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<UserRole | null>(null);
   const [error, setError] = useState('');
   const [token, setTokenState] = useState('');
   const navigate = useNavigate();
@@ -25,79 +24,99 @@ const SelectRole: React.FC = () => {
     }
   }, [navigate]);
 
-  const handleRoleSelect = (role: UserRole) => {
-    setSelectedRole(role);
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedRole) {
-      setError('Please select a role to continue');
-      return;
-    }
-
-    setLoading(true);
+  const handleRoleSelect = async (role: UserRole) => {
+    setLoading(role);
     setError('');
+
     try {
-      const response = await authService.selectRole({ role: selectedRole, token });
+      const response = await authService.selectRole({ role, token });
       setToken(response.token);
       localStorage.removeItem('temp_token');
       localStorage.removeItem('temp_phone');
 
-      // Update Redux state
       dispatch(setCredentials({
         token: response.token,
-        user: { id: 'temp-id', name: 'User', email: '', role: selectedRole }
+        user: { id: 'temp-id', name: 'User', email: '', role }
       }));
 
-      if (selectedRole === 'supplier') navigate('/supplier');
-      else if (selectedRole === 'reseller') navigate('/reseller');
+      if (role === 'supplier') navigate('/supplier');
+      else if (role === 'reseller') navigate('/reseller');
       else navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to set role. Please try again.');
-    } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
-  const roles: { id: UserRole; name: string; icon: any; desc: string }[] = [
-    { id: 'buyer', name: 'Buyer', icon: ShoppingBag, desc: 'Browse and buy products' },
-    { id: 'supplier', name: 'Supplier', icon: Store, desc: 'Sell products in bulk' },
-    { id: 'reseller', name: 'Reseller', icon: User, desc: 'Resell products to your network' },
-  ];
-
   return (
-    <>
-      <h1 className={styles.title}>Choose Your Role</h1>
-      <p className={styles.subtitle}>Tell us how you plan to use AMJ</p>
+    <div className={styles.pageContainer}>
+      <header className={styles.header}>
+        <h1 className={styles.title}>Choose Your Path</h1>
+        <p className={styles.subtitle}>
+          Join thousands of businesses on AMJStar Dukandar. Select the role that best describes how you'll use our platform.
+        </p>
+        {error && <div className={styles.errorMsg}>{error}</div>}
+      </header>
 
-      <div className={styles.roleGrid}>
-        {roles.map((role) => {
-          const Icon = role.icon;
-          return (
-            <div
-              key={role.id}
-              className={`${styles.roleOption} ${selectedRole === role.id ? styles.selected : ''}`}
-              onClick={() => handleRoleSelect(role.id)}
-            >
-              <Icon size={32} color={selectedRole === role.id ? '#007bff' : '#666'} />
-              <span className={styles.roleName}>{role.name}</span>
-              <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>{role.desc}</p>
-            </div>
-          );
-        })}
+      <div className={styles.splitContainer}>
+        {/* Buyer Pane */}
+        <div className={styles.rolePane}>
+          <span className={`${styles.badge} ${styles.badgeBuyer}`}>For Retailers</span>
+          <div className={styles.iconWrapper}>
+            <ShoppingBag size={48} color="#0B7F5A" />
+          </div>
+          <h2 className={styles.roleTitle}>Buyer</h2>
+          <p className={styles.roleDesc}>
+            Source high-quality products in bulk at wholesale prices directly from verified manufacturers.
+          </p>
+          <button
+            className={`${styles.selectBtn} ${styles.btnBuyer} ${loading ? styles.btnDisabled : ''}`}
+            onClick={() => handleRoleSelect('buyer')}
+            disabled={!!loading}
+          >
+            {loading === 'buyer' ? 'Setting up...' : 'Join as Buyer'}
+          </button>
+        </div>
+
+        {/* Supplier Pane */}
+        <div className={styles.rolePane}>
+          <span className={`${styles.badge} ${styles.badgeSupplier}`}>For Manufacturers</span>
+          <div className={styles.iconWrapper}>
+            <Store size={48} color="#1A3C5E" />
+          </div>
+          <h2 className={styles.roleTitle}>Supplier</h2>
+          <p className={styles.roleDesc}>
+            List your catalog, reach thousands of retailers across India, and grow your B2B sales effortlessly.
+          </p>
+          <button
+            className={`${styles.selectBtn} ${styles.btnSupplier} ${loading ? styles.btnDisabled : ''}`}
+            onClick={() => handleRoleSelect('supplier')}
+            disabled={!!loading}
+          >
+            {loading === 'supplier' ? 'Setting up...' : 'Join as Supplier'}
+          </button>
+        </div>
+
+        {/* Reseller Pane */}
+        <div className={styles.rolePane}>
+          <span className={`${styles.badge} ${styles.badgeReseller}`}>For Entrepreneurs</span>
+          <div className={styles.iconWrapper}>
+            <User size={48} color="#D94F00" />
+          </div>
+          <h2 className={styles.roleTitle}>Reseller</h2>
+          <p className={styles.roleDesc}>
+            Start your own business with zero investment. Share products with your network and earn margins.
+          </p>
+          <button
+            className={`${styles.selectBtn} ${styles.btnReseller} ${loading ? styles.btnDisabled : ''}`}
+            onClick={() => handleRoleSelect('reseller')}
+            disabled={!!loading}
+          >
+            {loading === 'reseller' ? 'Setting up...' : 'Join as Reseller'}
+          </button>
+        </div>
       </div>
-
-      {error && <p className={styles.error} style={{ marginTop: '16px' }}>{error}</p>}
-
-      <button
-        className={styles.button}
-        style={{ marginTop: '24px', width: '100%' }}
-        disabled={!selectedRole || loading}
-        onClick={handleSubmit}
-      >
-        {loading ? 'Setting up...' : 'Continue'}
-      </button>
-    </>
+    </div>
   );
 };
 

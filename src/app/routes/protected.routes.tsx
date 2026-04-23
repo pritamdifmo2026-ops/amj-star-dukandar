@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router-dom';
 import MainLayout from '@/shared/layout/MainLayout';
 import { ROUTES } from '@/shared/constants/routes';
 import ProtectedRoute from '@/shared/components/ProtectedRoute';
+import EmptyState from '@/shared/components/feedback/EmptyState';
 
 export const protectedRoutes: RouteObject[] = [
   {
@@ -11,7 +12,9 @@ export const protectedRoutes: RouteObject[] = [
         path: ROUTES.RESELLER_DASHBOARD,
         element: (
           <ProtectedRoute allowedRoles={['reseller']}>
-            <div>Reseller Dashboard (Coming Soon)</div>
+            <div style={{ padding: '40px' }}>
+              <EmptyState title="Reseller Dashboard" description="We are building powerful tools for you. Coming very soon!" />
+            </div>
           </ProtectedRoute>
         ),
       },
@@ -19,7 +22,9 @@ export const protectedRoutes: RouteObject[] = [
         path: ROUTES.SUPPLIER_DASHBOARD,
         element: (
           <ProtectedRoute allowedRoles={['supplier']}>
-            <div>Supplier Dashboard (Coming Soon)</div>
+            <div style={{ padding: '40px' }}>
+              <EmptyState title="Supplier Dashboard" description="We are building powerful tools for you. Coming very soon!" />
+            </div>
           </ProtectedRoute>
         ),
       },
@@ -27,13 +32,15 @@ export const protectedRoutes: RouteObject[] = [
         path: ROUTES.ADMIN_DASHBOARD,
         element: (
           <ProtectedRoute allowedRoles={['admin']}>
-            <div>Admin Dashboard (Coming Soon)</div>
+            <div style={{ padding: '40px' }}>
+              <EmptyState title="Admin Dashboard" description="Admin tools are coming soon!" />
+            </div>
           </ProtectedRoute>
         ),
       },
       {
         path: ROUTES.RESELLER_CART,
-        element: <div>Cart Page (Coming Soon)</div>,
+        element: <EmptyState title="Cart" description="Cart is coming soon!" />,
       }
     ],
   },

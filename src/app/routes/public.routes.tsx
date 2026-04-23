@@ -27,14 +27,14 @@ export const publicRoutes: RouteObject[] = [
         element: <VerifyOtp />,
       },
       {
-        path: ROUTES.SELECT_ROLE,
-        element: <SelectRole />,
-      },
-      {
         path: ROUTES.REGISTER,
         element: <Register />,
       },
     ],
+  },
+  {
+    path: ROUTES.SELECT_ROLE,
+    element: <SelectRole />,
   },
   {
     path: ROUTES.PRODUCT_LIST,

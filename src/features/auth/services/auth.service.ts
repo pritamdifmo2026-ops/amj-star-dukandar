@@ -18,7 +18,11 @@ const authService = {
   },
 
   selectRole: async (payload: SelectRolePayload) => {
-    const response = await apiClient.post<AuthResponse>('/auth/select-role', payload);
+    const response = await apiClient.post<AuthResponse>('/auth/select-role', payload, {
+      headers: {
+        Authorization: `Bearer ${payload.token}`
+      }
+    });
     return response.data;
   }
 };
