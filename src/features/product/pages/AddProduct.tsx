@@ -41,16 +41,16 @@ const AddProduct: React.FC = () => {
               </div>
               <div>
                 <h1 className={styles.title}>List New Product</h1>
-                <p className={styles.subtitle}>Add your product to the AMJ Star Marketplace</p>
+                <p className={styles.subtitle}>Add your product to the AMJStar Marketplace</p>
               </div>
             </div>
           </header>
           <div className={styles.layout}>
             <div className={styles.formCard}>
-              <ProductForm 
-                onSubmit={handleSubmit} 
-                isLoading={isSubmitting} 
-                submitLabel="Publish Product" 
+              <ProductForm
+                onSubmit={handleSubmit}
+                isLoading={isSubmitting}
+                submitLabel="Publish Product"
               />
             </div>
             <aside className={styles.sidebar}>

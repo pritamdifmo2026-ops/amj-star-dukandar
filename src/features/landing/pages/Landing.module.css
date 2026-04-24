@@ -166,8 +166,8 @@
   }
 
   .featuresGrid {
-    grid-template-columns: 1fr;
-    gap: var(--space-10);
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
   }
 
   .categoryHub,
@@ -185,5 +185,58 @@
 
   .sectionTitleCenter {
     font-size: var(--font-size-2xl);
+    margin-bottom: var(--space-8);
+  }
+
+  .categoryHub,
+  .middleNavigation,
+  .featuresSection {
+    padding: var(--space-8) 0;
+    margin-bottom: var(--space-8);
+  }
+
+  .sectionHeader {
+    margin-bottom: var(--space-6);
+  }
+
+  .productGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .categoryStrip {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-4);
+  }
+
+  .industryCard {
+    padding: var(--space-6) var(--space-2);
+  }
+
+  .industryIcon {
+    font-size: 32px;
+  }
+
+  .featureIcon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+    border-radius: var(--radius-sm);
+  }
+
+  .featureIcon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .featureBox h3 {
+    font-size: 11px;
+    margin-top: 4px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  .featureBox p {
+    display: none;
   }
 }

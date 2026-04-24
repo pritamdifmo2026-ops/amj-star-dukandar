@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingCart, ChevronDown, Phone, Menu, X, UserPlus } from 'lucide-react';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { logout } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import styles from './Navbar.module.css';
 
@@ -13,7 +14,9 @@ const CATEGORIES = [
 const Navbar: React.FC = () => {
   const [query, setQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const cartCount = useAppSelector((s) => s.cart.items.length);
   const isAuth = useAppSelector((s) => s.auth.isAuthenticated);
   const user = useAppSelector((s) => s.auth.user);
@@ -22,6 +25,14 @@ const Navbar: React.FC = () => {
     e.preventDefault();
     if (query.trim()) {
       navigate(`${ROUTES.PRODUCT_LIST}?search=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
+  const handleSignOut = () => {
+    if (window.confirm('Are you sure you want to sign out?')) {
+      dispatch(logout());
+      navigate(ROUTES.LOGIN);
+      setUserMenuOpen(false);
     }
   };
 
@@ -34,7 +45,7 @@ const Navbar: React.FC = () => {
             <Phone size={12} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
           </span>
           <div className={styles.topLinks}>
-            <a href="#" className={styles.topLink}>Sell on AMJ Star</a>
+            <a href="#" className={styles.topLink}>Sell on AMJStar</a>
             <span className={styles.sep}>|</span>
             <a href="#" className={styles.topLink}>Help Center</a>
           </div>
@@ -46,7 +57,7 @@ const Navbar: React.FC = () => {
         <div className={styles.container}>
           {/* Logo */}
           <Link to={ROUTES.HOME} className={styles.logo}>
-            <span className={styles.logoMain}>AMJ Star</span>
+            <span className={styles.logoMain}>AMJStar</span>
             <span className={styles.logoSub}>Dukandar</span>
           </Link>
 
@@ -71,8 +82,14 @@ const Navbar: React.FC = () => {
           {/* Right actions */}
           <div className={styles.actions}>
             {isAuth ? (
-              <div className={styles.userMenu}>
-                <span className={styles.userName}>{user?.name}</span>
+              <div className={styles.userMenu} onClick={() => setUserMenuOpen(!userMenuOpen)}>
+                <span className={styles.userName}>{user?.name || 'User'}</span>
+                {userMenuOpen && (
+                  <div className={styles.dropdown}>
+                    <Link to="/profile" className={styles.dropdownItem}>Profile</Link>
+                    <button className={styles.dropdownItem} onClick={handleSignOut}>Sign Out</button>
+                  </div>
+                )}
               </div>
             ) : (
               <>

@@ -1,6 +1,8 @@
 import type { RouteObject } from 'react-router-dom';
 import MainLayout from '@/shared/layout/MainLayout';
 import { ROUTES } from '@/shared/constants/routes';
+import ProtectedRoute from '@/shared/components/ProtectedRoute';
+import EmptyState from '@/shared/components/feedback/EmptyState';
 
 export const protectedRoutes: RouteObject[] = [
   {
@@ -8,19 +10,37 @@ export const protectedRoutes: RouteObject[] = [
     children: [
       {
         path: ROUTES.RESELLER_DASHBOARD,
-        element: <div>Reseller Dashboard (Coming Soon)</div>,
+        element: (
+          <ProtectedRoute allowedRoles={['reseller']}>
+            <div style={{ padding: '40px' }}>
+              <EmptyState title="Reseller Dashboard" description="We are building powerful tools for you. Coming very soon!" />
+            </div>
+          </ProtectedRoute>
+        ),
       },
       {
         path: ROUTES.SUPPLIER_DASHBOARD,
-        element: <div>Supplier Dashboard (Coming Soon)</div>,
+        element: (
+          <ProtectedRoute allowedRoles={['supplier']}>
+            <div style={{ padding: '40px' }}>
+              <EmptyState title="Supplier Dashboard" description="We are building powerful tools for you. Coming very soon!" />
+            </div>
+          </ProtectedRoute>
+        ),
       },
       {
         path: ROUTES.ADMIN_DASHBOARD,
-        element: <div>Admin Dashboard (Coming Soon)</div>,
+        element: (
+          <ProtectedRoute allowedRoles={['admin']}>
+            <div style={{ padding: '40px' }}>
+              <EmptyState title="Admin Dashboard" description="Admin tools are coming soon!" />
+            </div>
+          </ProtectedRoute>
+        ),
       },
       {
         path: ROUTES.RESELLER_CART,
-        element: <div>Cart Page (Coming Soon)</div>,
+        element: <EmptyState title="Cart" description="Cart is coming soon!" />,
       }
     ],
   },

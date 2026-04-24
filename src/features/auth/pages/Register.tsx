@@ -29,7 +29,7 @@ const Register: React.FC = () => {
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       <h2 className={styles.heading}>Create Account</h2>
-      <p className={styles.sub}>Join AMJ Star Dukandar as a buyer or supplier</p>
+      <p className={styles.sub}>Join AMJStar Dukandar as a buyer or supplier</p>
 
       <div className={styles.fields}>
         <Input label="Full Name" type="text" placeholder="Your full name" value={form.name} onChange={set('name')} leftIcon={<User size={16} />} fullWidth required />
