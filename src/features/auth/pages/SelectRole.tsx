@@ -11,35 +11,27 @@ import styles from './SelectRole.module.css';
 const SelectRole: React.FC = () => {
   const [loading, setLoading] = useState<UserRole | null>(null);
   const [error, setError] = useState('');
-  const [token, setTokenState] = useState('');
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    const tempToken = localStorage.getItem('temp_token');
-    if (!tempToken) {
-      navigate('/login');
-    } else {
-      setTokenState(tempToken);
-    }
-  }, [navigate]);
+    // If we're here, the user should already have a session cookie from verify-otp
+    // We can also check if Redux has a user, or just trust the backend to 401 if unauthorized
+  }, []);
 
   const handleRoleSelect = async (role: UserRole) => {
     setLoading(role);
     setError('');
 
     try {
-      const response = await authService.selectRole({ role, token });
-      setToken(response.token);
-      localStorage.removeItem('temp_token');
+      const response = await authService.selectRole({ role });
       localStorage.removeItem('temp_phone');
 
       dispatch(setCredentials({
-        token: response.token,
-        user: { id: 'temp-id', name: 'User', email: '', role }
+        user: response.user
       }));
 
-      if (role === 'supplier') navigate('/supplier/dashboard');
+      if (role === 'supplier') navigate('/supplier/onboarding');
       else if (role === 'reseller') navigate('/reseller/dashboard');
       else navigate('/');
     } catch (err: any) {

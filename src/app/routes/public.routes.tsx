@@ -10,6 +10,7 @@ import Landing from '@/features/landing/pages/Landing';
 import ProductList from '@/features/product/pages/ProductList';
 import ProductDetail from '@/features/product/pages/ProductDetail';
 import AddProduct from '@/features/product/pages/AddProduct';
+import AdminLogin from '@/features/admin/pages/AdminLogin';
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -52,5 +53,9 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/verify-email',
     element: <VerifyEmail />,
+  },
+  {
+    path: '/admin/login',
+    element: <AdminLogin />,
   }
 ];

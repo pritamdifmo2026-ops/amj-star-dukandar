@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/auth.service';
-import { setToken } from '@/shared/utils/auth';
 import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/auth.slice';
 import styles from '../components/Auth.module.css';
@@ -35,24 +34,21 @@ const VerifyOtp: React.FC = () => {
     try {
       const response = await authService.verifyOtp({ phone, otp });
       
-      if (response.isNewUser) {
-        localStorage.setItem('temp_token', response.token);
+      localStorage.removeItem('temp_phone');
+      
+      // Update Redux state
+      const user = response.user;
+      dispatch(setCredentials({ user }));
+      
+      // Redirect based on role or if role is missing
+      if (!user.role) {
         navigate('/select-role');
+      } else if (user.role === 'supplier') {
+        navigate('/supplier/dashboard');
+      } else if (user.role === 'reseller') {
+        navigate('/reseller/dashboard');
       } else {
-        setToken(response.token);
-        localStorage.removeItem('temp_phone');
-        
-        // Update Redux state
-        const role = response.user?.role || 'buyer';
-        dispatch(setCredentials({ 
-          token: response.token, 
-          user: { id: 'temp-id', name: 'User', email: '', role, phone } 
-        }));
-        
-        // Redirect based on role
-        if (role === 'supplier') navigate('/supplier/dashboard');
-        else if (role === 'reseller') navigate('/reseller/dashboard');
-        else navigate('/');
+        navigate('/');
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Invalid OTP. Please try again.');

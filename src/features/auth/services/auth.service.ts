@@ -18,44 +18,37 @@ const authService = {
     return response.data;
   },
 
-  selectRole: async (payload: SelectRolePayload) => {
-    const response = await apiClient.post<AuthResponse>('/auth/select-role', payload, {
-      headers: {
-        Authorization: `Bearer ${payload.token}`
-      }
-    });
+  adminLogin: async (email: string, password: string) => {
+    const response = await apiClient.post('/auth/admin-login', { email, password });
     return response.data;
   },
 
-  updateProfile: async (payload: { name?: string; email?: string; phone?: string; token: string }) => {
-    const response = await apiClient.put<{ message: string; user: AuthUser }>('/auth/profile', payload, {
-      headers: {
-        Authorization: `Bearer ${payload.token}`
-      }
-    });
+  selectRole: async (payload: { role: string }) => {
+    const response = await apiClient.post<AuthResponse>('/auth/select-role', payload);
     return response.data;
   },
 
-  getMe: async (token: string) => {
-    const response = await apiClient.get<{ user: AuthUser }>('/auth/me', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  logout: async () => {
+    await apiClient.post('/auth/logout');
+  },
+
+  updateProfile: async (payload: { name?: string; email?: string; phone?: string }) => {
+    const response = await apiClient.put<{ message: string; user: AuthUser }>('/user/profile', payload);
     return response.data;
   },
 
-  sendVerificationEmail: async (token: string) => {
-    const response = await apiClient.post<{ message: string }>('/auth/send-verification-email', {}, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
+  getMe: async () => {
+    const response = await apiClient.get<{ user: AuthUser }>('/user/me');
+    return response.data;
+  },
+
+  sendVerificationEmail: async () => {
+    const response = await apiClient.post<{ message: string }>('/user/send-verification-email', {});
     return response.data;
   },
 
   verifyEmail: async (emailToken: string) => {
-    const response = await apiClient.get<{ message: string; user: AuthUser }>(`/auth/verify-email?token=${emailToken}`);
+    const response = await apiClient.get<{ message: string; user: AuthUser }>(`/user/verify-email?token=${emailToken}`);
     return response.data;
   }
 };

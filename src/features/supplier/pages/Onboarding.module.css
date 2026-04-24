@@ -1,0 +1,359 @@
+.page {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  padding-top: 60px;
+}
+
+.stepperContainer {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto 40px;
+  padding: 0 20px;
+}
+
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.stepIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  transition: all 0.3s;
+}
+
+.stepActive .stepIcon {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 0 0 4px rgba(26, 60, 94, 0.1);
+}
+
+.step span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.stepActive span {
+  color: var(--color-primary);
+}
+
+.stepLine {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: -1;
+}
+
+.stepActive .stepLine {
+  background: var(--color-primary);
+}
+
+.main {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+}
+
+.stepContent {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stepContent h1 {
+  font-size: 1.4rem;
+  color: var(--color-secondary);
+  margin-bottom: 8px;
+}
+
+.stepContent p {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.iconCircle, .iconCircleSuccess {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.iconCircle {
+  background: #eff6ff;
+  color: var(--color-primary);
+}
+
+.iconCircleSuccess {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.formGroup {
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.changeBtn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inputVerified {
+  border-color: #16a34a !important;
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  font-weight: 600;
+}
+
+.verifiedIcon {
+  position: absolute;
+  right: 12px;
+  color: #16a34a;
+}
+
+.verifySleekBtn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.verifySleekBtn:hover {
+  background: #112a44;
+}
+
+.verifySleekBtn:disabled {
+  background: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.otpAnimation {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.formGroup label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.formGroup input,
+.formGroup textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.formGroup textarea {
+  height: 100px;
+  resize: none;
+}
+
+.tierGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.tierCard {
+  border: 2px solid #f1f5f9;
+  padding: 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  text-align: left;
+}
+
+.tierCard:hover {
+  border-color: #cbd5e1;
+}
+
+.selectedTier {
+  border-color: var(--color-primary);
+  background: #f8fafc;
+}
+
+.tierCard h3 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+  color: var(--color-secondary);
+}
+
+.tierLimit {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.tierPrice {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.checkBadge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--color-primary);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statusBox {
+  background: #f1f5f9;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.subStatus {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.successText {
+  text-align: center;
+  margin-bottom: 24px !important;
+}
+
+.initiativeBox {
+  background: #f0fdfa;
+  border: 1px solid #ccfbf1;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.initiativeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f766e;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+
+.initiativeBox p {
+  font-size: 0.85rem;
+  color: #0d9488;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .stepContent {
+    padding: 24px;
+  }
+
+  .tierGrid {
+    grid-template-columns: 1fr;
+  }
+}

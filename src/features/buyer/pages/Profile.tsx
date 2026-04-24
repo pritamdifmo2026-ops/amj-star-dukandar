@@ -10,7 +10,6 @@ import ProductCard from '@/features/product/components/ProductCard';
 const Profile: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const user = useAppSelector((state) => state.auth.user);
-  const token = useAppSelector((state) => state.auth.token);
   const wishlistItems = useAppSelector((state) => state.wishlist.items);
   const dispatch = useAppDispatch();
   
@@ -20,20 +19,7 @@ const Profile: React.FC = () => {
     setSearchParams({ tab });
   };
 
-  // Sync latest user data from backend on mount
-  React.useEffect(() => {
-    const fetchLatestProfile = async () => {
-      if (token) {
-        try {
-          const response = await authService.getMe(token);
-          dispatch(setCredentials({ token, user: response.user }));
-        } catch (err) {
-          console.error('Failed to sync profile', err);
-        }
-      }
-    };
-    fetchLatestProfile();
-  }, [token, dispatch]);
+  // Sync logic moved to RootLayout for global availability
 
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
@@ -49,16 +35,14 @@ const Profile: React.FC = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const handleSaveInfo = async () => {
-    if (user && token) {
+    if (user) {
       try {
         const response = await authService.updateProfile({
           name: editName,
-          email: editEmail,
-          token
+          email: editEmail
         });
 
         dispatch(setCredentials({
-          token,
           user: response.user
         }));
         setIsEditingInfo(false);
@@ -72,16 +56,14 @@ const Profile: React.FC = () => {
   };
 
   const handleSendVerifyEmail = async () => {
-    if (token) {
-      setIsSendingEmail(true);
-      try {
-        await authService.sendVerificationEmail(token);
-        alert('Verification email sent! Please check your inbox.');
-      } catch (err) {
-        alert('Failed to send verification email.');
-      } finally {
-        setIsSendingEmail(false);
-      }
+    setIsSendingEmail(true);
+    try {
+      await authService.sendVerificationEmail();
+      alert('Verification email sent! Please check your inbox.');
+    } catch (err) {
+      alert('Failed to send verification email.');
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -94,15 +76,13 @@ const Profile: React.FC = () => {
   };
 
   const handleVerifyPhoneOtp = async () => {
-    if (phoneOtp === '123456' && user && token) {
+    if (phoneOtp === '123456' && user) {
       try {
         const response = await authService.updateProfile({
-          phone: newPhone,
-          token
+          phone: newPhone
         });
 
         dispatch(setCredentials({
-          token,
           user: response.user
         }));
         setIsChangingPhone(false);

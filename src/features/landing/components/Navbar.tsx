@@ -4,6 +4,8 @@ import { Search, ShoppingCart, ChevronDown, Phone, Menu, X, UserPlus } from 'luc
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
+import Modal from '@/shared/components/ui/Modal';
+import Button from '@/shared/components/ui/Button';
 import styles from './Navbar.module.css';
 
 const CATEGORIES = [
@@ -15,11 +17,15 @@ const Navbar: React.FC = () => {
   const [query, setQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const cartCount = useAppSelector((s) => s.cart.items.length);
   const isAuth = useAppSelector((s) => s.auth.isAuthenticated);
   const user = useAppSelector((s) => s.auth.user);
+  const { profile } = useAppSelector((s) => s.supplier);
+  const isSupplier = user?.role === 'supplier';
+  const isAdmin = user?.role === 'admin';
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,11 +35,10 @@ const Navbar: React.FC = () => {
   };
 
   const handleSignOut = () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
-      dispatch(logout());
-      navigate(ROUTES.HOME);
-      setUserMenuOpen(false);
-    }
+    dispatch(logout());
+    navigate(ROUTES.HOME);
+    setShowLogoutModal(false);
+    setUserMenuOpen(false);
   };
 
   return (
@@ -83,11 +88,19 @@ const Navbar: React.FC = () => {
           <div className={styles.actions}>
             {isAuth ? (
               <div className={styles.userMenu} onClick={() => setUserMenuOpen(!userMenuOpen)}>
-                <span className={styles.userName}>{user?.name || 'User'}</span>
+                <span className={styles.userName}>
+                  {isSupplier ? (profile?.businessName || 'Supplier') : (user?.name || 'User')}
+                </span>
                 {userMenuOpen && (
                   <div className={styles.dropdown}>
-                    <Link to="/profile" className={styles.dropdownItem}>Profile</Link>
-                    <button className={styles.dropdownItem} onClick={handleSignOut}>Sign Out</button>
+                    {isSupplier ? (
+                      <Link to="/supplier/onboarding" className={styles.dropdownItem}>Dashboard</Link>
+                    ) : isAdmin ? (
+                      <Link to="/admin/dashboard" className={styles.dropdownItem}>Control Panel</Link>
+                    ) : (
+                      <Link to="/profile" className={styles.dropdownItem}>Profile</Link>
+                    )}
+                    <button className={styles.dropdownItem} onClick={() => setShowLogoutModal(true)}>Sign Out</button>
                   </div>
                 )}
               </div>
@@ -134,8 +147,14 @@ const Navbar: React.FC = () => {
         <div className={styles.mobileMenu}>
           {isAuth ? (
             <>
-              <Link to="/profile" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Profile</Link>
-              <button className={styles.mobileLink} style={{ textAlign: 'left', border: 'none', background: 'none' }} onClick={() => { handleSignOut(); setMobileOpen(false); }}>Sign Out</button>
+              {isSupplier ? (
+                <Link to="/supplier/onboarding" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Dashboard</Link>
+              ) : isAdmin ? (
+                <Link to="/admin/dashboard" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Control Panel</Link>
+              ) : (
+                <Link to="/profile" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Profile</Link>
+              )}
+              <button className={styles.mobileLink} style={{ textAlign: 'left', border: 'none', background: 'none' }} onClick={() => { setShowLogoutModal(true); setMobileOpen(false); }}>Sign Out</button>
             </>
           ) : (
             <>
@@ -156,6 +175,20 @@ const Navbar: React.FC = () => {
           ))}
         </div>
       </div>
+
+      <Modal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        title="Sign Out"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
+            <Button variant="danger" onClick={handleSignOut}>Sign Out</Button>
+          </>
+        }
+      >
+        Are you sure you want to sign out of your account?
+      </Modal>
     </header>
   );
 };
