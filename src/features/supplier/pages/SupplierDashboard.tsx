@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { useNavigate } from 'react-router-dom';
 import { logout } from '@/store/slices/auth.slice';
 import productService from '@/features/product/services/product.service';
 import Button from '@/shared/components/ui/Button';
-import { LayoutDashboard, Package, MessageSquare, Truck, Plus, CheckCircle, Clock, AlertCircle, Menu, ChevronLeft, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Package, MessageSquare, Truck, Plus, CheckCircle, Clock, AlertCircle, Menu, ChevronLeft, LogOut } from 'lucide-react';
 import AddProductModal from '../components/AddProductModal';
 import Modal from '@/shared/components/ui/Modal';
 import styles from './SupplierDashboard.module.css';
 
 const SupplierDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const { profile } = useAppSelector(state => state.supplier);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

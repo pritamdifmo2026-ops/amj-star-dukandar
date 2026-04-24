@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import styles from './Modal.module.css';
 import { X } from 'lucide-react';
-import Button from './Button';
+
 
 interface ModalProps {
   isOpen: boolean;

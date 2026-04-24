@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Store, ShoppingBag } from 'lucide-react';
 import authService from '../services/auth.service';
-import { setToken } from '@/shared/utils/auth';
+
 import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/auth.slice';
 import type { UserRole } from '../types';

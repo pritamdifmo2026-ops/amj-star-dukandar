@@ -15,7 +15,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     onSuccess: (data) => {
-      dispatch(setCredentials({ user: data.user, token: data.token }));
+      dispatch(setCredentials({ user: data.user }));
       toast.success(`Welcome back, ${data.user.name}!`);
       const roleRedirect: Record<string, string> = {
         admin: ROUTES.ADMIN_DASHBOARD,

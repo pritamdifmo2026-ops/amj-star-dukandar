@@ -12,7 +12,7 @@ const VerifyEmail: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const currentToken = useAppSelector((state) => state.auth.token);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const token = searchParams.get('token');
   
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -29,9 +29,8 @@ const VerifyEmail: React.FC = () => {
       try {
         const response = await authService.verifyEmail(token);
         // Update Redux state if the user is already logged in on this browser
-        if (currentToken) {
+        if (isAuthenticated) {
           dispatch(setCredentials({
-            token: currentToken,
             user: response.user
           }));
         }

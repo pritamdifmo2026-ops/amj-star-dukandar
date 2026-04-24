@@ -1,23 +1,26 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-export enum SupplierTier {
-  FREE = 'FREE',
-  GOLD = 'GOLD',
-  DIAMOND = 'DIAMOND',
-  PLATINUM = 'PLATINUM'
-}
+export const SupplierTier = {
+  FREE: 'FREE',
+  GOLD: 'GOLD',
+  DIAMOND: 'DIAMOND',
+  PLATINUM: 'PLATINUM'
+} as const;
+export type SupplierTier = (typeof SupplierTier)[keyof typeof SupplierTier];
 
-export enum KYCStatus {
-  PENDING = 'PENDING',
-  VERIFIED = 'VERIFIED',
-  REJECTED = 'REJECTED'
-}
+export const KYCStatus = {
+  PENDING: 'PENDING',
+  VERIFIED: 'VERIFIED',
+  REJECTED: 'REJECTED'
+} as const;
+export type KYCStatus = (typeof KYCStatus)[keyof typeof KYCStatus];
 
-export enum OnboardingStatus {
-  NOT_STARTED = 'NOT_STARTED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED'
-}
+export const OnboardingStatus = {
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED'
+} as const;
+export type OnboardingStatus = (typeof OnboardingStatus)[keyof typeof OnboardingStatus];
 
 interface SupplierProfile {
   businessName: string;

@@ -5,7 +5,7 @@ import productService, { type ProductInput } from '@/features/product/services/p
 import categoryService from '@/features/product/services/category.service';
 import uploadService from '@/features/product/services/upload.service';
 import ImageCropper from '@/features/product/components/ImageCropper';
-import { Upload, X, Plus } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import styles from '../pages/SupplierDashboard.module.css';
 
 interface AddProductModalProps {

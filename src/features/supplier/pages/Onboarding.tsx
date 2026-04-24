@@ -5,12 +5,11 @@ import { logout } from '@/store/slices/auth.slice';
 import {
   SupplierTier,
   OnboardingStatus,
-  setSupplierProfile,
-  updateOnboardingProgress
+  setSupplierProfile
 } from '@/store/slices/supplier.slice';
 import supplierService from '../services/supplier.service';
 import Button from '@/shared/components/ui/Button';
-import { Check, ArrowRight, Building2, ShieldCheck, CreditCard, LayoutDashboard, Edit2, ShieldAlert, Handshake } from 'lucide-react';
+import { Check, ArrowRight, Building2, ShieldCheck, CreditCard, LayoutDashboard, Handshake } from 'lucide-react';
 import authService from '@/features/auth/services/auth.service';
 import Modal from '@/shared/components/ui/Modal';
 import styles from './Onboarding.module.css';

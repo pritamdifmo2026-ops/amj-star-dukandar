@@ -2,7 +2,6 @@ import apiClient from '@/api/client';
 import type { 
   SendOtpPayload, 
   VerifyOtpPayload, 
-  SelectRolePayload, 
   AuthResponse,
   AuthUser
 } from '../types';

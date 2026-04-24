@@ -8,23 +8,22 @@ import authService from '@/features/auth/services/auth.service';
 
 const RootLayout: React.FC = () => {
   const dispatch = useAppDispatch();
-  const token = useAppSelector((state) => state.auth.token);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
   // Sync latest user data from backend on mount or when token changes
   useEffect(() => {
     const syncProfile = async () => {
-      if (token) {
+      if (isAuthenticated) {
         try {
-          const response = await authService.getMe(token);
-          dispatch(setCredentials({ token, user: response.user }));
+          const response = await authService.getMe();
+          dispatch(setCredentials({ user: response.user }));
         } catch (err) {
           console.error('Failed to sync profile', err);
-          // Optional: if 401, could trigger logout here
         }
       }
     };
     syncProfile();
-  }, [token, dispatch]);
+  }, [isAuthenticated, dispatch]);
 
   return (
     <>

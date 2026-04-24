@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { useSearchParams, Link } from 'react-router-dom';
-import { User, Package, MapPin, CreditCard, Settings, Shield, Bell, Heart, Edit2, Check, X } from 'lucide-react';
+import { User, Package, MapPin, CreditCard, Settings, Bell, Heart, Check, X } from 'lucide-react';
 import { setCredentials } from '@/store/slices/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import styles from './Profile.module.css';

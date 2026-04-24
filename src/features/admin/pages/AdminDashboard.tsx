@@ -14,7 +14,6 @@ import {
   Clock, 
   CheckCircle, 
   XCircle, 
-  Search, 
   ShieldCheck, 
   Power,
   BarChart3,
@@ -36,6 +35,7 @@ const AdminDashboard: React.FC = () => {
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
+
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
