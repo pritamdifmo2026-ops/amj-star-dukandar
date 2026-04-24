@@ -14,14 +14,30 @@ export interface SelectRolePayload {
   token: string;
 }
 
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  role: 'reseller' | 'supplier';
+}
+
 export interface AuthResponse {
   token: string;
   isNewUser?: boolean;
-  user?: AuthUser;
+  user: AuthUser;
 }
 
 export interface AuthUser {
   id: string;
+  name: string;
   phone: string;
+  email: string;
   role: UserRole;
 }
+
