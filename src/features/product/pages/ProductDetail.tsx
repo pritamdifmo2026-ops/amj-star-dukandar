@@ -1,11 +1,12 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart } from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart } from '@/store/slices/cart.slice';
+import { toggleWishlist } from '@/store/slices/wishlist.slice';
 import Button from '@/shared/components/ui/Button';
 import Loader from '@/shared/components/feedback/Loader';
 import ErrorState from '@/shared/components/feedback/ErrorState';
@@ -17,8 +18,16 @@ const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-
+  const wishlistItems = useAppSelector(state => state.wishlist.items);
+  
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
+  const isWishlisted = product ? wishlistItems.some(item => item.id === product.id) : false;
+
+  const handleToggleWishlist = () => {
+    if (product) {
+      dispatch(toggleWishlist(product));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -94,7 +103,16 @@ const ProductDetail: React.FC = () => {
                 <span className={styles.categoryBadge}>{product.category}</span>
               </div>
 
-              <h1 className={styles.title}>{product.name}</h1>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <h1 className={styles.title}>{product.name}</h1>
+                <button 
+                  className={`${styles.wishlistBtn} ${isWishlisted ? styles.active : ''}`}
+                  onClick={handleToggleWishlist}
+                  aria-label="Add to wishlist"
+                >
+                  <Heart size={24} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
+                </button>
+              </div>
 
               <div className={styles.ratingRow}>
                 <div className={styles.stars}>

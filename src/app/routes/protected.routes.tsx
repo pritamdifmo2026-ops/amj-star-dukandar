@@ -3,11 +3,20 @@ import MainLayout from '@/shared/layout/MainLayout';
 import { ROUTES } from '@/shared/constants/routes';
 import ProtectedRoute from '@/shared/components/ProtectedRoute';
 import EmptyState from '@/shared/components/feedback/EmptyState';
+import Profile from '@/features/buyer/pages/Profile';
 
 export const protectedRoutes: RouteObject[] = [
   {
     element: <MainLayout />,
     children: [
+      {
+        path: '/profile',
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: ROUTES.RESELLER_DASHBOARD,
         element: (

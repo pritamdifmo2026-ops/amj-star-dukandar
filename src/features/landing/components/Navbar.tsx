@@ -31,7 +31,7 @@ const Navbar: React.FC = () => {
   const handleSignOut = () => {
     if (window.confirm('Are you sure you want to sign out?')) {
       dispatch(logout());
-      navigate(ROUTES.LOGIN);
+      navigate(ROUTES.HOME);
       setUserMenuOpen(false);
     }
   };
@@ -130,10 +130,19 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile menu */}
-      {mobileOpen && (
+      <div className={`${styles.mobileMenuWrapper} ${mobileOpen ? styles.open : ''}`}>
         <div className={styles.mobileMenu}>
-          <Link to={ROUTES.LOGIN} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Sign In</Link>
-          <Link to={ROUTES.REGISTER} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Register</Link>
+          {isAuth ? (
+            <>
+              <Link to="/profile" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Profile</Link>
+              <button className={styles.mobileLink} style={{ textAlign: 'left', border: 'none', background: 'none' }} onClick={() => { handleSignOut(); setMobileOpen(false); }}>Sign Out</button>
+            </>
+          ) : (
+            <>
+              <Link to={ROUTES.LOGIN} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Sign In</Link>
+              <Link to={ROUTES.REGISTER} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Register</Link>
+            </>
+          )}
           <hr className={styles.mobileDivider} />
           {CATEGORIES.map((cat) => (
             <Link
@@ -146,7 +155,7 @@ const Navbar: React.FC = () => {
             </Link>
           ))}
         </div>
-      )}
+      </div>
     </header>
   );
 };

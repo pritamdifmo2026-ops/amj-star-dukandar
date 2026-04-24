@@ -297,6 +297,15 @@
 }
 
 /* ---- Mobile Menu ---- */
+.mobileMenuWrapper {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-in-out;
+}
+.mobileMenuWrapper.open {
+  max-height: 600px;
+}
+
 .mobileMenu {
   display: flex;
   flex-direction: column;

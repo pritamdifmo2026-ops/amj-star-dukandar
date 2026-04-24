@@ -5,6 +5,7 @@ import Login from '@/features/auth/pages/Login';
 import VerifyOtp from '@/features/auth/pages/VerifyOtp';
 import SelectRole from '@/features/auth/pages/SelectRole';
 import Register from '@/features/auth/pages/Register';
+import VerifyEmail from '@/features/auth/pages/VerifyEmail';
 import Landing from '@/features/landing/pages/Landing';
 import ProductList from '@/features/product/pages/ProductList';
 import ProductDetail from '@/features/product/pages/ProductDetail';
@@ -47,5 +48,9 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/products/add', // Temporarily public for testing
     element: <AddProduct />,
+  },
+  {
+    path: '/verify-email',
+    element: <VerifyEmail />,
   }
 ];

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Globe } from 'lucide-react';
 import appConfig from '@/config/app.config';
 import { ROUTES } from '@/shared/constants/routes';
@@ -10,6 +10,8 @@ import styles from './Footer.module.css';
 const Footer: React.FC = () => {
   const dispatch = useAppDispatch();
   const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const location = useLocation();
+  const isProfilePage = location.pathname.includes('/profile');
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -23,9 +25,11 @@ const Footer: React.FC = () => {
 
   return (
     <footer className={styles.footer}>
-      <div className={styles.backToTop} onClick={scrollToTop}>
-        TOP OF PAGE
-      </div>
+      {!isProfilePage && (
+        <div className={styles.backToTop} onClick={scrollToTop}>
+          TOP OF PAGE
+        </div>
+      )}
 
       <div className={styles.mainContent}>
         <div className={styles.container}>
