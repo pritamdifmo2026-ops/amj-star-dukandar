@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
@@ -6,7 +6,8 @@ import Hero from '../components/Hero';
 import Footer from '../components/Footer';
 import ProductCard from '@/features/product/components/ProductCard';
 import { ROUTES } from '@/shared/constants/routes';
-import { MOCK_PRODUCTS } from '@/api/mocks/products';
+import { productApi } from '@/features/product/services/product.api';
+import type { Product } from '@/features/product/types';
 import styles from './Landing.module.css';
 
 const CATEGORIES = [
@@ -18,6 +19,23 @@ const CATEGORIES = [
 ];
 
 const Landing: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await productApi.list({ pageSize: 50 });
+        setProducts(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   return (
     <div className={styles.landing}>
       <Navbar />
@@ -35,7 +53,7 @@ const Landing: React.FC = () => {
               </Link>
             </div>
             <div className={styles.productGrid}>
-              {MOCK_PRODUCTS
+              {loading ? <p>Loading products...</p> : products
                 .filter(p => p.category === 'Electronics')
                 .slice(0, 4)
                 .map(product => (
@@ -55,7 +73,7 @@ const Landing: React.FC = () => {
               </Link>
             </div>
             <div className={styles.productGrid}>
-              {MOCK_PRODUCTS
+              {loading ? <p>Loading products...</p> : products
                 .filter(p => p.category === 'Bulk Essentials')
                 .slice(0, 4)
                 .map(product => (
@@ -75,7 +93,7 @@ const Landing: React.FC = () => {
               </Link>
             </div>
             <div className={styles.productGrid}>
-              {MOCK_PRODUCTS
+              {loading ? <p>Loading products...</p> : products
                 .filter(p => p.category === 'Bulk Textiles')
                 .slice(0, 4)
                 .map(product => (
@@ -115,7 +133,7 @@ const Landing: React.FC = () => {
               </Link>
             </div>
             <div className={styles.productGrid}>
-              {MOCK_PRODUCTS
+              {loading ? <p>Loading products...</p> : products
                 .filter(p => p.category === 'Textiles')
                 .slice(0, 4)
                 .map(product => (
@@ -135,7 +153,7 @@ const Landing: React.FC = () => {
               </Link>
             </div>
             <div className={styles.productGrid}>
-              {MOCK_PRODUCTS
+              {loading ? <p>Loading products...</p> : products
                 .filter(p => p.category === 'Machinery')
                 .slice(0, 4)
                 .map(product => (
@@ -155,7 +173,7 @@ const Landing: React.FC = () => {
               </Link>
             </div>
             <div className={styles.productGrid}>
-              {MOCK_PRODUCTS
+              {loading ? <p>Loading products...</p> : products
                 .filter(p => p.category === 'Food & Beverages')
                 .slice(0, 4)
                 .map(product => (

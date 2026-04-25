@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import authService from '../services/auth.service';
 import styles from '../components/Auth.module.css';
 
@@ -8,6 +8,8 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +23,7 @@ const Login: React.FC = () => {
     try {
       await authService.sendOtp({ phone });
       localStorage.setItem('temp_phone', phone);
+      if (mode) localStorage.setItem('auth_mode', mode);
       navigate('/verify-otp');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
@@ -31,7 +34,9 @@ const Login: React.FC = () => {
 
   return (
     <>
-      <h1 className={styles.title}>Login to AMJ</h1>
+      <h1 className={styles.title}>
+        {mode === 'seller' ? 'Join AMJStar as Partner' : 'Login to AMJ'}
+      </h1>
       <p className={styles.subtitle}>Enter your phone number to receive an OTP</p>
       
       <form onSubmit={handleSubmit} className={styles.form}>

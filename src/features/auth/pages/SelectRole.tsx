@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User, Store, ShoppingBag } from 'lucide-react';
 import authService from '../services/auth.service';
 
@@ -12,6 +12,8 @@ const SelectRole: React.FC = () => {
   const [loading, setLoading] = useState<UserRole | null>(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode');
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -52,23 +54,25 @@ const SelectRole: React.FC = () => {
 
       <div className={styles.splitContainer}>
         {/* Buyer Pane */}
-        <div className={styles.rolePane}>
-          <span className={`${styles.badge} ${styles.badgeBuyer}`}>For Retailers</span>
-          <div className={styles.iconWrapper}>
-            <ShoppingBag size={48} color="#0B7F5A" />
+        {mode !== 'seller' && (
+          <div className={styles.rolePane}>
+            <span className={`${styles.badge} ${styles.badgeBuyer}`}>For Retailers</span>
+            <div className={styles.iconWrapper}>
+              <ShoppingBag size={48} color="#0B7F5A" />
+            </div>
+            <h2 className={styles.roleTitle}>Buyer</h2>
+            <p className={styles.roleDesc}>
+              Source high-quality products in bulk at wholesale prices directly from verified manufacturers.
+            </p>
+            <button
+              className={`${styles.selectBtn} ${styles.btnBuyer} ${loading ? styles.btnDisabled : ''}`}
+              onClick={() => handleRoleSelect('buyer')}
+              disabled={!!loading}
+            >
+              {loading === 'buyer' ? 'Setting up...' : 'Join as Buyer'}
+            </button>
           </div>
-          <h2 className={styles.roleTitle}>Buyer</h2>
-          <p className={styles.roleDesc}>
-            Source high-quality products in bulk at wholesale prices directly from verified manufacturers.
-          </p>
-          <button
-            className={`${styles.selectBtn} ${styles.btnBuyer} ${loading ? styles.btnDisabled : ''}`}
-            onClick={() => handleRoleSelect('buyer')}
-            disabled={!!loading}
-          >
-            {loading === 'buyer' ? 'Setting up...' : 'Join as Buyer'}
-          </button>
-        </div>
+        )}
 
         {/* Supplier Pane */}
         <div className={styles.rolePane}>
@@ -99,13 +103,13 @@ const SelectRole: React.FC = () => {
           <p className={styles.roleDesc}>
             Start your own business with zero investment. Share products with your network and earn margins.
           </p>
-          <button
-            className={`${styles.selectBtn} ${styles.btnReseller} ${loading ? styles.btnDisabled : ''}`}
-            onClick={() => handleRoleSelect('reseller')}
-            disabled={!!loading}
+          <a
+            href="#"
+            className={`${styles.selectBtn} ${styles.btnReseller}`}
+            style={{ display: 'block', textAlign: 'center', textDecoration: 'none', lineHeight: '44px' }}
           >
-            {loading === 'reseller' ? 'Setting up...' : 'Join as Reseller'}
-          </button>
+            Join as Reseller
+          </a>
         </div>
       </div>
     </div>

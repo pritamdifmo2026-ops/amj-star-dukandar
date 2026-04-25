@@ -2,52 +2,46 @@ import apiClient from '@/api/client';
 import { ENDPOINTS } from '@/api/endpoints';
 import type { Product, ProductFilters, CreateProductPayload } from '../types';
 import type { PaginatedResponse } from '@/shared/types/global.d';
-import { MOCK_PRODUCTS } from '@/api/mocks/products';
 
-// Helper to simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Set this to true to force mocks and avoid red console errors
-const USE_MOCKS = true; 
+const mapProduct = (item: any): Product => ({
+  id: item._id,
+  name: item.name,
+  description: item.description,
+  price: item.basePrice || 0,
+  unit: item.unit || 'Piece',
+  minOrderQty: item.moq || 1,
+  stock: item.stock || 0,
+  category: item.category || 'Other',
+  imageUrl: item.images?.[0],
+  images: item.images || [],
+  supplierId: item.supplierId?._id || item.supplierId,
+  supplierName: item.supplierId?.businessName || 'Verified Supplier',
+  isVerified: item.supplierId?.verifiedByAdmin ?? true,
+  rating: item.rating || 5,
+  gstRate: item.gstRate || 18,
+  createdAt: item.createdAt,
+  updatedAt: item.updatedAt,
+});
 
 export const productApi = {
   list: async (filters?: ProductFilters): Promise<PaginatedResponse<Product>> => {
-    if (USE_MOCKS) {
-      console.log('Serving from Mocks...');
-      await delay(500);
-      let filtered = [...MOCK_PRODUCTS];
-      
-      if (filters?.category) {
-        filtered = filtered.filter(p => p.category === filters.category);
-      }
-      if (filters?.search) {
-        const q = filters.search.toLowerCase();
-        filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
-      }
-
-      return {
-        data: filtered,
-        total: filtered.length,
-        page: filters?.page || 1,
-        pageSize: filters?.pageSize || 10,
-        totalPages: 1
-      };
-    }
 
     const res = await apiClient.get(ENDPOINTS.PRODUCTS.LIST, { params: filters });
-    return res.data;
+    
+    const rawProducts = res.data.products || [];
+    
+    return {
+      data: rawProducts.map(mapProduct),
+      total: rawProducts.length,
+      page: filters?.page || 1,
+      pageSize: filters?.pageSize || 10,
+      totalPages: 1
+    };
   },
 
   detail: async (id: string): Promise<Product> => {
-    if (USE_MOCKS) {
-      await delay(300);
-      const product = MOCK_PRODUCTS.find(p => p.id === id);
-      if (!product) throw new Error('Product not found');
-      return product;
-    }
-
     const res = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(id));
-    return res.data;
+    return mapProduct(res.data.product);
   },
 
   create: async (payload: CreateProductPayload): Promise<Product> => {

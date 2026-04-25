@@ -50,7 +50,7 @@ const Navbar: React.FC = () => {
             <Phone size={12} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
           </span>
           <div className={styles.topLinks}>
-            <a href="#" className={styles.topLink}>Sell on AMJStar</a>
+            <Link to="/login?mode=seller" className={styles.topLink}>Sell on AMJStar</Link>
             <span className={styles.sep}>|</span>
             <a href="#" className={styles.topLink}>Help Center</a>
           </div>

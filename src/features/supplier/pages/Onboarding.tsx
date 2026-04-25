@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import {
@@ -9,10 +9,23 @@ import {
 } from '@/store/slices/supplier.slice';
 import supplierService from '../services/supplier.service';
 import Button from '@/shared/components/ui/Button';
-import { Check, ArrowRight, Building2, ShieldCheck, CreditCard, LayoutDashboard, Handshake } from 'lucide-react';
+import { Check, ShieldCheck, Handshake, ChevronDown } from 'lucide-react';
 import authService from '@/features/auth/services/auth.service';
 import Modal from '@/shared/components/ui/Modal';
 import styles from './Onboarding.module.css';
+
+const INDIA_STATES: Record<string, string[]> = {
+  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
+  "Delhi": ["New Delhi", "North Delhi", "South Delhi"],
+  "Karnataka": ["Bengaluru", "Mysuru", "Hubli", "Mangaluru"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai"],
+  "Uttar Pradesh": ["Lucknow", "Kanpur", "Noida", "Agra", "Varanasi"],
+  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot"],
+  "Punjab": ["Ludhiana", "Amritsar", "Jalandhar", "Patiala"],
+  "West Bengal": ["Kolkata", "Howrah", "Darjeeling"],
+  "Kerala": ["Kochi", "Thiruvananthapuram", "Kozhikode"],
+  "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"]
+};
 
 const Onboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -25,10 +38,23 @@ const Onboarding: React.FC = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Form states
+  const [ownerName, setOwnerName] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [email, setEmail] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState(user?.phone || '');
+
+  const [address, setAddress] = useState('');
+  const [pinCode, setPinCode] = useState('');
+  const [state, setState] = useState('');
+  const [city, setCity] = useState('');
+  const [gstin, setGstin] = useState('');
+
+  const [about, setAbout] = useState('');
+  const [yearOfEstablishment, setYearOfEstablishment] = useState('');
   const [selectedTier, setSelectedTier] = useState<SupplierTier>(SupplierTier.FREE);
-  const [kycDetails, setKycDetails] = useState({ address: '', gstin: '', pan: '' });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Phone Change/OTP states
   const [isPhoneEditable, setIsPhoneEditable] = useState(false);
@@ -37,7 +63,6 @@ const Onboarding: React.FC = () => {
   const [isPhoneVerified, setIsPhoneVerified] = useState(true);
   const [otpLoading, setOtpLoading] = useState(false);
 
-  // Sync phone if user data loads later
   useEffect(() => {
     if (user?.phone && !phone) {
       setPhone(user.phone);
@@ -50,48 +75,111 @@ const Onboarding: React.FC = () => {
         const data = await supplierService.getProfile();
         if (data.supplier) {
           dispatch(setSupplierProfile(data.supplier));
-          setBusinessName(data.supplier.businessName || '');
-          setPhone(data.supplier.phone || '');
-          setSelectedTier(data.supplier.tier || SupplierTier.FREE);
-
-          // If verified and active, go straight to dashboard
+          
           if (data.supplier.isActive && data.supplier.verifiedByAdmin) {
             navigate('/supplier/dashboard');
             return;
           }
 
-          // Determine starting step based on progress
+          if (data.supplier.businessName) setBusinessName(data.supplier.businessName);
+          if (data.supplier.phone) setPhone(data.supplier.phone);
+          if (data.supplier.tier) setSelectedTier(data.supplier.tier);
+
+          const bd = data.supplier.businessDetails;
+          if (bd) {
+            if (bd.ownerName) setOwnerName(bd.ownerName);
+            if (bd.email) setEmail(bd.email);
+            if (bd.address) setAddress(bd.address);
+            if (bd.pinCode) setPinCode(bd.pinCode);
+            if (bd.state) setState(bd.state);
+            if (bd.city) setCity(bd.city);
+            if (bd.gstin) setGstin(bd.gstin);
+            if (bd.about) setAbout(bd.about);
+            if (bd.yearOfEstablishment) setYearOfEstablishment(bd.yearOfEstablishment);
+          }
+
           if (data.supplier.onboardingStatus === OnboardingStatus.COMPLETED) {
             setCurrentStep(5);
           } else if (data.supplier.tier) {
             setCurrentStep(4);
           } else if (data.supplier.businessName) {
-            setCurrentStep(3);
+            setCurrentStep(2);
           }
         }
       } catch (err) {
-        console.log('No existing supplier profile found');
+        console.log('No profile found, starting fresh');
       }
     };
     fetchProfile();
-  }, [dispatch]);
+  }, [dispatch, navigate]);
 
-  const handleNext = async () => {
+  const capitalize = (str: string) => str.replace(/\b\w/g, l => l.toUpperCase());
+
+  const handleCapitalizeChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setter(capitalize(e.target.value));
+    setErrors(prev => ({ ...prev, [e.target.name]: '' }));
+  };
+
+  const handleChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setter(e.target.value);
+    setErrors(prev => ({ ...prev, [e.target.name]: '' }));
+  };
+
+  const validateBasicInfo = () => {
+    const newErrs: Record<string, string> = {};
+    if (!ownerName.trim()) newErrs.ownerName = "Owner name is required";
+    if (!businessName.trim()) newErrs.businessName = "Business name is required";
+    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) newErrs.email = "Valid email is required";
+    if (!isPhoneVerified) newErrs.phone = "Phone must be verified";
+    if (countryCode === '+91' && !/^\d{10}$/.test(phone)) newErrs.phone = "Enter a valid 10-digit number";
+    
+    setErrors(newErrs);
+    return Object.keys(newErrs).length === 0;
+  };
+
+  const validateBusinessDetails = () => {
+    const newErrs: Record<string, string> = {};
+    if (!address.trim() || address.length < 5) newErrs.address = "Detailed address is required";
+    if (!pinCode.trim() || pinCode.length < 6) newErrs.pinCode = "Valid PIN is required";
+    if (!state) newErrs.state = "State is required";
+    if (!city) newErrs.city = "City is required";
+    
+    if (gstin.trim() && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)) {
+      newErrs.gstin = "Invalid GSTIN format";
+    }
+    
+    setErrors(newErrs);
+    return Object.keys(newErrs).length === 0;
+  };
+
+  const validateProfileCompletion = () => {
+    return true; 
+  };
+
+  const submitStep = async () => {
     setLoading(true);
     try {
-      if (currentStep === 2) {
+      if (currentStep === 1) {
+        if (!validateBasicInfo()) return;
         const data = await supplierService.onboard({ businessName, phone });
         dispatch(setSupplierProfile(data.supplier));
+        setCurrentStep(2);
+      } else if (currentStep === 2) {
+        if (!validateBusinessDetails()) return;
+        setCurrentStep(3);
       } else if (currentStep === 3) {
-        const data = await supplierService.selectTier(selectedTier);
-        dispatch(setSupplierProfile(data.supplier));
-      } else if (currentStep === 4) {
-        const data = await supplierService.submitKYC(kycDetails);
-        dispatch(setSupplierProfile(data.supplier));
+        if (!validateProfileCompletion()) return;
+        const tierData = await supplierService.selectTier(selectedTier);
+        dispatch(setSupplierProfile(tierData.supplier));
+        
+        const kycData = await supplierService.submitKYC({
+          ownerName, email, address, pinCode, state, city, gstin, about, yearOfEstablishment
+        });
+        dispatch(setSupplierProfile(kycData.supplier));
+        setCurrentStep(5);
       }
-      setCurrentStep(prev => prev + 1);
-    } catch (err) {
-      alert('Action failed. Please try again.');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
@@ -101,202 +189,268 @@ const Onboarding: React.FC = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className={styles.stepContent}>
-            <div className={styles.iconCircle}><Building2 size={48} /></div>
-            <h1>Welcome to AMJ Star Supplier Network</h1>
-            <p>Start your journey to reach thousands of bulk buyers across India. Our onboarding process is quick and secure.</p>
-            <Button onClick={() => setCurrentStep(2)} size="lg" className={styles.fullWidth}>
-              Start Onboarding <ArrowRight size={20} />
-            </Button>
+          <div className={styles.formContainer}>
+            <div className={styles.stepContent}>
+              <h1>Basic Information</h1>
+              <p>Tell us who you are so we can set up your supplier account.</p>
+              
+              <div className={styles.formGroup}>
+                <label>Owner / Representative Name <span className={styles.required}>*</span></label>
+                <input
+                  name="ownerName"
+                  className={`${styles.input} ${errors.ownerName ? styles.inputError : ''}`}
+                  value={ownerName}
+                  onChange={handleCapitalizeChange(setOwnerName)}
+                  placeholder="e.g. Rahul Sharma"
+                />
+                {errors.ownerName && <span className={styles.errorText}>{errors.ownerName}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Company / Business Name <span className={styles.required}>*</span></label>
+                <input
+                  name="businessName"
+                  className={`${styles.input} ${errors.businessName ? styles.inputError : ''}`}
+                  value={businessName}
+                  onChange={handleCapitalizeChange(setBusinessName)}
+                  placeholder="e.g. AMJ Textiles Pvt Ltd"
+                />
+                {errors.businessName && <span className={styles.errorText}>{errors.businessName}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Email Address <span className={styles.required}>*</span></label>
+                <input
+                  name="email"
+                  type="email"
+                  className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
+                  value={email}
+                  onChange={handleChange(setEmail)}
+                  placeholder="name@company.com"
+                />
+                {errors.email && <span className={styles.errorText}>{errors.email}</span>}
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Contact Phone <span className={styles.required}>*</span></label>
+                <div className={`${styles.phoneGroup} ${errors.phone ? styles.inputError : ''}`}>
+                  <select 
+                    className={`${styles.input} ${styles.countryCode}`}
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                  >
+                    <option value="+91">+91</option>
+                    <option value="+1">+1</option>
+                    <option value="+44">+44</option>
+                  </select>
+                  <input
+                    name="phone"
+                    type="tel"
+                    className={`${styles.input} ${styles.phoneInput}`}
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value.replace(/\D/g, ''));
+                      setErrors(prev => ({ ...prev, phone: '' }));
+                    }}
+                    disabled={!isPhoneEditable && isPhoneVerified}
+                    maxLength={15}
+                  />
+                </div>
+                {errors.phone && <span className={styles.errorText}>{errors.phone}</span>}
+              </div>
+
+              <div className={styles.buttonGroup}>
+                <Button onClick={submitStep} disabled={loading} size="lg" className={styles.fullWidth}>
+                  {loading ? 'Saving...' : 'Save & Continue'}
+                </Button>
+              </div>
+            </div>
           </div>
         );
       case 2:
         return (
-          <div className={styles.stepContent}>
-            <h1>Business Information</h1>
-            <p>Tell us about your company.</p>
-            <div className={styles.formGroup}>
-              <label>Business / Company Name</label>
-              <input
-                type="text"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="e.g. AMJ Textiles Pvt Ltd"
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <div className={styles.labelRow}>
-                <label>Contact Phone</label>
-                {!isPhoneEditable && (
-                  <button
-                    className={styles.changeBtn}
-                    onClick={() => {
-                      setIsPhoneEditable(true);
-                      setIsPhoneVerified(false);
-                    }}
-                  >
-                    Change?
-                  </button>
-                )}
-              </div>
-              <div className={styles.inputWrapper}>
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={!isPhoneEditable}
-                  className={isPhoneVerified ? styles.inputVerified : ''}
-                />
-                {isPhoneVerified && <Check className={styles.verifiedIcon} size={20} />}
-                {isPhoneEditable && !isOtpSent && (
-                  <button
-                    className={styles.verifySleekBtn}
-                    onClick={async () => {
-                      setOtpLoading(true);
-                      try {
-                        await authService.sendOtp({ phone });
-                        setIsOtpSent(true);
-                      } catch (err) {
-                        alert('Failed to send OTP');
-                      } finally {
-                        setOtpLoading(false);
-                      }
-                    }}
-                    disabled={otpLoading || phone.length < 10}
-                  >
-                    {otpLoading ? '...' : 'Verify'}
-                  </button>
-                )}
-              </div>
-            </div>
+          <div className={styles.formContainer}>
+            <div className={styles.stepContent}>
+              <h1>Business Details</h1>
+              <p>Where is your business registered?</p>
 
-            {isOtpSent && !isPhoneVerified && (
-              <div className={`${styles.formGroup} ${styles.otpAnimation}`}>
-                <label>Enter OTP</label>
-                <div className={styles.inputWrapper}>
+              <div className={styles.formGroup}>
+                <label>Registered Address <span className={styles.required}>*</span></label>
+                <textarea
+                  name="address"
+                  className={`${styles.input} ${errors.address ? styles.inputError : ''}`}
+                  value={address}
+                  onChange={handleCapitalizeChange(setAddress)}
+                  placeholder="Building, Street, Area"
+                />
+                {errors.address && <span className={styles.errorText}>{errors.address}</span>}
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>PIN Code <span className={styles.required}>*</span></label>
                   <input
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    placeholder="123456"
+                    name="pinCode"
+                    className={`${styles.input} ${errors.pinCode ? styles.inputError : ''}`}
+                    value={pinCode}
+                    onChange={(e) => {
+                      setPinCode(e.target.value.replace(/\D/g, ''));
+                      setErrors(prev => ({ ...prev, pinCode: '' }));
+                    }}
                     maxLength={6}
+                    placeholder="e.g. 400001"
                   />
-                  <button
-                    className={styles.verifySleekBtn}
-                    onClick={async () => {
-                      if (otp === '123456') { // Mock verification
-                        setIsPhoneVerified(true);
-                        setIsPhoneEditable(false);
-                        setIsOtpSent(false);
-                      } else {
-                        alert('Invalid OTP');
-                      }
+                  {errors.pinCode && <span className={styles.errorText}>{errors.pinCode}</span>}
+                </div>
+                <div className={styles.formGroup}>
+                  <label>State <span className={styles.required}>*</span></label>
+                  <select
+                    name="state"
+                    className={`${styles.input} ${errors.state ? styles.inputError : ''}`}
+                    value={state}
+                    onChange={(e) => {
+                      setState(e.target.value);
+                      setCity('');
+                      setErrors(prev => ({ ...prev, state: '' }));
                     }}
                   >
-                    Confirm
-                  </button>
+                    <option value="">Select State</option>
+                    {Object.keys(INDIA_STATES).map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  {errors.state && <span className={styles.errorText}>{errors.state}</span>}
                 </div>
               </div>
-            )}
 
-            <Button
-              onClick={handleNext}
-              disabled={!businessName || !isPhoneVerified || loading}
-              size="lg"
-              className={styles.fullWidth}
-            >
-              {loading ? 'Saving...' : 'Next: Select Tier'}
-            </Button>
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>City <span className={styles.required}>*</span></label>
+                  <select
+                    name="city"
+                    className={`${styles.input} ${errors.city ? styles.inputError : ''}`}
+                    value={city}
+                    onChange={handleChange(setCity)}
+                    disabled={!state}
+                  >
+                    <option value="">Select City</option>
+                    {state && INDIA_STATES[state]?.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  {errors.city && <span className={styles.errorText}>{errors.city}</span>}
+                </div>
+                <div className={styles.formGroup}>
+                  <label>GSTIN (Optional)</label>
+                  <input
+                    name="gstin"
+                    className={`${styles.input} ${errors.gstin ? styles.inputError : ''}`}
+                    value={gstin}
+                    onChange={(e) => {
+                      setGstin(e.target.value.toUpperCase());
+                      setErrors(prev => ({ ...prev, gstin: '' }));
+                    }}
+                    placeholder="22AAAAA0000A1Z5"
+                    maxLength={15}
+                  />
+                  {errors.gstin && <span className={styles.errorText}>{errors.gstin}</span>}
+                </div>
+              </div>
+
+              <div className={styles.buttonGroup}>
+                <Button onClick={() => setCurrentStep(1)} variant="outline" size="lg">Back</Button>
+                <Button onClick={submitStep} disabled={loading} size="lg" className={styles.fullWidth}>
+                  {loading ? 'Saving...' : 'Save & Continue'}
+                </Button>
+              </div>
+            </div>
           </div>
         );
       case 3:
         return (
-          <div className={styles.stepContent}>
-            <h1>Choose Your Tier</h1>
-            <p>Select a plan that fits your business scale.</p>
-            <div className={styles.tierGrid}>
-              {[
-                { id: SupplierTier.FREE, label: 'Free', limit: '5,000 Products', price: '₹0/mo' },
-                { id: SupplierTier.GOLD, label: 'Gold', limit: '5,000 Products + Visibility', price: '₹999/mo' },
-                { id: SupplierTier.DIAMOND, label: 'Diamond', limit: '10,000 Products + Premium', price: '₹2,499/mo' },
-                { id: SupplierTier.PLATINUM, label: 'Platinum', limit: 'Unlimited Products', price: '₹4,999/mo' },
-              ].map(tier => (
-                <div
-                  key={tier.id}
-                  className={`${styles.tierCard} ${selectedTier === tier.id ? styles.selectedTier : ''}`}
-                  onClick={() => setSelectedTier(tier.id)}
-                >
-                  <h3>{tier.label}</h3>
-                  <p className={styles.tierLimit}>{tier.limit}</p>
-                  <p className={styles.tierPrice}>{tier.price}</p>
-                  {selectedTier === tier.id && <div className={styles.checkBadge}><Check size={14} /></div>}
+          <div className={styles.formContainer}>
+            <div className={styles.stepContent}>
+              <h1>Profile & Tier</h1>
+              <p>Add some flair to your profile and choose a selling plan.</p>
+
+              <div className={styles.formGroup}>
+                <label>About Company (Optional)</label>
+                <textarea
+                  className={styles.input}
+                  value={about}
+                  onChange={(e) => setAbout(e.target.value)}
+                  placeholder="What makes your products special?"
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Year of Establishment (Optional)</label>
+                <input
+                  type="number"
+                  className={styles.input}
+                  value={yearOfEstablishment}
+                  onChange={(e) => setYearOfEstablishment(e.target.value)}
+                  placeholder="e.g. 2010"
+                />
+              </div>
+
+              <div className={styles.formGroup} style={{ marginTop: '30px' }}>
+                <label>Select Plan <span className={styles.required}>*</span></label>
+                <div className={styles.tierGrid}>
+                  {[
+                    { id: SupplierTier.FREE, label: 'Free Tier', limit: 'Up to 5,000 Products', price: '₹0' },
+                    { id: SupplierTier.GOLD, label: 'Gold Plan', limit: 'Priority Placement', price: '₹999/mo' },
+                  ].map(tier => (
+                    <div
+                      key={tier.id}
+                      className={`${styles.tierCard} ${selectedTier === tier.id ? styles.selectedTier : ''}`}
+                      onClick={() => setSelectedTier(tier.id)}
+                    >
+                      <div className={styles.tierInfo}>
+                        <h3>{tier.label}</h3>
+                        <span className={styles.tierLimit}>{tier.limit}</span>
+                      </div>
+                      <div className={styles.tierPrice}>{tier.price}</div>
+                      {selectedTier === tier.id && <div className={styles.checkBadge}><Check size={14} /></div>}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div className={styles.buttonGroup}>
+                <Button onClick={() => setCurrentStep(2)} variant="outline" size="lg">Back</Button>
+                <Button onClick={submitStep} disabled={loading} size="lg" className={styles.fullWidth}>
+                  {loading ? 'Submitting...' : 'Submit Profile'}
+                </Button>
+              </div>
             </div>
-            <Button onClick={handleNext} disabled={loading} size="lg" className={styles.fullWidth}>
-              {loading ? 'Saving...' : 'Next: KYC Details'}
-            </Button>
-          </div>
-        );
-      case 4:
-        return (
-          <div className={styles.stepContent}>
-            <h1>KYC Verification</h1>
-            <p>Help us verify your business for buyer trust.</p>
-            <div className={styles.formGroup}>
-              <label>Business Address</label>
-              <textarea
-                value={kycDetails.address}
-                onChange={(e) => setKycDetails({ ...kycDetails, address: e.target.value })}
-                placeholder="Full registered address"
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <label>GSTIN (Optional for now)</label>
-              <input
-                type="text"
-                value={kycDetails.gstin}
-                onChange={(e) => setKycDetails({ ...kycDetails, gstin: e.target.value })}
-                placeholder="27XXXXX..."
-              />
-            </div>
-            <Button onClick={handleNext} disabled={!kycDetails.address || loading} size="lg" className={styles.fullWidth}>
-              {loading ? 'Submitting...' : 'Complete Onboarding'}
-            </Button>
           </div>
         );
       case 5:
         return (
-          <div className={styles.stepContent}>
-            <div className={styles.iconCircleSuccess}><ShieldCheck size={48} /></div>
-            <h1>Onboarding Complete!</h1>
-            <p className={styles.successText}>
-              Your application is now under review. As part of our high-trust B2B process,
-              <strong> you will receive a verification call within 24 hours </strong>
-              to confirm your details and schedule a visit to your business location.
-            </p>
-
-            <div className={styles.initiativeBox}>
-              <div className={styles.initiativeHeader}>
-                <Handshake size={18} />
-                <span>Development Initiative</span>
+          <div className={styles.formContainer} style={{ maxWidth: '480px', margin: '0 auto' }}>
+            <div className={styles.stepContent}>
+              <div className={styles.iconCircleSuccess}><ShieldCheck size={48} /></div>
+              <h1 style={{ textAlign: 'center' }}>Application Submitted!</h1>
+              <p className={styles.successText}>
+                Your application is now under review. As part of our high-trust B2B process,
+                <strong> you will receive a verification call within 24 hours </strong>
+                to confirm your details.
+              </p>
+              
+              <div className={styles.statusBox}>
+                <p>Status: <strong>{profile?.kycStatus || 'PENDING'}</strong></p>
+                <p className={styles.subStatus}>Next step: Formal Cold Call (within 24h)</p>
               </div>
-              <p>Are you a Women Entrepreneur? We would love to connect and discuss growth & support for your business!</p>
-            </div>
 
-            <div className={styles.statusBox}>
-              <p>Current Status: <strong>{profile?.kycStatus || 'PENDING'}</strong></p>
-              <p className={styles.subStatus}>Next step: Formal Cold Call (within 24h)</p>
+              <Button
+                onClick={() => navigate('/')}
+                size="lg"
+                className={styles.fullWidth}
+              >
+                Go to Homepage
+              </Button>
             </div>
-
-            <Button
-              onClick={() => setShowLogoutModal(true)}
-              variant="outline"
-              size="lg"
-              className={styles.fullWidth}
-            >
-              Sign Out
-            </Button>
           </div>
         );
       default:
@@ -305,29 +459,41 @@ const Onboarding: React.FC = () => {
   };
 
   const steps = [
-    { n: 1, label: 'Start', icon: ArrowRight },
-    { n: 2, label: 'Info', icon: Building2 },
-    { n: 3, label: 'Tier', icon: CreditCard },
-    { n: 4, label: 'KYC', icon: ShieldCheck },
-    { n: 5, label: 'Done', icon: LayoutDashboard },
+    { n: 1, label: 'Basic Info', desc: 'Name & Email' },
+    { n: 2, label: 'Business', desc: 'Address & GST' },
+    { n: 3, label: 'Profile', desc: 'About & Plan' }
   ];
+
+  if (currentStep === 5) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.main} style={{ padding: '60px 20px' }}>
+          {renderStepContent()}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
-      <div className={styles.stepperContainer}>
+      <div className={styles.sidebar}>
+        <Link to="/" className={styles.sidebarBrand}>AMJStar Dukandar</Link>
         <div className={styles.stepper}>
-          {steps.map(step => (
-            <div
-              key={step.n}
-              className={`${styles.step} ${currentStep >= step.n ? styles.stepActive : ''}`}
-            >
-              <div className={styles.stepIcon}>
-                {currentStep > step.n ? <Check size={16} /> : <step.icon size={16} />}
+          {steps.map(step => {
+            const isActive = currentStep === step.n;
+            const isCompleted = currentStep > step.n;
+            return (
+              <div key={step.n} className={`${styles.step} ${isActive ? styles.stepActive : ''} ${isCompleted ? styles.stepCompleted : ''}`}>
+                <div className={styles.stepIcon}>
+                  {isCompleted ? <Check size={16} /> : step.n}
+                </div>
+                <div className={styles.stepText}>
+                  <span className={styles.stepTitle}>{step.label}</span>
+                  <span className={styles.stepDesc}>{step.desc}</span>
+                </div>
               </div>
-              <span>{step.label}</span>
-              {step.n < 5 && <div className={styles.stepLine} />}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

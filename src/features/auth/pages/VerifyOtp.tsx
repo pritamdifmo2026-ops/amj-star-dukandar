@@ -35,6 +35,7 @@ const VerifyOtp: React.FC = () => {
       const response = await authService.verifyOtp({ phone, otp });
       
       localStorage.removeItem('temp_phone');
+      const mode = localStorage.getItem('auth_mode');
       
       // Update Redux state
       const user = response.user;
@@ -42,7 +43,8 @@ const VerifyOtp: React.FC = () => {
       
       // Redirect based on role or if role is missing
       if (!user.role) {
-        navigate('/select-role');
+        navigate(mode ? `/select-role?mode=${mode}` : '/select-role');
+        if (mode) localStorage.removeItem('auth_mode');
       } else if (user.role === 'supplier') {
         navigate('/supplier/dashboard');
       } else if (user.role === 'reseller') {
