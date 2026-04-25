@@ -567,7 +567,7 @@ const Onboarding: React.FC = () => {
         );
       case 5:
         return (
-          <div className={styles.formContainer}>
+          <div className={`${styles.formContainer} ${styles.centeredContent}`}>
             <div className={styles.stepContent}>
               <div className={styles.iconCircleSuccess}><ShieldCheck size={48} /></div>
               <h1 style={{ textAlign: 'center' }}>Application Submitted!</h1>
@@ -595,7 +595,7 @@ const Onboarding: React.FC = () => {
               <Button
                 onClick={() => navigate('/')}
                 size="lg"
-                className={styles.fullWidth}
+                className={styles.homeBtn}
               >
                 Go to Homepage
               </Button>

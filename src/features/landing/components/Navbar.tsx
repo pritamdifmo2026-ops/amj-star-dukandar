@@ -6,6 +6,7 @@ import { logout } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
+import MessageModal from '@/shared/components/ui/MessageModal';
 import styles from './Navbar.module.css';
 
 const CATEGORIES = [
@@ -18,7 +19,19 @@ const Navbar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showSoonModal, setShowSoonModal] = useState(false);
   const navigate = useNavigate();
+  const userMenuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const dispatch = useAppDispatch();
   const cartCount = useAppSelector((s) => s.cart.items.length);
   const isAuth = useAppSelector((s) => s.auth.isAuthenticated);
@@ -26,6 +39,24 @@ const Navbar: React.FC = () => {
   const { profile } = useAppSelector((s) => s.supplier);
   const isSupplier = user?.role === 'supplier';
   const isAdmin = user?.role === 'admin';
+
+  React.useEffect(() => {
+    if (isSupplier && !profile) {
+      const fetchProfile = async () => {
+        try {
+          const { default: supplierService } = await import('@/features/supplier/services/supplier.service');
+          const responseData = await supplierService.getProfile();
+          const { setSupplierProfile } = await import('@/store/slices/supplier.slice');
+          if (responseData.success && responseData.supplier) {
+            dispatch(setSupplierProfile(responseData.supplier));
+          }
+        } catch (err) {
+          console.error('Failed to fetch supplier profile in Navbar');
+        }
+      };
+      fetchProfile();
+    }
+  }, [isSupplier, profile, dispatch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +118,11 @@ const Navbar: React.FC = () => {
           {/* Right actions */}
           <div className={styles.actions}>
             {isAuth ? (
-              <div className={styles.userMenu} onClick={() => setUserMenuOpen(!userMenuOpen)}>
+              <div 
+                className={styles.userMenu} 
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                ref={userMenuRef}
+              >
                 <span className={styles.userName}>
                   {isSupplier ? (profile?.businessName || 'Supplier') : (user?.name || 'User')}
                 </span>
@@ -110,19 +145,32 @@ const Navbar: React.FC = () => {
                   <UserPlus size={20} />
                   <span>Sign In</span>
                 </Link>
-                <Link to={ROUTES.REGISTER} className={styles.registerBtn}>Join Free</Link>
+                <Link to={`${ROUTES.LOGIN}?mode=register`} className={styles.registerBtn}>Join Free</Link>
               </>
             )}
-            <Link to={ROUTES.RESELLER_CART} className={styles.cartIcon} aria-label="Cart">
+            <div 
+              className={styles.cartIcon} 
+              aria-label="Cart" 
+              onClick={() => setShowSoonModal(true)}
+              style={{ cursor: 'pointer' }}
+            >
               <ShoppingCart size={20} />
               {cartCount > 0 && <span className={styles.cartBadge}>{cartCount}</span>}
-            </Link>
+            </div>
             <button className={styles.menuToggle} onClick={() => setMobileOpen((p) => !p)} aria-label="Menu">
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </nav>
+
+      <MessageModal 
+        isOpen={showSoonModal}
+        onClose={() => setShowSoonModal(false)}
+        title="Coming Soon"
+        message="We are currently updating our cart and checkout system. Please check back soon!"
+        type="info"
+      />
 
       {/* Category bar */}
       <div className={styles.catBar}>
@@ -159,7 +207,7 @@ const Navbar: React.FC = () => {
           ) : (
             <>
               <Link to={ROUTES.LOGIN} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Sign In</Link>
-              <Link to={ROUTES.REGISTER} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Register</Link>
+              <Link to={`${ROUTES.LOGIN}?mode=register`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Register</Link>
             </>
           )}
           <hr className={styles.mobileDivider} />

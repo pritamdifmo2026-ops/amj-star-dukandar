@@ -31,9 +31,14 @@
   text-decoration: none;
   transition: color 0.15s;
 }
-.topLink:hover { color: #fff; }
 
-.sep { color: #4a6a84; }
+.topLink:hover {
+  color: #fff;
+}
+
+.sep {
+  color: #4a6a84;
+}
 
 /* ---- Main Navbar ---- */
 .navbar {
@@ -66,12 +71,14 @@
   text-decoration: none;
   flex-shrink: 0;
 }
+
 .logoMain {
   font-size: 1.35rem;
   font-weight: 800;
   color: var(--color-primary);
   letter-spacing: -0.02em;
 }
+
 .logoSub {
   font-size: var(--font-size-xs);
   color: var(--color-secondary);
@@ -130,7 +137,10 @@
   justify-content: center;
   transition: background 0.15s;
 }
-.searchBtn:hover { background: var(--color-primary-dark); }
+
+.searchBtn:hover {
+  background: var(--color-primary-dark);
+}
 
 /* Actions */
 .actions {
@@ -138,7 +148,8 @@
   align-items: center;
   gap: var(--space-5);
   flex-shrink: 0;
-  margin-left: auto; /* Pushes everything to the far right */
+  margin-left: auto;
+  /* Pushes everything to the far right */
 }
 
 .loginBtn {
@@ -155,6 +166,7 @@
   align-items: center;
   gap: 8px;
 }
+
 .loginBtn:hover {
   background: var(--color-primary);
   color: #fff;
@@ -172,7 +184,10 @@
   transition: background 0.15s;
   white-space: nowrap;
 }
-.registerBtn:hover { background: var(--color-primary-dark); }
+
+.registerBtn:hover {
+  background: var(--color-primary-dark);
+}
 
 .cartIcon {
   position: relative;
@@ -181,7 +196,10 @@
   align-items: center;
   transition: color 0.15s;
 }
-.cartIcon:hover { color: var(--color-primary); }
+
+.cartIcon:hover {
+  color: var(--color-primary);
+}
 
 .cartBadge {
   position: absolute;
@@ -201,8 +219,8 @@
 
 .userName {
   font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #1A3C5E;
 }
 
 .userMenu {
@@ -210,13 +228,16 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  transition: background 0.2s;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border: 1px solid #1A3C5E;
+  border-radius: 8px;
+  transition: all 0.2s;
 }
 
 .userMenu:hover {
-  background: var(--color-surface-hover);
+  background: #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .dropdown {
@@ -227,7 +248,7 @@
   background: white;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 150px;
   display: flex;
   flex-direction: column;
@@ -279,7 +300,10 @@
   overflow-x: auto;
   scrollbar-width: none;
 }
-.catList::-webkit-scrollbar { display: none; }
+
+.catList::-webkit-scrollbar {
+  display: none;
+}
 
 .catLink {
   display: block;
@@ -291,8 +315,9 @@
   border-right: 1px solid #2a4d6a;
   transition: background 0.15s, color 0.15s;
 }
+
 .catLink:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 
@@ -302,6 +327,7 @@
   overflow: hidden;
   transition: max-height 0.3s ease-in-out;
 }
+
 .mobileMenuWrapper.open {
   max-height: 600px;
 }
@@ -321,7 +347,10 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   transition: background 0.2s;
 }
-.mobileLink:hover { background: rgba(255, 255, 255, 0.1); }
+
+.mobileLink:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
 
 .mobileDivider {
   border: none;
@@ -335,33 +364,56 @@
     text-align: center;
     gap: 4px;
   }
+
   .topLinks {
     display: none;
   }
+
   .navbar .container {
     gap: var(--space-3);
   }
+
   .logo {
     order: 1;
   }
+
   .actions {
     order: 2;
     margin-left: auto;
     gap: var(--space-3);
   }
+
   .searchForm {
     order: 3;
     max-width: 100%;
     width: 100%;
     margin-top: 4px;
   }
-  .categoryDrop { display: none; }
-  .loginBtn, .registerBtn { display: none; }
-  .menuToggle { display: flex; }
-  .catBar { display: none; }
+
+  .categoryDrop {
+    display: none;
+  }
+
+  .loginBtn,
+  .registerBtn {
+    display: none;
+  }
+
+  .menuToggle {
+    display: flex;
+  }
+
+  .catBar {
+    display: none;
+  }
 }
 
 @media (max-width: 500px) {
-  .logoSub { display: none; }
-  .helpline { font-size: 10px; }
+  .logoSub {
+    display: none;
+  }
+
+  .helpline {
+    font-size: 10px;
+  }
 }

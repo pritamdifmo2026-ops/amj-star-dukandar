@@ -7,6 +7,7 @@ export interface ProductInput {
   moq: number;
   unit: string;
   category: string;
+  hsnCode: string;
   images?: string[];
   specifications?: Record<string, string>;
 }
@@ -32,6 +33,16 @@ export const productService = {
   // Admin
   verifyProduct: async (id: string, status: 'APPROVED' | 'REJECTED') => {
     const response = await apiClient.patch(`/products/${id}/verify`, { status });
+    return response.data;
+  },
+
+  updateProduct: async (id: string, data: Partial<ProductInput>) => {
+    const response = await apiClient.patch(`/products/${id}`, data);
+    return response.data;
+  },
+
+  deleteProduct: async (id: string) => {
+    const response = await apiClient.delete(`/products/${id}`);
     return response.data;
   }
 };

@@ -43,6 +43,11 @@ const adminService = {
     const response = await api.get('/admin/products/pending');
     return response.data.products;
   },
+  
+  getAllProducts: async () => {
+    const response = await api.get('/admin/products/all');
+    return response.data.products;
+  },
 
   verifyProduct: async (id: string, status: 'APPROVED' | 'REJECTED') => {
     const response = await api.patch(`/admin/products/${id}/verify`, { status });

@@ -5,158 +5,6 @@
   overflow-x: hidden;
 }
 
-/* Sidebar Styling */
-.sidebar {
-  width: 260px;
-  background-color: #1e293b;
-  color: white;
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  height: 100vh;
-  left: 0;
-  top: 0;
-  z-index: 1000;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sidebarHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 40px;
-  padding: 0 8px;
-}
-
-.sidebarBrand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #38bdf8;
-  white-space: nowrap;
-  overflow: hidden;
-  transition: opacity 0.2s;
-}
-
-.toggleBtn {
-  background: rgba(255, 255, 255, 0.05);
-  border: none;
-  color: #94a3b8;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.toggleBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-/* Collapsed State */
-.sidebarCollapsed .sidebar {
-  width: 80px;
-}
-
-.sidebarCollapsed .sidebarBrand {
-  opacity: 0;
-  width: 0;
-  pointer-events: none;
-}
-
-.sidebarCollapsed .sidebarNav button span,
-.sidebarCollapsed .navDivider {
-  display: none;
-}
-
-.sidebarCollapsed .sidebarNav button {
-  justify-content: center;
-  padding: 12px;
-}
-
-.sidebarCollapsed .mainContent {
-  margin-left: 80px;
-}
-
-.sidebarNav {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sidebarNav button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: none;
-  background: none;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.sidebarNav button:hover:not(.disabledLink) {
-  background-color: #334155;
-  color: white;
-}
-
-.sidebarNav button.active {
-  background-color: #0284c7;
-  color: white;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
-}
-
-.sidebarFooter {
-  margin-top: auto;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logoutBtn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: none;
-  background: none;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-}
-
-.logoutBtn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-.navDivider {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #475569;
-  margin: 24px 0 8px 16px;
-  letter-spacing: 0.05em;
-}
-
-.disabledLink {
-  opacity: 0.6;
-  cursor: pointer !important;
-}
-
 /* Main Content Area */
 .mainContent {
   flex: 1;
@@ -522,3 +370,119 @@
 .emptyProducts p {
   margin: 16px 0 24px;
 }
+
+.actionsCell {
+  display: flex;
+  gap: 8px;
+}
+
+.actionBtn {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editBtn {
+  color: #2563eb;
+  background-color: #eff6ff;
+}
+
+.editBtn:hover {
+  background-color: #dbeafe;
+}
+
+.deleteBtn {
+  color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.deleteBtn:hover {
+  background-color: #fee2e2;
+}
+
+.trustedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: white;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.autoApprovalNotice {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  color: #166534;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.autoApprovalNotice strong {
+  color: #15803d;
+}
+
+/* Placeholder View Styles */
+.placeholderContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  border: 1px dashed #cbd5e1;
+}
+
+.placeholderIcon {
+  width: 120px;
+  height: 120px;
+  background: #f8fafc;
+  color: #94a3b8;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.placeholderContainer h2 {
+  font-size: 24px;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.placeholderContainer p {
+  color: #64748b;
+  max-width: 400px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.comingSoonBadge {
+  background: #2563eb;
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+

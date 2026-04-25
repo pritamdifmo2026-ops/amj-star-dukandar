@@ -2,75 +2,23 @@
   display: flex;
   min-height: 100vh;
   background-color: #f1f5f9;
+  overflow-x: hidden;
 }
 
-.sidebar {
-  width: 260px;
-  background-color: #1e293b;
-  color: white;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
+.content {
+  flex: 1;
+  margin-left: 260px;
+  padding: 40px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 100%;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 40px;
-  color: #38bdf8;
+.sidebarCollapsed .content {
+  margin-left: 80px;
 }
 
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.nav button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: none;
-  background: none;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-  text-align: left;
-}
-
-.nav button:hover {
-  background-color: #334155;
-  color: white;
-}
-
-.nav button.active {
-  background-color: #0284c7;
-  color: white;
-}
-
-.logoutBtn {
-  margin-top: auto;
-  border: none;
-  background: none;
-  color: #94a3b8;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 14px;
-}
-
-.logoutBtn:hover {
-  color: #f87171;
-  background-color: #334155;
+.sidebarCollapsed .content {
+  margin-left: 80px;
 }
 
 .content {
@@ -388,36 +336,133 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  margin-top: 24px;
+  gap: 8px;
+  margin-top: 16px;
 }
 
-.pagination button {
+.pageBtn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #475569;
+  gap: 4px;
+  padding: 6px 12px !important;
+  width: auto !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: white !important;
+  color: #475569 !important;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.pagination button:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+.pageBtn:hover:not(:disabled) {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
 }
 
-.pagination button:disabled {
+.pageBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.pagination span {
-  font-size: 14px;
-  color: #64748b;
-  font-weight: 500;
+.pageNumbers {
+  display: flex;
+  gap: 4px;
 }
+
+.pageNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: white !important;
+  color: #475569 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageNumber:hover {
+  background: #f8fafc !important;
+}
+
+.activePage {
+  background: #0284c7 !important;
+  color: white !important;
+  border-color: #0284c7 !important;
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+
+/* Product Queue New Styles */
+.productQueueContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sectionHeader h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.countBadge {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.marginTop {
+  margin-top: 48px;
+}
+
+.productInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.productThumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+}
+
+.productThumbPlaceholder {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+}
+
+

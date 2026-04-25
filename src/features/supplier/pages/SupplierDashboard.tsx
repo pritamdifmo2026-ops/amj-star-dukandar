@@ -1,11 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import productService from '@/features/product/services/product.service';
 import Button from '@/shared/components/ui/Button';
-import { LayoutDashboard, Package, MessageSquare, Truck, Plus, CheckCircle, Clock, AlertCircle, Menu, ChevronLeft, LogOut } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Package, 
+  Truck, 
+  Plus, 
+  ShieldCheck, 
+  Zap, 
+  LogOut,
+  Trash2,
+  FileText,
+  MessageCircle
+} from 'lucide-react';
+
+// Modular Components
+import SupplierStats from '../components/SupplierStats';
+import ProductTable from '../components/ProductTable';
+import PlaceholderView from '../components/PlaceholderView';
 import AddProductModal from '../components/AddProductModal';
+
 import Modal from '@/shared/components/ui/Modal';
+import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import styles from './SupplierDashboard.module.css';
 
 const SupplierDashboard: React.FC = () => {
@@ -14,9 +33,29 @@ const SupplierDashboard: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [activeView, setActiveView] = useState<'overview' | 'inventory'>('overview');
+  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeView = (searchParams.get('tab') as any) || 'overview';
+
+  const setActiveView = (tab: string) => {
+    setSearchParams({ tab });
+  };
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<any>(null);
+
+  const supplierMenu: MenuItem[] = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'inventory', label: 'My Inventory', icon: Package },
+  ];
+
+  const supplierFooterMenu: MenuItem[] = [
+    { id: 'quotations', label: 'Quotations', icon: FileText },
+    { id: 'chat', label: 'Chat', icon: MessageCircle },
+    { id: 'logistics', label: 'Logistics', icon: Truck },
+  ];
 
   const fetchProducts = async () => {
     try {
@@ -33,162 +72,156 @@ const SupplierDashboard: React.FC = () => {
     fetchProducts();
   }, []);
 
-  const stats = [
-    { label: 'Total Products', value: products.length, icon: Package, color: '#2563eb' },
-    { label: 'Live', value: products.filter(p => p.status === 'APPROVED').length, icon: CheckCircle, color: '#059669' },
-    { label: 'Pending', value: products.filter(p => p.status === 'PENDING').length, icon: Clock, color: '#d97706' },
-    { label: 'Rejected', value: products.filter(p => p.status === 'REJECTED').length, icon: AlertCircle, color: '#dc2626' },
-  ];
-
-  const handleComingSoon = (feature: string) => {
-    alert(`${feature} is coming soon! We are working to bring this feature to you.`);
+  const handleEdit = (product: any) => {
+    setEditingProduct(product);
+    setShowAddModal(true);
   };
 
-  const handleLogout = () => {
-    setShowLogoutModal(true);
+  const handleDelete = (product: any) => {
+    setProductToDelete(product);
+    setShowDeleteModal(true);
   };
 
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+    try {
+      await productService.deleteProduct(productToDelete._id);
+      fetchProducts();
+      setShowDeleteModal(false);
+      setProductToDelete(null);
+    } catch (err) {
+      alert('Failed to delete product');
+    }
+  };
+
+  const handleLogout = () => setShowLogoutModal(true);
   const confirmLogout = () => {
     dispatch(logout());
     window.location.href = '/';
   };
 
+  const isTrusted = products.filter(p => p.status === 'APPROVED').length >= 4;
+
   return (
     <div className={`${styles.dashboardContainer} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarBrand}>
-            <LayoutDashboard size={20} />
-            <span>Supplier Center</span>
-          </div>
-          <button className={styles.toggleBtn} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-
-        <nav className={styles.sidebarNav}>
-          <button
-            className={activeView === 'overview' ? styles.active : ''}
-            onClick={() => setActiveView('overview')}
-          >
-            <LayoutDashboard size={18} /> Overview
-          </button>
-          <button
-            className={activeView === 'inventory' ? styles.active : ''}
-            onClick={() => setActiveView('inventory')}
-          >
-            <Package size={18} /> My Inventory
-          </button>
-
-          <div className={styles.navDivider}>Future Features</div>
-
-          <button className={styles.disabledLink} onClick={() => handleComingSoon('Quotation System')}>
-            <MessageSquare size={18} /> Quotations
-          </button>
-          <button className={styles.disabledLink} onClick={() => handleComingSoon('Customer Chat')}>
-            <MessageSquare size={18} /> Chat
-          </button>
-          <button className={styles.disabledLink} onClick={() => handleComingSoon('Logistics Integration')}>
-            <Truck size={18} /> Logistics
-          </button>
-        </nav>
-
-        <div className={styles.sidebarFooter}>
-          <button className={styles.logoutBtn} onClick={handleLogout}>
-            <LogOut size={18} /> Sign Out
-          </button>
-        </div>
-      </aside>
+      <Sidebar
+        title="Supplier Center"
+        logoIcon={LayoutDashboard}
+        menu={supplierMenu}
+        footerMenu={supplierFooterMenu}
+        activeTab={activeView}
+        onTabChange={(id) => setActiveView(id as any)}
+        onLogout={handleLogout}
+        isSidebarOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        brandColor="#0284c7"
+      />
 
       <main className={styles.mainContent}>
         <header className={styles.header}>
           <div>
             <h1>Welcome back, {profile?.businessName}</h1>
-            <p>Manage your products and orders from your command center.</p>
+            {isTrusted ? (
+              <div className={styles.trustedBadge}>
+                <ShieldCheck size={16} />
+                <span>Trusted Supplier</span>
+              </div>
+            ) : (
+              <p>Manage your products and orders from your command center.</p>
+            )}
+            {isTrusted && (
+              <div className={styles.autoApprovalNotice}>
+                <Zap size={14} />
+                <span><strong>Auto-Upload Active:</strong> Your products will now be live instantly!</span>
+              </div>
+            )}
           </div>
           <Button onClick={() => setShowAddModal(true)} className={styles.addBtn}>
             <Plus size={20} /> Add New Product
           </Button>
         </header>
 
-        <div className={styles.statsGrid}>
-          {stats.map(stat => (
-            <div key={stat.label} className={styles.statCard}>
-              <div className={styles.statIcon} style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
-                <stat.icon size={24} />
+        {activeView === 'overview' && (
+          <>
+            <SupplierStats products={products} />
+            <section className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <h2>Recent Products</h2>
+                <button className={styles.viewAll} onClick={() => setActiveView('inventory')}>View All</button>
               </div>
-              <div className={styles.statInfo}>
-                <h3>{stat.value}</h3>
-                <p>{stat.label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+              <ProductTable 
+                products={products.slice(0, 5)} 
+                loading={loading} 
+                onEdit={handleEdit} 
+                onDelete={handleDelete}
+                onAdd={() => setShowAddModal(true)}
+              />
+            </section>
+          </>
+        )}
 
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2>Recent Products</h2>
-            <button className={styles.viewAll} onClick={() => setActiveView('inventory')}>View All</button>
-          </div>
-          <div className={styles.productTableWrapper}>
-            {loading ? (
-              <p>Loading products...</p>
-            ) : products.length > 0 ? (
-              <table className={styles.productTable}>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Price</th>
-                    <th>MOQ</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.slice(0, 5).map(product => (
-                    <tr key={product._id}>
-                      <td>
-                        <div className={styles.productCell}>
-                          {product.images && product.images.length > 0 ? (
-                            <img src={product.images[0]} alt={product.name} className={styles.productThumbnail} />
-                          ) : (
-                            <div className={styles.productImgPlaceholder} />
-                          )}
-                          <span>{product.name}</span>
-                        </div>
-                      </td>
-                      <td>₹{product.basePrice}</td>
-                      <td>{product.moq} {product.unit}</td>
-                      <td>
-                        <span className={`${styles.statusBadge} ${styles[product.status.toLowerCase()]}`}>
-                          {product.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className={styles.emptyProducts}>
-                <Package size={48} />
-                <p>No products added yet.</p>
-                <Button variant="outline" onClick={() => setShowAddModal(true)}>Add your first product</Button>
-              </div>
-            )}
-          </div>
-        </section>
+        {activeView === 'inventory' && (
+          <section className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2>My Inventory</h2>
+            </div>
+            <ProductTable 
+              products={products} 
+              loading={loading} 
+              onEdit={handleEdit} 
+              onDelete={handleDelete}
+              onAdd={() => setShowAddModal(true)}
+            />
+          </section>
+        )}
+
+        {activeView === 'quotations' && (
+          <PlaceholderView 
+            title="Quotations Management" 
+            icon={FileText} 
+            description="Track and manage price quotations from potential buyers in one place."
+          />
+        )}
+
+        {activeView === 'chat' && (
+          <PlaceholderView 
+            title="Supplier Chat" 
+            icon={MessageCircle} 
+            description="Communicate directly with buyers to discuss product requirements and deal terms."
+          />
+        )}
+
+        {activeView === 'logistics' && (
+          <PlaceholderView 
+            title="Logistics Tracking" 
+            icon={Truck} 
+            description="Manage your shipments and track delivery status for all your bulk orders."
+          />
+        )}
       </main>
 
-      <AddProductModal 
-        isOpen={showAddModal} 
-        onClose={() => setShowAddModal(false)}
+      <AddProductModal
+        isOpen={showAddModal}
+        onClose={() => { setShowAddModal(false); setEditingProduct(null); }}
         onSuccess={fetchProducts}
+        editingProduct={editingProduct}
       />
+
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Product">
+        <div className={styles.logoutModalContent}>
+          <div className={styles.logoutIcon}><Trash2 size={32} /></div>
+          <h3>Delete this product?</h3>
+          <p>Are you sure you want to remove <strong>{productToDelete?.name}</strong>? This action cannot be undone.</p>
+          <div className={styles.modalActions}>
+            <Button variant="outline" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+            <Button onClick={confirmDelete} className={styles.confirmBtn}>Delete</Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal isOpen={showLogoutModal} onClose={() => setShowLogoutModal(false)} title="Confirm Logout">
         <div className={styles.logoutModalContent}>
-          <div className={styles.logoutIcon}>
-            <LogOut size={32} />
-          </div>
+          <div className={styles.logoutIcon}><LogOut size={32} /></div>
           <h3>Are you sure?</h3>
           <p>You will need to login again to access your dashboard.</p>
           <div className={styles.modalActions}>

@@ -805,3 +805,15 @@ textarea.input {
   display: block;
   margin-bottom: 2px;
 }
+
+.centeredContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.homeBtn {
+  margin-top: 32px;
+  min-width: 240px;
+}

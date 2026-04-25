@@ -121,3 +121,23 @@
   margin-top: 8px;
   text-align: left;
 }
+
+.backWrapper {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: var(--primary-color, #007bff);
+}

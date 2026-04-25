@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
+import MessageModal from '@/shared/components/ui/MessageModal';
 import productService, { type ProductInput } from '@/features/product/services/product.service';
 import categoryService from '@/features/product/services/category.service';
 import uploadService from '@/features/product/services/upload.service';
@@ -12,12 +13,13 @@ interface AddProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  editingProduct?: any;
 }
 
-const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSuccess, editingProduct }) => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
-  const [formData, setFormData] = useState<ProductInput & { hsnCode: string }>({
+  const [formData, setFormData] = useState<ProductInput>({
     name: '',
     description: '',
     hsnCode: '',
@@ -27,6 +29,39 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
     category: '',
     images: [],
   });
+  
+  const [messageModal, setMessageModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  useEffect(() => {
+    if (editingProduct) {
+      setFormData({
+        name: editingProduct.name || '',
+        description: editingProduct.description || '',
+        hsnCode: editingProduct.hsnCode || '',
+        basePrice: editingProduct.basePrice || 0,
+        moq: editingProduct.moq || 1,
+        unit: editingProduct.unit || 'pcs',
+        category: editingProduct.category || '',
+        images: editingProduct.images || [],
+      });
+    } else {
+      setFormData({
+        name: '',
+        description: '',
+        hsnCode: '',
+        basePrice: 0,
+        moq: 1,
+        unit: 'pcs',
+        category: categories[0]?.name || '',
+        images: [],
+      });
+    }
+  }, [editingProduct, isOpen, categories]);
 
   const [tempImage, setTempImage] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
@@ -67,7 +102,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
         images: [...(prev.images || []), data.url]
       }));
     } catch (err) {
-      alert('Failed to upload image');
+      setMessageModal({
+        isOpen: true,
+        title: 'Upload Failed',
+        message: 'Failed to upload image. Please try again.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -82,26 +122,32 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.category) return alert('Please select a category');
+    if (!formData.category) {
+      setMessageModal({
+        isOpen: true,
+        title: 'Validation Error',
+        message: 'Please select a category for your product.',
+        type: 'error'
+      });
+      return;
+    }
     
     setLoading(true);
     try {
-      await productService.createProduct(formData);
+      if (editingProduct) {
+        await productService.updateProduct(editingProduct._id, formData);
+      } else {
+        await productService.createProduct(formData);
+      }
       onSuccess();
       onClose();
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        hsnCode: '',
-        basePrice: 0,
-        moq: 1,
-        unit: 'pcs',
-        category: categories[0]?.name || '',
-        images: [],
-      });
     } catch (err) {
-      alert('Failed to add product');
+      setMessageModal({
+        isOpen: true,
+        title: 'Submission Failed',
+        message: editingProduct ? 'Failed to update product' : 'Failed to add product',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -123,12 +169,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Add New Product"
+      title={editingProduct ? 'Edit Product' : 'Add New Product'}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={loading || !formData.name}>
-            {loading ? 'Processing...' : 'Add Product'}
+            {loading ? 'Processing...' : editingProduct ? 'Update Product' : 'Add Product'}
           </Button>
         </>
       }
@@ -235,6 +281,13 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
           </div>
         </div>
       </form>
+      <MessageModal 
+        isOpen={messageModal.isOpen}
+        onClose={() => setMessageModal({ ...messageModal, isOpen: false })}
+        title={messageModal.title}
+        message={messageModal.message}
+        type={messageModal.type}
+      />
     </Modal>
   );
 };

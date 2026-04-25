@@ -9,6 +9,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
   loading?: boolean;
   fullWidth?: boolean;
+  block?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -16,16 +17,18 @@ const Button: React.FC<ButtonProps> = ({
   size = 'md',
   loading = false,
   fullWidth = false,
+  block = false,
   disabled,
   children,
   className = '',
   ...rest
 }) => {
+  const isBlock = block || fullWidth;
   const classes = [
     styles.btn,
     styles[variant],
     styles[size],
-    fullWidth ? styles.fullWidth : '',
+    isBlock ? styles.fullWidth : '',
     loading ? styles.loading : '',
     className,
   ]

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import authService from '../services/auth.service';
 import styles from '../components/Auth.module.css';
 
@@ -34,8 +35,14 @@ const Login: React.FC = () => {
 
   return (
     <>
+      <div className={styles.backWrapper}>
+        <Link to="/" className={styles.backLink}>
+          <ArrowLeft size={18} /> Back to Home
+        </Link>
+      </div>
       <h1 className={styles.title}>
-        {mode === 'seller' ? 'Join AMJStar as Partner' : 'Login to AMJ'}
+        {mode === 'seller' ? 'Join AMJStar as Partner' : 
+         mode === 'register' ? 'Register on AMJ' : 'Login to AMJ'}
       </h1>
       <p className={styles.subtitle}>Enter your phone number to receive an OTP</p>
       

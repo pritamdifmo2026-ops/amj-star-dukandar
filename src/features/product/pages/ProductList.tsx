@@ -1,6 +1,6 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Filter, SlidersHorizontal } from 'lucide-react';
+import { Filter, SlidersHorizontal, X } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
 import Loader from '@/shared/components/feedback/Loader';
@@ -11,6 +11,7 @@ import Footer from '@/features/landing/components/Footer';
 import styles from './ProductList.module.css';
 
 const ProductList: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const category = searchParams.get('category') || undefined;
   const searchQuery = searchParams.get('search') || undefined;
@@ -31,9 +32,21 @@ const ProductList: React.FC = () => {
           {/* Filter Sidebar / Header */}
           <div className={styles.header}>
             <div className={styles.titleArea}>
-              <h1 className={styles.title}>
-                {searchQuery ? `Results for "${searchQuery}"` : category || 'All Products'}
-              </h1>
+              <div className={styles.titleRow}>
+                <h1 className={styles.title}>
+                  {searchQuery ? `Results for "${searchQuery}"` : category || 'All Products'}
+                </h1>
+                {(category || searchQuery) && (
+                  <button 
+                    className={styles.clearBtn} 
+                    onClick={() => navigate('/')}
+                    title="Go to Home"
+                  >
+                    <X size={16} />
+                    <span>View All</span>
+                  </button>
+                )}
+              </div>
               <p className={styles.count}>{products.length} products found</p>
             </div>
             
