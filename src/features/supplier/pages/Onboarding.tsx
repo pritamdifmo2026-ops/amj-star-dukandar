@@ -9,8 +9,7 @@ import {
 } from '@/store/slices/supplier.slice';
 import supplierService from '../services/supplier.service';
 import Button from '@/shared/components/ui/Button';
-import { Check, ShieldCheck, Handshake, ChevronDown } from 'lucide-react';
-import authService from '@/features/auth/services/auth.service';
+import { Check, ShieldCheck } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import styles from './Onboarding.module.css';
 
@@ -57,11 +56,7 @@ const Onboarding: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Phone Change/OTP states
-  const [isPhoneEditable, setIsPhoneEditable] = useState(false);
-  const [isOtpSent, setIsOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [isPhoneVerified, setIsPhoneVerified] = useState(true);
-  const [otpLoading, setOtpLoading] = useState(false);
+  const [isPhoneVerified] = useState(true);
 
   useEffect(() => {
     if (user?.phone && !phone) {
@@ -252,7 +247,7 @@ const Onboarding: React.FC = () => {
                       setPhone(e.target.value.replace(/\D/g, ''));
                       setErrors(prev => ({ ...prev, phone: '' }));
                     }}
-                    disabled={!isPhoneEditable && isPhoneVerified}
+                    disabled={isPhoneVerified}
                     maxLength={15}
                   />
                 </div>
