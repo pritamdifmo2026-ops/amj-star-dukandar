@@ -8,33 +8,43 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import { ROUTES } from '@/shared/constants/routes';
 import styles from './AdminDashboard.module.css';
-import { 
-  Users, 
-  Store, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  ShieldCheck, 
+import {
+  Users,
+  Store,
+  Clock,
+  CheckCircle,
+  XCircle,
+  ShieldCheck,
   Power,
   BarChart3,
   Package,
   Tags,
-  Trash2
+  Trash2,
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'stats' | 'suppliers' | 'users' | 'products' | 'categories'>('stats');
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [pendingSuppliers, setPendingSuppliers] = useState<any[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
   const [pendingProducts, setPendingProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [newCategory, setNewCategory] = useState('');
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  
+  const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+
+  // Search & Pagination States
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [supplierPage, setSupplierPage] = useState(1);
+  const SUPPLIERS_PER_PAGE = 5;
+
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -50,8 +60,8 @@ const AdminDashboard: React.FC = () => {
         const data = await adminService.getStats();
         setStats(data);
       } else if (activeTab === 'suppliers') {
-        const data = await adminService.getPendingSuppliers();
-        setPendingSuppliers(data);
+        const data = await adminService.getAllSuppliers();
+        setAllSuppliers(data);
       } else if (activeTab === 'users') {
         const data = await adminService.getAllUsers();
         setAllUsers(data);
@@ -73,7 +83,7 @@ const AdminDashboard: React.FC = () => {
   const handleVerify = async (id: string, status: 'VERIFIED' | 'REJECTED') => {
     try {
       await adminService.verifySupplier(id, status);
-      setPendingSuppliers(prev => prev.filter(s => s._id !== id));
+      setAllSuppliers(prev => prev.map(s => s._id === id ? { ...s, kycStatus: status, verifiedByAdmin: status === 'VERIFIED' } : s));
       alert(`Supplier ${status.toLowerCase()} successfully`);
     } catch (err) {
       alert('Action failed');
@@ -130,37 +140,37 @@ const AdminDashboard: React.FC = () => {
           <span>AMJ Admin</span>
         </Link>
         <nav className={styles.nav}>
-          <button 
-            className={activeTab === 'stats' ? styles.active : ''} 
+          <button
+            className={activeTab === 'stats' ? styles.active : ''}
             onClick={() => setActiveTab('stats')}
           >
             <BarChart3 size={20} /> Overview
           </button>
-          <button 
-            className={activeTab === 'suppliers' ? styles.active : ''} 
+          <button
+            className={activeTab === 'suppliers' ? styles.active : ''}
             onClick={() => setActiveTab('suppliers')}
           >
             <Clock size={20} /> Pending Suppliers
           </button>
-          <button 
-            className={activeTab === 'users' ? styles.active : ''} 
+          <button
+            className={activeTab === 'users' ? styles.active : ''}
             onClick={() => setActiveTab('users')}
           >
             <Users size={20} /> User Management
           </button>
-          <button 
-            className={activeTab === 'products' ? styles.active : ''} 
+          <button
+            className={activeTab === 'products' ? styles.active : ''}
             onClick={() => setActiveTab('products')}
           >
             <Package size={20} /> Product Queue
           </button>
-          <button 
-            className={activeTab === 'categories' ? styles.active : ''} 
+          <button
+            className={activeTab === 'categories' ? styles.active : ''}
             onClick={() => setActiveTab('categories')}
           >
             <Tags size={20} /> Categories
           </button>
-          
+
           <button className={styles.logoutBtn} onClick={() => setShowLogoutModal(true)}>
             <Power size={20} /> Sign Out
           </button>
@@ -170,6 +180,18 @@ const AdminDashboard: React.FC = () => {
       <main className={styles.content}>
         <header className={styles.header}>
           <h2>{activeTab === 'stats' ? 'Platform Overview' : activeTab === 'suppliers' ? 'Supplier Verifications' : 'System Users'}</h2>
+
+          {activeTab === 'suppliers' && (
+            <div className={styles.searchBar}>
+              <Search size={18} />
+              <input
+                type="text"
+                placeholder="Search by name, company or phone..."
+                value={supplierSearch}
+                onChange={(e) => { setSupplierSearch(e.target.value); setSupplierPage(1); }}
+              />
+            </div>
+          )}
         </header>
 
         {loading ? (
@@ -216,42 +238,93 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
 
-            {activeTab === 'suppliers' && (
-              <div className={styles.tableWrapper}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Business Name</th>
-                      <th>Owner</th>
-                      <th>Contact</th>
-                      <th>Tier</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingSuppliers.map(s => (
-                      <tr key={s._id}>
-                        <td>{s.businessName}</td>
-                        <td>{s.userId?.name}</td>
-                        <td>{s.phone}</td>
-                        <td><span className={styles.badge}>{s.tier}</span></td>
-                        <td className={styles.actions}>
-                          <button onClick={() => handleVerify(s._id, 'VERIFIED')} className={styles.approveBtn}>
-                            <CheckCircle size={18} />
-                          </button>
-                          <button onClick={() => handleVerify(s._id, 'REJECTED')} className={styles.rejectBtn}>
-                            <XCircle size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {pendingSuppliers.length === 0 && (
-                      <tr><td colSpan={5} className={styles.empty}>No pending verifications</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {activeTab === 'suppliers' && (() => {
+              const filteredSuppliers = allSuppliers.filter(s =>
+                s.businessName?.toLowerCase().includes(supplierSearch.toLowerCase()) ||
+                s.businessDetails?.ownerName?.toLowerCase().includes(supplierSearch.toLowerCase()) ||
+                s.phone?.includes(supplierSearch)
+              );
+
+              const totalPages = Math.ceil(filteredSuppliers.length / SUPPLIERS_PER_PAGE);
+              const paginatedSuppliers = filteredSuppliers.slice(
+                (supplierPage - 1) * SUPPLIERS_PER_PAGE,
+                supplierPage * SUPPLIERS_PER_PAGE
+              );
+
+              return (
+                <>
+                  <div className={styles.tableWrapper}>
+                    <table className={styles.table}>
+                      <thead>
+                        <tr>
+                          <th>Business Name</th>
+                          <th>Owner</th>
+                          <th>Contact</th>
+                          <th>Status</th>
+                          <th>Tier</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedSuppliers.map(s => (
+                          <tr key={s._id}>
+                            <td>{s.businessName}</td>
+                            <td>{s.businessDetails?.ownerName || s.userId?.name || 'N/A'}</td>
+                            <td>{s.phone}</td>
+                            <td>
+                              <span className={`${styles.statusBadge} ${s.kycStatus === 'VERIFIED' ? styles.statusVerified : styles.statusPending}`}>
+                                {s.kycStatus}
+                              </span>
+                            </td>
+                            <td><span className={styles.badge}>{s.tier}</span></td>
+                            <td className={styles.actions}>
+                              <button
+                                onClick={() => { setSelectedSupplier(s); setShowInfoModal(true); }}
+                                className={styles.viewTextBtn}
+                              >
+                                View
+                              </button>
+
+                              {s.kycStatus === 'PENDING' && (
+                                <>
+                                  <button onClick={() => handleVerify(s._id, 'VERIFIED')} className={styles.approveBtn} title="Verify">
+                                    <CheckCircle size={18} />
+                                  </button>
+                                  <button onClick={() => handleVerify(s._id, 'REJECTED')} className={styles.rejectBtn} title="Reject">
+                                    <XCircle size={18} />
+                                  </button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredSuppliers.length === 0 && (
+                          <tr><td colSpan={6} className={styles.empty}>No suppliers found</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className={styles.pagination}>
+                      <button
+                        disabled={supplierPage === 1}
+                        onClick={() => setSupplierPage(p => p - 1)}
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <span>Page {supplierPage} of {totalPages}</span>
+                      <button
+                        disabled={supplierPage === totalPages}
+                        onClick={() => setSupplierPage(p => p + 1)}
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {activeTab === 'products' && (
               <div className={styles.tableWrapper}>
@@ -293,8 +366,8 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'categories' && (
               <div className={styles.categoryView}>
                 <form onSubmit={handleAddCategory} className={styles.categoryForm}>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newCategory}
                     onChange={(e) => setNewCategory(e.target.value)}
                     placeholder="Enter new category name (e.g. Textiles)"
@@ -358,7 +431,7 @@ const AdminDashboard: React.FC = () => {
                           </span>
                         </td>
                         <td>
-                          <button 
+                          <button
                             onClick={() => handleToggleStatus(u._id, u.isActive)}
                             className={u.isActive ? styles.banBtn : styles.unbanBtn}
                           >
@@ -387,6 +460,62 @@ const AdminDashboard: React.FC = () => {
         }
       >
         Are you sure you want to sign out of the Admin Portal?
+      </Modal>
+      <Modal
+        isOpen={showInfoModal}
+        onClose={() => setShowInfoModal(false)}
+        title="Supplier Full Information"
+        footer={<Button onClick={() => setShowInfoModal(false)}>Close</Button>}
+      >
+        {selectedSupplier && (
+          <div className={styles.infoGrid}>
+            <div className={styles.infoItem}>
+              <label>Business Name</label>
+              <p>{selectedSupplier.businessName}</p>
+            </div>
+            <div className={styles.infoItem}>
+              <label>Owner Name</label>
+              <p>{selectedSupplier.businessDetails?.ownerName || 'N/A'}</p>
+            </div>
+            <div className={styles.infoItem}>
+              <label>Contact Phone</label>
+              <p>{selectedSupplier.phone}</p>
+            </div>
+            <div className={styles.infoItem}>
+              <label>Email Address</label>
+              <p>{selectedSupplier.businessDetails?.email || selectedSupplier.userId?.email || 'N/A'}</p>
+            </div>
+            <div className={styles.infoItem}>
+              <label>GST Number</label>
+              <p>{selectedSupplier.businessDetails?.gstin || 'N/A'}</p>
+            </div>
+            <div className={styles.infoItem}>
+              <label>Established</label>
+              <p>{selectedSupplier.businessDetails?.yearOfEstablishment || 'N/A'}</p>
+            </div>
+            <div className={styles.infoItem}>
+              <label>Plan Selected</label>
+              <p><span className={styles.badge}>{selectedSupplier.tier}</span></p>
+            </div>
+            <div className={styles.infoItem} style={{ gridColumn: 'span 2' }}>
+              <label>Full Address</label>
+              <p>
+                {selectedSupplier.businessDetails?.address}, {selectedSupplier.businessDetails?.city}, {selectedSupplier.businessDetails?.state} - {selectedSupplier.businessDetails?.pinCode}
+              </p>
+            </div>
+            <div className={styles.infoItem} style={{ gridColumn: 'span 2' }}>
+              <label>About Company</label>
+              <p>{selectedSupplier.businessDetails?.about || 'No description provided'}</p>
+            </div>
+            {selectedSupplier.businessDetails?.isWomenEntrepreneur && (
+              <div className={styles.infoItem} style={{ gridColumn: 'span 2' }}>
+                <div className={styles.womenBadgeAdmin}>
+                  <ShieldCheck size={16} /> Registered as Woman-led Business
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   );

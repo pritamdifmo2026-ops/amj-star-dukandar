@@ -21,14 +21,7 @@ export const protectedRoutes: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-      {
-        path: '/supplier/onboarding',
-        element: (
-          <ProtectedRoute allowedRoles={['supplier']}>
-            <Onboarding />
-          </ProtectedRoute>
-        ),
-      },
+
       {
         path: ROUTES.RESELLER_DASHBOARD,
         element: (
@@ -40,6 +33,14 @@ export const protectedRoutes: RouteObject[] = [
         ),
       },
     ],
+  },
+  {
+    path: '/supplier/onboarding',
+    element: (
+      <ProtectedRoute allowedRoles={['supplier']}>
+        <Onboarding />
+      </ProtectedRoute>
+    ),
   },
   {
     path: ROUTES.SUPPLIER_DASHBOARD,

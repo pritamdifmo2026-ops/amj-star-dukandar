@@ -19,6 +19,11 @@ const adminService = {
     return response.data.suppliers;
   },
 
+  getAllSuppliers: async () => {
+    const response = await api.get('/admin/suppliers/all');
+    return response.data.suppliers;
+  },
+
   verifySupplier: async (id: string, status: 'VERIFIED' | 'REJECTED') => {
     const response = await api.patch(`/admin/suppliers/${id}/verify`, { status });
     return response.data.supplier;

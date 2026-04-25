@@ -7,7 +7,7 @@ const supplierService = {
     return response.data;
   },
 
-  onboard: async (data: { businessName: string; phone: string }) => {
+  onboard: async (data: { businessName: string; phone: string; ownerName: string; email: string; isWomenEntrepreneur: boolean }) => {
     const response = await apiClient.post('/supplier/onboard', data);
     return response.data;
   },
@@ -19,6 +19,11 @@ const supplierService = {
 
   submitKYC: async (details: any) => {
     const response = await apiClient.post('/supplier/kyc', details);
+    return response.data;
+  },
+
+  saveDraft: async (details: any) => {
+    const response = await apiClient.post('/supplier/draft', details);
     return response.data;
   }
 };

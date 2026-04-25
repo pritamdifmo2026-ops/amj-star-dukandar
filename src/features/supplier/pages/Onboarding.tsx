@@ -9,7 +9,7 @@ import {
 } from '@/store/slices/supplier.slice';
 import supplierService from '../services/supplier.service';
 import Button from '@/shared/components/ui/Button';
-import { Check, ShieldCheck } from 'lucide-react';
+import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Headset, Star, Handshake } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import styles from './Onboarding.module.css';
 
@@ -57,6 +57,8 @@ const Onboarding: React.FC = () => {
 
   // Phone Change/OTP states
   const [isPhoneVerified] = useState(true);
+  const [isPhoneEditable, setIsPhoneEditable] = useState(false);
+  const [isWomenEntrepreneur, setIsWomenEntrepreneur] = useState(false);
 
   useEffect(() => {
     if (user?.phone && !phone) {
@@ -70,7 +72,7 @@ const Onboarding: React.FC = () => {
         const data = await supplierService.getProfile();
         if (data.supplier) {
           dispatch(setSupplierProfile(data.supplier));
-          
+
           if (data.supplier.isActive && data.supplier.verifiedByAdmin) {
             navigate('/supplier/dashboard');
             return;
@@ -79,6 +81,10 @@ const Onboarding: React.FC = () => {
           if (data.supplier.businessName) setBusinessName(data.supplier.businessName);
           if (data.supplier.phone) setPhone(data.supplier.phone);
           if (data.supplier.tier) setSelectedTier(data.supplier.tier);
+
+          // Fallback to user account details if business-specific ones aren't set yet
+          if (user?.email && !email) setEmail(user.email);
+          if (user?.name && !ownerName) setOwnerName(user.name);
 
           const bd = data.supplier.businessDetails;
           if (bd) {
@@ -91,14 +97,17 @@ const Onboarding: React.FC = () => {
             if (bd.gstin) setGstin(bd.gstin);
             if (bd.about) setAbout(bd.about);
             if (bd.yearOfEstablishment) setYearOfEstablishment(bd.yearOfEstablishment);
+            if (bd.isWomenEntrepreneur) setIsWomenEntrepreneur(bd.isWomenEntrepreneur);
           }
 
           if (data.supplier.onboardingStatus === OnboardingStatus.COMPLETED) {
             setCurrentStep(5);
-          } else if (data.supplier.tier) {
-            setCurrentStep(4);
+          } else if (data.supplier.businessDetails?.address || data.supplier.businessDetails?.gstin) {
+            setCurrentStep(3);
           } else if (data.supplier.businessName) {
             setCurrentStep(2);
+          } else {
+            setCurrentStep(1);
           }
         }
       } catch (err) {
@@ -127,7 +136,7 @@ const Onboarding: React.FC = () => {
     if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) newErrs.email = "Valid email is required";
     if (!isPhoneVerified) newErrs.phone = "Phone must be verified";
     if (countryCode === '+91' && !/^\d{10}$/.test(phone)) newErrs.phone = "Enter a valid 10-digit number";
-    
+
     setErrors(newErrs);
     return Object.keys(newErrs).length === 0;
   };
@@ -138,17 +147,31 @@ const Onboarding: React.FC = () => {
     if (!pinCode.trim() || pinCode.length < 6) newErrs.pinCode = "Valid PIN is required";
     if (!state) newErrs.state = "State is required";
     if (!city) newErrs.city = "City is required";
-    
+
     if (gstin.trim() && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)) {
       newErrs.gstin = "Invalid GSTIN format";
     }
-    
+
     setErrors(newErrs);
     return Object.keys(newErrs).length === 0;
   };
 
   const validateProfileCompletion = () => {
-    return true; 
+    const newErrs: Record<string, string> = {};
+    if (!ownerName.trim()) newErrs.ownerName = "Owner name is required";
+    if (!email.trim()) newErrs.email = "Email is required";
+    if (!address.trim()) newErrs.address = "Address is required";
+    if (!pinCode.trim()) newErrs.pinCode = "PIN code is required";
+    if (!state.trim()) newErrs.state = "State is required";
+    if (!city.trim()) newErrs.city = "City is required";
+    
+    if (Object.keys(newErrs).length > 0) {
+      setErrors(newErrs);
+      console.error("Validation failed at final step:", newErrs);
+      alert("Please ensure all business details (Address, Owner Name, etc.) are filled in previous steps.");
+      return false;
+    }
+    return true;
   };
 
   const submitStep = async () => {
@@ -156,19 +179,29 @@ const Onboarding: React.FC = () => {
     try {
       if (currentStep === 1) {
         if (!validateBasicInfo()) return;
-        const data = await supplierService.onboard({ businessName, phone });
+        const data = await supplierService.onboard({ businessName, phone, ownerName, email, isWomenEntrepreneur });
         dispatch(setSupplierProfile(data.supplier));
         setCurrentStep(2);
       } else if (currentStep === 2) {
         if (!validateBusinessDetails()) return;
+        // Save draft to server
+        await supplierService.saveDraft({
+          ownerName, email, address, pinCode, state, city, gstin, isWomenEntrepreneur
+        });
         setCurrentStep(3);
       } else if (currentStep === 3) {
+        // Save profile draft
+        await supplierService.saveDraft({
+          ownerName, email, address, pinCode, state, city, gstin, about, yearOfEstablishment, isWomenEntrepreneur
+        });
+        setCurrentStep(4);
+      } else if (currentStep === 4) {
         if (!validateProfileCompletion()) return;
         const tierData = await supplierService.selectTier(selectedTier);
         dispatch(setSupplierProfile(tierData.supplier));
-        
+
         const kycData = await supplierService.submitKYC({
-          ownerName, email, address, pinCode, state, city, gstin, about, yearOfEstablishment
+          ownerName, email, address, pinCode, state, city, gstin, about, yearOfEstablishment, isWomenEntrepreneur
         });
         dispatch(setSupplierProfile(kycData.supplier));
         setCurrentStep(5);
@@ -186,58 +219,89 @@ const Onboarding: React.FC = () => {
         return (
           <div className={styles.formContainer}>
             <div className={styles.stepContent}>
-              <h1>Basic Information</h1>
-              <p>Tell us who you are so we can set up your supplier account.</p>
-              
+              <div className={styles.headerRow}>
+                <div className={styles.headerIconWrapper}>
+                  <User size={24} className={styles.headerIcon} />
+                </div>
+                <div>
+                  <h1>Basic Information</h1>
+                  <p>Tell us who you are so we can set up your supplier account.</p>
+                </div>
+              </div>
+
               <div className={styles.formGroup}>
                 <label>Owner / Representative Name <span className={styles.required}>*</span></label>
-                <input
-                  name="ownerName"
-                  className={`${styles.input} ${errors.ownerName ? styles.inputError : ''}`}
-                  value={ownerName}
-                  onChange={handleCapitalizeChange(setOwnerName)}
-                  placeholder="e.g. Rahul Sharma"
-                />
+                <div className={styles.inputWrapper}>
+                  <User className={styles.inputIcon} size={18} />
+                  <input
+                    name="ownerName"
+                    className={`${styles.input} ${styles.inputWithIcon} ${errors.ownerName ? styles.inputError : ''}`}
+                    value={ownerName}
+                    onChange={handleCapitalizeChange(setOwnerName)}
+                    placeholder="e.g. John Smith"
+                  />
+                </div>
                 {errors.ownerName && <span className={styles.errorText}>{errors.ownerName}</span>}
               </div>
 
               <div className={styles.formGroup}>
                 <label>Company / Business Name <span className={styles.required}>*</span></label>
-                <input
-                  name="businessName"
-                  className={`${styles.input} ${errors.businessName ? styles.inputError : ''}`}
-                  value={businessName}
-                  onChange={handleCapitalizeChange(setBusinessName)}
-                  placeholder="e.g. AMJ Textiles Pvt Ltd"
-                />
+                <div className={styles.inputWrapper}>
+                  <Building2 className={styles.inputIcon} size={18} />
+                  <input
+                    name="businessName"
+                    className={`${styles.input} ${styles.inputWithIcon} ${errors.businessName ? styles.inputError : ''}`}
+                    value={businessName}
+                    onChange={handleCapitalizeChange(setBusinessName)}
+                    placeholder="e.g. AMJ Textiles Pvt Ltd"
+                  />
+                </div>
                 {errors.businessName && <span className={styles.errorText}>{errors.businessName}</span>}
               </div>
 
               <div className={styles.formGroup}>
                 <label>Email Address <span className={styles.required}>*</span></label>
-                <input
-                  name="email"
-                  type="email"
-                  className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
-                  value={email}
-                  onChange={handleChange(setEmail)}
-                  placeholder="name@company.com"
-                />
+                <div className={styles.inputWrapper}>
+                  <Mail className={styles.inputIcon} size={18} />
+                  <input
+                    name="email"
+                    type="email"
+                    className={`${styles.input} ${styles.inputWithIcon} ${errors.email ? styles.inputError : ''}`}
+                    value={email}
+                    onChange={handleChange(setEmail)}
+                    placeholder="name@company.com"
+                  />
+                </div>
                 {errors.email && <span className={styles.errorText}>{errors.email}</span>}
               </div>
 
               <div className={styles.formGroup}>
-                <label>Contact Phone <span className={styles.required}>*</span></label>
-                <div className={`${styles.phoneGroup} ${errors.phone ? styles.inputError : ''}`}>
-                  <select 
-                    className={`${styles.input} ${styles.countryCode}`}
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                  >
-                    <option value="+91">+91</option>
-                    <option value="+1">+1</option>
-                    <option value="+44">+44</option>
-                  </select>
+                <div className={styles.labelWithAction}>
+                  <label>Contact Phone <span className={styles.required}>*</span></label>
+                  {!isPhoneEditable && (
+                    <button 
+                      type="button" 
+                      className={styles.textActionBtn}
+                      onClick={() => setIsPhoneEditable(true)}
+                    >
+                      Change
+                    </button>
+                  )}
+                </div>
+                <div className={`${styles.phoneGroup} ${errors.phone ? styles.inputError : ''} ${!isPhoneEditable ? styles.inputDisabled : ''}`}>
+                  <div className={styles.countryCodeWrapper}>
+                    <Phone className={styles.inputIcon} size={18} />
+                    <select
+                      className={`${styles.input} ${styles.countryCode}`}
+                      value={countryCode}
+                      onChange={(e) => setCountryCode(e.target.value)}
+                      disabled={!isPhoneEditable}
+                    >
+                      <option value="+91">+91</option>
+                      <option value="+1">+1</option>
+                      <option value="+44">+44</option>
+                    </select>
+                  </div>
                   <input
                     name="phone"
                     type="tel"
@@ -247,17 +311,23 @@ const Onboarding: React.FC = () => {
                       setPhone(e.target.value.replace(/\D/g, ''));
                       setErrors(prev => ({ ...prev, phone: '' }));
                     }}
-                    disabled={isPhoneVerified}
+                    disabled={!isPhoneEditable}
                     maxLength={15}
+                    placeholder="9090909090"
                   />
                 </div>
                 {errors.phone && <span className={styles.errorText}>{errors.phone}</span>}
               </div>
 
               <div className={styles.buttonGroup}>
-                <Button onClick={submitStep} disabled={loading} size="lg" className={styles.fullWidth}>
-                  {loading ? 'Saving...' : 'Save & Continue'}
-                </Button>
+                <button onClick={submitStep} disabled={loading} className={styles.orangeBtn}>
+                  {loading ? 'Saving...' : 'Save & Continue'} <ArrowRight size={18} />
+                </button>
+              </div>
+
+              <div className={styles.secureText}>
+                <ShieldCheck size={14} className={styles.secureIcon} />
+                Your information is secure and will only be used to set up your account.
               </div>
             </div>
           </div>
@@ -266,8 +336,15 @@ const Onboarding: React.FC = () => {
         return (
           <div className={styles.formContainer}>
             <div className={styles.stepContent}>
-              <h1>Business Details</h1>
-              <p>Where is your business registered?</p>
+              <div className={styles.headerRow}>
+                <div className={styles.headerIconWrapper}>
+                  <Building2 size={24} className={styles.headerIcon} />
+                </div>
+                <div>
+                  <h1>Business Details</h1>
+                  <p>Where is your business registered?</p>
+                </div>
+              </div>
 
               <div className={styles.formGroup}>
                 <label>Registered Address <span className={styles.required}>*</span></label>
@@ -353,10 +430,14 @@ const Onboarding: React.FC = () => {
               </div>
 
               <div className={styles.buttonGroup}>
-                <Button onClick={() => setCurrentStep(1)} variant="outline" size="lg">Back</Button>
-                <Button onClick={submitStep} disabled={loading} size="lg" className={styles.fullWidth}>
-                  {loading ? 'Saving...' : 'Save & Continue'}
-                </Button>
+                <button onClick={() => setCurrentStep(1)} className={styles.outlineBtn}>Back</button>
+                <button onClick={submitStep} disabled={loading} className={styles.orangeBtn}>
+                  {loading ? 'Saving...' : 'Save & Continue'} <ArrowRight size={18} />
+                </button>
+              </div>
+              <div className={styles.secureText}>
+                <ShieldCheck size={14} className={styles.secureIcon} />
+                Your information is secure and will only be used to set up your account.
               </div>
             </div>
           </div>
@@ -365,8 +446,15 @@ const Onboarding: React.FC = () => {
         return (
           <div className={styles.formContainer}>
             <div className={styles.stepContent}>
-              <h1>Profile & Tier</h1>
-              <p>Add some flair to your profile and choose a selling plan.</p>
+              <div className={styles.headerRow}>
+                <div className={styles.headerIconWrapper}>
+                  <User size={24} className={styles.headerIcon} />
+                </div>
+                <div>
+                  <h1>Business Profile</h1>
+                  <p>Add some flair to your profile to attract more buyers.</p>
+                </div>
+              </div>
 
               <div className={styles.formGroup}>
                 <label>About Company (Optional)</label>
@@ -375,6 +463,7 @@ const Onboarding: React.FC = () => {
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
                   placeholder="What makes your products special?"
+                  rows={4}
                 />
               </div>
 
@@ -389,12 +478,60 @@ const Onboarding: React.FC = () => {
                 />
               </div>
 
-              <div className={styles.formGroup} style={{ marginTop: '30px' }}>
-                <label>Select Plan <span className={styles.required}>*</span></label>
+              <div className={styles.buttonGroup}>
+                <button onClick={() => setCurrentStep(2)} className={styles.outlineBtn}>Back</button>
+                <button onClick={submitStep} disabled={loading} className={styles.orangeBtn}>
+                  {loading ? 'Saving...' : 'Next: Select Plan'} <ArrowRight size={18} />
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      case 4:
+        return (
+          <div className={styles.formContainer} style={{ maxWidth: '800px' }}>
+            <div className={styles.stepContent}>
+              <div className={styles.headerRow}>
+                <div className={styles.headerIconWrapper}>
+                  <Star size={24} className={styles.headerIcon} />
+                </div>
+                <div>
+                  <h1>Choose your Selling Plan</h1>
+                  <p>Select a plan that fits your business scale and growth goals.</p>
+                </div>
+              </div>
+
+              <div className={styles.formGroup}>
                 <div className={styles.tierGrid}>
                   {[
-                    { id: SupplierTier.FREE, label: 'Free Tier', limit: 'Up to 5,000 Products', price: '₹0' },
-                    { id: SupplierTier.GOLD, label: 'Gold Plan', limit: 'Priority Placement', price: '₹999/mo' },
+                    { 
+                      id: SupplierTier.FREE, 
+                      label: 'Free Tier', 
+                      desc: 'Basic visibility. List up to 5K products (group).', 
+                      price: '₹0',
+                      features: ['Up to 5,000 Products', 'Basic Marketplace Visibility']
+                    },
+                    { 
+                      id: SupplierTier.GOLD, 
+                      label: 'Gold Plan', 
+                      desc: 'Increased visibility. KYC required. List up to 5K products.', 
+                      price: '₹999/mo',
+                      features: ['Up to 5,000 Products', 'Priority Placement', 'KYC Verified Badge']
+                    },
+                    { 
+                      id: SupplierTier.DIAMOND, 
+                      label: 'Diamond Plan', 
+                      desc: 'Higher ranking. Can list single product pushes.', 
+                      price: '₹2,499/mo',
+                      features: ['Single Product Pushes', 'Higher Ranking', 'Advanced Analytics']
+                    },
+                    { 
+                      id: SupplierTier.PLATINUM, 
+                      label: 'Platinum Plan', 
+                      desc: 'Max visibility, dedicated support, e-commerce integration.', 
+                      price: '₹4,999/mo',
+                      features: ['Maximum Visibility', 'Dedicated Account Manager', 'E-commerce Integration']
+                    },
                   ].map(tier => (
                     <div
                       key={tier.id}
@@ -402,28 +539,35 @@ const Onboarding: React.FC = () => {
                       onClick={() => setSelectedTier(tier.id)}
                     >
                       <div className={styles.tierInfo}>
-                        <h3>{tier.label}</h3>
-                        <span className={styles.tierLimit}>{tier.limit}</span>
+                        <div className={styles.tierMain}>
+                          <h3>{tier.label}</h3>
+                          <p className={styles.tierDesc}>{tier.desc}</p>
+                        </div>
+                        <div className={styles.tierFeatures}>
+                          {tier.features.map((f, i) => <span key={i} className={styles.featureTag}>{f}</span>)}
+                        </div>
                       </div>
-                      <div className={styles.tierPrice}>{tier.price}</div>
-                      {selectedTier === tier.id && <div className={styles.checkBadge}><Check size={14} /></div>}
+                      <div className={styles.tierPriceSide}>
+                        <div className={styles.tierPrice}>{tier.price}</div>
+                        {selectedTier === tier.id && <div className={styles.checkBadge}><Check size={14} /></div>}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className={styles.buttonGroup}>
-                <Button onClick={() => setCurrentStep(2)} variant="outline" size="lg">Back</Button>
-                <Button onClick={submitStep} disabled={loading} size="lg" className={styles.fullWidth}>
-                  {loading ? 'Submitting...' : 'Submit Profile'}
-                </Button>
+                <button onClick={() => setCurrentStep(3)} className={styles.outlineBtn}>Back</button>
+                <button onClick={submitStep} disabled={loading} className={styles.orangeBtn}>
+                  {loading ? 'Submitting...' : 'Complete Onboarding'} <Check size={18} />
+                </button>
               </div>
             </div>
           </div>
         );
       case 5:
         return (
-          <div className={styles.formContainer} style={{ maxWidth: '480px', margin: '0 auto' }}>
+          <div className={styles.formContainer}>
             <div className={styles.stepContent}>
               <div className={styles.iconCircleSuccess}><ShieldCheck size={48} /></div>
               <h1 style={{ textAlign: 'center' }}>Application Submitted!</h1>
@@ -432,10 +576,20 @@ const Onboarding: React.FC = () => {
                 <strong> you will receive a verification call within 24 hours </strong>
                 to confirm your details.
               </p>
-              
+
               <div className={styles.statusBox}>
                 <p>Status: <strong>{profile?.kycStatus || 'PENDING'}</strong></p>
                 <p className={styles.subStatus}>Next step: Formal Cold Call (within 24h)</p>
+              </div>
+
+              <div className={styles.growthCard}>
+                <div className={styles.growthIconWrapper}>
+                  <Handshake size={24} />
+                </div>
+                <div className={styles.growthText}>
+                  <p><strong>Woman Entrepreneur?</strong></p>
+                  <p>We would love to connect and discuss growth with you!</p>
+                </div>
               </div>
 
               <Button
@@ -456,14 +610,17 @@ const Onboarding: React.FC = () => {
   const steps = [
     { n: 1, label: 'Basic Info', desc: 'Name & Email' },
     { n: 2, label: 'Business', desc: 'Address & GST' },
-    { n: 3, label: 'Profile', desc: 'About & Plan' }
+    { n: 3, label: 'Profile', desc: 'About' },
+    { n: 4, label: 'Plans', desc: 'Selling Tiers' }
   ];
 
   if (currentStep === 5) {
     return (
       <div className={styles.page}>
-        <div className={styles.main} style={{ padding: '60px 20px' }}>
-          {renderStepContent()}
+        <div className={styles.main}>
+          <div className={`${styles.formSection} ${styles.centeredForm}`}>
+            {renderStepContent()}
+          </div>
         </div>
       </div>
     );
@@ -472,28 +629,51 @@ const Onboarding: React.FC = () => {
   return (
     <div className={styles.page}>
       <div className={styles.sidebar}>
-        <Link to="/" className={styles.sidebarBrand}>AMJStar Dukandar</Link>
-        <div className={styles.stepper}>
-          {steps.map(step => {
-            const isActive = currentStep === step.n;
-            const isCompleted = currentStep > step.n;
-            return (
-              <div key={step.n} className={`${styles.step} ${isActive ? styles.stepActive : ''} ${isCompleted ? styles.stepCompleted : ''}`}>
-                <div className={styles.stepIcon}>
-                  {isCompleted ? <Check size={16} /> : step.n}
+        <div className={styles.sidebarTop}>
+          <Link to="/" className={styles.sidebarBrand}>
+            AMJStar Dukandar <Star size={20} className={styles.brandStar} />
+          </Link>
+          <div className={styles.stepper}>
+            {steps.map(step => {
+              const isActive = currentStep === step.n;
+              const isCompleted = currentStep > step.n;
+              return (
+                <div key={step.n} className={`${styles.step} ${isActive ? styles.stepActive : ''} ${isCompleted ? styles.stepCompleted : ''}`}>
+                  <div className={styles.stepIcon}>
+                    {isCompleted ? <Check size={16} /> : step.n}
+                  </div>
+                  <div className={styles.stepText}>
+                    <span className={styles.stepTitle}>{step.label}</span>
+                    <span className={styles.stepDesc}>{step.desc}</span>
+                  </div>
                 </div>
-                <div className={styles.stepText}>
-                  <span className={styles.stepTitle}>{step.label}</span>
-                  <span className={styles.stepDesc}>{step.desc}</span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={styles.helpBox}>
+          <div className={styles.helpBoxContent}>
+            <Headset size={24} className={styles.helpIcon} />
+            <div className={styles.helpText}>
+              <strong>Need help?</strong>
+              <span>Visit our Help Center</span>
+            </div>
+          </div>
+          <ArrowRight size={16} className={styles.helpArrow} />
         </div>
       </div>
 
       <main className={styles.main}>
-        {renderStepContent()}
+        <div className={styles.formSection}>
+          {renderStepContent()}
+        </div>
+        <div className={styles.imageSection}>
+          <img
+            src="https://media.istockphoto.com/id/1197932646/photo/congratulating-the-new-partners.jpg?s=612x612&w=0&k=20&c=t1hbDdPtSEEfkznvCKSJVfg1rBb-EdUqG4C8CTLmmVo="
+            alt="Business Partners"
+          />
+        </div>
       </main>
 
       <Modal
