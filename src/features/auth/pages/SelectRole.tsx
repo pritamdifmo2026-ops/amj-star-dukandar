@@ -34,7 +34,7 @@ const SelectRole: React.FC = () => {
       }));
 
       if (role === 'supplier') navigate('/supplier/onboarding');
-      else if (role === 'reseller') navigate('/reseller/dashboard');
+      else if (role === 'reseller') navigate('/reseller/onboarding');
       else navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to set role. Please try again.');
@@ -103,13 +103,14 @@ const SelectRole: React.FC = () => {
           <p className={styles.roleDesc}>
             Start your own business with zero investment. Share products with your network and earn margins.
           </p>
-          <a
-            href="#"
-            className={`${styles.selectBtn} ${styles.btnReseller}`}
-            style={{ display: 'block', textAlign: 'center', textDecoration: 'none', lineHeight: '44px' }}
+          <button
+            type="button"
+            className={`${styles.selectBtn} ${styles.btnReseller} ${loading ? styles.btnDisabled : ''}`}
+            onClick={() => handleRoleSelect('reseller')}
+            disabled={!!loading}
           >
-            Join as Reseller
-          </a>
+            {loading === 'reseller' ? 'Setting up...' : 'Join as Reseller'}
+          </button>
         </div>
       </div>
     </div>
