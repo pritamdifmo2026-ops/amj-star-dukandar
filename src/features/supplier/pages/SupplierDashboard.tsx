@@ -21,7 +21,7 @@ import {
 import SupplierStats from '../components/SupplierStats';
 import ProductTable from '../components/ProductTable';
 import PlaceholderView from '../components/PlaceholderView';
-import AddProductModal from '../components/AddProductModal';
+import AddProductForm from '../components/AddProductForm';
 
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
@@ -32,7 +32,6 @@ const SupplierDashboard: React.FC = () => {
   const { profile } = useAppSelector(state => state.supplier);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
@@ -74,7 +73,7 @@ const SupplierDashboard: React.FC = () => {
 
   const handleEdit = (product: any) => {
     setEditingProduct(product);
-    setShowAddModal(true);
+    setActiveView('edit-product');
   };
 
   const handleDelete = (product: any) => {
@@ -102,11 +101,17 @@ const SupplierDashboard: React.FC = () => {
 
   const isTrusted = products.filter(p => p.status === 'APPROVED').length >= 4;
 
+  const handleFormSuccess = () => {
+    fetchProducts();
+    setActiveView('inventory');
+    setEditingProduct(null);
+  };
+
   return (
     <div className={`${styles.dashboardContainer} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
       <Sidebar
         title="Supplier Center"
-        logoIcon={LayoutDashboard}
+        logoSrc="/favicon.jpeg"
         menu={supplierMenu}
         footerMenu={supplierFooterMenu}
         activeTab={activeView}
@@ -136,7 +141,7 @@ const SupplierDashboard: React.FC = () => {
               </div>
             )}
           </div>
-          <Button onClick={() => setShowAddModal(true)} className={styles.addBtn}>
+          <Button onClick={() => setActiveView('add-product')} className={styles.addBtn}>
             <Plus size={20} /> Add New Product
           </Button>
         </header>
@@ -154,7 +159,7 @@ const SupplierDashboard: React.FC = () => {
                 loading={loading} 
                 onEdit={handleEdit} 
                 onDelete={handleDelete}
-                onAdd={() => setShowAddModal(true)}
+                onAdd={() => setActiveView('add-product')}
               />
             </section>
           </>
@@ -170,7 +175,7 @@ const SupplierDashboard: React.FC = () => {
               loading={loading} 
               onEdit={handleEdit} 
               onDelete={handleDelete}
-              onAdd={() => setShowAddModal(true)}
+              onAdd={() => setActiveView('add-product')}
             />
           </section>
         )}
@@ -200,12 +205,13 @@ const SupplierDashboard: React.FC = () => {
         )}
       </main>
 
-      <AddProductModal
-        isOpen={showAddModal}
-        onClose={() => { setShowAddModal(false); setEditingProduct(null); }}
-        onSuccess={fetchProducts}
-        editingProduct={editingProduct}
-      />
+      {(activeView === 'add-product' || activeView === 'edit-product') && (
+        <AddProductForm 
+          onBack={() => { setActiveView('inventory'); setEditingProduct(null); }}
+          onSuccess={handleFormSuccess}
+          editingProduct={editingProduct}
+        />
+      )}
 
       <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Product">
         <div className={styles.logoutModalContent}>

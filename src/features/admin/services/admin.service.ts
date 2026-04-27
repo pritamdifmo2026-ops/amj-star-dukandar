@@ -52,6 +52,11 @@ const adminService = {
   verifyProduct: async (id: string, status: 'APPROVED' | 'REJECTED') => {
     const response = await api.patch(`/admin/products/${id}/verify`, { status });
     return response.data.product;
+  },
+  
+  getSupplierProducts: async (id: string) => {
+    const response = await api.get(`/admin/suppliers/${id}/products`);
+    return response.data.products;
   }
 };
 

@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, ChevronRight, Search, Package, ExternalLink } from 'lucide-react';
 import styles from '../pages/AdminDashboard.module.css';
+import adminService from '../services/admin.service';
+import Modal from '@/shared/components/ui/Modal';
+import Button from '@/shared/components/ui/Button';
 
 interface SupplierVerificationProps {
   suppliers: any[];
@@ -11,7 +15,7 @@ interface SupplierTableProps {
   title: string;
   suppliers: any[];
   onVerify: (id: string, status: 'VERIFIED' | 'REJECTED') => Promise<void>;
-  onView: (supplier: any) => void;
+  onView: (supplierId: string) => void;
   showActions?: boolean;
 }
 
@@ -69,7 +73,7 @@ const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerif
                 </td>
                 <td><span className={styles.badge}>{s.tier}</span></td>
                 <td className={styles.actions}>
-                  <button onClick={() => onView(s)} className={styles.viewTextBtn}>View</button>
+                  <button onClick={() => onView(s._id)} className={styles.viewTextBtn}>View</button>
                   {showActions && s.kycStatus === 'PENDING' && (
                     <>
                       <button onClick={() => onVerify(s._id, 'VERIFIED')} className={styles.approveBtn} title="Verify">
@@ -109,33 +113,188 @@ const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerif
   );
 };
 
+const SupplierProducts: React.FC<{ supplierId: string; businessName: string; onBack: () => void }> = ({ supplierId, businessName, onBack }) => {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; productId: string; name: string } | null>(null);
+
+  const fetchProducts = async () => {
+    try {
+      const data = await adminService.getSupplierProducts(supplierId);
+      setProducts(data);
+    } catch (err) {
+      console.error('Failed to fetch supplier products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [supplierId]);
+
+  const handleApprove = async () => {
+    if (!confirmModal) return;
+    try {
+      await adminService.verifyProduct(confirmModal.productId, 'APPROVED');
+      setConfirmModal(null);
+      fetchProducts();
+    } catch (err) {
+      alert('Failed to approve product');
+    }
+  };
+
+  return (
+    <div className={styles.detailPage}>
+      <div className={styles.detailHeader}>
+        <button onClick={onBack} className={styles.backLink}>
+          <ChevronLeft size={20} /> Back to Profile
+        </button>
+        <h2 className={styles.tableTitle} style={{ fontSize: '16px' }}>Products by {businessName}</h2>
+      </div>
+
+      {loading ? (
+        <div className={styles.loader}>Loading products...</div>
+      ) : (
+        <div className={styles.tableSection}>
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map(p => (
+                  <tr key={p._id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {p.images?.[0] && <img src={p.images[0]} alt="" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />}
+                        <span>{p.name}</span>
+                      </div>
+                    </td>
+                    <td>{p.category}</td>
+                    <td>₹{p.basePrice}/{p.unit}</td>
+                    <td>
+                      <span className={`${styles.statusBadge} ${p.status === 'APPROVED' ? styles.statusVerified : styles.statusPending}`}>
+                        {p.status}
+                      </span>
+                    </td>
+                    <td className={styles.actions}>
+                      {p.status === 'PENDING' && (
+                        <button onClick={() => setConfirmModal({ isOpen: true, productId: p._id, name: p.name })} className={styles.approveBtn} title="Approve">
+                          <CheckCircle size={18} />
+                        </button>
+                      )}
+                      {p.status === 'APPROVED' && (
+                        <a href={`/products/${p._id}`} target="_blank" rel="noreferrer" className={styles.viewTextBtn} title="View on website">
+                          <ExternalLink size={16} />
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {products.length === 0 && (
+                  <tr><td colSpan={5} className={styles.empty}>No products found for this supplier</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {confirmModal && (
+        <Modal 
+          isOpen={confirmModal.isOpen} 
+          onClose={() => setConfirmModal(null)}
+          title="Verify Product"
+        >
+          <div style={{ textAlign: 'center', padding: '10px 0' }}>
+            <div style={{ 
+              width: '64px', 
+              height: '64px', 
+              backgroundColor: '#f0fdf4', 
+              color: '#16a34a', 
+              borderRadius: '50%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              margin: '0 auto 20px' 
+            }}>
+              <CheckCircle size={32} />
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>Verify this product?</h3>
+            <p style={{ color: '#64748b', marginBottom: '24px', lineHeight: '1.5', fontSize: '14px' }}>
+              Do you want to verify this product? This will make the product <strong>{confirmModal.name}</strong> live on the website.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <Button variant="outline" onClick={() => setConfirmModal(null)}>Cancel</Button>
+              <Button onClick={handleApprove}>Confirm & Publish</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
 const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, onVerify }) => {
-  const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'suppliers';
+  const supplierId = searchParams.get('id');
+
+  const selectedSupplier = suppliers.find(s => s._id === supplierId);
 
   const pendingSuppliers = suppliers.filter(s => s.kycStatus === 'PENDING');
   const verifiedSuppliers = suppliers.filter(s => s.kycStatus === 'VERIFIED');
 
-  if (selectedSupplier) {
+  if (activeTab === 'supplier-products' && selectedSupplier) {
+    return (
+      <SupplierProducts 
+        supplierId={selectedSupplier._id} 
+        businessName={selectedSupplier.businessName} 
+        onBack={() => setSearchParams({ tab: 'supplier-detail', id: selectedSupplier._id })} 
+      />
+    );
+  }
+
+  if (activeTab === 'supplier-detail' && selectedSupplier) {
     return (
       <div className={styles.detailPage}>
         <div className={styles.detailHeader}>
-          <button onClick={() => setSelectedSupplier(null)} className={styles.backLink}>
+          <button onClick={() => setSearchParams({ tab: 'suppliers' })} className={styles.backLink}>
             <ChevronLeft size={20} /> Back to List
           </button>
           <div className={styles.headerActions}>
-            <button
-              className={styles.rejectBtn}
-              onClick={() => onVerify(selectedSupplier._id, 'REJECTED')}
-            >
-              <XCircle size={18} /> Reject
-            </button>
-            <button
-              className={styles.verifyBtn}
-              onClick={() => onVerify(selectedSupplier._id, 'VERIFIED')}
-              disabled={selectedSupplier.kycStatus === 'VERIFIED'}
-            >
-              <CheckCircle size={18} /> Verify Supplier
-            </button>
+            {selectedSupplier.kycStatus === 'VERIFIED' && (
+              <button 
+                onClick={() => setSearchParams({ tab: 'supplier-products', id: selectedSupplier._id })} 
+                className={styles.viewProductsBtn}
+              >
+                <Package size={18} /> View Products
+              </button>
+            )}
+            
+            {selectedSupplier.kycStatus === 'PENDING' && (
+              <>
+                <button
+                  className={styles.largeRejectBtn}
+                  onClick={() => onVerify(selectedSupplier._id, 'REJECTED')}
+                >
+                  <XCircle size={18} /> Reject
+                </button>
+                <button
+                  className={styles.verifyBtn}
+                  onClick={() => onVerify(selectedSupplier._id, 'VERIFIED')}
+                >
+                  <CheckCircle size={18} /> Verify Supplier
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -240,7 +399,7 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
         title="Pending Suppliers"
         suppliers={pendingSuppliers}
         onVerify={onVerify}
-        onView={setSelectedSupplier}
+        onView={(id) => setSearchParams({ tab: 'supplier-detail', id })}
         showActions
       />
 
@@ -250,7 +409,7 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
         title="Approved Suppliers"
         suppliers={verifiedSuppliers}
         onVerify={onVerify}
-        onView={setSelectedSupplier}
+        onView={(id) => setSearchParams({ tab: 'supplier-detail', id })}
       />
     </div>
   );

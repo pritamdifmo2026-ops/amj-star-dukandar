@@ -21,7 +21,6 @@ import {
   Users,
   ShieldCheck,
   BarChart3,
-  Clock,
   Package,
   Tags,
   Search
@@ -30,7 +29,7 @@ import {
 const AdminDashboard: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as any) || 'stats';
-  
+
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab });
   };
@@ -46,7 +45,7 @@ const AdminDashboard: React.FC = () => {
 
   const adminMenu: MenuItem[] = [
     { id: 'stats', label: 'Overview', icon: BarChart3 },
-    { id: 'suppliers', label: 'Pending Suppliers', icon: Clock },
+    { id: 'suppliers', label: 'Manage Suppliers', icon: Users },
     { id: 'users', label: 'User Management', icon: Users },
     { id: 'products', label: 'Product Queue', icon: Package },
     { id: 'categories', label: 'Categories', icon: Tags },
@@ -65,8 +64,6 @@ const AdminDashboard: React.FC = () => {
   const [rejectPrompt, setRejectPrompt] = useState<{ isOpen: boolean; supplierId: string }>({ isOpen: false, supplierId: '' });
   const [rejectionReasonInput, setRejectionReasonInput] = useState('');
 
-  const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null);
-  const [showInfoModal, setShowInfoModal] = useState(false);
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -146,7 +143,7 @@ const AdminDashboard: React.FC = () => {
       await adminService.verifyProduct(id, status);
       if (status === 'APPROVED') fetchData();
       else setPendingProducts(prev => prev.filter(p => p._id !== id));
-      
+
       setMessageModal({
         isOpen: true,
         title: 'Success',
@@ -184,7 +181,7 @@ const AdminDashboard: React.FC = () => {
     <div className={`${styles.container} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
       <Sidebar
         title="AMJ Admin"
-        logoIcon={ShieldCheck}
+        logoSrc="/favicon.jpeg"
         menu={adminMenu}
         activeTab={activeTab}
         onTabChange={(id) => setActiveTab(id as any)}
@@ -199,6 +196,8 @@ const AdminDashboard: React.FC = () => {
           <h2>
             {activeTab === 'stats' && 'Platform Overview'}
             {activeTab === 'suppliers' && 'Supplier Verifications'}
+            {activeTab === 'supplier-detail' && 'Supplier Profile'}
+            {activeTab === 'supplier-products' && 'Supplier Products'}
             {activeTab === 'users' && 'User Management'}
             {activeTab === 'products' && 'Product Queue'}
             {activeTab === 'categories' && 'Category Management'}
@@ -222,85 +221,85 @@ const AdminDashboard: React.FC = () => {
         ) : (
           <div className={styles.view}>
             {activeTab === 'stats' && stats && <DashboardOverview stats={stats} />}
-            {activeTab === 'suppliers' && (
-              <SupplierVerification 
-                suppliers={allSuppliers} 
-                onVerify={handleVerifySupplier} 
+            {(activeTab === 'suppliers' || activeTab === 'supplier-detail' || activeTab === 'supplier-products') && (
+              <SupplierVerification
+                suppliers={allSuppliers}
+                onVerify={handleVerifySupplier}
               />
             )}
             {activeTab === 'users' && (
-              <UserManagement 
-                users={allUsers} 
-                onToggleStatus={handleToggleUserStatus} 
+              <UserManagement
+                users={allUsers}
+                onToggleStatus={handleToggleUserStatus}
               />
             )}
             {activeTab === 'products' && (
-              <ProductQueue 
-                pendingProducts={pendingProducts} 
-                approvedProducts={approvedProducts} 
-                onVerify={handleVerifyProduct} 
+              <ProductQueue
+                pendingProducts={pendingProducts}
+                approvedProducts={approvedProducts}
+                onVerify={handleVerifyProduct}
               />
             )}
             {activeTab === 'categories' && (
-              <CategoryManagement 
-                categories={categories} 
-                onAddCategory={handleAddCategory} 
+              <CategoryManagement
+                categories={categories}
+                onAddCategory={handleAddCategory}
               />
             )}
           </div>
         )}
       </main>
 
-        {/* Verification Confirmation Modal */}
-        <Modal
-          isOpen={confirmVerify.isOpen}
-          onClose={() => setConfirmVerify({ isOpen: false, supplierId: '' })}
-          title="Verify Supplier"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setConfirmVerify({ isOpen: false, supplierId: '' })}>Cancel</Button>
-              <Button onClick={() => executeVerify(confirmVerify.supplierId)}>Confirm</Button>
-            </>
-          }
-        >
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <ShieldCheck size={48} color="#e65c00" style={{ marginBottom: '16px', margin: '0 auto' }} />
-            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Are you sure you want to verify this supplier and onboard them?</p>
-          </div>
-        </Modal>
+      {/* Verification Confirmation Modal */}
+      <Modal
+        isOpen={confirmVerify.isOpen}
+        onClose={() => setConfirmVerify({ isOpen: false, supplierId: '' })}
+        title="Verify Supplier"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirmVerify({ isOpen: false, supplierId: '' })}>Cancel</Button>
+            <Button onClick={() => executeVerify(confirmVerify.supplierId)}>Confirm</Button>
+          </>
+        }
+      >
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <ShieldCheck size={48} color="#e65c00" style={{ marginBottom: '16px', margin: '0 auto' }} />
+          <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Are you sure you want to verify this supplier and onboard them?</p>
+        </div>
+      </Modal>
 
-        {/* Rejection Reason Modal */}
-        <Modal
-          isOpen={rejectPrompt.isOpen}
-          onClose={() => setRejectPrompt({ isOpen: false, supplierId: '' })}
-          title="Reject Application"
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setRejectPrompt({ isOpen: false, supplierId: '' })}>Cancel</Button>
-              <Button variant="danger" onClick={() => executeReject(rejectPrompt.supplierId)}>Confirm Rejection</Button>
-            </>
-          }
-        >
-          <div style={{ padding: '10px 0' }}>
-            <p style={{ marginBottom: '12px', fontWeight: 500 }}>Please provide a reason for rejection:</p>
-            <textarea
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '8px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                minHeight: '100px',
-                resize: 'vertical'
-              }}
-              placeholder="e.g. Invalid GST document, Address mismatch..."
-              value={rejectionReasonInput}
-              onChange={(e) => setRejectionReasonInput(e.target.value)}
-            />
-          </div>
-        </Modal>
+      {/* Rejection Reason Modal */}
+      <Modal
+        isOpen={rejectPrompt.isOpen}
+        onClose={() => setRejectPrompt({ isOpen: false, supplierId: '' })}
+        title="Reject Application"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setRejectPrompt({ isOpen: false, supplierId: '' })}>Cancel</Button>
+            <Button variant="danger" onClick={() => executeReject(rejectPrompt.supplierId)}>Confirm Rejection</Button>
+          </>
+        }
+      >
+        <div style={{ padding: '10px 0' }}>
+          <p style={{ marginBottom: '12px', fontWeight: 500 }}>Please provide a reason for rejection:</p>
+          <textarea
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              fontSize: '14px',
+              minHeight: '100px',
+              resize: 'vertical'
+            }}
+            placeholder="e.g. Invalid GST document, Address mismatch..."
+            value={rejectionReasonInput}
+            onChange={(e) => setRejectionReasonInput(e.target.value)}
+          />
+        </div>
+      </Modal>
 
-        <Modal
+      <Modal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
         title="Sign Out"
@@ -314,7 +313,7 @@ const AdminDashboard: React.FC = () => {
         Are you sure you want to sign out of the Admin Portal?
       </Modal>
 
-      <MessageModal 
+      <MessageModal
         isOpen={messageModal.isOpen}
         onClose={() => setMessageModal({ ...messageModal, isOpen: false })}
         title={messageModal.title}

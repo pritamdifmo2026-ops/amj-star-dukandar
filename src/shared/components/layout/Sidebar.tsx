@@ -22,6 +22,7 @@ export interface MenuItem {
 interface SidebarProps {
   title: string;
   logoIcon?: LucideIcon;
+  logoSrc?: string;
   menu: MenuItem[];
   activeTab: string;
   onTabChange: (id: string) => void;
@@ -35,6 +36,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({
   title,
   logoIcon: LogoIcon,
+  logoSrc,
   menu,
   activeTab,
   onTabChange,
@@ -70,7 +72,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     >
       <div className={styles.sidebarHeader}>
         <div className={styles.sidebarBrand} onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          {LogoIcon && <LogoIcon size={20} />}
+          {logoSrc ? (
+            <img src={logoSrc} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+          ) : (
+            LogoIcon && <LogoIcon size={20} />
+          )}
           <span>{title}</span>
         </div>
         <button className={styles.toggleBtn} onClick={onToggle}>

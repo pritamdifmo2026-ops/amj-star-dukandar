@@ -39,7 +39,9 @@ const Footer: React.FC = () => {
               <ul className={styles.linkList}>
                 <li><Link to={ROUTES.PRODUCT_LIST}>Browse Products</Link></li>
                 <li><Link to={ROUTES.LOGIN}>Post a Requirement</Link></li>
-                <li><Link to={ROUTES.REGISTER}>Register as Buyer</Link></li>
+                {!isAuthenticated && (
+                  <li><Link to={ROUTES.REGISTER}>Register as Buyer</Link></li>
+                )}
                 <li><a href="#">Help Center</a></li>
               </ul>
             </div>
@@ -47,8 +49,12 @@ const Footer: React.FC = () => {
             <div className={styles.linkCol}>
               <h4 className={styles.colTitle}>For Suppliers</h4>
               <ul className={styles.linkList}>
-                <li><Link to={ROUTES.REGISTER}>Register as Supplier</Link></li>
-                <li><Link to={ROUTES.LOGIN}>Supplier Login</Link></li>
+                {!isAuthenticated && (
+                  <>
+                    <li><Link to={ROUTES.REGISTER}>Register as Supplier</Link></li>
+                    <li><Link to={ROUTES.LOGIN}>Supplier Login</Link></li>
+                  </>
+                )}
                 <li><a href="#">Grow Your Business</a></li>
                 <li><a href="#">Supplier FAQ</a></li>
               </ul>

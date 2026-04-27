@@ -81,8 +81,12 @@ const Navbar: React.FC = () => {
             <Phone size={12} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
           </span>
           <div className={styles.topLinks}>
-            <Link to="/login?mode=seller" className={styles.topLink}>Sell on AMJStar</Link>
-            <span className={styles.sep}>|</span>
+            {!(isSupplier || isAdmin) && (
+              <>
+                <Link to="/login?mode=seller" className={styles.topLink}>Sell on AMJStar</Link>
+                <span className={styles.sep}>|</span>
+              </>
+            )}
             <a href="#" className={styles.topLink}>Help Center</a>
           </div>
         </div>
@@ -93,8 +97,7 @@ const Navbar: React.FC = () => {
         <div className={styles.container}>
           {/* Logo */}
           <Link to={ROUTES.HOME} className={styles.logo}>
-            <span className={styles.logoMain}>AMJStar</span>
-            <span className={styles.logoSub}>Dukandar</span>
+            <img src="/favicon.jpeg" alt="AMJStar Logo" style={{ height: '44px', objectFit: 'contain' }} />
           </Link>
 
           {/* Search */}
