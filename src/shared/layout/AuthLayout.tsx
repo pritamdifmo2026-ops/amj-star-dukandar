@@ -7,8 +7,10 @@ const AuthLayout: React.FC = () => {
   return (
     <div className={styles.layout}>
       <div className={styles.brand}>
-        <img src="/favicon.jpeg" alt="AMJStar Logo" className={styles.logoImage} style={{ height: '60px', objectFit: 'contain' }} />
-        <p className={styles.tagline}>{appConfig.appTagline}</p>
+        <div className={styles.brandRow}>
+          <img src="/favicon.jpeg" alt="AMJStar Logo" className={styles.logoImage} />
+          <p className={styles.tagline}>{appConfig.appTagline}</p>
+        </div>
       </div>
       <div className={styles.card}>
         <Outlet />
