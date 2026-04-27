@@ -7,6 +7,7 @@ import {
   OnboardingStatus,
   setSupplierProfile
 } from '@/store/slices/supplier.slice';
+import { ROUTES } from '@/shared/constants/routes';
 import supplierService from '../services/supplier.service';
 import Button from '@/shared/components/ui/Button';
 import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Headset, Star, Handshake, XCircle, Upload } from 'lucide-react';
@@ -79,7 +80,8 @@ const Onboarding: React.FC = () => {
           dispatch(setSupplierProfile(data.supplier));
 
           if (data.supplier.isActive && data.supplier.verifiedByAdmin) {
-            navigate('/supplier/dashboard');
+            const destination = user?.role === 'reseller' ? '/reseller/dashboard' : '/supplier/dashboard';
+            navigate(destination);
             return;
           }
 
@@ -246,6 +248,12 @@ const Onboarding: React.FC = () => {
           isFoodSupplier, fssaiLicenseNumber, fssaiCertificate: fssaiCertificateUrl
         });
         dispatch(setSupplierProfile(kycData.supplier));
+
+        if (user?.role === 'reseller') {
+          navigate(ROUTES.RESELLER_DASHBOARD);
+          return;
+        }
+
         setCurrentStep(5);
       }
     } catch (err: any) {

@@ -71,5 +71,97 @@ export default defineConfig([
   },
 ])
 ```
+
+# Reseller Onboarding Documentation
+
+## STEP 1: Basic Account Setup
+Fields:
+- Full Name
+- Phone Number (OTP verify)
+- Email
+- Password
+- City
+- State
+- Country
+
+## STEP 2: Reseller Profile (Storefront Identity)
+Fields:
+- Store Name (required)
+- Profile Type:
+  - Individual Reseller
+  - Business Reseller
+- Profile Description (short bio)
+- Profile Image / Logo
+
+## STEP 3: Selling Channels
+Fields:
+- Where do you sell? (multi-select)
+  - WhatsApp
+  - Instagram
+  - Facebook
+  - Offline network
+  - Amazon / Flipkart / Meesho
+  - Personal Website
+  - Others (specify)
+- Add Links (dynamic based on selection)
+  - Instagram link
+  - Website link
+  - Others (add links)
+- Primary Selling Method:
+  - Direct to customers
+  - To retailers/shopkeepers
+  - Both
+- Monthly Sales Volume:
+  - 0–50 orders
+  - 50–200
+  - 200–500
+  - 500+
+- Selling Reach:
+  - Local
+  - State
+  - Pan India
+  - International
+
+## STEP 4: Experience & Credibility
+Fields:
+- Experience:
+  - Beginner
+  - 1–2 years
+  - 3+ years
+- Have you sold products before? (Yes/No)
+
+## STEP 5: Payment Setup
+Fields:
+- Account Holder Name
+- Bank Account Number
+- IFSC Code
+- Bank Name
+Optional:
+- PAN Number
+- GST (if business i.e. optional)
+
+## STEP 6: Verification
+Fields:
+- ID Proof (optional upload)
+- Agreement checkbox:
+  - Accept Terms
+  - Accept Commission Policy
+  - Accept Payment Terms (RTGS)
+
+## STEP 7: Plan Selection
+UI Content:
+- Starter (Free) → 200 product adds
+- Basic → ₹999 → 999 adds
+- Standard → ₹1,000 → 1,000 adds
+- Premium → ₹5,000 → 5,000 adds + benefits
+Fields:
+- Select Plan (default = Free)
+- Upgrade CTA
+
+## Onboarding Behavior
+- Auto-save after each step
+- Resume onboarding
+- Step tracking
+
 # amj-star-dukandar
 # amj-star-dukandar

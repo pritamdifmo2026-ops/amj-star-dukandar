@@ -9,6 +9,7 @@ export const ROUTES = {
 
   // Reseller
   RESELLER_DASHBOARD: '/reseller/dashboard',
+  RESELLER_ONBOARDING: '/reseller/onboarding',
   RESELLER_ORDERS: '/reseller/orders',
   RESELLER_CART: '/reseller/cart',
   RESELLER_CHECKOUT: '/reseller/checkout',

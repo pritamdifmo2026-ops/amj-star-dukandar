@@ -26,9 +26,7 @@ export const protectedRoutes: RouteObject[] = [
         path: ROUTES.RESELLER_DASHBOARD,
         element: (
           <ProtectedRoute allowedRoles={['reseller']}>
-            <div style={{ padding: '40px' }}>
-              <EmptyState title="Reseller Dashboard" description="We are building powerful tools for you. Coming very soon!" />
-            </div>
+            <SupplierDashboard />
           </ProtectedRoute>
         ),
       },
@@ -37,7 +35,15 @@ export const protectedRoutes: RouteObject[] = [
   {
     path: '/supplier/onboarding',
     element: (
-      <ProtectedRoute allowedRoles={['supplier']}>
+      <ProtectedRoute allowedRoles={['supplier', 'reseller']}>
+        <Onboarding />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.RESELLER_ONBOARDING,
+    element: (
+      <ProtectedRoute allowedRoles={['reseller']}>
         <Onboarding />
       </ProtectedRoute>
     ),

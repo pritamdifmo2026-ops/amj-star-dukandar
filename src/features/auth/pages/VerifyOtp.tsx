@@ -46,9 +46,9 @@ const VerifyOtp: React.FC = () => {
         navigate(mode ? `/select-role?mode=${mode}` : '/select-role');
         if (mode) localStorage.removeItem('auth_mode');
       } else if (user.role === 'supplier') {
-        navigate('/supplier/dashboard');
+        navigate('/supplier/onboarding');
       } else if (user.role === 'reseller') {
-        navigate('/reseller/dashboard');
+        navigate('/reseller/onboarding');
       } else {
         navigate('/');
       }
