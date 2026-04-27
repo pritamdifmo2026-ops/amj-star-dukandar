@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
 import { ROUTES } from '@/shared/constants/routes';
 import resellerService from '../services/reseller.service';
+import ResellerOnboardingLayout from '../layout/ResellerOnboardingLayout';
 import Button from '@/shared/components/ui/Button';
 import { 
   User, 
@@ -17,9 +18,24 @@ import {
   Package,
   Star,
   Check,
-  CheckCircle
+  CheckCircle,
+  Handshake
 } from 'lucide-react';
 import styles from './ResellerOnboarding.module.css';
+
+const STATE_CITY_MAP: Record<string, string[]> = {
+  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Thane"],
+  "Delhi": ["New Delhi", "North Delhi", "South Delhi", "Dwarka"],
+  "Karnataka": ["Bengaluru", "Mysuru", "Hubli", "Mangaluru"],
+  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem"],
+  "Uttar Pradesh": ["Lucknow", "Kanpur", "Noida", "Agra", "Varanasi"],
+  "West Bengal": ["Kolkata", "Howrah", "Siliguri", "Durgapur"],
+  "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
+  "Telangana": ["Hyderabad", "Warangal", "Nizamabad"],
+  "Haryana": ["Gurugram", "Faridabad", "Panipat", "Ambala"],
+  "Kerala": ["Kochi", "Thiruvananthapuram", "Kozhikode"]
+};
 
 const ResellerOnboarding: React.FC = () => {
   const navigate = useNavigate();
@@ -27,6 +43,9 @@ const ResellerOnboarding: React.FC = () => {
   
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Step 1: Basic Info
   const [fullName, setFullName] = useState(user?.name || '');
@@ -62,7 +81,8 @@ const ResellerOnboarding: React.FC = () => {
   const [gstNumber, setGstNumber] = useState('');
 
   // Step 6: Verification
-  const [idProofUrl] = useState('');
+  const [idProofUrl, setIdProofUrl] = useState('');
+  const [idProofFile, setIdProofFile] = useState<File | null>(null);
   const [agreements, setAgreements] = useState({
     terms: false,
     commission: false,
@@ -101,6 +121,15 @@ const ResellerOnboarding: React.FC = () => {
   const saveStepData = async (nextStep?: number) => {
     setLoading(true);
     try {
+      // Handle file upload if idProofFile exists
+      let finalIdProofUrl = idProofUrl;
+      if (idProofFile && nextStep === 7) {
+        const uploadRes = await resellerService.uploadDoc(idProofFile);
+        finalIdProofUrl = uploadRes.url;
+        setIdProofUrl(finalIdProofUrl);
+        setIdProofFile(null); // Clear local file after successful upload
+      }
+
       const data: any = {
         storeName,
         profileType,
@@ -119,7 +148,7 @@ const ResellerOnboarding: React.FC = () => {
         bankName,
         panNumber,
         gstNumber,
-        idProofUrl,
+        idProofUrl: finalIdProofUrl,
         subscriptionPlan,
         step: nextStep || currentStep,
         termsAccepted: agreements.terms,
@@ -127,12 +156,43 @@ const ResellerOnboarding: React.FC = () => {
         paymentTermsAccepted: agreements.payment
       };
 
+      // Strip empty strings so Zod's .optional() validation doesn't fail on min() requirements
+      Object.keys(data).forEach(key => {
+        if (data[key] === '') {
+          delete data[key];
+        }
+      });
+
+      setFormErrors({});
       await resellerService.onboard(data);
-      if (nextStep) setCurrentStep(nextStep);
+      if (nextStep) {
+        if (nextStep === 8 || (currentStep === 7 && !nextStep)) {
+          setIsSubmitted(true);
+        } else {
+          setCurrentStep(nextStep);
+        }
+      } else if (currentStep === 7) {
+        setIsSubmitted(true);
+      }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to save progress');
+      if (err.response?.data?.errors) {
+        const newErrors: Record<string, string> = {};
+        err.response.data.errors.forEach((e: any) => {
+          const field = e.path.split('.').pop();
+          if (field) newErrors[field] = e.message;
+        });
+        setFormErrors(newErrors);
+      } else {
+        alert(err.response?.data?.message || 'Failed to save progress');
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const clearError = (field: string) => {
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -143,6 +203,16 @@ const ResellerOnboarding: React.FC = () => {
         : [...prev, platform]
     );
   };
+
+  const steps = [
+    { n: 1, label: 'Account Setup', desc: 'Basic Details' },
+    { n: 2, label: 'Profile', desc: 'Storefront Identity' },
+    { n: 3, label: 'Channels', desc: 'Selling Platforms' },
+    { n: 4, label: 'Experience', desc: 'Sales Credibility' },
+    { n: 5, label: 'Payment', desc: 'Bank Details' },
+    { n: 6, label: 'Verification', desc: 'ID & Agreement' },
+    { n: 7, label: 'Plans', desc: 'Choose Package' }
+  ];
 
   const renderStep = () => {
     switch(currentStep) {
@@ -157,7 +227,15 @@ const ResellerOnboarding: React.FC = () => {
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
                 <label>Full Name</label>
-                <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Enter your full name" />
+                <input 
+                  value={fullName} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    const formatted = val.replace(/\b\w/g, l => l.toUpperCase());
+                    setFullName(formatted);
+                  }} 
+                  placeholder="Enter your full name" 
+                />
               </div>
               <div className={styles.inputGroup}>
                 <label>Phone Number</label>
@@ -171,13 +249,35 @@ const ResellerOnboarding: React.FC = () => {
                 <input value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
               </div>
               <div className={styles.inputGroup}>
-                <label>City</label>
-                <input value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Mumbai" />
+                <label>State</label>
+                <select 
+                  value={state} 
+                  onChange={e => {
+                    setState(e.target.value);
+                    setCity(''); // Reset city when state changes
+                  }} 
+                  className={styles.input}
+                >
+                  <option value="">Select State</option>
+                  {Object.keys(STATE_CITY_MAP).sort().map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
               </div>
               <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
-                  <label>State</label>
-                  <input value={state} onChange={e => setState(e.target.value)} placeholder="e.g. Maharashtra" />
+                  <label>City</label>
+                  <select 
+                    value={city} 
+                    onChange={e => setCity(e.target.value)} 
+                    className={styles.input}
+                    disabled={!state}
+                  >
+                    <option value="">Select City</option>
+                    {state && STATE_CITY_MAP[state]?.sort().map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className={styles.inputGroup}>
                   <label>Country</label>
@@ -204,7 +304,16 @@ const ResellerOnboarding: React.FC = () => {
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
                 <label>Store Name *</label>
-                <input value={storeName} onChange={e => setStoreName(e.target.value)} placeholder="e.g. Trendify Boutique" required />
+                <input 
+                  value={storeName} 
+                  onChange={e => {
+                    setStoreName(e.target.value);
+                    clearError('storeName');
+                  }} 
+                  placeholder="e.g. Trendify Boutique" 
+                  required 
+                />
+                {formErrors.storeName && <span className={styles.errorText}>{formErrors.storeName}</span>}
               </div>
               <div className={styles.inputGroup}>
                 <label>Profile Type</label>
@@ -384,10 +493,31 @@ const ResellerOnboarding: React.FC = () => {
               <p>Finalize your application with our policies.</p>
             </div>
             <div className={styles.verificationBox}>
-              <div className={styles.uploadSection}>
+              <div 
+                className={styles.uploadSection} 
+                onClick={() => fileInputRef.current?.click()}
+                style={{ cursor: 'pointer' }}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setIdProofFile(file);
+                  }}
+                  style={{ display: 'none' }}
+                />
                 <div className={styles.uploadPlaceholder}>
-                  <Upload size={32} />
-                  <p>Upload ID Proof (Aadhar/Voter ID) - Optional</p>
+                  <Upload size={32} color={idProofFile || idProofUrl ? "#10b981" : "#94a3b8"} />
+                  <p>
+                    {idProofFile 
+                      ? `✓ ${idProofFile.name}` 
+                      : idProofUrl 
+                        ? '✓ ID Proof uploaded' 
+                        : 'Upload ID Proof (Aadhar/Voter ID)'}
+                  </p>
+                  {!idProofFile && !idProofUrl && <span style={{ fontSize: '12px', color: '#ef4444' }}>*Required</span>}
                 </div>
               </div>
               <div className={styles.agreements}>
@@ -411,7 +541,7 @@ const ResellerOnboarding: React.FC = () => {
                 onClick={() => saveStepData(7)} 
                 loading={loading} 
                 className={styles.nextBtn}
-                disabled={!agreements.terms || !agreements.commission || !agreements.payment}
+                disabled={!agreements.terms || !agreements.commission || !agreements.payment || (!idProofFile && !idProofUrl)}
               >
                 Choose Plan <ArrowRight size={18} />
               </Button>
@@ -464,38 +594,46 @@ const ResellerOnboarding: React.FC = () => {
     }
   };
 
+  if (isSubmitted) {
+    return (
+      <div className={styles.centeredForm}>
+        <div className={styles.successCard}>
+          <div className={styles.successIconWrapper}>
+            <CheckCircle size={48} />
+          </div>
+          <h2>Thank you for joining us!</h2>
+          <p>
+            Your reseller application has been successfully submitted. 
+            Our team will review your details and contact you soon to finalize your account.
+          </p>
+
+          <div className={styles.growthCard}>
+            <div className={styles.growthIconWrapper}>
+              <Handshake size={24} />
+            </div>
+            <div className={styles.growthText}>
+              <p><strong>Woman Entrepreneur?</strong></p>
+              <p>We would love to connect and discuss growth with you!</p>
+            </div>
+          </div>
+
+          <Button 
+            onClick={() => navigate('/')} 
+            className={styles.homeBtn}
+          >
+            Go to Homepage
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={styles.onboardingPage}>
-      <nav className={styles.nav}>
-        <div className={styles.container}>
-          <Link to="/" className={styles.brand}>AMJStar</Link>
-          <div className={styles.stepperNav}>
-            {[1, 2, 3, 4, 5, 6, 7].map(s => (
-              <div key={s} className={`${styles.stepIndicator} ${currentStep === s ? styles.active : ''} ${currentStep > s ? styles.completed : ''}`}>
-                {currentStep > s ? <Check size={14} /> : s}
-              </div>
-            ))}
-          </div>
-          <button className={styles.logoutBtn}>Logout</button>
-        </div>
-      </nav>
-
-      <main className={styles.main}>
-        <div className={styles.formCard}>
-          {renderStep()}
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <div className={styles.container}>
-          <p>© 2024 AMJStar Dukandar. Secure Onboarding.</p>
-          <div className={styles.footerLinks}>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms & Conditions</a>
-          </div>
-        </div>
-      </footer>
-    </div>
+    <ResellerOnboardingLayout currentStep={currentStep} steps={steps}>
+      <div className={styles.formCard}>
+        {renderStep()}
+      </div>
+    </ResellerOnboardingLayout>
   );
 };
 

@@ -1,0 +1,254 @@
+.page {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  background: #ffffff;
+}
+
+.sidebar {
+  width: 320px;
+  background: #0f172a;
+  color: white;
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarTop {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarBrand {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  padding-bottom: 12px;
+  margin-bottom: 40px;
+}
+
+.sidebarBrand::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: #e65c00;
+}
+
+.brandStar {
+  color: #e65c00;
+  fill: #e65c00;
+}
+
+.stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+  position: relative;
+}
+
+.stepper::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  bottom: 15px;
+  left: 15px;
+  width: 2px;
+  border-left: 2px dashed #334155;
+  z-index: 0;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.stepIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 2px solid #334155;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: bold;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.stepActive .stepIcon {
+  background: #e65c00;
+  border-color: #e65c00;
+  color: white;
+}
+
+.stepCompleted .stepIcon {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+.stepText {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+
+.stepTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.stepActive .stepTitle,
+.stepCompleted .stepTitle {
+  color: white;
+}
+
+.stepDesc {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.helpBox {
+  margin-top: auto;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.helpBox:hover {
+  background: #0f172a;
+}
+
+.helpBoxContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.helpIcon {
+  color: #e65c00;
+}
+
+.helpText {
+  display: flex;
+  flex-direction: column;
+}
+
+.helpText strong {
+  font-size: 0.9rem;
+  color: white;
+}
+
+.helpText span {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.helpArrow {
+  color: #94a3b8;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  background: white;
+}
+
+.formSection {
+  flex: 2;
+  padding: 60px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.formSection::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+.imageSection {
+  flex: 0 0 42%;
+  background: #e2e8f0;
+  display: none;
+}
+
+.imageSection img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (min-width: 1024px) {
+  .imageSection {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    flex-direction: column;
+    padding: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 20px;
+    background: #0f172a;
+  }
+
+  .sidebarBrand {
+    margin-bottom: 20px;
+  }
+
+  .stepper {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+
+  .stepper::before {
+    display: none;
+  }
+
+  .stepText {
+    display: none;
+  }
+
+  .helpBox {
+    display: none;
+  }
+
+  .formSection {
+    width: 100%;
+    padding: 24px 20px;
+    flex: none;
+    height: auto;
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import {
@@ -9,8 +9,9 @@ import {
 } from '@/store/slices/supplier.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import supplierService from '../services/supplier.service';
+import SupplierOnboardingLayout from '../layout/SupplierOnboardingLayout';
 import Button from '@/shared/components/ui/Button';
-import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Headset, Star, Handshake, XCircle, Upload } from 'lucide-react';
+import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Star, Handshake, XCircle, Upload } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import styles from './Onboarding.module.css';
 
@@ -37,6 +38,15 @@ const Onboarding: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  useEffect(() => {
+    // Scroll to top of the form container or window on step change
+    const scrollContainer = document.getElementById('supplier-form-scroll-area');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   // Form states
   const [ownerName, setOwnerName] = useState('');
@@ -685,9 +695,8 @@ const Onboarding: React.FC = () => {
       case 5:
         const isRejected = profile?.kycStatus === 'REJECTED';
         return (
-          <div className={`${styles.formContainer} ${styles.centeredContent}`}>
-            <div className={styles.stepContent}>
-              <div className={isRejected ? styles.iconCircleError : styles.iconCircleSuccess}>
+          <>
+            <div className={isRejected ? styles.iconCircleError : styles.iconCircleSuccess}>
                 {isRejected ? <XCircle size={48} /> : <ShieldCheck size={48} />}
               </div>
               <h1 style={{ textAlign: 'center' }}>
@@ -746,8 +755,7 @@ const Onboarding: React.FC = () => {
               >
                 Go to Homepage
               </Button>
-            </div>
-          </div>
+          </>
         );
       default:
         return null;
@@ -761,68 +769,22 @@ const Onboarding: React.FC = () => {
     { n: 4, label: 'Plans', desc: 'Selling Tiers' }
   ];
 
+
+
   if (currentStep === 5) {
     return (
-      <div className={styles.page}>
-        <div className={styles.main}>
-          <div className={`${styles.formSection} ${styles.centeredForm}`}>
-            {renderStepContent()}
-          </div>
+      <div className={styles.centeredForm}>
+        <div className={styles.successCard}>
+          {renderStepContent()}
         </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.sidebar}>
-        <div className={styles.sidebarTop}>
-          <Link to="/" className={styles.sidebarBrand}>
-            AMJStar Dukandar <Star size={20} className={styles.brandStar} />
-          </Link>
-          <div className={styles.stepper}>
-            {steps.map(step => {
-              const isActive = currentStep === step.n;
-              const isCompleted = currentStep > step.n;
-              return (
-                <div key={step.n} className={`${styles.step} ${isActive ? styles.stepActive : ''} ${isCompleted ? styles.stepCompleted : ''}`}>
-                  <div className={styles.stepIcon}>
-                    {isCompleted ? <Check size={16} /> : step.n}
-                  </div>
-                  <div className={styles.stepText}>
-                    <span className={styles.stepTitle}>{step.label}</span>
-                    <span className={styles.stepDesc}>{step.desc}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className={styles.helpBox}>
-          <div className={styles.helpBoxContent}>
-            <Headset size={24} className={styles.helpIcon} />
-            <div className={styles.helpText}>
-              <strong>Need help?</strong>
-              <span>Visit our Help Center</span>
-            </div>
-          </div>
-          <ArrowRight size={16} className={styles.helpArrow} />
-        </div>
-      </div>
-
-      <main className={styles.main}>
-        <div className={styles.formSection}>
-          {renderStepContent()}
-        </div>
-        <div className={styles.imageSection}>
-          <img
-            src="https://media.istockphoto.com/id/1197932646/photo/congratulating-the-new-partners.jpg?s=612x612&w=0&k=20&c=t1hbDdPtSEEfkznvCKSJVfg1rBb-EdUqG4C8CTLmmVo="
-            alt="Business Partners"
-          />
-        </div>
-      </main>
-
+    <SupplierOnboardingLayout currentStep={currentStep} steps={steps}>
+      {renderStepContent()}
+      
       <Modal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
@@ -839,7 +801,7 @@ const Onboarding: React.FC = () => {
       >
         Are you sure you want to sign out? Your onboarding progress is saved.
       </Modal>
-    </div>
+    </SupplierOnboardingLayout>
   );
 };
 
