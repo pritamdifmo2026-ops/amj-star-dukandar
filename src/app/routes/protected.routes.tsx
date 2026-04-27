@@ -2,12 +2,12 @@ import { Navigate, type RouteObject } from 'react-router-dom';
 import MainLayout from '@/shared/layout/MainLayout';
 import { ROUTES } from '@/shared/constants/routes';
 import ProtectedRoute from '@/shared/components/ProtectedRoute';
-import EmptyState from '@/shared/components/feedback/EmptyState';
 import Profile from '@/features/buyer/pages/Profile';
 import Onboarding from '@/features/supplier/pages/Onboarding';
 import SupplierGuard from '@/features/supplier/components/SupplierGuard';
 import AdminDashboard from '@/features/admin/pages/AdminDashboard';
 import SupplierDashboard from '@/features/supplier/pages/SupplierDashboard';
+import ResellerOnboarding from '@/features/reseller/pages/ResellerOnboarding';
 
 export const protectedRoutes: RouteObject[] = [
   {
@@ -35,7 +35,7 @@ export const protectedRoutes: RouteObject[] = [
   {
     path: '/supplier/onboarding',
     element: (
-      <ProtectedRoute allowedRoles={['supplier', 'reseller']}>
+      <ProtectedRoute allowedRoles={['supplier']}>
         <Onboarding />
       </ProtectedRoute>
     ),
@@ -44,7 +44,7 @@ export const protectedRoutes: RouteObject[] = [
     path: ROUTES.RESELLER_ONBOARDING,
     element: (
       <ProtectedRoute allowedRoles={['reseller']}>
-        <Onboarding />
+        <ResellerOnboarding />
       </ProtectedRoute>
     ),
   },
