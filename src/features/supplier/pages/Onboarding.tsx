@@ -9,7 +9,7 @@ import {
 } from '@/store/slices/supplier.slice';
 import supplierService from '../services/supplier.service';
 import Button from '@/shared/components/ui/Button';
-import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Headset, Star, Handshake } from 'lucide-react';
+import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Headset, Star, Handshake, XCircle } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import styles from './Onboarding.module.css';
 
@@ -127,6 +127,12 @@ const Onboarding: React.FC = () => {
   const handleChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setter(e.target.value);
     setErrors(prev => ({ ...prev, [e.target.name]: '' }));
+  };
+
+  const handleReapply = () => {
+    setCurrentStep(1);
+    // When reapplying, we want to allow editing, so we might need to reset some states
+    // but the existing values will be there from the 'profile' selector.
   };
 
   const validateBasicInfo = () => {
@@ -566,31 +572,61 @@ const Onboarding: React.FC = () => {
           </div>
         );
       case 5:
+        const isRejected = profile?.kycStatus === 'REJECTED';
         return (
           <div className={`${styles.formContainer} ${styles.centeredContent}`}>
             <div className={styles.stepContent}>
-              <div className={styles.iconCircleSuccess}><ShieldCheck size={48} /></div>
-              <h1 style={{ textAlign: 'center' }}>Application Submitted!</h1>
-              <p className={styles.successText}>
-                Your application is now under review. As part of our high-trust B2B process,
-                <strong> you will receive a verification call within 24 hours </strong>
-                to confirm your details.
-              </p>
+              <div className={isRejected ? styles.iconCircleError : styles.iconCircleSuccess}>
+                {isRejected ? <XCircle size={48} /> : <ShieldCheck size={48} />}
+              </div>
+              <h1 style={{ textAlign: 'center' }}>
+                {isRejected ? 'Application Rejected' : 'Application Submitted!'}
+              </h1>
+              
+              {!isRejected ? (
+                <p className={styles.successText}>
+                  Your application is now under review. As part of our high-trust B2B process,
+                  <strong> you will receive a verification call within 24 hours </strong>
+                  to confirm your details.
+                </p>
+              ) : (
+                <div className={styles.rejectionBox}>
+                  <p><strong>Reason for Rejection:</strong></p>
+                  <p>{profile?.rejectionReason || 'Your application did not meet our initial requirements. Please see the details below.'}</p>
+                </div>
+              )}
 
-              <div className={styles.statusBox}>
+              <div className={`${styles.statusBox} ${isRejected ? styles.statusRejected : ''}`}>
                 <p>Status: <strong>{profile?.kycStatus || 'PENDING'}</strong></p>
-                <p className={styles.subStatus}>Next step: Formal Cold Call (within 24h)</p>
+                {!isRejected && <p className={styles.subStatus}>Next step: Formal Cold Call (within 24h)</p>}
               </div>
 
-              <div className={styles.growthCard}>
-                <div className={styles.growthIconWrapper}>
-                  <Handshake size={24} />
+              {isRejected && (
+                <div className={styles.contactTeam}>
+                  <p>Need help? Contact our support team:</p>
+                  <p><strong>Phone: +91 xxxxxxxx</strong></p>
+                  <p>Or update your details and try again.</p>
+                  <Button 
+                    onClick={handleReapply} 
+                    className={styles.reapplyBtn}
+                    variant="outline"
+                  >
+                    Update & Reapply
+                  </Button>
                 </div>
-                <div className={styles.growthText}>
-                  <p><strong>Woman Entrepreneur?</strong></p>
-                  <p>We would love to connect and discuss growth with you!</p>
+              )}
+
+              {!isRejected && (
+                <div className={styles.growthCard}>
+                  <div className={styles.growthIconWrapper}>
+                    <Handshake size={24} />
+                  </div>
+                  <div className={styles.growthText}>
+                    <p><strong>Woman Entrepreneur?</strong></p>
+                    <p>We would love to connect and discuss growth with you!</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <Button
                 onClick={() => navigate('/')}

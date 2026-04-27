@@ -29,6 +29,7 @@ interface SupplierProfile {
   kycStatus: KYCStatus;
   onboardingStatus: OnboardingStatus;
   isActive: boolean;
+  rejectionReason?: string;
 }
 
 interface SupplierState {

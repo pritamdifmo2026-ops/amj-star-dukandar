@@ -24,8 +24,8 @@ const adminService = {
     return response.data.suppliers;
   },
 
-  verifySupplier: async (id: string, status: 'VERIFIED' | 'REJECTED') => {
-    const response = await api.patch(`/admin/suppliers/${id}/verify`, { status });
+  verifySupplier: async (id: string, status: 'VERIFIED' | 'REJECTED', reason?: string) => {
+    const response = await api.patch(`/admin/suppliers/${id}/verify`, { status, reason });
     return response.data.supplier;
   },
 

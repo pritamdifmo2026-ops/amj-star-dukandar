@@ -817,3 +817,46 @@ textarea.input {
   margin-top: 32px;
   min-width: 240px;
 }
+
+.statusRejected {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.iconCircleError {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #fee2e2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.rejectionBox {
+  background: #fff5f5;
+  border-left: 4px solid #ef4444;
+  padding: 16px;
+  margin: 20px 0;
+  text-align: left;
+  border-radius: 4px;
+}
+
+.reapplyBtn {
+  margin-top: 16px;
+  background: #ef4444;
+  color: white;
+}
+
+.contactTeam {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+}

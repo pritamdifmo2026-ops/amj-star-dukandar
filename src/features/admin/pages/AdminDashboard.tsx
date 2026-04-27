@@ -60,6 +60,14 @@ const AdminDashboard: React.FC = () => {
     type: 'info'
   });
 
+  // Custom Action Modals
+  const [confirmVerify, setConfirmVerify] = useState<{ isOpen: boolean; supplierId: string }>({ isOpen: false, supplierId: '' });
+  const [rejectPrompt, setRejectPrompt] = useState<{ isOpen: boolean; supplierId: string }>({ isOpen: false, supplierId: '' });
+  const [rejectionReasonInput, setRejectionReasonInput] = useState('');
+
+  const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -99,15 +107,35 @@ const AdminDashboard: React.FC = () => {
   };
 
   const handleVerifySupplier = async (id: string, status: 'VERIFIED' | 'REJECTED') => {
+    if (status === 'VERIFIED') {
+      setConfirmVerify({ isOpen: true, supplierId: id });
+    } else {
+      setRejectPrompt({ isOpen: true, supplierId: id });
+      setRejectionReasonInput('');
+    }
+  };
+
+  const executeVerify = async (id: string) => {
     try {
-      await adminService.verifySupplier(id, status);
-      setAllSuppliers(prev => prev.map(s => s._id === id ? { ...s, kycStatus: status, verifiedByAdmin: status === 'VERIFIED' } : s));
-      setMessageModal({
-        isOpen: true,
-        title: 'Success',
-        message: `Supplier ${status.toLowerCase()} successfully`,
-        type: 'success'
-      });
+      await adminService.verifySupplier(id, 'VERIFIED');
+      setAllSuppliers(prev => prev.map(s => s._id === id ? { ...s, kycStatus: 'VERIFIED', verifiedByAdmin: true } : s));
+      setConfirmVerify({ isOpen: false, supplierId: '' });
+      setMessageModal({ isOpen: true, title: 'Success', message: 'Supplier verified successfully', type: 'success' });
+    } catch (err) {
+      setMessageModal({ isOpen: true, title: 'Error', message: 'Action failed', type: 'error' });
+    }
+  };
+
+  const executeReject = async (id: string) => {
+    if (!rejectionReasonInput.trim()) {
+      alert('Please provide a reason');
+      return;
+    }
+    try {
+      await adminService.verifySupplier(id, 'REJECTED', rejectionReasonInput);
+      setAllSuppliers(prev => prev.map(s => s._id === id ? { ...s, kycStatus: 'REJECTED', verifiedByAdmin: false, rejectionReason: rejectionReasonInput } : s));
+      setRejectPrompt({ isOpen: false, supplierId: '' });
+      setMessageModal({ isOpen: true, title: 'Success', message: 'Supplier rejected successfully', type: 'success' });
     } catch (err) {
       setMessageModal({ isOpen: true, title: 'Error', message: 'Action failed', type: 'error' });
     }
@@ -224,7 +252,56 @@ const AdminDashboard: React.FC = () => {
         )}
       </main>
 
-      <Modal
+        {/* Verification Confirmation Modal */}
+        <Modal
+          isOpen={confirmVerify.isOpen}
+          onClose={() => setConfirmVerify({ isOpen: false, supplierId: '' })}
+          title="Verify Supplier"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setConfirmVerify({ isOpen: false, supplierId: '' })}>Cancel</Button>
+              <Button onClick={() => executeVerify(confirmVerify.supplierId)}>Confirm</Button>
+            </>
+          }
+        >
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <ShieldCheck size={48} color="#e65c00" style={{ marginBottom: '16px', margin: '0 auto' }} />
+            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Are you sure you want to verify this supplier and onboard them?</p>
+          </div>
+        </Modal>
+
+        {/* Rejection Reason Modal */}
+        <Modal
+          isOpen={rejectPrompt.isOpen}
+          onClose={() => setRejectPrompt({ isOpen: false, supplierId: '' })}
+          title="Reject Application"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setRejectPrompt({ isOpen: false, supplierId: '' })}>Cancel</Button>
+              <Button variant="danger" onClick={() => executeReject(rejectPrompt.supplierId)}>Confirm Rejection</Button>
+            </>
+          }
+        >
+          <div style={{ padding: '10px 0' }}>
+            <p style={{ marginBottom: '12px', fontWeight: 500 }}>Please provide a reason for rejection:</p>
+            <textarea
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                fontSize: '14px',
+                minHeight: '100px',
+                resize: 'vertical'
+              }}
+              placeholder="e.g. Invalid GST document, Address mismatch..."
+              value={rejectionReasonInput}
+              onChange={(e) => setRejectionReasonInput(e.target.value)}
+            />
+          </div>
+        </Modal>
+
+        <Modal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
         title="Sign Out"
