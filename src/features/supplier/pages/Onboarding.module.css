@@ -860,3 +860,86 @@ textarea.input {
   border-radius: 8px;
   border: 1px dashed #cbd5e1;
 }
+
+.checkboxGroup {
+  margin: 20px 0;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.conditionalFields {
+  margin-left: 32px;
+  padding: 16px;
+  border-left: 2px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #fdfdfd;
+  margin-bottom: 20px;
+}
+
+.fileInputWrapper {
+  margin-top: 8px;
+  padding: 16px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  text-align: center;
+  background: #fff;
+}
+
+.fileInput {
+  width: 100%;
+  cursor: pointer;
+}
+
+.fileHint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 8px;
+}
+
+.fileSuccess {
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.customFileUpload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #475569;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0 auto 12px;
+}
+
+.customFileUpload:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #1e293b;
+}

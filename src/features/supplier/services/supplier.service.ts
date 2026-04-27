@@ -25,6 +25,15 @@ const supplierService = {
   saveDraft: async (details: any) => {
     const response = await apiClient.post('/supplier/draft', details);
     return response.data;
+  },
+  
+  uploadDoc: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/supplier/upload-doc', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
   }
 };
 

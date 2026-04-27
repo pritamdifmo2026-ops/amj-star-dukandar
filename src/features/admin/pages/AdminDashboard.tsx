@@ -226,7 +226,6 @@ const AdminDashboard: React.FC = () => {
               <SupplierVerification 
                 suppliers={allSuppliers} 
                 onVerify={handleVerifySupplier} 
-                searchQuery={supplierSearch} 
               />
             )}
             {activeTab === 'users' && (
