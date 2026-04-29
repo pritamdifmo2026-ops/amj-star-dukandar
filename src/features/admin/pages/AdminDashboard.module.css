@@ -320,6 +320,11 @@
   color: #166534;
 }
 
+.statusRejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .viewTextBtn {
   background: #f1f5f9;
   color: #475569;

@@ -21,7 +21,9 @@ export function attachInterceptors(client: AxiosInstance): void {
     },
     (error) => {
       console.error(`❌ [API Response Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response?.data || error.message);
-      if (error.response?.status === 401) {
+      
+      // Prevent infinite redirect loop
+      if (error.response?.status === 401 && !window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }
       return Promise.reject(error);

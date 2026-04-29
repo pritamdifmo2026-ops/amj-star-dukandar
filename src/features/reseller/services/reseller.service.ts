@@ -2,7 +2,15 @@ import apiClient from '@/api/client';
 
 export interface ResellerProfile {
   _id?: string;
+  fullName?: string;
   storeName?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  address?: string;
+  email?: string;
+  phone?: string;
+  isEmailVerified?: boolean;
   profileType?: 'Individual Reseller' | 'Business Reseller';
   profileDescription?: string;
   profileImage?: string;
@@ -22,7 +30,10 @@ export interface ResellerProfile {
   idProofUrl?: string;
   subscriptionPlan?: 'Starter' | 'Basic' | 'Standard' | 'Premium';
   status?: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason?: string;
   step?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 const resellerService = {
@@ -42,6 +53,21 @@ const resellerService = {
     const response = await apiClient.post('/reseller/upload-doc', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
+    return response.data;
+  },
+
+  requestProduct: async (productId: string) => {
+    const response = await apiClient.post('/partnership/request', { productId });
+    return response.data;
+  },
+
+  getRequests: async () => {
+    const response = await apiClient.get('/partnership/my-requests');
+    return response.data;
+  },
+
+  updateProfile: async (data: Partial<ResellerProfile>) => {
+    const response = await apiClient.put('/reseller/profile', data);
     return response.data;
   }
 };

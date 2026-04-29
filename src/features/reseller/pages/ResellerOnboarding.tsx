@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { logout } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import resellerService from '../services/reseller.service';
 import ResellerOnboardingLayout from '../layout/ResellerOnboardingLayout';
@@ -19,6 +20,7 @@ import {
   Star,
   Check,
   CheckCircle,
+  XCircle,
   Handshake
 } from 'lucide-react';
 import styles from './ResellerOnboarding.module.css';
@@ -39,17 +41,20 @@ const STATE_CITY_MAP: Record<string, string[]> = {
 
 const ResellerOnboarding: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const user = useAppSelector(state => state.auth.user);
   
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Step 1: Basic Info
   const [fullName, setFullName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [address, setAddress] = useState('');
   const [phone] = useState(user?.phone || '');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
@@ -96,20 +101,43 @@ const ResellerOnboarding: React.FC = () => {
     const fetchProfile = async () => {
       try {
         const data = await resellerService.getProfile();
+        setProfile(data);
         if (data) {
           if (data.status === 'APPROVED') {
             navigate(ROUTES.RESELLER_DASHBOARD);
             return;
           }
           
+          if (data.status === 'PENDING') {
+            setIsSubmitted(true);
+          }
+
+          if (data.fullName) setFullName(data.fullName);
+          if (data.email) setEmail(data.email);
+          if (data.address) setAddress(data.address);
+          if (data.city) setCity(data.city);
+          if (data.state) setState(data.state);
           if (data.storeName) setStoreName(data.storeName);
           if (data.profileType) setProfileType(data.profileType);
           if (data.profileDescription) setProfileDescription(data.profileDescription);
           if (data.platforms) setPlatforms(data.platforms);
           if (data.socialLinks) setSocialLinks(data.socialLinks);
+          if (data.primarySellingMethod) setPrimarySellingMethod(data.primarySellingMethod);
+          if (data.monthlyVolume) setMonthlyVolume(data.monthlyVolume);
+          if (data.reach) setReach(data.reach);
+          if (data.experience) setExperience(data.experience);
+          if (data.soldBefore !== undefined) setSoldBefore(data.soldBefore);
           if (data.step) setCurrentStep(data.step);
           
-          // ... populate other fields if needed
+          // Populate payment details
+          if (data.accountName) setAccountName(data.accountName);
+          if (data.accountNumber) setAccountNumber(data.accountNumber);
+          if (data.ifscCode) setIfscCode(data.ifscCode);
+          if (data.bankName) setBankName(data.bankName);
+          if (data.panNumber) setPanNumber(data.panNumber);
+          if (data.gstNumber) setGstNumber(data.gstNumber);
+          if (data.idProofUrl) setIdProofUrl(data.idProofUrl);
+          if (data.subscriptionPlan) setSubscriptionPlan(data.subscriptionPlan);
         }
       } catch (err) {
         console.log('Starting fresh onboarding');
@@ -118,7 +146,81 @@ const ResellerOnboarding: React.FC = () => {
     fetchProfile();
   }, [navigate]);
 
+  const validateStep = (step: number) => {
+    const errors: Record<string, string> = {};
+    
+    if (step === 1) {
+      if (!fullName.trim()) errors.fullName = 'Full name is required';
+      if (!email.trim()) {
+        errors.email = 'Email address is required';
+      } else if (!/\S+@\S+\.\S+/.test(email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+      if (!address.trim()) errors.address = 'Proper address is required';
+      if (!state) errors.state = 'State is required';
+      if (!city) errors.city = 'City is required';
+    }
+    
+    if (step === 2) {
+      if (!storeName.trim()) errors.storeName = 'Store name is required';
+      if (!profileType) errors.profileType = 'Profile type is required';
+      if (!profileDescription.trim()) errors.profileDescription = 'Profile description is required';
+    }
+    
+    if (step === 3) {
+      if (!primarySellingMethod) errors.primarySellingMethod = 'Primary selling method is required';
+    }
+    
+    if (step === 4) {
+      if (!monthlyVolume) errors.monthlyVolume = 'Monthly sales volume is required';
+      if (!reach) errors.reach = 'Selling reach is required';
+      if (!experience) errors.experience = 'Experience level is required';
+    }
+    
+    if (step === 5) {
+      if (!accountName.trim()) errors.accountName = 'Account holder name is required';
+      if (!accountNumber.trim()) {
+        errors.accountNumber = 'Account number is required';
+      } else if (!/^\d{9,18}$/.test(accountNumber)) {
+        errors.accountNumber = 'Account number must be 9–18 digits';
+      }
+      if (!ifscCode.trim()) {
+        errors.ifscCode = 'IFSC code is required';
+      } else if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifscCode)) {
+        errors.ifscCode = 'Invalid IFSC format (e.g. ABCD0123456)';
+      }
+      if (!bankName.trim()) errors.bankName = 'Bank name is required';
+      
+      if (panNumber && !/^[A-Z]{5}\d{4}[A-Z]{1}$/.test(panNumber)) {
+        errors.panNumber = 'Invalid PAN format (e.g. ABCDE1234F)';
+      }
+      
+      if (gstNumber && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstNumber)) {
+        errors.gstNumber = 'Invalid GST format (15 characters)';
+      }
+    }
+    
+    if (step === 6) {
+      if (!idProofUrl && !idProofFile) errors.idProof = 'ID proof is mandatory';
+      if (!agreements.terms) errors.terms = 'You must accept the terms and conditions';
+      if (!agreements.commission) errors.commission = 'You must accept the commission policy';
+      if (!agreements.payment) errors.payment = 'You must accept the payment terms';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearError = (field: string) => {
+    setFormErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+  };
+
   const saveStepData = async (nextStep?: number) => {
+    if (!validateStep(currentStep)) return;
     setLoading(true);
     try {
       // Handle file upload if idProofFile exists
@@ -131,7 +233,13 @@ const ResellerOnboarding: React.FC = () => {
       }
 
       const data: any = {
+        fullName,
+        email,
         storeName,
+        address,
+        city,
+        state,
+        country,
         profileType,
         profileDescription,
         profileImage: profileImageUrl,
@@ -190,11 +298,12 @@ const ResellerOnboarding: React.FC = () => {
     }
   };
 
-  const clearError = (field: string) => {
-    if (formErrors[field]) {
-      setFormErrors(prev => ({ ...prev, [field]: '' }));
-    }
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
   };
+
+
 
   const handlePlatformToggle = (platform: string) => {
     setPlatforms(prev => 
@@ -226,16 +335,18 @@ const ResellerOnboarding: React.FC = () => {
             </div>
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
-                <label>Full Name</label>
+                <label>Full Name *</label>
                 <input 
                   value={fullName} 
                   onChange={e => {
                     const val = e.target.value;
                     const formatted = val.replace(/\b\w/g, l => l.toUpperCase());
                     setFullName(formatted);
+                    clearError('fullName');
                   }} 
                   placeholder="Enter your full name" 
                 />
+                {formErrors.fullName && <span className={styles.errorText}>{formErrors.fullName}</span>}
               </div>
               <div className={styles.inputGroup}>
                 <label>Phone Number</label>
@@ -245,16 +356,38 @@ const ResellerOnboarding: React.FC = () => {
                 </div>
               </div>
               <div className={styles.inputGroup}>
-                <label>Email Address</label>
-                <input value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
+                <label>Email Address *</label>
+                <input 
+                  value={email} 
+                  onChange={e => {
+                    setEmail(e.target.value);
+                    clearError('email');
+                  }} 
+                  placeholder="email@example.com" 
+                />
+                {formErrors.email && <span className={styles.errorText}>{formErrors.email}</span>}
               </div>
               <div className={styles.inputGroup}>
-                <label>State</label>
+                <label>Proper Address *</label>
+                <textarea 
+                  value={address} 
+                  onChange={e => {
+                    setAddress(e.target.value);
+                    clearError('address');
+                  }} 
+                  placeholder="Street, Area, Building..." 
+                  rows={2}
+                />
+                {formErrors.address && <span className={styles.errorText}>{formErrors.address}</span>}
+              </div>
+              <div className={styles.inputGroup}>
+                <label>State *</label>
                 <select 
                   value={state} 
                   onChange={e => {
                     setState(e.target.value);
                     setCity(''); // Reset city when state changes
+                    clearError('state');
                   }} 
                   className={styles.input}
                 >
@@ -263,13 +396,17 @@ const ResellerOnboarding: React.FC = () => {
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
+                {formErrors.state && <span className={styles.errorText}>{formErrors.state}</span>}
               </div>
               <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
-                  <label>City</label>
+                  <label>City *</label>
                   <select 
                     value={city} 
-                    onChange={e => setCity(e.target.value)} 
+                    onChange={e => {
+                      setCity(e.target.value);
+                      clearError('city');
+                    }} 
                     className={styles.input}
                     disabled={!state}
                   >
@@ -278,6 +415,7 @@ const ResellerOnboarding: React.FC = () => {
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
+                  {formErrors.city && <span className={styles.errorText}>{formErrors.city}</span>}
                 </div>
                 <div className={styles.inputGroup}>
                   <label>Country</label>
@@ -316,24 +454,37 @@ const ResellerOnboarding: React.FC = () => {
                 {formErrors.storeName && <span className={styles.errorText}>{formErrors.storeName}</span>}
               </div>
               <div className={styles.inputGroup}>
-                <label>Profile Type</label>
+                <label>Profile Type *</label>
                 <div className={styles.radioGroup}>
                   {['Individual Reseller', 'Business Reseller'].map(type => (
                     <label key={type} className={`${styles.radioLabel} ${profileType === type ? styles.active : ''}`}>
-                      <input type="radio" name="profileType" checked={profileType === type} onChange={() => setProfileType(type as any)} />
+                      <input 
+                        type="radio" 
+                        name="profileType" 
+                        checked={profileType === type} 
+                        onChange={() => {
+                          setProfileType(type as any);
+                          clearError('profileType');
+                        }} 
+                      />
                       {type}
                     </label>
                   ))}
                 </div>
+                {formErrors.profileType && <span className={styles.errorText}>{formErrors.profileType}</span>}
               </div>
               <div className={styles.inputGroup}>
-                <label>Profile Description</label>
+                <label>Profile Description *</label>
                 <textarea 
                   value={profileDescription} 
-                  onChange={e => setProfileDescription(e.target.value)} 
+                  onChange={e => {
+                    setProfileDescription(e.target.value);
+                    clearError('profileDescription');
+                  }} 
                   placeholder="Tell us about your reseller business..." 
                   rows={4}
                 />
+                {formErrors.profileDescription && <span className={styles.errorText}>{formErrors.profileDescription}</span>}
               </div>
             </div>
             <div className={styles.actions}>
@@ -364,31 +515,52 @@ const ResellerOnboarding: React.FC = () => {
             
             <div className={styles.formGrid} style={{marginTop: '24px'}}>
               <div className={styles.inputGroup}>
-                <label>Primary Selling Method</label>
-                <select value={primarySellingMethod} onChange={e => setPrimarySellingMethod(e.target.value as any)}>
+                <label>Primary Selling Method *</label>
+                <select 
+                  value={primarySellingMethod} 
+                  onChange={e => {
+                    setPrimarySellingMethod(e.target.value as any);
+                    clearError('primarySellingMethod');
+                  }}
+                >
                   <option value="Direct to customers">Direct to customers</option>
                   <option value="To retailers/shopkeepers">To retailers/shopkeepers</option>
                   <option value="Both">Both</option>
                 </select>
+                {formErrors.primarySellingMethod && <span className={styles.errorText}>{formErrors.primarySellingMethod}</span>}
               </div>
               <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
-                  <label>Monthly Sales Volume</label>
-                  <select value={monthlyVolume} onChange={e => setMonthlyVolume(e.target.value as any)}>
+                  <label>Monthly Sales Volume *</label>
+                  <select 
+                    value={monthlyVolume} 
+                    onChange={e => {
+                      setMonthlyVolume(e.target.value as any);
+                      clearError('monthlyVolume');
+                    }}
+                  >
                     <option value="0–50 orders">0–50 orders</option>
                     <option value="50–200">50–200</option>
                     <option value="200–500">200–500</option>
                     <option value="500+">500+</option>
                   </select>
+                  {formErrors.monthlyVolume && <span className={styles.errorText}>{formErrors.monthlyVolume}</span>}
                 </div>
                 <div className={styles.inputGroup}>
-                  <label>Selling Reach</label>
-                  <select value={reach} onChange={e => setReach(e.target.value as any)}>
+                  <label>Selling Reach *</label>
+                  <select 
+                    value={reach} 
+                    onChange={e => {
+                      setReach(e.target.value as any);
+                      clearError('reach');
+                    }}
+                  >
                     <option value="Local">Local</option>
                     <option value="State">State</option>
                     <option value="Pan India">Pan India</option>
                     <option value="International">International</option>
                   </select>
+                  {formErrors.reach && <span className={styles.errorText}>{formErrors.reach}</span>}
                 </div>
               </div>
             </div>
@@ -412,19 +584,27 @@ const ResellerOnboarding: React.FC = () => {
             </div>
             <div className={styles.formGrid}>
                <div className={styles.inputGroup}>
-                <label>Experience Level</label>
+                <label>Experience Level *</label>
                 <div className={styles.tierOptions}>
                   {['Beginner', '1–2 years', '3+ years'].map(exp => (
-                    <div key={exp} className={`${styles.tierItem} ${experience === exp ? styles.active : ''}`} onClick={() => setExperience(exp as any)}>
+                    <div 
+                      key={exp} 
+                      className={`${styles.tierItem} ${experience === exp ? styles.active : ''}`} 
+                      onClick={() => {
+                        setExperience(exp as any);
+                        clearError('experience');
+                      }}
+                    >
                       {exp}
                     </div>
                   ))}
                 </div>
+                {formErrors.experience && <span className={styles.errorText}>{formErrors.experience}</span>}
               </div>
               <div className={styles.checkboxGroup}>
                 <label className={styles.checkboxLabel}>
                   <input type="checkbox" checked={soldBefore} onChange={e => setSoldBefore(e.target.checked)} />
-                  <span>Have you sold products before?</span>
+                  <span>Have you sold products before? (Optional)</span>
                 </label>
               </div>
             </div>
@@ -447,31 +627,81 @@ const ResellerOnboarding: React.FC = () => {
             </div>
             <div className={styles.formGrid}>
               <div className={styles.inputGroup}>
-                <label>Account Holder Name</label>
-                <input value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="Full name as per bank record" />
+                <label>Account Holder Name *</label>
+                <input 
+                  value={accountName} 
+                  onChange={e => {
+                    setAccountName(e.target.value);
+                    clearError('accountName');
+                  }} 
+                  placeholder="Full name as per bank record" 
+                />
+                {formErrors.accountName && <span className={styles.errorText}>{formErrors.accountName}</span>}
               </div>
               <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
-                  <label>Account Number</label>
-                  <input value={accountNumber} onChange={e => setAccountNumber(e.target.value)} placeholder="0000 0000 0000" />
+                  <label>Account Number *</label>
+                  <input 
+                    value={accountNumber} 
+                    onChange={e => {
+                      setAccountNumber(e.target.value);
+                      clearError('accountNumber');
+                    }} 
+                    placeholder="0000 0000 0000" 
+                  />
+                  {formErrors.accountNumber && <span className={styles.errorText}>{formErrors.accountNumber}</span>}
                 </div>
                 <div className={styles.inputGroup}>
-                  <label>IFSC Code</label>
-                  <input value={ifscCode} onChange={e => setIfscCode(e.target.value)} placeholder="ABCD0123456" />
+                  <label>IFSC Code *</label>
+                  <input 
+                    value={ifscCode} 
+                    onChange={e => {
+                      setIfscCode(e.target.value.toUpperCase());
+                      clearError('ifscCode');
+                    }} 
+                    placeholder="ABCD0123456" 
+                  />
+                  {formErrors.ifscCode && <span className={styles.errorText}>{formErrors.ifscCode}</span>}
                 </div>
               </div>
               <div className={styles.inputGroup}>
-                <label>Bank Name</label>
-                <input value={bankName} onChange={e => setBankName(e.target.value)} placeholder="e.g. HDFC Bank" />
+                <label>Bank Name *</label>
+                <input 
+                  value={bankName} 
+                  onChange={e => {
+                    setBankName(e.target.value);
+                    clearError('bankName');
+                  }} 
+                  placeholder="e.g. HDFC Bank" 
+                />
+                {formErrors.bankName && <span className={styles.errorText}>{formErrors.bankName}</span>}
               </div>
               <div className={styles.formRow}>
                 <div className={styles.inputGroup}>
                   <label>PAN Number (Optional)</label>
-                  <input value={panNumber} onChange={e => setPanNumber(e.target.value.toUpperCase())} placeholder="ABCDE1234F" maxLength={10} />
+                  <input 
+                    value={panNumber} 
+                    onChange={e => {
+                      setPanNumber(e.target.value.toUpperCase());
+                      clearError('panNumber');
+                    }} 
+                    placeholder="ABCDE1234F" 
+                    maxLength={10} 
+                  />
+                  {formErrors.panNumber && <span className={styles.errorText}>{formErrors.panNumber}</span>}
                 </div>
                 <div className={styles.inputGroup}>
                   <label>GST Number (Optional)</label>
-                  <input value={gstNumber} onChange={e => setGstNumber(e.target.value.toUpperCase())} placeholder="22AAAAA0000A1Z5" maxLength={15} />
+                  <input 
+                    value={gstNumber} 
+                    onChange={e => {
+                      setGstNumber(e.target.value.toUpperCase());
+                      clearError('gstNumber');
+                    }} 
+                    placeholder="22AAAAA0000A1Z5" 
+                    maxLength={15} 
+                  />
+                  {formErrors.gstNumber && <span className={styles.errorText}>{formErrors.gstNumber}</span>}
                 </div>
               </div>
             </div>
@@ -494,7 +724,7 @@ const ResellerOnboarding: React.FC = () => {
             </div>
             <div className={styles.verificationBox}>
               <div 
-                className={styles.uploadSection} 
+                className={`${styles.uploadSection} ${formErrors.idProof ? styles.errorBorder : ''}`} 
                 onClick={() => fileInputRef.current?.click()}
                 style={{ cursor: 'pointer' }}
               >
@@ -504,7 +734,10 @@ const ResellerOnboarding: React.FC = () => {
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) setIdProofFile(file);
+                    if (file) {
+                      setIdProofFile(file);
+                      clearError('idProof');
+                    }
                   }}
                   style={{ display: 'none' }}
                 />
@@ -515,24 +748,56 @@ const ResellerOnboarding: React.FC = () => {
                       ? `✓ ${idProofFile.name}` 
                       : idProofUrl 
                         ? '✓ ID Proof uploaded' 
-                        : 'Upload ID Proof (Aadhar/Voter ID)'}
+                        : 'Upload ID Proof (Mandatory *)'}
                   </p>
-                  {!idProofFile && !idProofUrl && <span style={{ fontSize: '12px', color: '#ef4444' }}>*Required</span>}
+                  {formErrors.idProof && <span className={styles.errorText}>{formErrors.idProof}</span>}
                 </div>
               </div>
               <div className={styles.agreements}>
-                <label className={styles.agreeRow}>
-                  <input type="checkbox" checked={agreements.terms} onChange={e => setAgreements({...agreements, terms: e.target.checked})} />
-                  <span>I accept the Terms of Service</span>
-                </label>
-                <label className={styles.agreeRow}>
-                  <input type="checkbox" checked={agreements.commission} onChange={e => setAgreements({...agreements, commission: e.target.checked})} />
-                  <span>I accept the Commission Policy</span>
-                </label>
-                <label className={styles.agreeRow}>
-                  <input type="checkbox" checked={agreements.payment} onChange={e => setAgreements({...agreements, payment: e.target.checked})} />
-                  <span>I accept the Payment Terms (RTGS/NEFT)</span>
-                </label>
+                <div className={styles.inputGroup}>
+                  <label className={styles.agreeRow}>
+                    <input 
+                      type="checkbox" 
+                      checked={agreements.terms} 
+                      onChange={e => {
+                        setAgreements({...agreements, terms: e.target.checked});
+                        if (e.target.checked) clearError('terms');
+                      }} 
+                    />
+                    <span>I accept the Terms of Service *</span>
+                  </label>
+                  {formErrors.terms && <span className={styles.errorText}>{formErrors.terms}</span>}
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label className={styles.agreeRow}>
+                    <input 
+                      type="checkbox" 
+                      checked={agreements.commission} 
+                      onChange={e => {
+                        setAgreements({...agreements, commission: e.target.checked});
+                        if (e.target.checked) clearError('commission');
+                      }} 
+                    />
+                    <span>I accept the Commission Policy *</span>
+                  </label>
+                  {formErrors.commission && <span className={styles.errorText}>{formErrors.commission}</span>}
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label className={styles.agreeRow}>
+                    <input 
+                      type="checkbox" 
+                      checked={agreements.payment} 
+                      onChange={e => {
+                        setAgreements({...agreements, payment: e.target.checked});
+                        if (e.target.checked) clearError('payment');
+                      }} 
+                    />
+                    <span>I accept the Payment Terms (RTGS/NEFT) *</span>
+                  </label>
+                  {formErrors.payment && <span className={styles.errorText}>{formErrors.payment}</span>}
+                </div>
               </div>
             </div>
             <div className={styles.actions}>
@@ -594,17 +859,19 @@ const ResellerOnboarding: React.FC = () => {
     }
   };
 
-  if (isSubmitted) {
+  if (isSubmitted || profile?.status === 'PENDING') {
     return (
       <div className={styles.centeredForm}>
         <div className={styles.successCard}>
           <div className={styles.successIconWrapper}>
             <CheckCircle size={48} />
           </div>
-          <h2>Thank you for joining us!</h2>
+          <h2>Application Under Review</h2>
           <p>
-            Your reseller application has been successfully submitted. 
-            Our team will review your details and contact you soon to finalize your account.
+            Thank you! Your reseller application for <strong>{storeName}</strong> has been submitted and is currently under review by our admin team.
+          </p>
+          <p style={{ marginTop: '12px', fontSize: '14px', color: '#64748b' }}>
+            We usually process applications within 24-48 business hours. You'll be notified once your account is activated.
           </p>
 
           <div className={styles.growthCard}>
@@ -612,17 +879,74 @@ const ResellerOnboarding: React.FC = () => {
               <Handshake size={24} />
             </div>
             <div className={styles.growthText}>
-              <p><strong>Woman Entrepreneur?</strong></p>
-              <p>We would love to connect and discuss growth with you!</p>
+              <p><strong>Need Help?</strong></p>
+              <p>Contact our support team at +91 xxxxxxxxxx for priority onboarding.</p>
             </div>
           </div>
 
-          <Button 
-            onClick={() => navigate('/')} 
-            className={styles.homeBtn}
-          >
-            Go to Homepage
-          </Button>
+          <div className={styles.buttonGroup}>
+            <Button 
+              onClick={() => navigate('/')} 
+              className={styles.homeBtn}
+            >
+              Go to Homepage
+            </Button>
+            <Button 
+              variant="secondary"
+              onClick={handleLogout}
+              className={styles.homeBtn}
+            >
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (profile?.status === 'REJECTED') {
+    return (
+      <div className={styles.centeredForm}>
+        <div className={`${styles.successCard} ${styles.rejectedCard}`}>
+          <div className={styles.errorIconWrapper}>
+            <XCircle size={48} />
+          </div>
+          <h2 style={{ color: '#ef4444' }}>Application Rejected</h2>
+          <div className={styles.rejectionReasonBox}>
+            <p className={styles.rejectionLabel}>Reason for rejection:</p>
+            <p className={styles.rejectionText}>{profile.rejectionReason || 'Details provided in the onboarding form were insufficient or incorrect.'}</p>
+          </div>
+          
+          <p style={{ marginTop: '20px', fontSize: '14px', color: '#64748b' }}>
+            Don't worry! You can update your details and re-submit your application for review.
+          </p>
+
+          <div className={styles.contactCenter}>
+            <a href="tel:+91xxxxxxxxxx" className={styles.contactSupportBtn}>
+              Contact Support: +91 xxxxxxxxxx
+            </a>
+          </div>
+
+          <div className={styles.buttonGroup}>
+            <Button 
+              onClick={() => {
+                setProfile(null);
+                setIsSubmitted(false);
+                setCurrentStep(1);
+              }} 
+              className={styles.homeBtn}
+              style={{ background: '#e65100', margin: 0 }}
+            >
+              Update & Re-apply
+            </Button>
+            <Button 
+              variant="secondary"
+              onClick={handleLogout}
+              className={styles.homeBtn}
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
       </div>
     );

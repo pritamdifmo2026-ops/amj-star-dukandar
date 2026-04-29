@@ -45,6 +45,20 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
           <p>{stats.activeUsers}</p>
         </div>
       </div>
+      <div className={styles.statCard}>
+        <Users color="#0284c7" />
+        <div>
+          <h3>Total Resellers</h3>
+          <p>{stats.totalResellers}</p>
+        </div>
+      </div>
+      <div className={styles.statCard}>
+        <Clock color="#e11d48" />
+        <div>
+          <h3>Pending Resellers</h3>
+          <p>{stats.pendingResellers}</p>
+        </div>
+      </div>
     </div>
   );
 };

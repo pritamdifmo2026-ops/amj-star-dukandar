@@ -3,7 +3,9 @@ import api from '@/api/client';
 export interface AdminStats {
   totalUsers: number;
   totalSuppliers: number;
+  totalResellers: number;
   pendingVerifications: number;
+  pendingResellers: number;
   pendingProducts: number;
   activeUsers: number;
 }
@@ -52,6 +54,21 @@ const adminService = {
   verifyProduct: async (id: string, status: 'APPROVED' | 'REJECTED') => {
     const response = await api.patch(`/admin/products/${id}/verify`, { status });
     return response.data.product;
+  },
+  
+  getPendingResellers: async () => {
+    const response = await api.get('/admin/resellers/pending');
+    return response.data.resellers;
+  },
+
+  getAllResellers: async () => {
+    const response = await api.get('/admin/resellers/all');
+    return response.data.resellers;
+  },
+
+  verifyReseller: async (id: string, status: 'APPROVED' | 'REJECTED', reason?: string) => {
+    const response = await api.patch(`/admin/resellers/${id}/verify`, { status, reason });
+    return response.data.reseller;
   },
   
   getSupplierProducts: async (id: string) => {

@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   Menu,
   LogOut,
+  X,
   type LucideIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -68,6 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}
+      data-open={isSidebarOpen}
       style={{ '--brand-color': brandColor } as React.CSSProperties}
     >
       <div className={styles.sidebarHeader}>
@@ -81,6 +83,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
         <button className={styles.toggleBtn} onClick={onToggle}>
           {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
+        </button>
+        <button className={styles.mobileCloseBtn} onClick={onToggle}>
+          <X size={20} />
         </button>
       </div>
 

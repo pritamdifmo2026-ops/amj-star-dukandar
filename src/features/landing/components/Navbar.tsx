@@ -36,12 +36,14 @@ const Navbar: React.FC = () => {
   const cartCount = useAppSelector((s) => s.cart.items.length);
   const isAuth = useAppSelector((s) => s.auth.isAuthenticated);
   const user = useAppSelector((s) => s.auth.user);
-  const { profile } = useAppSelector((s) => s.supplier);
   const isSupplier = user?.role === 'supplier';
+  const isReseller = user?.role === 'reseller';
   const isAdmin = user?.role === 'admin';
+  const { profile: supplierProfile } = useAppSelector((s) => s.supplier);
+  const { profile: resellerProfile } = useAppSelector((s) => s.reseller);
 
   React.useEffect(() => {
-    if (isSupplier && !profile) {
+    if (isSupplier && !supplierProfile) {
       const fetchProfile = async () => {
         try {
           const { default: supplierService } = await import('@/features/supplier/services/supplier.service');
@@ -56,7 +58,25 @@ const Navbar: React.FC = () => {
       };
       fetchProfile();
     }
-  }, [isSupplier, profile, dispatch]);
+  }, [isSupplier, supplierProfile, dispatch]);
+
+  React.useEffect(() => {
+    if (isReseller && !resellerProfile) {
+      const fetchProfile = async () => {
+        try {
+          const { default: resellerService } = await import('@/features/reseller/services/reseller.service');
+          const data = await resellerService.getProfile();
+          const { setResellerProfile } = await import('@/store/slices/reseller.slice');
+          if (data) {
+            dispatch(setResellerProfile(data));
+          }
+        } catch (err) {
+          console.error('Failed to fetch reseller profile in Navbar');
+        }
+      };
+      fetchProfile();
+    }
+  }, [isReseller, resellerProfile, dispatch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,9 +87,13 @@ const Navbar: React.FC = () => {
 
   const handleSignOut = () => {
     dispatch(logout());
-    navigate(ROUTES.HOME);
-    setShowLogoutModal(false);
-    setUserMenuOpen(false);
+    if (isAdmin) {
+      window.location.href = '/';
+    } else {
+      navigate(ROUTES.HOME);
+      setShowLogoutModal(false);
+      setUserMenuOpen(false);
+    }
   };
 
   return (
@@ -81,7 +105,7 @@ const Navbar: React.FC = () => {
             <Phone size={12} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
           </span>
           <div className={styles.topLinks}>
-            {!(isSupplier || isAdmin) && (
+            {!(isSupplier || isReseller || isAdmin) && (
               <>
                 <Link to="/login?mode=seller" className={styles.topLink}>Sell on AMJStar</Link>
                 <span className={styles.sep}>|</span>
@@ -127,12 +151,19 @@ const Navbar: React.FC = () => {
                 ref={userMenuRef}
               >
                 <span className={styles.userName}>
-                  {isSupplier ? (profile?.businessName || 'Supplier') : (user?.name || 'User')}
+                  {isSupplier 
+                    ? (supplierProfile?.businessName || 'Supplier') 
+                    : isReseller 
+                      ? (resellerProfile?.fullName || resellerProfile?.storeName || user?.name || 'Reseller') 
+                      : (user?.name || 'User')
+                  }
                 </span>
                 {userMenuOpen && (
                   <div className={styles.dropdown}>
                     {isSupplier ? (
                       <Link to="/supplier/onboarding" className={styles.dropdownItem}>Dashboard</Link>
+                    ) : isReseller ? (
+                      <Link to="/reseller/dashboard" className={styles.dropdownItem}>Dashboard</Link>
                     ) : isAdmin ? (
                       <Link to="/admin/dashboard" className={styles.dropdownItem}>Control Panel</Link>
                     ) : (
@@ -148,7 +179,7 @@ const Navbar: React.FC = () => {
                   <UserPlus size={20} />
                   <span>Sign In</span>
                 </Link>
-                <Link to={`${ROUTES.LOGIN}?mode=register`} className={styles.registerBtn}>Join Free</Link>
+                <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.registerBtn}>Join Free</Link>
               </>
             )}
             <div 
@@ -200,6 +231,8 @@ const Navbar: React.FC = () => {
             <>
               {isSupplier ? (
                 <Link to="/supplier/onboarding" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Dashboard</Link>
+              ) : isReseller ? (
+                <Link to="/reseller/dashboard" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Dashboard</Link>
               ) : isAdmin ? (
                 <Link to="/admin/dashboard" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Control Panel</Link>
               ) : (
@@ -210,7 +243,7 @@ const Navbar: React.FC = () => {
           ) : (
             <>
               <Link to={ROUTES.LOGIN} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Sign In</Link>
-              <Link to={`${ROUTES.LOGIN}?mode=register`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Register</Link>
+              <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Register</Link>
             </>
           )}
           <hr className={styles.mobileDivider} />

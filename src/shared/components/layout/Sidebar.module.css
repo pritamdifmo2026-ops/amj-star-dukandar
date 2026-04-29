@@ -56,6 +56,10 @@
   color: white;
 }
 
+.mobileCloseBtn {
+  display: none;
+}
+
 /* Collapsed State */
 .sidebarCollapsed {
   width: 80px;
@@ -155,17 +159,23 @@
 @media (max-width: 768px) {
   .sidebar {
     left: -260px;
-  }
-  
-  .sidebarCollapsed {
-    left: 0;
-    width: 260px;
+    width: 260px !important;
   }
 
-  .sidebarCollapsed .sidebarBrand,
-  .sidebarCollapsed .sidebarNav button span,
-  .sidebarCollapsed .logoutBtn span,
-  .sidebarCollapsed .navDivider {
+  .sidebar[data-open="true"] {
+    left: 0;
+  }
+
+  .toggleBtn {
+    display: none;
+  }
+
+  .mobileCloseBtn {
     display: flex;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 8px;
+    cursor: pointer;
   }
 }

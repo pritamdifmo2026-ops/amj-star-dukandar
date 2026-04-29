@@ -14,7 +14,8 @@ import {
   LogOut,
   Trash2,
   FileText,
-  MessageCircle
+  MessageCircle,
+  Handshake
 } from 'lucide-react';
 
 // Modular Components
@@ -22,6 +23,7 @@ import SupplierStats from '../components/SupplierStats';
 import ProductTable from '../components/ProductTable';
 import PlaceholderView from '../components/PlaceholderView';
 import AddProductForm from '../components/AddProductForm';
+import SupplierPartnerships from '../components/SupplierPartnerships';
 
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
@@ -48,6 +50,7 @@ const SupplierDashboard: React.FC = () => {
   const supplierMenu: MenuItem[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'inventory', label: 'My Inventory', icon: Package },
+    { id: 'partnerships', label: 'Reseller Partnerships', icon: Handshake },
   ];
 
   const supplierFooterMenu: MenuItem[] = [
@@ -203,6 +206,8 @@ const SupplierDashboard: React.FC = () => {
             description="Manage your shipments and track delivery status for all your bulk orders."
           />
         )}
+
+        {activeView === 'partnerships' && <SupplierPartnerships />}
       </main>
 
       {(activeView === 'add-product' || activeView === 'edit-product') && (

@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import ScrollToTop from '@/shared/components/navigation/ScrollToTop';
-import { Toaster } from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials, logout } from '@/store/slices/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 
 const RootLayout: React.FC = () => {
@@ -17,8 +16,11 @@ const RootLayout: React.FC = () => {
         try {
           const response = await authService.getMe();
           dispatch(setCredentials({ user: response.user }));
-        } catch (err) {
+        } catch (err: any) {
           console.error('Failed to sync profile', err);
+          if (err.response?.status === 401) {
+            dispatch(logout());
+          }
         }
       }
     };
@@ -28,7 +30,6 @@ const RootLayout: React.FC = () => {
   return (
     <>
       <ScrollToTop />
-      <Toaster />
       <Outlet />
     </>
   );

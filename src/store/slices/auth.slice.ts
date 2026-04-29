@@ -8,6 +8,7 @@ interface AuthUser {
   role: UserRole;
   phone?: string;
   isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
 }
 
 interface AuthState {

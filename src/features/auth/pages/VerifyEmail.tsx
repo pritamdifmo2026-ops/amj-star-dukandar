@@ -59,8 +59,8 @@ const VerifyEmail: React.FC = () => {
           <>
             <ShieldCheck size={64} color="#10b981" style={{ margin: '0 auto 16px' }} />
             <h2 style={{ color: 'var(--text-h)', marginBottom: '8px' }}>Email Verified!</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>Your email address has been successfully verified.</p>
-            <Button onClick={() => navigate('/profile')} style={{ width: '100%' }}>Return to Profile</Button>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '8px' }}>Your email address has been successfully verified.</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>You can now close this window and return to your dashboard.</p>
           </>
         )}
 

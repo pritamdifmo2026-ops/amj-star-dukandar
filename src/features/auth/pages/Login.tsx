@@ -42,6 +42,7 @@ const Login: React.FC = () => {
       </div>
       <h1 className={styles.title}>
         {mode === 'seller' ? 'Join AMJStar as Partner' : 
+         mode === 'buyer' ? 'Join AMJStar as Buyer' :
          mode === 'register' ? 'Register on AMJ' : 'Login to AMJ'}
       </h1>
       <p className={styles.subtitle}>Enter your phone number to receive an OTP</p>

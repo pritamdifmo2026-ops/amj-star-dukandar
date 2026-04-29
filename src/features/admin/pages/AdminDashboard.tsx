@@ -3,7 +3,7 @@ import adminService from '../services/admin.service';
 import type { AdminStats } from '../services/admin.service';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
@@ -15,6 +15,7 @@ import SupplierVerification from '../components/SupplierVerification';
 import UserManagement from '../components/UserManagement';
 import ProductQueue from '../components/ProductQueue';
 import CategoryManagement from '../components/CategoryManagement';
+import ResellerVerification from '../components/ResellerVerification';
 
 import styles from './AdminDashboard.module.css';
 import {
@@ -22,8 +23,7 @@ import {
   ShieldCheck,
   BarChart3,
   Package,
-  Tags,
-  Search
+  Tags
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -35,17 +35,18 @@ const AdminDashboard: React.FC = () => {
   };
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
+  const [allResellers, setAllResellers] = useState<any[]>([]);
   const [pendingProducts, setPendingProducts] = useState<any[]>([]);
   const [approvedProducts, setApprovedProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [supplierSearch, setSupplierSearch] = useState('');
 
   const adminMenu: MenuItem[] = [
     { id: 'stats', label: 'Overview', icon: BarChart3 },
     { id: 'suppliers', label: 'Manage Suppliers', icon: Users },
+    { id: 'resellers', label: 'Manage Resellers', icon: Users },
     { id: 'users', label: 'User Management', icon: Users },
     { id: 'products', label: 'Product Queue', icon: Package },
     { id: 'categories', label: 'Categories', icon: Tags },
@@ -60,13 +61,20 @@ const AdminDashboard: React.FC = () => {
   });
 
   // Custom Action Modals
-  const [confirmVerify, setConfirmVerify] = useState<{ isOpen: boolean; supplierId: string }>({ isOpen: false, supplierId: '' });
-  const [rejectPrompt, setRejectPrompt] = useState<{ isOpen: boolean; supplierId: string }>({ isOpen: false, supplierId: '' });
+  const [confirmVerify, setConfirmVerify] = useState<{ isOpen: boolean; id: string; type: 'supplier' | 'reseller' }>({ isOpen: false, id: '', type: 'supplier' });
+  const [rejectPrompt, setRejectPrompt] = useState<{ isOpen: boolean; id: string; type: 'supplier' | 'reseller' }>({ isOpen: false, id: '', type: 'supplier' });
   const [rejectionReasonInput, setRejectionReasonInput] = useState('');
 
 
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (activeTab === 'reseller-detail') {
+      setSearchParams({ tab: 'resellers' });
+    } else if (activeTab === 'supplier-detail' || activeTab === 'supplier-products') {
+      setSearchParams({ tab: 'suppliers' });
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -78,9 +86,12 @@ const AdminDashboard: React.FC = () => {
       if (activeTab === 'stats') {
         const data = await adminService.getStats();
         setStats(data);
-      } else if (activeTab === 'suppliers') {
+      } else if (activeTab === 'suppliers' || activeTab === 'supplier-detail' || activeTab === 'supplier-products') {
         const data = await adminService.getAllSuppliers();
         setAllSuppliers(data);
+      } else if (activeTab === 'resellers' || activeTab === 'reseller-detail') {
+        const data = await adminService.getAllResellers();
+        setAllResellers(data);
       } else if (activeTab === 'users') {
         const data = await adminService.getAllUsers();
         setAllUsers(data);
@@ -105,34 +116,55 @@ const AdminDashboard: React.FC = () => {
 
   const handleVerifySupplier = async (id: string, status: 'VERIFIED' | 'REJECTED') => {
     if (status === 'VERIFIED') {
-      setConfirmVerify({ isOpen: true, supplierId: id });
+      setConfirmVerify({ isOpen: true, id, type: 'supplier' });
     } else {
-      setRejectPrompt({ isOpen: true, supplierId: id });
+      setRejectPrompt({ isOpen: true, id, type: 'supplier' });
       setRejectionReasonInput('');
     }
   };
 
-  const executeVerify = async (id: string) => {
+  const handleVerifyReseller = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+    if (status === 'APPROVED') {
+      setConfirmVerify({ isOpen: true, id, type: 'reseller' });
+    } else {
+      setRejectPrompt({ isOpen: true, id, type: 'reseller' });
+      setRejectionReasonInput('');
+    }
+  };
+
+  const executeVerify = async () => {
+    const { id, type } = confirmVerify;
     try {
-      await adminService.verifySupplier(id, 'VERIFIED');
-      setAllSuppliers(prev => prev.map(s => s._id === id ? { ...s, kycStatus: 'VERIFIED', verifiedByAdmin: true } : s));
-      setConfirmVerify({ isOpen: false, supplierId: '' });
-      setMessageModal({ isOpen: true, title: 'Success', message: 'Supplier verified successfully', type: 'success' });
+      if (type === 'supplier') {
+        await adminService.verifySupplier(id, 'VERIFIED');
+        setAllSuppliers(prev => prev.map(s => s._id === id ? { ...s, kycStatus: 'VERIFIED', verifiedByAdmin: true } : s));
+      } else {
+        await adminService.verifyReseller(id, 'APPROVED');
+        setAllResellers(prev => prev.map(r => r._id === id ? { ...r, status: 'APPROVED' } : r));
+      }
+      setConfirmVerify({ isOpen: false, id: '', type: 'supplier' });
+      setMessageModal({ isOpen: true, title: 'Success', message: `${type === 'supplier' ? 'Supplier' : 'Reseller'} verified successfully`, type: 'success' });
     } catch (err) {
       setMessageModal({ isOpen: true, title: 'Error', message: 'Action failed', type: 'error' });
     }
   };
 
-  const executeReject = async (id: string) => {
+  const executeReject = async () => {
+    const { id, type } = rejectPrompt;
     if (!rejectionReasonInput.trim()) {
       alert('Please provide a reason');
       return;
     }
     try {
-      await adminService.verifySupplier(id, 'REJECTED', rejectionReasonInput);
-      setAllSuppliers(prev => prev.map(s => s._id === id ? { ...s, kycStatus: 'REJECTED', verifiedByAdmin: false, rejectionReason: rejectionReasonInput } : s));
-      setRejectPrompt({ isOpen: false, supplierId: '' });
-      setMessageModal({ isOpen: true, title: 'Success', message: 'Supplier rejected successfully', type: 'success' });
+      if (type === 'supplier') {
+        await adminService.verifySupplier(id, 'REJECTED', rejectionReasonInput);
+        setAllSuppliers(prev => prev.map(s => s._id === id ? { ...s, kycStatus: 'REJECTED', verifiedByAdmin: false, rejectionReason: rejectionReasonInput } : s));
+      } else {
+        await adminService.verifyReseller(id, 'REJECTED', rejectionReasonInput);
+        setAllResellers(prev => prev.map(r => r._id === id ? { ...r, status: 'REJECTED', rejectionReason: rejectionReasonInput } : r));
+      }
+      setRejectPrompt({ isOpen: false, id: '', type: 'supplier' });
+      setMessageModal({ isOpen: true, title: 'Success', message: `${type === 'supplier' ? 'Supplier' : 'Reseller'} rejected successfully`, type: 'success' });
     } catch (err) {
       setMessageModal({ isOpen: true, title: 'Error', message: 'Action failed', type: 'error' });
     }
@@ -173,8 +205,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleSignOut = () => {
     dispatch(logout());
-    navigate('/admin/login');
-    setShowLogoutModal(false);
+    window.location.href = '/';
   };
 
   return (
@@ -198,22 +229,13 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'suppliers' && 'Supplier Verifications'}
             {activeTab === 'supplier-detail' && 'Supplier Profile'}
             {activeTab === 'supplier-products' && 'Supplier Products'}
+            {activeTab === 'resellers' && 'Reseller Verifications'}
+            {activeTab === 'reseller-detail' && 'Reseller Profile'}
             {activeTab === 'users' && 'User Management'}
             {activeTab === 'products' && 'Product Queue'}
             {activeTab === 'categories' && 'Category Management'}
           </h2>
 
-          {activeTab === 'suppliers' && (
-            <div className={styles.searchBar}>
-              <Search size={18} />
-              <input
-                type="text"
-                placeholder="Search suppliers..."
-                value={supplierSearch}
-                onChange={(e) => setSupplierSearch(e.target.value)}
-              />
-            </div>
-          )}
         </header>
 
         {loading ? (
@@ -225,6 +247,12 @@ const AdminDashboard: React.FC = () => {
               <SupplierVerification
                 suppliers={allSuppliers}
                 onVerify={handleVerifySupplier}
+              />
+            )}
+            {(activeTab === 'resellers' || activeTab === 'reseller-detail') && (
+              <ResellerVerification
+                resellers={allResellers}
+                onVerify={handleVerifyReseller}
               />
             )}
             {activeTab === 'users' && (
@@ -253,30 +281,35 @@ const AdminDashboard: React.FC = () => {
       {/* Verification Confirmation Modal */}
       <Modal
         isOpen={confirmVerify.isOpen}
-        onClose={() => setConfirmVerify({ isOpen: false, supplierId: '' })}
-        title="Verify Supplier"
+        onClose={() => setConfirmVerify({ isOpen: false, id: '', type: 'supplier' })}
+        title={`Verify ${confirmVerify.type === 'supplier' ? 'Supplier' : 'Reseller'}`}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setConfirmVerify({ isOpen: false, supplierId: '' })}>Cancel</Button>
-            <Button onClick={() => executeVerify(confirmVerify.supplierId)}>Confirm</Button>
+            <Button variant="secondary" onClick={() => setConfirmVerify({ isOpen: false, id: '', type: 'supplier' })}>Cancel</Button>
+            <Button onClick={executeVerify}>Confirm</Button>
           </>
         }
       >
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
           <ShieldCheck size={48} color="#e65c00" style={{ marginBottom: '16px', margin: '0 auto' }} />
-          <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Are you sure you want to verify this supplier and onboard them?</p>
+          <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Are you sure you want to verify this {confirmVerify.type} and onboard them?</p>
+          {confirmVerify.type === 'reseller' && (
+            <p style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '8px' }}>
+              They will be notified and can start using their reseller dashboard.
+            </p>
+          )}
         </div>
       </Modal>
 
       {/* Rejection Reason Modal */}
       <Modal
         isOpen={rejectPrompt.isOpen}
-        onClose={() => setRejectPrompt({ isOpen: false, supplierId: '' })}
+        onClose={() => setRejectPrompt({ isOpen: false, id: '', type: 'supplier' })}
         title="Reject Application"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setRejectPrompt({ isOpen: false, supplierId: '' })}>Cancel</Button>
-            <Button variant="danger" onClick={() => executeReject(rejectPrompt.supplierId)}>Confirm Rejection</Button>
+            <Button variant="secondary" onClick={() => setRejectPrompt({ isOpen: false, id: '', type: 'supplier' })}>Cancel</Button>
+            <Button variant="danger" onClick={executeReject}>Confirm Rejection</Button>
           </>
         }
       >

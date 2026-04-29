@@ -43,8 +43,16 @@ const VerifyOtp: React.FC = () => {
       
       // Redirect based on role or if role is missing
       if (!user.role) {
-        navigate(mode ? `/select-role?mode=${mode}` : '/select-role');
-        if (mode) localStorage.removeItem('auth_mode');
+        if (mode === 'buyer') {
+          // Auto-assign buyer role
+          const roleResponse = await authService.selectRole({ role: 'buyer' });
+          dispatch(setCredentials({ user: roleResponse.user }));
+          localStorage.removeItem('auth_mode');
+          navigate('/profile');
+        } else {
+          navigate(mode ? `/select-role?mode=${mode}` : '/select-role');
+          if (mode) localStorage.removeItem('auth_mode');
+        }
       } else if (user.role === 'supplier') {
         navigate('/supplier/onboarding');
       } else if (user.role === 'reseller') {

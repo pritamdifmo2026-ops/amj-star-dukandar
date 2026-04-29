@@ -18,10 +18,10 @@ const Hero: React.FC = () => {
             Get the best prices for your business in bulk.
           </p>
           <div className={styles.actions}>
-            <Link to={ROUTES.REGISTER} className={styles.primaryBtn}>
+            <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.primaryBtn}>
               Join as Buyer
             </Link>
-            <Link to={ROUTES.REGISTER} className={styles.secondaryBtn}>
+            <Link to={`${ROUTES.LOGIN}?mode=seller`} className={styles.secondaryBtn}>
               Start Selling
             </Link>
           </div>

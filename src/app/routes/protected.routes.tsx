@@ -7,7 +7,9 @@ import Onboarding from '@/features/supplier/pages/Onboarding';
 import SupplierGuard from '@/features/supplier/components/SupplierGuard';
 import AdminDashboard from '@/features/admin/pages/AdminDashboard';
 import SupplierDashboard from '@/features/supplier/pages/SupplierDashboard';
+import ResellerDashboard from '@/features/reseller/pages/ResellerDashboard';
 import ResellerOnboarding from '@/features/reseller/pages/ResellerOnboarding';
+import ResellerGuard from '@/features/reseller/components/ResellerGuard';
 
 export const protectedRoutes: RouteObject[] = [
   {
@@ -21,16 +23,17 @@ export const protectedRoutes: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-
-      {
-        path: ROUTES.RESELLER_DASHBOARD,
-        element: (
-          <ProtectedRoute allowedRoles={['reseller']}>
-            <SupplierDashboard />
-          </ProtectedRoute>
-        ),
-      },
     ],
+  },
+  {
+    path: ROUTES.RESELLER_DASHBOARD,
+    element: (
+      <ProtectedRoute allowedRoles={['reseller']}>
+        <ResellerGuard>
+          <ResellerDashboard />
+        </ResellerGuard>
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/supplier/onboarding',

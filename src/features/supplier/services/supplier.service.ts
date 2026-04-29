@@ -34,6 +34,21 @@ const supplierService = {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
+  },
+
+  getPartnershipRequests: async () => {
+    const response = await apiClient.get('/partnership/incoming-requests');
+    return response.data;
+  },
+
+  respondToRequest: async (partnershipId: string, action: 'APPROVED' | 'REJECTED', rejectionReason?: string) => {
+    const response = await apiClient.post(`/partnership/respond/${partnershipId}`, { action, rejectionReason });
+    return response.data;
+  },
+
+  getPartners: async () => {
+    const response = await apiClient.get('/partnership/partners');
+    return response.data;
   }
 };
 
