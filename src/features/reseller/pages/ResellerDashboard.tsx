@@ -20,9 +20,9 @@ import {
   Store,
   UserPlus,
   BarChart3,
-  ListChecks,
   Settings as SettingsIcon,
-  Handshake
+  Handshake,
+  Zap
 } from 'lucide-react';
 
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
@@ -36,6 +36,7 @@ import ResellerSupplierPartners from '../components/ResellerSupplierPartners';
 import ResellerSettings from '../components/ResellerSettings';
 import ResellerStorefront from '../components/ResellerStorefront';
 import ResellerPerformance from '../components/ResellerPerformance';
+import ResellerActionCenter from '../components/ResellerActionCenter';
 import styles from './ResellerDashboard.module.css';
 
 const ResellerDashboard: React.FC = () => {
@@ -56,7 +57,6 @@ const ResellerDashboard: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'storefront', label: 'My Storefront', icon: Store },
     { id: 'leads', label: 'Leads', icon: UserPlus },
-    { id: 'tasks', label: 'Tasks & Follow-ups', icon: ListChecks },
     { id: 'browse', label: 'Browse Products', icon: Search },
     { id: 'my-products', label: 'My Products', icon: Package },
     { id: 'supplier-partners', label: 'Supplier Partnership', icon: Handshake },
@@ -67,6 +67,7 @@ const ResellerDashboard: React.FC = () => {
     { id: 'payouts', label: 'Earnings & Payouts', icon: CreditCard },
     { id: 'performance', label: 'Performance', icon: BarChart3 },
     { id: 'history', label: 'Activity History', icon: History },
+    { id: 'tasks', label: 'Action Center', icon: Zap },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
@@ -236,13 +237,7 @@ const ResellerDashboard: React.FC = () => {
           />
         )}
 
-        {activeView === 'tasks' && (
-          <PlaceholderView
-            title="Tasks & Follow-ups"
-            icon={ListChecks}
-            description="Manage your cold call deadlines and upcoming follow-up reminders."
-          />
-        )}
+        {activeView === 'tasks' && <ResellerActionCenter />}
 
         {activeView === 'browse' && <ResellerBrowseProducts />}
 

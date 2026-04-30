@@ -106,7 +106,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {footerMenu.length > 0 && (
           <>
-            <div className={styles.navDivider}>Future Features</div>
             {footerMenu.map((item) => {
               const Icon = item.icon;
               return (

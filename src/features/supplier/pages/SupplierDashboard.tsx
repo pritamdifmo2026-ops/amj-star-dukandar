@@ -4,13 +4,13 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import productService from '@/features/product/services/product.service';
 import Button from '@/shared/components/ui/Button';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Truck, 
-  Plus, 
-  ShieldCheck, 
-  Zap, 
+import {
+  LayoutDashboard,
+  Package,
+  Truck,
+  Plus,
+  ShieldCheck,
+  Zap,
   LogOut,
   Trash2,
   FileText,
@@ -36,7 +36,7 @@ const SupplierDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  
+
   const [searchParams, setSearchParams] = useSearchParams();
   const activeView = (searchParams.get('tab') as any) || 'overview';
 
@@ -113,7 +113,7 @@ const SupplierDashboard: React.FC = () => {
   return (
     <div className={`${styles.dashboardContainer} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
       <Sidebar
-        title="Supplier Center"
+        title="Supplier Hub"
         logoSrc="/favicon.jpeg"
         menu={supplierMenu}
         footerMenu={supplierFooterMenu}
@@ -126,28 +126,30 @@ const SupplierDashboard: React.FC = () => {
       />
 
       <main className={styles.mainContent}>
-        <header className={styles.header}>
-          <div>
-            <h1>Welcome back, {profile?.businessName}</h1>
-            {isTrusted ? (
-              <div className={styles.trustedBadge}>
-                <ShieldCheck size={16} />
-                <span>Trusted Supplier</span>
-              </div>
-            ) : (
-              <p>Manage your products and orders from your command center.</p>
-            )}
-            {isTrusted && (
-              <div className={styles.autoApprovalNotice}>
-                <Zap size={14} />
-                <span><strong>Auto-Upload Active:</strong> Your products will now be live instantly!</span>
-              </div>
-            )}
-          </div>
-          <Button onClick={() => setActiveView('add-product')} className={styles.addBtn}>
-            <Plus size={20} /> Add New Product
-          </Button>
-        </header>
+        {activeView === 'overview' && (
+          <header className={styles.header}>
+            <div>
+              <h1>Welcome back, {profile?.businessName}</h1>
+              {isTrusted ? (
+                <div className={styles.trustedBadge}>
+                  <ShieldCheck size={16} />
+                  <span>Trusted Supplier</span>
+                </div>
+              ) : (
+                <p>Manage your products and orders from your command center.</p>
+              )}
+              {isTrusted && (
+                <div className={styles.autoApprovalNotice}>
+                  <Zap size={14} />
+                  <span><strong>Auto-Upload Active:</strong> Your products will now be live instantly!</span>
+                </div>
+              )}
+            </div>
+            <Button onClick={() => setActiveView('add-product')} className={styles.addBtn}>
+              <Plus size={20} /> Add New Product
+            </Button>
+          </header>
+        )}
 
         {activeView === 'overview' && (
           <>
@@ -157,10 +159,10 @@ const SupplierDashboard: React.FC = () => {
                 <h2>Recent Products</h2>
                 <button className={styles.viewAll} onClick={() => setActiveView('inventory')}>View All</button>
               </div>
-              <ProductTable 
-                products={products.slice(0, 5)} 
-                loading={loading} 
-                onEdit={handleEdit} 
+              <ProductTable
+                products={products.slice(0, 5)}
+                loading={loading}
+                onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAdd={() => setActiveView('add-product')}
               />
@@ -172,11 +174,14 @@ const SupplierDashboard: React.FC = () => {
           <section className={styles.section}>
             <div className={styles.sectionHeader}>
               <h2>My Inventory</h2>
+              <button className={styles.inventoryAddBtn} onClick={() => setActiveView('add-product')}>
+                <Plus size={18} /> Add New Product
+              </button>
             </div>
-            <ProductTable 
-              products={products} 
-              loading={loading} 
-              onEdit={handleEdit} 
+            <ProductTable
+              products={products}
+              loading={loading}
+              onEdit={handleEdit}
               onDelete={handleDelete}
               onAdd={() => setActiveView('add-product')}
             />
@@ -184,25 +189,25 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'quotations' && (
-          <PlaceholderView 
-            title="Quotations Management" 
-            icon={FileText} 
+          <PlaceholderView
+            title="Quotations Management"
+            icon={FileText}
             description="Track and manage price quotations from potential buyers in one place."
           />
         )}
 
         {activeView === 'chat' && (
-          <PlaceholderView 
-            title="Supplier Chat" 
-            icon={MessageCircle} 
+          <PlaceholderView
+            title="Supplier Chat"
+            icon={MessageCircle}
             description="Communicate directly with buyers to discuss product requirements and deal terms."
           />
         )}
 
         {activeView === 'logistics' && (
-          <PlaceholderView 
-            title="Logistics Tracking" 
-            icon={Truck} 
+          <PlaceholderView
+            title="Logistics Tracking"
+            icon={Truck}
             description="Manage your shipments and track delivery status for all your bulk orders."
           />
         )}
@@ -211,7 +216,7 @@ const SupplierDashboard: React.FC = () => {
       </main>
 
       {(activeView === 'add-product' || activeView === 'edit-product') && (
-        <AddProductForm 
+        <AddProductForm
           onBack={() => { setActiveView('inventory'); setEditingProduct(null); }}
           onSuccess={handleFormSuccess}
           editingProduct={editingProduct}

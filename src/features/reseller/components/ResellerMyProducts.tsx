@@ -59,9 +59,9 @@ const ResellerMyProducts: React.FC = () => {
   useEffect(() => {
     if (drawerProduct) {
       const base = drawerProduct.product?.basePrice || 0;
-      const selling = drawerProduct.sellingPrice || Math.round(base * 1.3);
+      const selling = drawerProduct.sellingPrice || base;
       setEditSellingPrice(String(selling));
-      const margin = base > 0 ? Math.round(((selling - base) / base) * 100) : 30;
+      const margin = base > 0 ? Math.round(((selling - base) / base) * 100) : 0;
       setEditMarginPct(String(margin));
       setEditTitle(drawerProduct.customTitle || drawerProduct.product?.name || '');
       setEditDesc(drawerProduct.customDescription || drawerProduct.product?.description || '');
@@ -76,8 +76,8 @@ const ResellerMyProducts: React.FC = () => {
       // Hydrate with defaults (using 0 for analytics until backend supports it)
       const hydrated = (data.requests || []).map((r: ProductRequest) => ({
         ...r,
-        sellingPrice: r.sellingPrice || (r.product?.basePrice ? Math.round(r.product.basePrice * 1.3) : 0),
-        visible: r.visible !== false,
+        sellingPrice: r.sellingPrice || r.product?.basePrice || 0,
+        visible: r.visible === true,
         views: r.views || 0,
         orders: r.orders || 0,
       }));
@@ -218,7 +218,7 @@ const ResellerMyProducts: React.FC = () => {
           ) : (
             approvedProducts.map(req => {
               const base = req.product?.basePrice || 0;
-              const selling = req.sellingPrice || Math.round(base * 1.3);
+              const selling = req.sellingPrice || base;
               const margin = selling - base;
               const conv = conversionRate(req);
 

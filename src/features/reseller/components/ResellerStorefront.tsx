@@ -35,8 +35,8 @@ const ResellerStorefront: React.FC = () => {
         .filter((r: any) => r.status === 'APPROVED')
         .map((r: any) => ({
           ...r,
-          visible: r.visible !== false,
-          sellingPrice: r.sellingPrice || (r.product?.basePrice ? Math.round(r.product.basePrice * 1.3) : 0),
+          visible: r.visible === true,
+          sellingPrice: r.sellingPrice || r.product?.basePrice || 0,
         }));
       setProducts(approved);
     } catch {
@@ -233,7 +233,7 @@ const ResellerStorefront: React.FC = () => {
               <div className={styles.productsList}>
                 {products.map(req => {
                   const base = req.product?.basePrice || 0;
-                  const selling = req.sellingPrice || Math.round(base * 1.3);
+                  const selling = req.sellingPrice || base;
                   const margin = selling - base;
 
                   return (
