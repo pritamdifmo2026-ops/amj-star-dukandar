@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart } from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
@@ -12,6 +12,7 @@ import Loader from '@/shared/components/feedback/Loader';
 import ErrorState from '@/shared/components/feedback/ErrorState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
+import ImageMagnifier from '../components/ImageMagnifier';
 import styles from './ProductDetail.module.css';
 
 const ProductDetail: React.FC = () => {
@@ -21,6 +22,12 @@ const ProductDetail: React.FC = () => {
   const wishlistItems = useAppSelector(state => state.wishlist.items);
   
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setSelectedImage(null);
+  }, [id]);
+  
   const isWishlisted = product ? wishlistItems.some(item => item.id === product.id) : false;
 
   const handleToggleWishlist = () => {
@@ -49,16 +56,21 @@ const ProductDetail: React.FC = () => {
     );
   }
 
+  const galleryImages = Array.from(
+    new Set([product.imageUrl, ...(product.images || [])].filter((img): img is string => Boolean(img)))
+  );
+  const currentImage = selectedImage || galleryImages[0] || '';
+
   const handleAddToCart = () => {
     dispatch(
       addToCart({
         productId: product.id,
         name: product.name,
         price: product.price,
-        quantity: product.minOrderQty, // Default to minimum order quantity
+        quantity: product.minOrderQty,
         unit: product.unit,
         supplierId: product.supplierId,
-        imageUrl: product.imageUrl || product.images[0],
+        imageUrl: currentImage,
       })
     );
   };
@@ -78,14 +90,18 @@ const ProductDetail: React.FC = () => {
           </button>
 
           <div className={styles.layout}>
-            {/* Left: Images */}
+            {/* Left: Image with Amazon-style magnifier */}
             <div className={styles.imageSection}>
               <div className={styles.mainImageWrap}>
-                <img src={product.imageUrl || product.images[0]} alt={product.name} className={styles.mainImage} />
+                <ImageMagnifier src={currentImage} alt={product.name} />
               </div>
               <div className={styles.thumbnailGrid}>
-                {product.images.map((img, idx) => (
-                  <div key={idx} className={styles.thumbWrap}>
+                {galleryImages.map((img, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`${styles.thumbWrap} ${currentImage === img ? styles.activeThumb : ''}`}
+                    onClick={() => setSelectedImage(img)}
+                  >
                     <img src={img} alt={`${product.name} ${idx}`} />
                   </div>
                 ))}
