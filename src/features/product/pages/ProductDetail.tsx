@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart, CreditCard } from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
@@ -12,6 +12,7 @@ import Loader from '@/shared/components/feedback/Loader';
 import ErrorState from '@/shared/components/feedback/ErrorState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
+import ImageMagnifier from '../components/ImageMagnifier';
 import styles from './ProductDetail.module.css';
 
 const ProductDetail: React.FC = () => {
@@ -21,6 +22,12 @@ const ProductDetail: React.FC = () => {
   const wishlistItems = useAppSelector(state => state.wishlist.items);
   
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setSelectedImage(null);
+  }, [id]);
+  
   const isWishlisted = product ? wishlistItems.some(item => item.id === product.id) : false;
 
   const handleToggleWishlist = () => {
@@ -49,18 +56,40 @@ const ProductDetail: React.FC = () => {
     );
   }
 
+  // Gallery and current image - defined BEFORE handlers that use them
+  const galleryImages = Array.from(
+    new Set([product.imageUrl, ...(product.images || [])].filter((img): img is string => Boolean(img)))
+  );
+  const currentImage = selectedImage || galleryImages[0] || '';
+
+  // Handlers that use currentImage - defined AFTER currentImage
   const handleAddToCart = () => {
     dispatch(
       addToCart({
         productId: product.id,
         name: product.name,
         price: product.price,
-        quantity: product.minOrderQty, // Default to minimum order quantity
+        quantity: product.minOrderQty,
         unit: product.unit,
         supplierId: product.supplierId,
-        imageUrl: product.imageUrl || product.images[0],
+        imageUrl: currentImage,
       })
     );
+  };
+
+  const handleBuyNow = () => {
+    dispatch(
+      addToCart({
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: product.minOrderQty,
+        unit: product.unit,
+        supplierId: product.supplierId,
+        imageUrl: currentImage,
+      })
+    );
+    // navigate('/checkout');
   };
 
   const gstAmount = calculateGST(product.price, product.gstRate);
@@ -78,14 +107,18 @@ const ProductDetail: React.FC = () => {
           </button>
 
           <div className={styles.layout}>
-            {/* Left: Images */}
+            {/* Left: Image with Amazon-style magnifier */}
             <div className={styles.imageSection}>
               <div className={styles.mainImageWrap}>
-                <img src={product.imageUrl || product.images[0]} alt={product.name} className={styles.mainImage} />
+                <ImageMagnifier src={currentImage} alt={product.name} />
               </div>
               <div className={styles.thumbnailGrid}>
-                {product.images.map((img, idx) => (
-                  <div key={idx} className={styles.thumbWrap}>
+                {galleryImages.map((img, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`${styles.thumbWrap} ${currentImage === img ? styles.activeThumb : ''}`}
+                    onClick={() => setSelectedImage(img)}
+                  >
                     <img src={img} alt={`${product.name} ${idx}`} />
                   </div>
                 ))}
@@ -154,6 +187,10 @@ const ProductDetail: React.FC = () => {
                 <Button size="lg" className={styles.buyBtn} onClick={handleAddToCart}>
                   <ShoppingCart size={20} />
                   Add to Cart
+                </Button>
+                <Button size="lg" variant="primary" className={styles.buyNowBtn} onClick={handleBuyNow}>
+                  <CreditCard size={20} />
+                  Buy Now
                 </Button>
                 <Button variant="outline" size="lg" className={styles.inquiryBtn}>
                   Send Inquiry
