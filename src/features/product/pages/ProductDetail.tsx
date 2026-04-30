@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart, CreditCard } from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
@@ -56,11 +56,13 @@ const ProductDetail: React.FC = () => {
     );
   }
 
+  // Gallery and current image - defined BEFORE handlers that use them
   const galleryImages = Array.from(
     new Set([product.imageUrl, ...(product.images || [])].filter((img): img is string => Boolean(img)))
   );
   const currentImage = selectedImage || galleryImages[0] || '';
 
+  // Handlers that use currentImage - defined AFTER currentImage
   const handleAddToCart = () => {
     dispatch(
       addToCart({
@@ -73,6 +75,21 @@ const ProductDetail: React.FC = () => {
         imageUrl: currentImage,
       })
     );
+  };
+
+  const handleBuyNow = () => {
+    dispatch(
+      addToCart({
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        quantity: product.minOrderQty,
+        unit: product.unit,
+        supplierId: product.supplierId,
+        imageUrl: currentImage,
+      })
+    );
+    // navigate('/checkout');
   };
 
   const gstAmount = calculateGST(product.price, product.gstRate);
@@ -170,6 +187,10 @@ const ProductDetail: React.FC = () => {
                 <Button size="lg" className={styles.buyBtn} onClick={handleAddToCart}>
                   <ShoppingCart size={20} />
                   Add to Cart
+                </Button>
+                <Button size="lg" variant="primary" className={styles.buyNowBtn} onClick={handleBuyNow}>
+                  <CreditCard size={20} />
+                  Buy Now
                 </Button>
                 <Button variant="outline" size="lg" className={styles.inquiryBtn}>
                   Send Inquiry
