@@ -295,10 +295,12 @@
   margin-bottom: var(--space-10);
 }
 
-.buyBtn {
-  flex: 1.5;
+.buyBtn,
+.buyNowBtn {
+  flex: 1;
   height: 54px;
   font-size: var(--font-size-lg);
+  white-space: nowrap;
 }
 
 .inquiryBtn {
