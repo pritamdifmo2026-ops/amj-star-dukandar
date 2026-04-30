@@ -69,6 +69,11 @@ const resellerService = {
   updateProfile: async (data: Partial<ResellerProfile>) => {
     const response = await apiClient.put('/reseller/profile', data);
     return response.data;
+  },
+
+  updateProductCustomization: async (partnershipId: string, data: any) => {
+    const response = await apiClient.put(`/partnership/customization/${partnershipId}`, data);
+    return response.data;
   }
 };
 

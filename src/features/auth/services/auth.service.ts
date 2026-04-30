@@ -17,6 +17,11 @@ const authService = {
     return response.data;
   },
 
+  verifyPhoneUpdate: async (payload: VerifyOtpPayload) => {
+    const response = await apiClient.post<AuthResponse>('/auth/change-phone/verify', payload);
+    return response.data;
+  },
+
   adminLogin: async (email: string, password: string) => {
     const response = await apiClient.post('/auth/admin-login', { email, password });
     return response.data;

@@ -3,7 +3,8 @@ import {
   Phone, Mail, Store, Zap, 
   ShieldCheck, CheckCircle, AlertTriangle 
 } from 'lucide-react';
-import { useAppSelector } from '@/store/hooks';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setCredentials } from '@/store/slices/auth.slice';
 import Button from '@/shared/components/ui/Button';
 import toast from 'react-hot-toast';
 import styles from './ResellerSettings.module.css';
@@ -12,6 +13,7 @@ import authService from '@/features/auth/services/auth.service';
 import resellerService from '@/features/reseller/services/reseller.service';
 
 const ResellerSettings: React.FC = () => {
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector(state => state.auth);
   const { profile } = useAppSelector(state => state.reseller);
   
@@ -71,9 +73,9 @@ const ResellerSettings: React.FC = () => {
 
   const startEmailUpdate = async () => {
     if (email !== (user?.email || profile?.email)) {
-      // First update email in profile
+      // First update email in reseller profile (which also syncs with User account)
       try {
-        await authService.updateProfile({ email });
+        await resellerService.updateProfile({ email });
         toast.success('Email updated, sending verification link...');
       } catch (err) {
         toast.error('Failed to update email');
@@ -92,7 +94,13 @@ const ResellerSettings: React.FC = () => {
   const verifyOtp = async () => {
     if (otp.length === 6) {
       try {
-        await authService.verifyOtp({ phone, otp });
+        const response = await authService.verifyPhoneUpdate({ phone, otp });
+        // Update Redux with new user info (and new token in cookie)
+        dispatch(setCredentials({ user: response.user }));
+        
+        // Also update reseller profile to sync with new phone
+        await resellerService.updateProfile({ phone });
+        
         toast.success('Phone number verified and updated!');
         setShowOtpField(false);
         setUpdatingField(null);
