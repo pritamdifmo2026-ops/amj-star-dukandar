@@ -37,10 +37,11 @@ const Profile: React.FC = () => {
   const handleSaveInfo = async () => {
     if (user) {
       try {
-        const response = await authService.updateProfile({
-          name: editName,
-          email: editEmail
-        });
+        const payload: any = {};
+        if (editName && editName.trim().length >= 2) payload.name = editName.trim();
+        if (editEmail && editEmail.trim().length > 0) payload.email = editEmail.trim();
+
+        const response = await authService.updateProfile(payload);
 
         dispatch(setCredentials({
           user: response.user
