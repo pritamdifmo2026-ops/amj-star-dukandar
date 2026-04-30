@@ -34,6 +34,8 @@ import ResellerMyProducts from '../components/ResellerMyProducts';
 import ResellerHistory from '../components/ResellerHistory';
 import ResellerSupplierPartners from '../components/ResellerSupplierPartners';
 import ResellerSettings from '../components/ResellerSettings';
+import ResellerStorefront from '../components/ResellerStorefront';
+import ResellerPerformance from '../components/ResellerPerformance';
 import styles from './ResellerDashboard.module.css';
 
 const ResellerDashboard: React.FC = () => {
@@ -224,13 +226,7 @@ const ResellerDashboard: React.FC = () => {
 
         {activeView === 'overview' && renderOverview()}
 
-        {activeView === 'storefront' && (
-          <PlaceholderView
-            title="My Storefront"
-            icon={Store}
-            description="Preview and share your personalized shop link with your customers."
-          />
-        )}
+        {activeView === 'storefront' && <ResellerStorefront />}
 
         {activeView === 'leads' && (
           <PlaceholderView
@@ -268,13 +264,7 @@ const ResellerDashboard: React.FC = () => {
           />
         )}
 
-        {activeView === 'performance' && (
-          <PlaceholderView
-            title="Performance Insights"
-            icon={BarChart3}
-            description="Analyze your conversion rates, sales trends, and business growth."
-          />
-        )}
+        {activeView === 'performance' && <ResellerPerformance />}
 
         {activeView === 'supplier-partners' && <ResellerSupplierPartners />}
         {activeView === 'history' && <ResellerHistory />}

@@ -1,0 +1,165 @@
+.container {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+
+.containerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+/* ─── Header ─── */
+.storeHeader {
+  background: white;
+  padding: 2rem 0;
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.storeBranding {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.storeAvatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e65c00, #f9a825);
+  color: white;
+  font-size: 2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.storeTitle {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 0.25rem;
+}
+
+.storeTrust {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #16a34a;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ─── Main Content ─── */
+.mainContent {
+  flex: 1;
+  padding: 3rem 0;
+}
+
+.welcomeBanner {
+  background: linear-gradient(to right, #1a3c5e, #0f2440);
+  color: white;
+  padding: 2rem;
+  border-radius: 16px;
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.starIcon {
+  color: #f59e0b;
+  margin-bottom: 1rem;
+}
+
+.welcomeBanner h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.welcomeBanner p {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.8);
+  margin: 0;
+}
+
+/* ─── Grid ─── */
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.productCard {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.productCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+.productImagePlaceholder {
+  height: 200px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+}
+
+.productInfo {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.productName {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.priceRow {
+  display: flex;
+  align-items: center;
+}
+
+.price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #e65c00;
+}
+
+.buyBtn {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+/* ─── Footer ─── */
+.footer {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: #64748b;
+}
+
+.footer p { margin: 0; font-weight: 600; }

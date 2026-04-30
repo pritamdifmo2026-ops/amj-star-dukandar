@@ -11,6 +11,7 @@ import ProductList from '@/features/product/pages/ProductList';
 import ProductDetail from '@/features/product/pages/ProductDetail';
 import AddProduct from '@/features/product/pages/AddProduct';
 import AdminLogin from '@/features/admin/pages/AdminLogin';
+import PublicStorefront from '@/features/reseller/pages/PublicStorefront';
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -57,5 +58,9 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/admin/login',
     element: <AdminLogin />,
+  },
+  {
+    path: '/store/:slug',
+    element: <PublicStorefront />,
   }
 ];
