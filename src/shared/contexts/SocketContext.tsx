@@ -28,8 +28,11 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Socket URL is the base URL without /api
-      const socketUrl = env.API_BASE_URL.replace('/api', '');
+      // Dynamically derive the socket URL from the API_BASE_URL
+      // This ensures LAN collaborators connect to your IP, not their own 'localhost'
+      const socketUrl = env.API_BASE_URL.split('/api')[0]; 
+      
+      console.log('🔌 Connecting socket to:', socketUrl);
       
       const newSocket = io(socketUrl, {
         withCredentials: true,
