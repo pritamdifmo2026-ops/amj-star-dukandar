@@ -7,6 +7,8 @@ import {
   Send,
   List,
   ArrowLeft,
+  Check,
+  CheckCheck
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketContext';
@@ -42,8 +44,16 @@ export const FloatingChat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
-  const getOtherUser = (conv: any) =>
-    conv?.buyerId?._id === user?.id ? conv?.supplierId : conv?.buyerId;
+  const getOtherUser = (conv: any) => {
+    const currentUserId = user?._id || user?.id;
+    const buyerId = conv?.buyerId?._id || conv?.buyerId;
+    
+    // Compare as strings to avoid object/string mismatch
+    if (buyerId?.toString() === currentUserId?.toString()) {
+      return conv?.supplierId;
+    }
+    return conv?.buyerId;
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -111,8 +121,24 @@ export const FloatingChat: React.FC = () => {
 
   const handleSend = () => {
     if (!inputText.trim() || !activeConv) return;
-    const receiverId = getOtherUser(activeConv)?._id;
-    if (!receiverId) return;
+    
+    console.log('[Chat] Full activeConv:', JSON.stringify(activeConv, null, 2));
+    
+    const other = getOtherUser(activeConv);
+    
+    // other can be: a populated user object {_id, name} OR a raw ObjectId string
+    const receiverId: string | undefined = 
+      typeof other === 'string' ? other :
+      typeof other === 'object' && other !== null ? (other._id?.toString() || other.id?.toString()) :
+      undefined;
+    
+    console.log('[Chat] handleSend →', { other, receiverId, activeConv: activeConv._id });
+    
+    if (!receiverId) {
+      console.warn('[Chat] Cannot send: receiverId is undefined', other);
+      return;
+    }
+    
     sendMessage(inputText, receiverId);
     setInputText('');
     handleTyping(false);
@@ -253,10 +279,21 @@ export const FloatingChat: React.FC = () => {
                   <div
                     key={msg._id || idx}
                     className={`${styles.message} ${
-                      msg.senderId === user?.id ? styles.sent : styles.received
+                      (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString() 
+                        ? styles.sent 
+                        : styles.received
                     }`}
                   >
-                    {msg.text}
+                    <div className={styles.messageText}>{msg.text}</div>
+                    {(msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString() && (
+                      <div className={styles.messageStatus}>
+                        {msg.isRead ? (
+                          <CheckCheck size={12} className={styles.readIcon} />
+                        ) : (
+                          <Check size={12} className={styles.sentIcon} />
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
                 <div ref={messagesEndRef} />

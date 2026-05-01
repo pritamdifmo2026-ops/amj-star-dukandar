@@ -32,6 +32,7 @@ import ProductTable from '../components/ProductTable';
 import PlaceholderView from '../components/PlaceholderView';
 import AddProductForm from '../components/AddProductForm';
 import SupplierPartnerships from '../components/SupplierPartnerships';
+import ChatInbox from '@/features/chat/components/ChatInbox';
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import styles from './SupplierDashboard.module.css';
@@ -396,11 +397,9 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'chat' && (
-          <PlaceholderView
-            title="Supplier Chat"
-            icon={MessageCircle}
-            description="Communicate directly with buyers to discuss product requirements and deal terms."
-          />
+          <div style={{ height: 'calc(100vh - 180px)' }}>
+            <ChatInbox />
+          </div>
         )}
 
         {activeView === 'logistics' && (

@@ -55,9 +55,10 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         socket.close();
         setSocket(null);
         setIsConnected(false);
+        setActiveChatId(null); // ← clear stale chat ID on logout/user change
       }
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user?.id]); // use user.id not the whole object to avoid re-running on populate
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, activeChatId, setActiveChatId }}>
