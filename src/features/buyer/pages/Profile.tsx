@@ -4,11 +4,12 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   User, Package, MapPin, CreditCard, Settings, Bell, Heart, 
   X, Mail, Phone, ShoppingBag, 
-  LogOut, ChevronRight, Star, Clock, Check
+  LogOut, ChevronRight, Star, Clock, Check, MessageCircle
 } from 'lucide-react';
 import { setCredentials } from '@/store/slices/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import ProductCard from '@/features/product/components/ProductCard';
+import ChatInbox from '@/features/chat/components/ChatInbox';
 import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
@@ -108,6 +109,7 @@ const Profile: React.FC = () => {
   const menuItems = [
     { id: 'overview', label: 'Account Overview', icon: User },
     { id: 'orders', label: 'My Orders', icon: Package, badge: orderCount },
+    { id: 'messages', label: 'Messages', icon: MessageCircle },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistItems.length },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'payments', label: 'Payment Methods', icon: CreditCard },
@@ -297,8 +299,14 @@ const Profile: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'messages' && (
+          <div style={{ height: '70vh', minHeight: '500px' }}>
+            <ChatInbox />
+          </div>
+        )}
+
         {/* Placeholder for other tabs */}
-        {activeTab !== 'overview' && activeTab !== 'wishlist' && currentMenuItem && (
+        {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && currentMenuItem && (
           <div className={styles.placeholderCard}>
             {CurrentIcon && <CurrentIcon size={48} strokeWidth={1.5} />}
             <h3>{currentMenuItem.label}</h3>

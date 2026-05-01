@@ -1,7 +1,6 @@
 .page {
   display: flex;
   height: 100%;
-  min-height: 500px;
   background: white;
   font-family: 'Inter', sans-serif;
   border-radius: 12px;
@@ -71,8 +70,8 @@
 
 .filterTab:hover,
 .filterTabActive {
-  background: #ff4d4d;
-  border-color: #ff4d4d;
+  background: var(--color-primary, #ff4d4d);
+  border-color: var(--color-primary, #ff4d4d);
   color: white;
   font-weight: 500;
 }
@@ -99,7 +98,7 @@
 
 .convItemActive {
   background: #fff5f5;
-  border-left: 3px solid #ff4d4d;
+  border-left: 3px solid var(--color-primary, #ff4d4d);
 }
 
 .avatar {
@@ -149,7 +148,7 @@
 }
 
 .unreadBadge {
-  background: #ff4d4d;
+  background: var(--color-primary, #ff4d4d);
   color: white;
   font-size: 10px;
   min-width: 18px;
@@ -237,6 +236,26 @@
   border-radius: 18px;
   font-size: 14px;
   line-height: 1.45;
+  position: relative;
+}
+
+.messageText {
+  margin-bottom: 2px;
+}
+
+.messageStatus {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.readIcon {
+  color: #4fc3f7; /* Light blue for read */
+}
+
+.sentIcon {
+  color: #eee; /* Light gray for sent */
 }
 
 .sent {
@@ -283,7 +302,7 @@
 }
 
 .chatInputBar input:focus {
-  border-color: #ff4d4d;
+  border-color: var(--color-primary, #ff4d4d);
   background: white;
 }
 
@@ -319,4 +338,19 @@
 .noChat p {
   font-size: 14px;
   color: #aaa;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+  }
+  .chatPanel {
+    display: none;
+  }
+  .sidebar[data-chat-active="true"] {
+    display: none;
+  }
+  .chatPanel[data-chat-active="true"] {
+    display: flex;
+  }
 }

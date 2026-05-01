@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MessageCircle, Send, Inbox } from 'lucide-react';
+import { Search, Send, Inbox, ArrowLeft, Check, CheckCheck } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { chatApi } from '@/shared/services/chat.api';
-import { useSocket } from '@/shared/contexts/SocketContext';
 import { useChat } from '@/shared/hooks/useChat';
-import styles from './SupplierInbox.module.css';
+import { useSocket } from '@/shared/contexts/SocketContext';
+import styles from './ChatInbox.module.css';
 
 type Filter = 'all' | 'unread';
 
-const SupplierInbox: React.FC = () => {
+const ChatInbox: React.FC = () => {
   const { user } = useSelector((state: any) => state.auth);
 
   const [conversations, setConversations] = useState<any[]>([]);
@@ -26,16 +26,11 @@ const SupplierInbox: React.FC = () => {
     loadConversations();
   }, []);
 
-  // Real-time list refresh
   useEffect(() => {
     if (!socket) return;
-
     const handleNotification = (notif: any) => {
-      if (notif.type === 'CHAT_MESSAGE') {
-        loadConversations();
-      }
+      if (notif.type === 'CHAT_MESSAGE') loadConversations();
     };
-
     socket.on('new_notification', handleNotification);
     return () => {
       socket.off('new_notification', handleNotification);
@@ -51,19 +46,27 @@ const SupplierInbox: React.FC = () => {
     }
   };
 
-  // Auto-scroll on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // ─── Helpers ──────────────────────────────────────────────────────
-  const getBuyer = (conv: any) => conv.buyerId;
+  // Get the "other" person in the conversation
+  const getOtherParticipant = (conv: any) => {
+    const currentUserId = user?._id || user?.id;
+    const buyerId = conv?.buyerId?._id || conv?.buyerId;
+    
+    if (buyerId?.toString() === currentUserId?.toString()) {
+      return conv?.supplierId;
+    }
+    return conv?.buyerId;
+  };
 
   const getUnread = (conv: any) => conv.unreadCount?.[user?.id] || 0;
 
   const filteredConversations = conversations.filter((conv) => {
-    const buyer = getBuyer(conv);
-    const matchesSearch = buyer?.name?.toLowerCase().includes(search.toLowerCase());
+    const other = getOtherParticipant(conv);
+    const matchesSearch = other?.name?.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === 'all' || getUnread(conv) > 0;
     return matchesSearch && matchesFilter;
   });
@@ -75,8 +78,19 @@ const SupplierInbox: React.FC = () => {
 
   const handleSend = () => {
     if (!inputText.trim() || !activeConv) return;
-    const receiverId = getBuyer(activeConv)?._id;
-    if (!receiverId) return;
+    const other = getOtherParticipant(activeConv);
+    
+    const receiverId: string | undefined =
+      typeof other === 'string' ? other :
+      typeof other === 'object' && other !== null ? (other._id?.toString() || other.id?.toString()) :
+      undefined;
+    
+    console.log('[ChatInbox] handleSend →', { other, receiverId, convId: activeConv._id });
+    
+    if (!receiverId) {
+      console.warn('[ChatInbox] Cannot send: receiverId is undefined', other);
+      return;
+    }
     sendMessage(inputText, receiverId);
     setInputText('');
     handleTyping(false);
@@ -85,14 +99,17 @@ const SupplierInbox: React.FC = () => {
   // ─── Render ───────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
-      {/* ── Left: Conversation List ─────────────────────────────── */}
-      <aside className={styles.sidebar}>
+      {/* ── Left: List ── */}
+      <aside 
+        className={styles.sidebar} 
+        data-chat-active={!!activeConv}
+      >
         <div className={styles.sidebarHeader}>
-          <h1>Inbox</h1>
+          <h1>Messages</h1>
           <div className={styles.searchBar}>
             <Search size={14} />
             <input
-              placeholder="Search buyers…"
+              placeholder="Search chats…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -119,7 +136,7 @@ const SupplierInbox: React.FC = () => {
             <div className={styles.emptyList}>No conversations yet.</div>
           ) : (
             filteredConversations.map((conv) => {
-              const buyer = getBuyer(conv);
+              const other = getOtherParticipant(conv);
               const unread = getUnread(conv);
               const isActive = activeConv?._id === conv._id;
 
@@ -130,7 +147,7 @@ const SupplierInbox: React.FC = () => {
                   onClick={() => handleSelectConv(conv)}
                 >
                   <div className={styles.avatar}>
-                    {buyer?.name?.[0]?.toUpperCase() || '?'}
+                    {other?.name?.[0]?.toUpperCase() || '?'}
                   </div>
                   <div className={styles.convMeta}>
                     {conv.productId?.name && (
@@ -139,7 +156,7 @@ const SupplierInbox: React.FC = () => {
                       </span>
                     )}
                     <div className={styles.convName}>
-                      <span>{buyer?.name || 'Buyer'}</span>
+                      <span>{other?.name || 'User'}</span>
                       <span className={styles.convTime}>
                         {new Date(conv.lastMessageAt).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -161,54 +178,72 @@ const SupplierInbox: React.FC = () => {
         </div>
       </aside>
 
-      {/* ── Right: Chat Thread ──────────────────────────────────── */}
-      <main className={styles.chatPanel}>
+      {/* ── Right: Thread ── */}
+      <main 
+        className={styles.chatPanel}
+        data-chat-active={!!activeConv}
+      >
         {!activeConv ? (
           <div className={styles.noChat}>
             <Inbox size={48} strokeWidth={1} />
-            <p>Select a conversation to start replying</p>
+            <p>Select a conversation to start chatting</p>
           </div>
         ) : (
           <>
-            {/* Header */}
             <div className={styles.chatHeader}>
+              <button 
+                className={styles.mobileBackBtn} 
+                onClick={() => setActiveConv(null)}
+                style={{ border: 'none', background: 'none', marginRight: '10px', display: 'none' }}
+              >
+                <ArrowLeft size={20} />
+              </button>
               <div className={styles.avatar}>
-                {getBuyer(activeConv)?.name?.[0]?.toUpperCase() || '?'}
+                {getOtherParticipant(activeConv)?.name?.[0]?.toUpperCase() || '?'}
               </div>
               <div className={styles.chatHeaderInfo}>
                 <span className={styles.chatHeaderName}>
-                  {getBuyer(activeConv)?.name || 'Buyer'}
+                  {getOtherParticipant(activeConv)?.name || 'User'}
                 </span>
                 <span className={styles.chatHeaderSub}>
                   {isTyping
                     ? 'Typing…'
                     : activeConv.productId?.name
-                      ? `Enquiry: ${activeConv.productId.name}`
-                      : 'General enquiry'}
+                      ? `Context: ${activeConv.productId.name}`
+                      : 'Active chat'}
                 </span>
               </div>
             </div>
 
-            {/* Messages */}
             <div className={styles.chatMessages}>
               {messages.map((msg, idx) => (
                 <div
                   key={msg._id || idx}
                   className={`${styles.message} ${
-                    msg.senderId === user?.id ? styles.sent : styles.received
+                    (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString() 
+                      ? styles.sent 
+                      : styles.received
                   }`}
                 >
-                  {msg.text}
+                  <div className={styles.messageText}>{msg.text}</div>
+                  {(msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString() && (
+                    <div className={styles.messageStatus}>
+                      {msg.isRead ? (
+                        <CheckCheck size={14} className={styles.readIcon} />
+                      ) : (
+                        <Check size={14} className={styles.sentIcon} />
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
             <div className={styles.chatInputBar}>
               <input
                 type="text"
-                placeholder="Type your reply…"
+                placeholder="Type your message…"
                 value={inputText}
                 onChange={(e) => {
                   setInputText(e.target.value);
@@ -231,4 +266,4 @@ const SupplierInbox: React.FC = () => {
   );
 };
 
-export default SupplierInbox;
+export default ChatInbox;

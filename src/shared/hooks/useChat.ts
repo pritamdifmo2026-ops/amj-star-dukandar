@@ -10,6 +10,11 @@ export const useChat = (conversationId?: string) => {
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
 
+  // Keep a ref so sendMessage/handleTyping always use the *current* conversationId
+  // even if the hook was rendered before it was set (stale closure fix)
+  const conversationIdRef = useRef<string | undefined>(conversationId);
+  conversationIdRef.current = conversationId;
+
   // Auto-clear typing indicator after 2s of silence
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -40,7 +45,8 @@ export const useChat = (conversationId?: string) => {
     };
 
     const handleUserTyping = (data: { userId: string; isTyping: boolean }) => {
-      if (data.userId === user?.id) return; // ignore own typing echo
+      const currentUserId = user?._id || user?.id;
+      if (data.userId?.toString() === currentUserId?.toString()) return; // ignore own typing echo
       setIsTyping(data.isTyping);
 
       // Auto-clear after 2 s in case the stop event is missed
@@ -50,13 +56,27 @@ export const useChat = (conversationId?: string) => {
       }
     };
 
+    const handleMessagesRead = (data: { conversationId: string; readerId: string }) => {
+      const currentUserId = user?._id || user?.id;
+      if (data.conversationId === conversationId && data.readerId?.toString() !== currentUserId?.toString()) {
+        setMessages((prev) => 
+          prev.map((msg) => {
+            const senderId = msg.senderId?._id || msg.senderId;
+            return senderId?.toString() === currentUserId?.toString() ? { ...msg, isRead: true } : msg;
+          })
+        );
+      }
+    };
+
     socket.on('new_message', handleNewMessage);
     socket.on('user_typing', handleUserTyping);
+    socket.on('messages_read', handleMessagesRead);
 
     return () => {
       // Remove ONLY this hook's specific listener, not all listeners
       socket.off('new_message', handleNewMessage);
       socket.off('user_typing', handleUserTyping);
+      socket.off('messages_read', handleMessagesRead);
 
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
@@ -77,14 +97,19 @@ export const useChat = (conversationId?: string) => {
   }, [conversationId]);
 
   const sendMessage = useCallback((text: string, receiverId: string) => {
-    if (!socket || !conversationId) return;
-    socket.emit('send_message', { conversationId, receiverId, text });
-  }, [socket, conversationId]);
+    const convId = conversationIdRef.current;
+    if (!socket || !convId) {
+      console.warn('sendMessage: socket or conversationId not ready', { socket: !!socket, convId });
+      return;
+    }
+    socket.emit('send_message', { conversationId: convId, receiverId, text });
+  }, [socket]);
 
   const handleTyping = useCallback((typing: boolean) => {
-    if (!socket || !conversationId) return;
-    socket.emit('typing', { conversationId, isTyping: typing });
-  }, [socket, conversationId]);
+    const convId = conversationIdRef.current;
+    if (!socket || !convId) return;
+    socket.emit('typing', { conversationId: convId, isTyping: typing });
+  }, [socket]);
 
   return { messages, loading, isTyping, sendMessage, handleTyping };
 };
