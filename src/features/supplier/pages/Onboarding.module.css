@@ -455,5 +455,5 @@ textarea.input { height: 70px; resize: vertical; }
 @media (max-width: 768px) {
   .centeredForm { padding: 15px; }
   .successCard { padding: 24px 20px; }
-  .formRow { flex-direction: column; gap: 0; }
+  .formRow { flex-direction: column; gap: 16px; }
 }

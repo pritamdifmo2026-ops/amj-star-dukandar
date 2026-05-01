@@ -23,7 +23,8 @@ import {
   ShieldCheck,
   BarChart3,
   Package,
-  Tags
+  Tags,
+  Menu
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -41,7 +42,7 @@ const AdminDashboard: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 768);
 
   const adminMenu: MenuItem[] = [
     { id: 'stats', label: 'Overview', icon: BarChart3 },
@@ -215,12 +216,31 @@ const AdminDashboard: React.FC = () => {
         logoSrc="/favicon.jpeg"
         menu={adminMenu}
         activeTab={activeTab}
-        onTabChange={(id) => setActiveTab(id as any)}
+        onTabChange={(id) => {
+          setActiveTab(id as any);
+          if (window.innerWidth <= 768) {
+            setIsSidebarOpen(false);
+          }
+        }}
         onLogout={() => setShowLogoutModal(true)}
         isSidebarOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         brandColor="#0284c7"
       />
+
+      <header className={styles.mobileHeader}>
+        <button 
+          className={styles.menuToggle} 
+          onClick={() => setIsSidebarOpen(true)}
+        >
+          <Menu size={20} />
+        </button>
+        <div className={styles.mobileTitle}>AMJ Admin</div>
+      </header>
+
+      {isSidebarOpen && window.innerWidth <= 768 && (
+        <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
+      )}
 
       <main className={styles.content}>
         <header className={styles.header}>
