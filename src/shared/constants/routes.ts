@@ -16,6 +16,7 @@ export const ROUTES = {
 
   // Supplier
   SUPPLIER_DASHBOARD: '/supplier/dashboard',
+  SUPPLIER_INBOX: '/supplier/inbox',
   SUPPLIER_PRODUCTS: '/supplier/products',
   SUPPLIER_ADD_PRODUCT: '/supplier/products/add',
   SUPPLIER_ORDERS: '/supplier/orders',

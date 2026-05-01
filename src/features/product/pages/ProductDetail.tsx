@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart, CreditCard } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart, CreditCard, MessageCircle } from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart } from '@/store/slices/cart.slice';
 import { toggleWishlist } from '@/store/slices/wishlist.slice';
+import { useSocket } from '@/shared/contexts/SocketContext';
+import { chatApi } from '@/shared/services/chat.api';
 import Button from '@/shared/components/ui/Button';
 import Loader from '@/shared/components/feedback/Loader';
 import ErrorState from '@/shared/components/feedback/ErrorState';
@@ -20,7 +22,9 @@ const ProductDetail: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const wishlistItems = useAppSelector(state => state.wishlist.items);
-  
+  const { setActiveChatId } = useSocket();
+  const [contactingSupplier, setContactingSupplier] = useState(false);
+
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -33,6 +37,22 @@ const ProductDetail: React.FC = () => {
   const handleToggleWishlist = () => {
     if (product) {
       dispatch(toggleWishlist(product));
+    }
+  };
+
+  const handleContactSupplier = async () => {
+    if (!product) return;
+    setContactingSupplier(true);
+    try {
+      const conversation = await chatApi.getOrCreateConversation(
+        product.supplierId,
+        product.id
+      );
+      setActiveChatId(conversation._id);
+    } catch (err) {
+      console.error('Failed to open chat', err);
+    } finally {
+      setContactingSupplier(false);
     }
   };
 
@@ -192,8 +212,15 @@ const ProductDetail: React.FC = () => {
                   <CreditCard size={20} />
                   Buy Now
                 </Button>
-                <Button variant="outline" size="lg" className={styles.inquiryBtn}>
-                  Send Inquiry
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className={styles.inquiryBtn}
+                  onClick={handleContactSupplier}
+                  disabled={contactingSupplier}
+                >
+                  <MessageCircle size={18} />
+                  {contactingSupplier ? 'Opening Chat…' : 'Chat with Supplier'}
                 </Button>
               </div>
 

@@ -31,4 +31,11 @@ export const ENDPOINTS = {
     REMOVE: (id: string | number) => `/cart/${id}`,
     CLEAR: '/cart/clear',
   },
+
+  // Chat
+  CHAT: {
+    CONVERSATION: '/chat/conversation',
+    CONVERSATIONS: '/chat/conversations',
+    MESSAGES: (id: string) => `/chat/messages/${id}`,
+  },
 } as const;

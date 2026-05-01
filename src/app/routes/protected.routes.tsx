@@ -5,6 +5,7 @@ import ProtectedRoute from '@/shared/components/ProtectedRoute';
 import Profile from '@/features/buyer/pages/Profile';
 import Onboarding from '@/features/supplier/pages/Onboarding';
 import SupplierGuard from '@/features/supplier/components/SupplierGuard';
+import SupplierInbox from '@/features/supplier/pages/SupplierInbox';
 import AdminDashboard from '@/features/admin/pages/AdminDashboard';
 import SupplierDashboard from '@/features/supplier/pages/SupplierDashboard';
 import ResellerDashboard from '@/features/reseller/pages/ResellerDashboard';
@@ -57,6 +58,16 @@ export const protectedRoutes: RouteObject[] = [
       <ProtectedRoute allowedRoles={['supplier']}>
         <SupplierGuard>
           <SupplierDashboard />
+        </SupplierGuard>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTES.SUPPLIER_INBOX,
+    element: (
+      <ProtectedRoute allowedRoles={['supplier']}>
+        <SupplierGuard>
+          <SupplierInbox />
         </SupplierGuard>
       </ProtectedRoute>
     ),

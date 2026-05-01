@@ -5,6 +5,8 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setCredentials, logout } from '@/store/slices/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 
+import { FloatingChat } from '@/shared/components/chat/FloatingChat';
+
 const RootLayout: React.FC = () => {
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
@@ -31,6 +33,7 @@ const RootLayout: React.FC = () => {
     <>
       <ScrollToTop />
       <Outlet />
+      <FloatingChat />
     </>
   );
 };
