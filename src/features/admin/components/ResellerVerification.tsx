@@ -61,17 +61,17 @@ const ResellerTable: React.FC<ResellerTableProps> = ({ title, resellers, onVerif
           <tbody>
             {paginated.map(r => (
               <tr key={r._id}>
-                <td>{r.storeName}</td>
-                <td>{r.fullName || r.user?.name || 'N/A'}</td>
-                <td>{r.phone || r.user?.phone || r.user?.email || 'N/A'}</td>
-                <td>
+                <td data-label="Store Name">{r.storeName}</td>
+                <td data-label="Reseller Name">{r.fullName || r.user?.name || 'N/A'}</td>
+                <td data-label="Contact">{r.phone || r.user?.phone || r.user?.email || 'N/A'}</td>
+                <td data-label="Status">
                   <span className={`${styles.statusBadge} ${r.status === 'APPROVED' ? styles.statusVerified : r.status === 'REJECTED' ? styles.statusRejected : styles.statusPending}`}>
                     {r.status}
                   </span>
                 </td>
-                <td><span className={styles.badge} style={{ background: '#f0f9ff', color: '#0369a1' }}>{r.subscriptionPlan || 'Starter'}</span></td>
-                <td><span className={styles.badge}>{r.reach}</span></td>
-                <td className={styles.actions}>
+                <td data-label="Plan"><span className={styles.badge} style={{ background: '#f0f9ff', color: '#0369a1' }}>{r.subscriptionPlan || 'Starter'}</span></td>
+                <td data-label="Reach"><span className={styles.badge}>{r.reach}</span></td>
+                <td data-label="Actions" className={styles.actions}>
                   <button onClick={() => onView(r._id)} className={styles.viewTextBtn}>View</button>
                   {showActions && r.status === 'PENDING' && (
                     <>

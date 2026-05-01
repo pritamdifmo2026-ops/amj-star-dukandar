@@ -107,8 +107,8 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
           <tbody>
             {pagedProducts.map(p => (
               <tr key={p._id}>
-                <td className={styles.productCell}>
-                  <div className={styles.productInfo}>
+                <td data-label="Product" className={styles.productCell}>
+                  <div className={styles.productInfo} style={{ justifyContent: 'flex-end' }}>
                     {p.images?.[0] ? (
                       <img src={p.images[0]} alt="" className={styles.productThumb} />
                     ) : (
@@ -119,11 +119,11 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
                     <span>{p.name}</span>
                   </div>
                 </td>
-                <td>{p.supplierId?.businessName}</td>
-                <td>₹{p.basePrice}</td>
-                <td>{p.category}</td>
+                <td data-label="Supplier">{p.supplierId?.businessName}</td>
+                <td data-label="Price">₹{p.basePrice}</td>
+                <td data-label="Category">{p.category}</td>
                 {isPending ? (
-                  <td className={styles.actions}>
+                  <td data-label="Actions" className={styles.actions}>
                     <button 
                       onClick={() => setProductConfirm({ product: p, status: 'APPROVED' })} 
                       className={styles.approveBtn}
@@ -140,7 +140,7 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
                     </button>
                   </td>
                 ) : (
-                  <td>
+                  <td data-label="Status">
                     <span className={styles.statusActive}>
                       <CheckCircle size={14} style={{ marginRight: '4px' }} />
                       Approved
