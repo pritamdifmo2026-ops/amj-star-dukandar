@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MessageCircle, Send, Inbox } from 'lucide-react';
+import { Search, Send, Inbox } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { chatApi } from '@/shared/services/chat.api';
 import { useSocket } from '@/shared/contexts/SocketContext';

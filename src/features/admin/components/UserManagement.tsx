@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Power } from 'lucide-react';
 import styles from '../pages/AdminDashboard.module.css';
+import Pagination from '@/shared/components/ui/Pagination';
 
 interface UserManagementProps {
   users: any[];
@@ -8,6 +9,11 @@ interface UserManagementProps {
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ users, onToggleStatus }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
+
+  const pagedUsers = users.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
   return (
     <div className={styles.tableWrapper}>
       <table className={styles.table}>
@@ -21,7 +27,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onToggleStatus }
           </tr>
         </thead>
         <tbody>
-          {users.map(u => (
+          {pagedUsers.map(u => (
             <tr key={u._id}>
               <td data-label="Name">{u.name || 'N/A'}</td>
               <td data-label="Phone">{u.phone}</td>
@@ -46,6 +52,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onToggleStatus }
           )}
         </tbody>
       </table>
+      
+      <Pagination 
+        totalItems={users.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        styles={styles}
+      />
     </div>
   );
 };

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Package, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, CheckCircle, XCircle } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import styles from '../pages/AdminDashboard.module.css';
+import Pagination from '@/shared/components/ui/Pagination';
 
 interface ProductQueueProps {
   pendingProducts: any[];
@@ -28,66 +29,6 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
     }
   };
 
-  const renderPagination = (totalItems: number, currentPage: number, onPageChange: (p: number) => void) => {
-    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-    if (totalPages <= 1) return null;
-
-    const renderPageNumbers = () => {
-      const pages = [];
-      if (totalPages <= 4) {
-        for (let i = 1; i <= totalPages; i++) pages.push(i);
-      } else {
-        // 1, 2, ..., totalPages
-        pages.push(1);
-        pages.push(2);
-        if (currentPage > 3) pages.push('...');
-        if (currentPage > 2 && currentPage < totalPages - 1) {
-          if (!pages.includes(currentPage)) pages.push(currentPage);
-        }
-        if (currentPage < totalPages - 2) pages.push('...');
-        if (!pages.includes(totalPages)) pages.push(totalPages);
-      }
-
-      return pages.map((p, idx) => {
-        if (p === '...') return <span key={`dots-${idx}`} className={styles.dots}>...</span>;
-        return (
-          <button
-            key={p}
-            onClick={() => onPageChange(p as number)}
-            className={`${styles.pageNumber} ${currentPage === p ? styles.activePage : ''}`}
-          >
-            {p}
-          </button>
-        );
-      });
-    };
-
-    return (
-      <div className={styles.pagination}>
-        <button 
-          disabled={currentPage === 1} 
-          onClick={() => onPageChange(currentPage - 1)}
-          className={styles.pageBtn}
-        >
-          <ChevronLeft size={16} />
-          Prev
-        </button>
-        
-        <div className={styles.pageNumbers}>
-          {renderPageNumbers()}
-        </div>
-
-        <button 
-          disabled={currentPage === totalPages} 
-          onClick={() => onPageChange(currentPage + 1)}
-          className={styles.pageBtn}
-        >
-          Next
-          <ChevronRight size={16} />
-        </button>
-      </div>
-    );
-  };
 
   const renderProductTable = (products: any[], isPending: boolean, currentPage: number) => {
     const pagedProducts = products.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -108,7 +49,7 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
             {pagedProducts.map(p => (
               <tr key={p._id}>
                 <td data-label="Product" className={styles.productCell}>
-                  <div className={styles.productInfo} style={{ justifyContent: 'flex-end' }}>
+                  <div className={styles.productInfo}>
                     {p.images?.[0] ? (
                       <img src={p.images[0]} alt="" className={styles.productThumb} />
                     ) : (
@@ -165,14 +106,26 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
         <span className={styles.countBadge}>{pendingProducts.length} items</span>
       </div>
       {renderProductTable(pendingProducts, true, pendingPage)}
-      {renderPagination(pendingProducts.length, pendingPage, setPendingPage)}
+      <Pagination 
+        totalItems={pendingProducts.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={pendingPage}
+        onPageChange={setPendingPage}
+        styles={styles}
+      />
 
       <div className={`${styles.sectionHeader} ${styles.marginTop}`}>
         <h3>Approved Products</h3>
         <span className={styles.countBadge}>{approvedProducts.length} items</span>
       </div>
       {renderProductTable(approvedProducts, false, approvedPage)}
-      {renderPagination(approvedProducts.length, approvedPage, setApprovedPage)}
+      <Pagination 
+        totalItems={approvedProducts.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={approvedPage}
+        onPageChange={setApprovedPage}
+        styles={styles}
+      />
 
       <Modal
         isOpen={!!productConfirm}

@@ -88,7 +88,7 @@ const ResellerSupplierPartners: React.FC = () => {
             <tbody>
               {filteredPartners.map((partner) => (
                 <tr key={partner._id}>
-                  <td>
+                  <td data-label="Supplier">
                     <div className={styles.supplierBrand}>
                       <div className={styles.brandIcon}><Building size={20}/></div>
                       <div>
@@ -97,21 +97,21 @@ const ResellerSupplierPartners: React.FC = () => {
                       </div>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Contact Info">
                     <div className={styles.contactInfo}>
                       <div className={styles.infoRow}><Phone size={14}/> {partner.phone}</div>
                       <div className={styles.infoRow}><Mail size={14}/> {partner.userId?.email || 'N/A'}</div>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Approved Products">
                     <div className={styles.productList}>
                       {partner.products.map((p: string, idx: number) => (
                         <span key={idx} className={styles.productBadge}>{p}</span>
                       ))}
                     </div>
                   </td>
-                  <td>{new Date(partner.joinedAt).toLocaleDateString()}</td>
-                  <td>
+                  <td data-label="Partner Since">{new Date(partner.joinedAt).toLocaleDateString()}</td>
+                  <td data-label="Actions">
                     <a href={`tel:${partner.phone}`} className={styles.callLink}>
                       Call Supplier
                     </a>

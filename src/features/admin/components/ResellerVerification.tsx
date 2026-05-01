@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, ChevronRight, Search, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, ExternalLink } from 'lucide-react';
 import styles from '../pages/AdminDashboard.module.css';
+import Pagination from '@/shared/components/ui/Pagination';
 
 interface ResellerVerificationProps {
   resellers: any[];
@@ -27,7 +28,6 @@ const ResellerTable: React.FC<ResellerTableProps> = ({ title, resellers, onVerif
     r.phone?.includes(search)
   );
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
@@ -97,17 +97,13 @@ const ResellerTable: React.FC<ResellerTableProps> = ({ title, resellers, onVerif
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-            <ChevronLeft size={18} />
-          </button>
-          <span>Page {page} of {totalPages}</span>
-          <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
+      <Pagination 
+        totalItems={filtered.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={page}
+        onPageChange={setPage}
+        styles={styles}
+      />
     </div>
   );
 };

@@ -469,13 +469,126 @@
 .toggleBtn:hover { background: #f1f5f9; }
 
 /* ─── Responsive ─── */
-@media (max-width: 900px) {
-  .mainGrid { grid-template-columns: 1fr; }
-  .statsRow { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 1024px) {
+  .mainGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 }
 
-@media (max-width: 560px) {
-  .statusBanner { flex-direction: column; align-items: flex-start; }
-  .statsRow { grid-template-columns: 1fr; }
-  .shareActions { flex-direction: column; }
+@media (max-width: 768px) {
+  .statusBanner {
+    padding: 1.5rem 1.25rem;
+    text-align: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  
+  .statusLeft {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .statusTitle {
+    font-size: 1.15rem;
+    line-height: 1.3;
+  }
+
+  .statusSub {
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .previewBtn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.8rem;
+  }
+
+  .statsRow {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .previewProductGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .previewItem img {
+    height: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    gap: 1.25rem;
+  }
+
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+
+  .previewProductGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .previewItem img {
+    height: 70px;
+  }
+
+  .previewHeader {
+    padding: 1rem;
+  }
+
+  .storeAvatar {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+
+  .previewStoreName {
+    font-size: 0.95rem;
+  }
+
+  .shareActions {
+    flex-direction: column;
+  }
+
+  .linkBox {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copyBtn {
+    border-left: none;
+    border-top: 1px solid #e2e8f0;
+    justify-content: center;
+    padding: 0.75rem;
+  }
+
+  .productRow {
+    padding: 0.85rem 1rem;
+    flex-wrap: wrap;
+  }
+
+  .productRowInfo {
+    width: calc(100% - 60px);
+  }
+
+  .productRowActions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #f1f5f9;
+  }
+
+  .previewFooter {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
 }

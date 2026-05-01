@@ -130,7 +130,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {userData.map((entry, index) => (
+                  {userData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

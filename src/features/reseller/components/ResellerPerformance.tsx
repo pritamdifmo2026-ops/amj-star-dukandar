@@ -172,20 +172,20 @@ const ResellerPerformance: React.FC = () => {
             <tbody>
               {topProducts.map((p, i) => (
                 <tr key={i}>
-                  <td>
+                  <td data-label="Product">
                     <div className={styles.productCell}>
                       <div className={styles.productRank}>#{i + 1}</div>
                       <span>{p.name}</span>
                     </div>
                   </td>
-                  <td className={styles.centerCol}>{p.views}</td>
-                  <td className={styles.centerCol}>{p.orders}</td>
-                  <td className={styles.centerCol}>
+                  <td className={styles.centerCol} data-label="Views">{p.views}</td>
+                  <td className={styles.centerCol} data-label="Orders">{p.orders}</td>
+                  <td className={styles.centerCol} data-label="Conversion">
                     <span className={styles.convBadge}>
                       {p.views > 0 ? ((p.orders / p.views) * 100).toFixed(1) : '0.0'}%
                     </span>
                   </td>
-                  <td className={styles.rightCol}>
+                  <td className={styles.rightCol} data-label="Your Margin">
                     <span className={styles.marginBadge}>{p.margin}</span>
                   </td>
                 </tr>

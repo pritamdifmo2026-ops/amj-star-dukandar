@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, ChevronRight, Search, Package, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink } from 'lucide-react';
 import styles from '../pages/AdminDashboard.module.css';
 import adminService from '../services/admin.service';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
+import Pagination from '@/shared/components/ui/Pagination';
 
 interface SupplierVerificationProps {
   suppliers: any[];
@@ -30,7 +31,6 @@ const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerif
     s.phone?.includes(search)
   );
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
@@ -98,17 +98,13 @@ const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerif
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-            <ChevronLeft size={18} />
-          </button>
-          <span>Page {page} of {totalPages}</span>
-          <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
+      <Pagination 
+        totalItems={filtered.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={page}
+        onPageChange={setPage}
+        styles={styles}
+      />
     </div>
   );
 };
@@ -172,7 +168,7 @@ const SupplierProducts: React.FC<{ supplierId: string; businessName: string; onB
                 {products.map(p => (
                   <tr key={p._id}>
                     <td data-label="Product">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {p.images?.[0] && <img src={p.images[0]} alt="" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />}
                         <span>{p.name}</span>
                       </div>

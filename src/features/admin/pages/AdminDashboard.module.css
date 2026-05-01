@@ -707,8 +707,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
   z-index: 999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (max-width: 1024px) {
@@ -799,8 +806,7 @@
   
   .table td:last-child {
     border-bottom: none;
-    padding-top: 12px;
-    justify-content: flex-end;
+    justify-content: space-between;
   }
   
   .table td::before {
@@ -808,12 +814,36 @@
     font-weight: 700;
     color: #64748b;
     text-align: left;
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
+    flex-shrink: 0;
+    min-width: 100px; /* Ensure label doesn't shrink too much */
   }
   
   .table td:empty {
     display: none;
+  }
+
+  .table td > div {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex: 1;
+    text-align: right;
+    gap: 8px;
+    min-width: 0; /* Allow content to shrink if needed */
+  }
+
+  .productInfo {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .productInfo span {
+    text-align: right;
+    word-break: break-word;
+    max-width: 150px; /* Limit width to prevent pushing too far left */
   }
 
   /* Specific Adjustments for Action Buttons */

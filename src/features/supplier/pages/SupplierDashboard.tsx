@@ -20,7 +20,6 @@ import {
   Edit,
   RefreshCw,
   Image as ImageIcon,
-  IndianRupee,
   Layers,
   CheckCircle,
   Clock,

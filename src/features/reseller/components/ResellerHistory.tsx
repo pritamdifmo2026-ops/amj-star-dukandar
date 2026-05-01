@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { History, Search, CheckCircle, XCircle, Clock } from 'lucide-react';
 import resellerService from '../services/reseller.service';
+import Pagination from '@/shared/components/ui/Pagination';
 import styles from './ResellerHistory.module.css';
 
 interface Activity {
@@ -17,6 +18,8 @@ const ResellerHistory: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchHistory();
@@ -30,7 +33,6 @@ const ResellerHistory: React.FC = () => {
       const parsedActivities: Activity[] = [];
 
       requests.forEach((req: any) => {
-        // Add the initial request activity
         parsedActivities.push({
           id: `${req._id}-requested`,
           type: 'REQUESTED',
@@ -41,7 +43,6 @@ const ResellerHistory: React.FC = () => {
           supplierName: req.supplier?.businessName || 'Unknown Supplier'
         });
 
-        // Add the response activity if it's no longer pending
         if (req.status === 'APPROVED' && req.respondedAt) {
           parsedActivities.push({
             id: `${req._id}-approved`,
@@ -65,7 +66,6 @@ const ResellerHistory: React.FC = () => {
         }
       });
 
-      // Sort by date descending (newest first)
       parsedActivities.sort((a, b) => b.date.getTime() - a.date.getTime());
       setActivities(parsedActivities);
     } catch (err) {
@@ -81,6 +81,12 @@ const ResellerHistory: React.FC = () => {
     activity.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     activity.supplierName.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentActivities = filteredActivities.slice(indexOfFirstItem, indexOfLastItem);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -104,7 +110,10 @@ const ResellerHistory: React.FC = () => {
             type="text"
             placeholder="Search activities..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
       </header>
@@ -118,45 +127,60 @@ const ResellerHistory: React.FC = () => {
           <p>{searchTerm ? 'Try adjusting your search filters.' : 'Your recent account activities will appear here.'}</p>
         </div>
       ) : (
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Date & Time</th>
-                <th>Activity</th>
-                <th>Product</th>
-                <th>Supplier</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredActivities.map((activity) => (
-                <tr key={activity.id}>
-                  <td className={styles.dateCell}>
-                    <div className={styles.dateText}>{activity.date.toLocaleDateString()}</div>
-                    <div className={styles.timeText}>{activity.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                  </td>
-                  <td className={styles.activityCell}>
-                    <div className={styles.activityContent}>
-                      {getActivityIcon(activity.type)}
-                      <div>
-                        <strong>{activity.title}</strong>
-                        <p>{activity.description}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{activity.productName}</td>
-                  <td>{activity.supplierName}</td>
-                  <td>
-                    <span className={`${styles.statusBadge} ${styles[activity.type.toLowerCase()]}`}>
-                      {activity.type}
-                    </span>
-                  </td>
+        <>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Date & Time</th>
+                  <th>Activity</th>
+                  <th>Product</th>
+                  <th>Supplier</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {currentActivities.map((activity) => (
+                  <tr key={activity.id}>
+                    <td className={styles.dateCell} data-label="Date & Time">
+                      <div className={styles.dateText}>{activity.date.toLocaleDateString()}</div>
+                      <div className={styles.timeText}>{activity.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </td>
+                    <td className={styles.activityCell} data-label="Activity">
+                      <div className={styles.activityContent}>
+                        {getActivityIcon(activity.type)}
+                        <div>
+                          <strong>{activity.title}</strong>
+                          <p>{activity.description}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td data-label="Product">{activity.productName}</td>
+                    <td data-label="Supplier">{activity.supplierName}</td>
+                    <td data-label="Status">
+                      <span className={`${styles.statusBadge} ${styles[activity.type.toLowerCase()]}`}>
+                        {activity.type}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              totalItems={filteredActivities.length}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              styles={styles}
+            />
+          )}
+        </>
       )}
     </div>
   );
