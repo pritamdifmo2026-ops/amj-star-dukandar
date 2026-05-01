@@ -12,6 +12,7 @@ import ProductDetail from '@/features/product/pages/ProductDetail';
 import AddProduct from '@/features/product/pages/AddProduct';
 import AdminLogin from '@/features/admin/pages/AdminLogin';
 import PublicStorefront from '@/features/reseller/pages/PublicStorefront';
+import SupplierVerifyEmail from '@/features/supplier/pages/VerifyEmail';
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -62,5 +63,9 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/store/:slug',
     element: <PublicStorefront />,
+  },
+  {
+    path: '/verify-supplier-email',
+    element: <SupplierVerifyEmail />,
   }
 ];

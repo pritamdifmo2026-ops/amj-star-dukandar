@@ -60,6 +60,7 @@ const Onboarding: React.FC = () => {
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [gstin, setGstin] = useState('');
+  const [pan, setPan] = useState('');
 
   const [about, setAbout] = useState('');
   const [yearOfEstablishment, setYearOfEstablishment] = useState('');
@@ -70,7 +71,6 @@ const Onboarding: React.FC = () => {
   // Phone Change/OTP states
   const [isPhoneVerified] = useState(true);
   const [isPhoneEditable, setIsPhoneEditable] = useState(false);
-  const [isWomenEntrepreneur, setIsWomenEntrepreneur] = useState(false);
   const [isFoodSupplier, setIsFoodSupplier] = useState(false);
   const [fssaiLicenseNumber, setFssaiLicenseNumber] = useState('');
   const [fssaiCertificate, setFssaiCertificate] = useState<File | null>(null);
@@ -112,9 +112,9 @@ const Onboarding: React.FC = () => {
             if (bd.state) setState(bd.state);
             if (bd.city) setCity(bd.city);
             if (bd.gstin) setGstin(bd.gstin);
+            if (bd.pan) setPan(bd.pan);
             if (bd.about) setAbout(bd.about);
             if (bd.yearOfEstablishment) setYearOfEstablishment(bd.yearOfEstablishment);
-            if (bd.isWomenEntrepreneur) setIsWomenEntrepreneur(bd.isWomenEntrepreneur);
             if (bd.isFoodSupplier) setIsFoodSupplier(bd.isFoodSupplier);
             if (bd.fssaiLicenseNumber) setFssaiLicenseNumber(bd.fssaiLicenseNumber);
             if (bd.fssaiCertificate) setFssaiCertificateUrl(bd.fssaiCertificate);
@@ -178,13 +178,17 @@ const Onboarding: React.FC = () => {
       newErrs.gstin = "Invalid GSTIN format";
     }
 
+    if (!pan.trim() || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
+      newErrs.pan = "Valid 10-digit PAN is required";
+    }
+
     setErrors(newErrs);
     return Object.keys(newErrs).length === 0;
   };
 
   const validateProfileInfo = () => {
     const newErrs: Record<string, string> = {};
-    
+
     if (isFoodSupplier) {
       if (!fssaiLicenseNumber.trim() || fssaiLicenseNumber.length !== 14) {
         newErrs.fssaiLicenseNumber = "FSSAI License Number must be 14 digits";
@@ -206,7 +210,7 @@ const Onboarding: React.FC = () => {
     if (!pinCode.trim()) newErrs.pinCode = "PIN code is required";
     if (!state.trim()) newErrs.state = "State is required";
     if (!city.trim()) newErrs.city = "City is required";
-    
+
     if (Object.keys(newErrs).length > 0) {
       setErrors(newErrs);
       console.error("Validation failed at final step:", newErrs);
@@ -221,19 +225,19 @@ const Onboarding: React.FC = () => {
     try {
       if (currentStep === 1) {
         if (!validateBasicInfo()) return;
-        const data = await supplierService.onboard({ businessName, phone, ownerName, email, isWomenEntrepreneur });
+        const data = await supplierService.onboard({ businessName, phone, ownerName, email });
         dispatch(setSupplierProfile(data.supplier));
         setCurrentStep(2);
       } else if (currentStep === 2) {
         if (!validateBusinessDetails()) return;
         // Save draft to server
         await supplierService.saveDraft({
-          ownerName, email, address, pinCode, state, city, gstin, isWomenEntrepreneur
+          ownerName, email, address, pinCode, state, city, gstin, pan
         });
         setCurrentStep(3);
       } else if (currentStep === 3) {
         if (!validateProfileInfo()) return;
-        
+
         let finalCertUrl = fssaiCertificateUrl;
         if (fssaiCertificate) {
           const uploadRes = await supplierService.uploadDoc(fssaiCertificate);
@@ -244,7 +248,7 @@ const Onboarding: React.FC = () => {
 
         // Save profile draft
         await supplierService.saveDraft({
-          ownerName, email, address, pinCode, state, city, gstin, about, yearOfEstablishment, isWomenEntrepreneur,
+          ownerName, email, address, pinCode, state, city, gstin, pan, about, yearOfEstablishment,
           isFoodSupplier, fssaiLicenseNumber, fssaiCertificate: finalCertUrl
         });
         setCurrentStep(4);
@@ -254,7 +258,7 @@ const Onboarding: React.FC = () => {
         dispatch(setSupplierProfile(tierData.supplier));
 
         const kycData = await supplierService.submitKYC({
-          ownerName, email, address, pinCode, state, city, gstin, about, yearOfEstablishment, isWomenEntrepreneur,
+          ownerName, email, address, pinCode, state, city, gstin, pan, about, yearOfEstablishment,
           isFoodSupplier, fssaiLicenseNumber, fssaiCertificate: fssaiCertificateUrl
         });
         dispatch(setSupplierProfile(kycData.supplier));
@@ -339,8 +343,8 @@ const Onboarding: React.FC = () => {
                 <div className={styles.labelWithAction}>
                   <label>Contact Phone <span className={styles.required}>*</span></label>
                   {!isPhoneEditable && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className={styles.textActionBtn}
                       onClick={() => setIsPhoneEditable(true)}
                     >
@@ -489,6 +493,27 @@ const Onboarding: React.FC = () => {
                 </div>
               </div>
 
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label>PAN Number <span className={styles.required}>*</span></label>
+                  <input
+                    name="pan"
+                    className={`${styles.input} ${errors.pan ? styles.inputError : ''}`}
+                    value={pan}
+                    onChange={(e) => {
+                      setPan(e.target.value.toUpperCase());
+                      setErrors(prev => ({ ...prev, pan: '' }));
+                    }}
+                    placeholder="ABCDE1234F"
+                    maxLength={10}
+                  />
+                  {errors.pan && <span className={styles.errorText}>{errors.pan}</span>}
+                </div>
+                <div className={styles.formGroup}>
+                  {/* Empty space for grid alignment */}
+                </div>
+              </div>
+
               <div className={styles.buttonGroup}>
                 <button onClick={() => setCurrentStep(1)} className={styles.outlineBtn}>Back</button>
                 <button onClick={submitStep} disabled={loading} className={styles.orangeBtn}>
@@ -573,14 +598,14 @@ const Onboarding: React.FC = () => {
                         }}
                         style={{ display: 'none' }}
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         className={styles.customFileUpload}
                       >
                         <Upload size={18} /> {fssaiCertificate || fssaiCertificateUrl ? 'Change File' : 'Choose File'}
                       </button>
-                      
+
                       {fssaiCertificate ? (
                         <p className={styles.fileSuccess}>✓ {fssaiCertificate.name}</p>
                       ) : fssaiCertificateUrl ? (
@@ -631,31 +656,31 @@ const Onboarding: React.FC = () => {
               <div className={styles.formGroup}>
                 <div className={styles.tierGrid}>
                   {[
-                    { 
-                      id: SupplierTier.FREE, 
-                      label: 'Free Tier', 
-                      desc: 'Basic visibility. List up to 5K products (group).', 
+                    {
+                      id: SupplierTier.FREE,
+                      label: 'Free Tier',
+                      desc: 'Basic visibility. List up to 5K products (group).',
                       price: '₹0',
                       features: ['Up to 5,000 Products', 'Basic Marketplace Visibility']
                     },
-                    { 
-                      id: SupplierTier.GOLD, 
-                      label: 'Gold Plan', 
-                      desc: 'Increased visibility. KYC required. List up to 5K products.', 
+                    {
+                      id: SupplierTier.GOLD,
+                      label: 'Gold Plan',
+                      desc: 'Increased visibility. KYC required. List up to 5K products.',
                       price: '₹999/mo',
                       features: ['Up to 5,000 Products', 'Priority Placement', 'KYC Verified Badge']
                     },
-                    { 
-                      id: SupplierTier.DIAMOND, 
-                      label: 'Diamond Plan', 
-                      desc: 'Higher ranking. Can list single product pushes.', 
+                    {
+                      id: SupplierTier.DIAMOND,
+                      label: 'Diamond Plan',
+                      desc: 'Higher ranking. Can list single product pushes.',
                       price: '₹2,499/mo',
                       features: ['Single Product Pushes', 'Higher Ranking', 'Advanced Analytics']
                     },
-                    { 
-                      id: SupplierTier.PLATINUM, 
-                      label: 'Platinum Plan', 
-                      desc: 'Max visibility, dedicated support, e-commerce integration.', 
+                    {
+                      id: SupplierTier.PLATINUM,
+                      label: 'Platinum Plan',
+                      desc: 'Max visibility, dedicated support, e-commerce integration.',
                       price: '₹4,999/mo',
                       features: ['Maximum Visibility', 'Dedicated Account Manager', 'E-commerce Integration']
                     },
@@ -697,64 +722,64 @@ const Onboarding: React.FC = () => {
         return (
           <>
             <div className={isRejected ? styles.iconCircleError : styles.iconCircleSuccess}>
-                {isRejected ? <XCircle size={48} /> : <ShieldCheck size={48} />}
+              {isRejected ? <XCircle size={48} /> : <ShieldCheck size={48} />}
+            </div>
+            <h1 style={{ textAlign: 'center' }}>
+              {isRejected ? 'Application Rejected' : 'Application Submitted!'}
+            </h1>
+
+            {!isRejected ? (
+              <p className={styles.successText}>
+                Your application is now under review. As part of our high-trust B2B process,
+                <strong> you will receive a verification call within 24 hours </strong>
+                to confirm your details.
+              </p>
+            ) : (
+              <div className={styles.rejectionBox}>
+                <p><strong>Reason for Rejection:</strong></p>
+                <p>{profile?.rejectionReason || 'Your application did not meet our initial requirements. Please see the details below.'}</p>
               </div>
-              <h1 style={{ textAlign: 'center' }}>
-                {isRejected ? 'Application Rejected' : 'Application Submitted!'}
-              </h1>
-              
-              {!isRejected ? (
-                <p className={styles.successText}>
-                  Your application is now under review. As part of our high-trust B2B process,
-                  <strong> you will receive a verification call within 24 hours </strong>
-                  to confirm your details.
-                </p>
-              ) : (
-                <div className={styles.rejectionBox}>
-                  <p><strong>Reason for Rejection:</strong></p>
-                  <p>{profile?.rejectionReason || 'Your application did not meet our initial requirements. Please see the details below.'}</p>
-                </div>
-              )}
+            )}
 
-              <div className={`${styles.statusBox} ${isRejected ? styles.statusRejected : ''}`}>
-                <p>Status: <strong>{profile?.kycStatus || 'PENDING'}</strong></p>
-                {!isRejected && <p className={styles.subStatus}>Next step: Formal Cold Call (within 24h)</p>}
+            <div className={`${styles.statusBox} ${isRejected ? styles.statusRejected : ''}`}>
+              <p>Status: <strong>{profile?.kycStatus || 'PENDING'}</strong></p>
+              {!isRejected && <p className={styles.subStatus}>Next step: Formal Cold Call (within 24h)</p>}
+            </div>
+
+            {isRejected && (
+              <div className={styles.contactTeam}>
+                <p>Need help? Contact our support team:</p>
+                <p><strong>Phone: +91 xxxxxxxx</strong></p>
+                <p>Or update your details and try again.</p>
+                <Button
+                  onClick={handleReapply}
+                  className={styles.reapplyBtn}
+                  variant="outline"
+                >
+                  Update & Reapply
+                </Button>
               </div>
+            )}
 
-              {isRejected && (
-                <div className={styles.contactTeam}>
-                  <p>Need help? Contact our support team:</p>
-                  <p><strong>Phone: +91 xxxxxxxx</strong></p>
-                  <p>Or update your details and try again.</p>
-                  <Button 
-                    onClick={handleReapply} 
-                    className={styles.reapplyBtn}
-                    variant="outline"
-                  >
-                    Update & Reapply
-                  </Button>
+            {!isRejected && (
+              <div className={styles.growthCard}>
+                <div className={styles.growthIconWrapper}>
+                  <Handshake size={24} />
                 </div>
-              )}
-
-              {!isRejected && (
-                <div className={styles.growthCard}>
-                  <div className={styles.growthIconWrapper}>
-                    <Handshake size={24} />
-                  </div>
-                  <div className={styles.growthText}>
-                    <p><strong>Woman Entrepreneur?</strong></p>
-                    <p>We would love to connect and discuss growth with you!</p>
-                  </div>
+                <div className={styles.growthText}>
+                  <p><strong>Woman Entrepreneur?</strong></p>
+                  <p>We would love to connect and discuss growth with you!</p>
                 </div>
-              )}
+              </div>
+            )}
 
-              <Button
-                onClick={() => navigate('/')}
-                size="lg"
-                className={styles.homeBtn}
-              >
-                Go to Homepage
-              </Button>
+            <Button
+              onClick={() => navigate('/')}
+              size="lg"
+              className={styles.homeBtn}
+            >
+              Go to Homepage
+            </Button>
           </>
         );
       default:
@@ -784,7 +809,7 @@ const Onboarding: React.FC = () => {
   return (
     <SupplierOnboardingLayout currentStep={currentStep} steps={steps}>
       {renderStepContent()}
-      
+
       <Modal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}

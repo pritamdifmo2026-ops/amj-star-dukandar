@@ -3,9 +3,7 @@ import {
   MessageCircle,
   X,
   ChevronDown,
-  Maximize2,
   Send,
-  List,
   ArrowLeft,
   Check,
   CheckCheck
@@ -31,7 +29,7 @@ type ActivePanel = 'list' | 'chat';
 
 export const FloatingChat: React.FC = () => {
   const { isAuthenticated, user } = useSelector((state: any) => state.auth);
-  const { socket, isConnected, activeChatId, setActiveChatId } = useSocket();
+  const { socket, isConnected, activeChatId } = useSocket();
 
   const [uiState, setUiState] = useState<UIState>('CLOSED');
   const [panel, setPanel] = useState<ActivePanel>('list');

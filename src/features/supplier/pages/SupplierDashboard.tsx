@@ -8,9 +8,6 @@ import {
   LayoutDashboard,
   Package,
   Truck,
-  Plus,
-  ShieldCheck,
-  Zap,
   LogOut,
   Trash2,
   FileText,
@@ -18,20 +15,23 @@ import {
   Handshake,
   Menu,
   Edit,
-  RefreshCw,
   Image as ImageIcon,
   IndianRupee,
   Layers,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  ShoppingBag,
+  Settings as SettingsIcon
 } from 'lucide-react';
 
-import SupplierStats from '../components/SupplierStats';
 import ProductTable from '../components/ProductTable';
 import PlaceholderView from '../components/PlaceholderView';
 import AddProductForm from '../components/AddProductForm';
 import SupplierPartnerships from '../components/SupplierPartnerships';
+import SupplierOverview from '../components/SupplierOverview';
+import SupplierInventory from '../components/SupplierInventory';
+import SupplierSettings from '../components/SupplierSettings';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
@@ -201,7 +201,8 @@ const SupplierDashboard: React.FC = () => {
 
   const supplierMenu: MenuItem[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'inventory', label: 'My Inventory', icon: Package },
+    { id: 'inventory', label: 'My Products', icon: Package },
+    { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'partnerships', label: 'Reseller Partnerships', icon: Handshake },
   ];
 
@@ -209,6 +210,7 @@ const SupplierDashboard: React.FC = () => {
     { id: 'quotations', label: 'Quotations', icon: FileText },
     { id: 'chat', label: 'Chat', icon: MessageCircle },
     { id: 'logistics', label: 'Logistics', icon: Truck },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
   const fetchProducts = useCallback(async (showLoading = true) => {
@@ -326,35 +328,7 @@ const SupplierDashboard: React.FC = () => {
         <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      <main className={styles.mainContent}>
-        <div className={styles.header}>
-          <div>
-            <h1>Welcome back, {profile?.businessName || 'Supplier'}</h1>
-            {isTrusted ? (
-              <div className={styles.trustedBadge}>
-                <ShieldCheck size={16} />
-                <span>Trusted Supplier</span>
-              </div>
-            ) : (
-              <p>Manage your products and orders from your command center.</p>
-            )}
-            {isTrusted && (
-              <div className={styles.autoApprovalNotice}>
-                <Zap size={14} />
-                <span><strong>Auto-Upload Active:</strong> Your products will now be live instantly!</span>
-              </div>
-            )}
-          </div>
-          <div className={styles.headerActions}>
-            <Button variant="outline" onClick={handleRefresh} className={styles.refreshBtn}>
-              <RefreshCw size={18} /> Refresh
-            </Button>
-            <Button onClick={() => setActiveView('add-product')} className={styles.addBtn}>
-              <Plus size={20} /> Add New Product
-            </Button>
-          </div>
-        </div>
-
+      <main className={`${styles.mainContent} ${activeView === 'chat' ? styles.noPadding : ''}`}>
         {error && (
           <div className={styles.errorBanner}>
             <AlertCircle size={18} />
@@ -364,28 +338,30 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'overview' && (
-          <>
-            <SupplierStats products={products} />
-            <section className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <h2>Recent Products</h2>
-                <button className={styles.viewAll} onClick={() => setActiveView('inventory')}>View All</button>
-              </div>
-              {renderProductListing(products.slice(0, 5))}
-            </section>
-          </>
+          <SupplierOverview 
+            profile={profile}
+            products={products}
+            isTrusted={isTrusted}
+            handleRefresh={handleRefresh}
+            setActiveView={setActiveView}
+            renderProductListing={renderProductListing}
+          />
+        )}
+        
+        {activeView === 'inventory' && (
+          <SupplierInventory 
+            products={products}
+            handleRefresh={handleRefresh}
+            renderProductListing={renderProductListing}
+          />
         )}
 
-        {activeView === 'inventory' && (
-          <section className={styles.section}>
-            <div className={styles.sectionHeader}>
-              <h2>My Inventory</h2>
-              <button className={styles.viewAll} onClick={handleRefresh}>
-                <RefreshCw size={14} /> Refresh
-              </button>
-            </div>
-            {renderProductListing(products)}
-          </section>
+        {activeView === 'orders' && (
+          <PlaceholderView
+            title="Orders Management"
+            icon={ShoppingBag}
+            description="Track and manage all your customer and reseller orders in one place."
+          />
         )}
 
         {activeView === 'quotations' && (
@@ -397,7 +373,7 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'chat' && (
-          <div style={{ height: 'calc(100vh - 180px)' }}>
+          <div style={{ height: '100vh', width: '100%' }}>
             <ChatInbox />
           </div>
         )}
@@ -411,6 +387,8 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'partnerships' && <SupplierPartnerships />}
+
+        {activeView === 'settings' && <SupplierSettings profile={profile} />}
       </main>
 
       {(activeView === 'add-product' || activeView === 'edit-product') && (

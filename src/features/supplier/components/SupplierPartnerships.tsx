@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Handshake, Store, MapPin } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
+import toast from 'react-hot-toast';
 import supplierService from '../services/supplier.service';
 import styles from './SupplierPartnerships.module.css';
 
@@ -38,13 +39,13 @@ const SupplierPartnerships: React.FC = () => {
   const handleRespond = async (id: string, action: 'APPROVED' | 'REJECTED', reason?: string) => {
     try {
       await supplierService.respondToRequest(id, action, reason);
-      alert(`Request ${action.toLowerCase()} successfully`);
+      toast.success(`Request ${action.toLowerCase()} successfully`);
       setModalType(null);
       setSelectedRequest(null);
       setRejectionReason('');
       fetchData(); // Refresh lists
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to respond');
+      toast.error(error.response?.data?.message || 'Failed to respond');
     }
   };
 

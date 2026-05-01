@@ -10,6 +10,8 @@ import { setCredentials } from '@/store/slices/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import ProductCard from '@/features/product/components/ProductCard';
 import ChatInbox from '@/features/chat/components/ChatInbox';
+import { useSocket } from '@/shared/contexts/SocketContext';
+import { chatApi } from '@/shared/services/chat.api';
 import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
@@ -40,6 +42,36 @@ const Profile: React.FC = () => {
   const orderCount = 0;
   const memberSince = 'January 2024';
   const isEmailVerified = user?.isEmailVerified || false;
+  const { socket } = useSocket();
+  const [totalUnread, setTotalUnread] = useState(0);
+
+  // Fetch unread count for the sidebar badge
+  const fetchUnreadCount = async () => {
+    try {
+      const conversations = await chatApi.getConversations();
+      const count = conversations.reduce((acc: number, conv: any) => {
+        const userId = user?.id;
+        const unread = userId ? (conv.unreadCount?.[userId] || 0) : 0;
+        return acc + unread;
+      }, 0);
+      setTotalUnread(count);
+    } catch (err) {
+      console.error('Failed to fetch unread count for profile badge');
+    }
+  };
+
+  React.useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    if (!socket) return;
+    const handleNewMsg = () => fetchUnreadCount();
+    socket.on('new_notification', handleNewMsg);
+    return () => { socket.off('new_notification', handleNewMsg); };
+  }, [socket]);
 
   const handleSaveInfo = async () => {
     if (user) {
@@ -109,7 +141,7 @@ const Profile: React.FC = () => {
   const menuItems = [
     { id: 'overview', label: 'Account Overview', icon: User },
     { id: 'orders', label: 'My Orders', icon: Package, badge: orderCount },
-    { id: 'messages', label: 'Messages', icon: MessageCircle },
+    { id: 'messages', label: 'Messages', icon: MessageCircle, badge: totalUnread },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistItems.length },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'payments', label: 'Payment Methods', icon: CreditCard },
@@ -161,79 +193,83 @@ const Profile: React.FC = () => {
       </aside>
 
       <main className={styles.mainContent}>
-        <div className={styles.profileCover}>
-          <div className={styles.coverGradient}></div>
-          <div className={styles.profileHeader}>
-            <div className={styles.avatar}>
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-            </div>
-            <div className={styles.userInfo}>
-              <div className={styles.nameSection}>
-                <h1>{user?.name || 'Valued Partner'}</h1>
-                {isEmailVerified && (
-                  <span className={styles.verifiedBadge}>
-                    <Check size={14} style={{ marginRight: '4px' }} /> Verified
-                  </span>
-                )}
+        {activeTab === 'overview' && (
+          <div className={styles.profileCover}>
+            <div className={styles.coverGradient}></div>
+            <div className={styles.profileHeader}>
+              <div className={styles.avatar}>
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
               </div>
-              <div className={styles.userMeta}>
-                <span className={styles.roleTag}>{user?.role || 'Buyer'} Account</span>
-                <span className={styles.memberSince}>Member since {memberSince}</span>
-              </div>
-              <div className={styles.contactInfo}>
-                <div className={styles.contactItem}>
-                  <Mail size={16} />
-                  <span>{user?.email || 'Not provided'}</span>
-                  {!isEmailVerified && user?.email && (
-                    <button 
-                      className={styles.verifyEmailBtn} 
-                      onClick={handleSendVerifyEmail}
-                      disabled={isSendingEmail}
-                    >
-                      {isSendingEmail ? 'Sending...' : 'Verify'}
-                    </button>
+              <div className={styles.userInfo}>
+                <div className={styles.nameSection}>
+                  <h1>{user?.name || 'Valued Partner'}</h1>
+                  {isEmailVerified && (
+                    <span className={styles.verifiedBadge}>
+                      <Check size={14} style={{ marginRight: '4px' }} /> Verified
+                    </span>
                   )}
                 </div>
-                <div className={styles.contactItem}>
-                  <Phone size={16} />
-                  <span>{user?.phone || 'Not provided'}</span>
-                  <button className={styles.editContactBtn} onClick={() => setIsChangingPhone(true)}>Update</button>
+                <div className={styles.userMeta}>
+                  <span className={styles.roleTag}>{user?.role || 'Buyer'} Account</span>
+                  <span className={styles.memberSince}>Member since {memberSince}</span>
+                </div>
+                <div className={styles.contactInfo}>
+                  <div className={styles.contactItem}>
+                    <Mail size={16} />
+                    <span>{user?.email || 'Not provided'}</span>
+                    {!isEmailVerified && user?.email && (
+                      <button 
+                        className={styles.verifyEmailBtn} 
+                        onClick={handleSendVerifyEmail}
+                        disabled={isSendingEmail}
+                      >
+                        {isSendingEmail ? 'Sending...' : 'Verify'}
+                      </button>
+                    )}
+                  </div>
+                  <div className={styles.contactItem}>
+                    <Phone size={16} />
+                    <span>{user?.phone || 'Not provided'}</span>
+                    <button className={styles.editContactBtn} onClick={() => setIsChangingPhone(true)}>Update</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <ShoppingBag size={24} className={styles.statIcon} />
-            <div>
-              <span className={styles.statValue}>{orderCount}</span>
-              <span className={styles.statLabel}>Orders</span>
+        {activeTab === 'overview' && (
+          <div className={styles.statsRow}>
+            <div className={styles.statCard}>
+              <ShoppingBag size={24} className={styles.statIcon} />
+              <div>
+                <span className={styles.statValue}>{orderCount}</span>
+                <span className={styles.statLabel}>Orders</span>
+              </div>
+            </div>
+            <div className={styles.statCard}>
+              <Heart size={24} className={styles.statIcon} />
+              <div>
+                <span className={styles.statValue}>{wishlistItems.length}</span>
+                <span className={styles.statLabel}>Wishlist</span>
+              </div>
+            </div>
+            <div className={styles.statCard}>
+              <Star size={24} className={styles.statIcon} />
+              <div>
+                <span className={styles.statValue}>0</span>
+                <span className={styles.statLabel}>Reviews</span>
+              </div>
+            </div>
+            <div className={styles.statCard}>
+              <Clock size={24} className={styles.statIcon} />
+              <div>
+                <span className={styles.statValue}>0</span>
+                <span className={styles.statLabel}>Pending</span>
+              </div>
             </div>
           </div>
-          <div className={styles.statCard}>
-            <Heart size={24} className={styles.statIcon} />
-            <div>
-              <span className={styles.statValue}>{wishlistItems.length}</span>
-              <span className={styles.statLabel}>Wishlist</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <Star size={24} className={styles.statIcon} />
-            <div>
-              <span className={styles.statValue}>0</span>
-              <span className={styles.statLabel}>Reviews</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <Clock size={24} className={styles.statIcon} />
-            <div>
-              <span className={styles.statValue}>0</span>
-              <span className={styles.statLabel}>Pending</span>
-            </div>
-          </div>
-        </div>
+        )}
 
         {activeTab === 'overview' && (
           <div className={styles.overviewContent}>
@@ -300,7 +336,7 @@ const Profile: React.FC = () => {
         )}
 
         {activeTab === 'messages' && (
-          <div style={{ height: '70vh', minHeight: '500px' }}>
+          <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px', margin: '-20px' }}>
             <ChatInbox />
           </div>
         )}
