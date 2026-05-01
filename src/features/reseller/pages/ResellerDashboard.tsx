@@ -51,7 +51,19 @@ const ResellerDashboard: React.FC = () => {
   const setActiveView = (tab: string) => {
     setSearchParams({ tab });
   };
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 1024);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 1024) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const resellerMenu: MenuItem[] = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -190,7 +202,7 @@ const ResellerDashboard: React.FC = () => {
         </button>
       </header>
 
-      {isSidebarOpen && (
+      {isSidebarOpen && window.innerWidth <= 1024 && (
         <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
       )}
 
@@ -202,7 +214,7 @@ const ResellerDashboard: React.FC = () => {
         activeTab={activeView}
         onTabChange={(id) => {
           setActiveView(id as any);
-          if (window.innerWidth <= 768) {
+          if (window.innerWidth <= 1024) {
             setIsSidebarOpen(false);
           }
         }}

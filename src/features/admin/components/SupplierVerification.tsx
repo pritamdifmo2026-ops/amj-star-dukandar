@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, ChevronRight, Search, Package, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink } from 'lucide-react';
 import styles from '../pages/AdminDashboard.module.css';
 import adminService from '../services/admin.service';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
+import Pagination from '@/shared/components/ui/Pagination';
 
 interface SupplierVerificationProps {
   suppliers: any[];
@@ -30,7 +31,6 @@ const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerif
     s.phone?.includes(search)
   );
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
@@ -63,16 +63,16 @@ const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerif
           <tbody>
             {paginated.map(s => (
               <tr key={s._id}>
-                <td>{s.businessName}</td>
-                <td>{s.businessDetails?.ownerName || s.userId?.name || 'N/A'}</td>
-                <td>{s.phone}</td>
-                <td>
+                <td data-label="Business Name">{s.businessName}</td>
+                <td data-label="Owner">{s.businessDetails?.ownerName || s.userId?.name || 'N/A'}</td>
+                <td data-label="Contact">{s.phone}</td>
+                <td data-label="Status">
                   <span className={`${styles.statusBadge} ${s.kycStatus === 'VERIFIED' ? styles.statusVerified : styles.statusPending}`}>
                     {s.kycStatus}
                   </span>
                 </td>
-                <td><span className={styles.badge}>{s.tier}</span></td>
-                <td className={styles.actions}>
+                <td data-label="Tier"><span className={styles.badge}>{s.tier}</span></td>
+                <td data-label="Actions" className={styles.actions}>
                   <button onClick={() => onView(s._id)} className={styles.viewTextBtn}>View</button>
                   {showActions && s.kycStatus === 'PENDING' && (
                     <>
@@ -98,17 +98,13 @@ const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerif
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-            <ChevronLeft size={18} />
-          </button>
-          <span>Page {page} of {totalPages}</span>
-          <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
+      <Pagination 
+        totalItems={filtered.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={page}
+        onPageChange={setPage}
+        styles={styles}
+      />
     </div>
   );
 };
@@ -171,20 +167,20 @@ const SupplierProducts: React.FC<{ supplierId: string; businessName: string; onB
               <tbody>
                 {products.map(p => (
                   <tr key={p._id}>
-                    <td>
+                    <td data-label="Product">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {p.images?.[0] && <img src={p.images[0]} alt="" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />}
                         <span>{p.name}</span>
                       </div>
                     </td>
-                    <td>{p.category}</td>
-                    <td>₹{p.basePrice}/{p.unit}</td>
-                    <td>
+                    <td data-label="Category">{p.category}</td>
+                    <td data-label="Price">₹{p.basePrice}/{p.unit}</td>
+                    <td data-label="Status">
                       <span className={`${styles.statusBadge} ${p.status === 'APPROVED' ? styles.statusVerified : styles.statusPending}`}>
                         {p.status}
                       </span>
                     </td>
-                    <td className={styles.actions}>
+                    <td data-label="Actions" className={styles.actions}>
                       {p.status === 'PENDING' && (
                         <button onClick={() => setConfirmModal({ isOpen: true, productId: p._id, name: p.name })} className={styles.approveBtn} title="Approve">
                           <CheckCircle size={18} />

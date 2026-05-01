@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import styles from '../pages/AdminDashboard.module.css';
+import Pagination from '@/shared/components/ui/Pagination';
 
 interface CategoryManagementProps {
   categories: any[];
@@ -17,6 +18,10 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
   const [newCategory, setNewCategory] = useState('');
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
+  const pagedCategories = categories.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,17 +73,18 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
             </tr>
           </thead>
           <tbody>
-            {categories.map(c => (
+            {pagedCategories.map(c => (
               <tr key={c._id}>
-                <td>{c.name}</td>
-                <td className={styles.slugColumn}>{c.slug}</td>
-                <td><span className={styles.badge}>{c.isActive ? 'Active' : 'Inactive'}</span></td>
-                <td>
+                <td data-label="Category Name">{c.name}</td>
+                <td data-label="Slug" className={styles.slugColumn}>{c.slug}</td>
+                <td data-label="Status"><span className={styles.badge}>{c.isActive ? 'Active' : 'Inactive'}</span></td>
+                <td data-label="Actions">
                   <button 
                     className={styles.rejectBtn}
                     onClick={() => handleDelete(c._id)}
                     disabled={deletingId === c._id}
                     aria-label="Delete category"
+                    style={{ marginLeft: 'auto' }}
                   >
                     <Trash2 size={18} />
                   </button>
@@ -90,9 +96,17 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
             )}
           </tbody>
         </table>
+        
+        <Pagination 
+          totalItems={categories.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          styles={styles}
+        />
       </div>
     </div>
   );
 };
 
-export default CategoryManagement;
+export default CategoryManagement;

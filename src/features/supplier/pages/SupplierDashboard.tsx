@@ -16,7 +16,6 @@ import {
   Menu,
   Edit,
   Image as ImageIcon,
-  IndianRupee,
   Layers,
   CheckCircle,
   Clock,
@@ -102,7 +101,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
             <h3 className={styles.productName}>{product.name}</h3>
             <div className={styles.productMeta}>
               <span className={styles.price}>
-                <IndianRupee size={14} /> {product.price?.toLocaleString()}
+                ₹{product.basePrice?.toLocaleString()}
               </span>
               <span className={styles.moq}>
                 <Layers size={14} /> MOQ: {product.moq}

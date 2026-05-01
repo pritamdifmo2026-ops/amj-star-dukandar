@@ -176,9 +176,135 @@
   .header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 1.5rem;
   }
   
   .searchBar {
     width: 100%;
   }
+
+  /* Table to Card Transformation */
+  .table, .table thead, .table tbody, .table th, .table td, .table tr {
+    display: block;
+  }
+
+  .table thead {
+    display: none; /* Hide headers on mobile */
+  }
+
+  .table tr {
+    margin-bottom: 1.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: white;
+    padding: 0.5rem;
+  }
+
+  .table td {
+    border-bottom: 1px dashed #f1f5f9;
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: right;
+  }
+
+  .table td:last-child {
+    border-bottom: none;
+  }
+
+  /* Labels for mobile view */
+  .table td::before {
+    content: attr(data-label);
+    float: left;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-right: 1rem;
+    text-align: left;
+  }
+
+  .activityCell {
+    min-width: unset;
+  }
+
+  .activityContent {
+    flex-direction: row;
+    justify-content: flex-end;
+    text-align: right;
+  }
+}
+
+/* ─── Pagination Styles ─── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding-bottom: 1rem;
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  border-color: #e65c00;
+  color: #e65c00;
+  background: #fff7ed;
+}
+
+.pageBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageNumbers {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.pageNumber {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageNumber:hover {
+  border-color: #e65c00;
+  color: #e65c00;
+}
+
+.activePage {
+  background: #e65c00 !important;
+  color: white !important;
+  border-color: #e65c00 !important;
+}
+
+.dots {
+  color: #94a3b8;
+  padding: 0 0.25rem;
 }

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, ChevronRight, Search, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, ExternalLink } from 'lucide-react';
 import styles from '../pages/AdminDashboard.module.css';
+import Pagination from '@/shared/components/ui/Pagination';
 
 interface ResellerVerificationProps {
   resellers: any[];
@@ -27,7 +28,6 @@ const ResellerTable: React.FC<ResellerTableProps> = ({ title, resellers, onVerif
     r.phone?.includes(search)
   );
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
@@ -61,17 +61,17 @@ const ResellerTable: React.FC<ResellerTableProps> = ({ title, resellers, onVerif
           <tbody>
             {paginated.map(r => (
               <tr key={r._id}>
-                <td>{r.storeName}</td>
-                <td>{r.fullName || r.user?.name || 'N/A'}</td>
-                <td>{r.phone || r.user?.phone || r.user?.email || 'N/A'}</td>
-                <td>
+                <td data-label="Store Name">{r.storeName}</td>
+                <td data-label="Reseller Name">{r.fullName || r.user?.name || 'N/A'}</td>
+                <td data-label="Contact">{r.phone || r.user?.phone || r.user?.email || 'N/A'}</td>
+                <td data-label="Status">
                   <span className={`${styles.statusBadge} ${r.status === 'APPROVED' ? styles.statusVerified : r.status === 'REJECTED' ? styles.statusRejected : styles.statusPending}`}>
                     {r.status}
                   </span>
                 </td>
-                <td><span className={styles.badge} style={{ background: '#f0f9ff', color: '#0369a1' }}>{r.subscriptionPlan || 'Starter'}</span></td>
-                <td><span className={styles.badge}>{r.reach}</span></td>
-                <td className={styles.actions}>
+                <td data-label="Plan"><span className={styles.badge} style={{ background: '#f0f9ff', color: '#0369a1' }}>{r.subscriptionPlan || 'Starter'}</span></td>
+                <td data-label="Reach"><span className={styles.badge}>{r.reach}</span></td>
+                <td data-label="Actions" className={styles.actions}>
                   <button onClick={() => onView(r._id)} className={styles.viewTextBtn}>View</button>
                   {showActions && r.status === 'PENDING' && (
                     <>
@@ -97,17 +97,13 @@ const ResellerTable: React.FC<ResellerTableProps> = ({ title, resellers, onVerif
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-            <ChevronLeft size={18} />
-          </button>
-          <span>Page {page} of {totalPages}</span>
-          <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
+      <Pagination 
+        totalItems={filtered.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={page}
+        onPageChange={setPage}
+        styles={styles}
+      />
     </div>
   );
 };
