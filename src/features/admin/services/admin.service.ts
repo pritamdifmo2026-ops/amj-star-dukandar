@@ -8,6 +8,7 @@ export interface AdminStats {
   pendingResellers: number;
   pendingProducts: number;
   activeUsers: number;
+  totalProducts?: number;
 }
 
 const adminService = {

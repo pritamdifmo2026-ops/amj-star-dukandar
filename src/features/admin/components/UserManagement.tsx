@@ -23,15 +23,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onToggleStatus }
         <tbody>
           {users.map(u => (
             <tr key={u._id}>
-              <td>{u.name || 'N/A'}</td>
-              <td>{u.phone}</td>
-              <td><span className={styles.roleBadge}>{u.role}</span></td>
-              <td>
+              <td data-label="Name">{u.name || 'N/A'}</td>
+              <td data-label="Phone">{u.phone}</td>
+              <td data-label="Role"><span className={styles.roleBadge}>{u.role}</span></td>
+              <td data-label="Status">
                 <span className={u.isActive ? styles.statusActive : styles.statusInactive}>
                   {u.isActive ? 'Active' : 'Banned'}
                 </span>
               </td>
-              <td>
+              <td data-label="Action">
                 <button
                   onClick={() => onToggleStatus(u._id, u.isActive)}
                   className={u.isActive ? styles.banBtn : styles.unbanBtn}

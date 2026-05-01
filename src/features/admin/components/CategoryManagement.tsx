@@ -70,15 +70,16 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
           <tbody>
             {categories.map(c => (
               <tr key={c._id}>
-                <td>{c.name}</td>
-                <td className={styles.slugColumn}>{c.slug}</td>
-                <td><span className={styles.badge}>{c.isActive ? 'Active' : 'Inactive'}</span></td>
-                <td>
+                <td data-label="Category Name">{c.name}</td>
+                <td data-label="Slug" className={styles.slugColumn}>{c.slug}</td>
+                <td data-label="Status"><span className={styles.badge}>{c.isActive ? 'Active' : 'Inactive'}</span></td>
+                <td data-label="Actions">
                   <button 
                     className={styles.rejectBtn}
                     onClick={() => handleDelete(c._id)}
                     disabled={deletingId === c._id}
                     aria-label="Delete category"
+                    style={{ marginLeft: 'auto' }}
                   >
                     <Trash2 size={18} />
                   </button>

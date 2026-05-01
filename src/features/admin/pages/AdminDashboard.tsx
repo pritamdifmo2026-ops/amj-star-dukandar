@@ -42,7 +42,19 @@ const AdminDashboard: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 1024) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const adminMenu: MenuItem[] = [
     { id: 'stats', label: 'Overview', icon: BarChart3 },
@@ -218,7 +230,7 @@ const AdminDashboard: React.FC = () => {
         activeTab={activeTab}
         onTabChange={(id) => {
           setActiveTab(id as any);
-          if (window.innerWidth <= 768) {
+          if (window.innerWidth <= 1024) {
             setIsSidebarOpen(false);
           }
         }}
@@ -238,7 +250,7 @@ const AdminDashboard: React.FC = () => {
         <div className={styles.mobileTitle}>AMJ Admin</div>
       </header>
 
-      {isSidebarOpen && window.innerWidth <= 768 && (
+      {isSidebarOpen && window.innerWidth <= 1024 && (
         <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
       )}
 
