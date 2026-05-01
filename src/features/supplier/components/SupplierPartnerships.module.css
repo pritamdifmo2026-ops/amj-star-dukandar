@@ -298,3 +298,27 @@
 .rejectConfirmBtn:hover {
   background-color: #dc2626;
 }
+
+@media (max-width: 768px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+  .requestCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .actions button {
+    flex: 1;
+    justify-content: center;
+  }
+  .partnerHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

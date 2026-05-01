@@ -1,5 +1,6 @@
 .container {
   display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background-color: #f1f5f9;
   overflow-x: hidden;
@@ -84,6 +85,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px;
 }
 
 .table th {
@@ -662,4 +664,91 @@
   width: 100%;
   font-size: 14px;
   color: #1e293b;
+}
+
+.mobileHeader {
+  display: none;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  z-index: 100;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.mobileTitle {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 16px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.menuToggle {
+  background: none;
+  border: none;
+  color: #64748b;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mobileOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+@media (max-width: 1024px) {
+  .content {
+    margin-left: 80px;
+  }
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    margin-left: 0 !important;
+    padding: 16px;
+  }
+  .mobileHeader {
+    display: flex;
+  }
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .searchBar, .tableSearch {
+    width: 100%;
+  }
+  .detailGrid, .infoGrid {
+    grid-template-columns: 1fr;
+  }
+  .categoryForm {
+    flex-direction: column;
+  }
+  .categoryForm input, .categoryForm button {
+    width: 100%;
+  }
+  .tableWrapper {
+    overflow-x: auto;
+  }
 }

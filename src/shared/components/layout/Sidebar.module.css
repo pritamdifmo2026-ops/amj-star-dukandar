@@ -163,7 +163,7 @@
   cursor: pointer !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar {
     left: -260px;
     width: 260px !important;

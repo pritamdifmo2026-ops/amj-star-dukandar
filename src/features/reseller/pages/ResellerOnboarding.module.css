@@ -521,3 +521,30 @@
   text-align: center;
   width: 100%;
 }
+
+@media (max-width: 768px) {
+  .formCard {
+    padding: 24px;
+  }
+  .formRow, .radioGroup, .tierOptions {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .planGrid {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    flex-direction: column-reverse;
+    gap: 16px;
+  }
+  .actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  .centeredForm {
+    padding: 15px;
+  }
+  .successCard {
+    padding: 24px 20px;
+  }
+}
