@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import resellerService from '../services/reseller.service';
 import { setResellerProfile } from '@/store/slices/reseller.slice';
-import { ROUTES } from '@/shared/constants/routes';
 
 interface ResellerGuardProps {
   children: React.ReactNode;
@@ -59,10 +57,8 @@ const ResellerGuard: React.FC<ResellerGuardProps> = ({ children }) => {
     );
   }
 
-  // If no profile yet or not approved, force onboarding/pending view
-  if (!profile || profile.status !== 'APPROVED') {
-    return <Navigate to={ROUTES.RESELLER_ONBOARDING} replace />;
-  }
+  // Allow access to dashboard directly even if not approved
+  return <>{children}</>;
 
   return <>{children}</>;
 };

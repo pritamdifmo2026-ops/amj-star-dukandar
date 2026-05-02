@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import supplierService from '../services/supplier.service';
 import { setSupplierProfile } from '@/store/slices/supplier.slice';
@@ -22,7 +21,7 @@ const SupplierGuard: React.FC<SupplierGuardProps> = ({ children }) => {
             dispatch(setSupplierProfile(data.supplier));
           }
         } catch (err) {
-          console.error('Failed to fetch supplier profile');
+          // Allow access to dashboard directly even if not approved
         } finally {
           setLoading(false);
         }
@@ -37,10 +36,9 @@ const SupplierGuard: React.FC<SupplierGuardProps> = ({ children }) => {
     return <div style={{ padding: '40px', textAlign: 'center' }}>Verifying account status...</div>;
   }
 
-  // If no profile yet or not verified, force onboarding/pending view
-  if (!profile || profile.kycStatus !== 'VERIFIED') {
-    return <Navigate to="/supplier/onboarding" replace />;
-  }
+  // Allow access to dashboard directly even if not verified
+  // Verification status can be handled via banners inside the dashboard
+  return <>{children}</>;
 
   return <>{children}</>;
 };

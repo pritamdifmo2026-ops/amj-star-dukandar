@@ -32,6 +32,17 @@ interface SidebarProps {
   onToggle: () => void;
   footerMenu?: MenuItem[];
   brandColor?: string;
+  user?: {
+    name?: string;
+    email?: string;
+    avatar?: string;
+  };
+  profile?: {
+    fullName?: string;
+    businessName?: string;
+    storeName?: string;
+  };
+  theme?: 'default' | 'admin' | 'dark';
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -45,11 +56,18 @@ const Sidebar: React.FC<SidebarProps> = ({
   isSidebarOpen,
   onToggle,
   footerMenu = [],
-  brandColor = '#0284c7'
+  brandColor = '#0284c7',
+  user,
+  profile,
+  theme = 'default'
 }) => {
   const navigate = useNavigate();
   const [showSoonModal, setShowSoonModal] = React.useState(false);
   const [soonFeature, setSoonFeature] = React.useState('');
+
+  const displayName = profile?.businessName || profile?.storeName || profile?.fullName || user?.name || 'User';
+  const displayEmail = user?.email || 'user@amjstar.com';
+
   const handleTabClick = (item: MenuItem) => {
     if (item.disabled || item.comingSoon) {
       if (item.comingSoon) {
@@ -68,21 +86,23 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}
+      className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ''} ${styles[theme]}`}
       data-open={isSidebarOpen}
       style={{ '--brand-color': brandColor } as React.CSSProperties}
     >
       <div className={styles.sidebarHeader}>
         <div className={styles.sidebarBrand} onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          {logoSrc ? (
-            <img src={logoSrc} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-          ) : (
-            LogoIcon && <LogoIcon size={20} />
-          )}
-          <span>{title}</span>
+          <div className={styles.logoWrapper}>
+            {logoSrc ? (
+              <img src={logoSrc} alt="Logo" className={styles.logoImg} />
+            ) : (
+              LogoIcon && <LogoIcon size={24} />
+            )}
+          </div>
+          <span className={styles.brandTitle}>{title}</span>
         </div>
         <button className={styles.toggleBtn} onClick={onToggle}>
-          {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
+          {isSidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
         </button>
         <button className={styles.mobileCloseBtn} onClick={onToggle}>
           <X size={20} />
@@ -90,22 +110,25 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <nav className={styles.sidebarNav}>
-        {menu.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              className={`${activeTab === item.id ? styles.active : ''} ${item.comingSoon ? styles.disabledLink : ''}`}
-              onClick={() => handleTabClick(item)}
-            >
-              <Icon size={18} />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+        <div className={styles.navSection}>
+          {menu.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                className={`${activeTab === item.id ? styles.active : ''} ${item.comingSoon ? styles.disabledLink : ''}`}
+                onClick={() => handleTabClick(item)}
+              >
+                <div className={styles.iconBox}><Icon size={18} /></div>
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
         {footerMenu.length > 0 && (
-          <>
+          <div className={styles.navSection}>
+            <div className={styles.navDivider}>Advanced</div>
             {footerMenu.map((item) => {
               const Icon = item.icon;
               return (
@@ -114,16 +137,25 @@ const Sidebar: React.FC<SidebarProps> = ({
                   className={`${activeTab === item.id ? styles.active : ''} ${item.comingSoon ? styles.disabledLink : ''}`}
                   onClick={() => handleTabClick(item)}
                 >
-                  <Icon size={18} />
+                  <div className={styles.iconBox}><Icon size={18} /></div>
                   <span>{item.label}</span>
                 </button>
               );
             })}
-          </>
+          </div>
         )}
       </nav>
 
       <div className={styles.sidebarFooter}>
+        <div className={styles.userProfile}>
+          <div className={styles.userAvatar}>
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+          <div className={styles.userInfo}>
+            <p className={styles.userName}>{displayName}</p>
+            <p className={styles.userEmail}>{displayEmail}</p>
+          </div>
+        </div>
         <button className={styles.logoutBtn} onClick={onLogout}>
           <LogOut size={18} />
           <span>Sign Out</span>

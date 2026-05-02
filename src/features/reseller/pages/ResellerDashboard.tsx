@@ -222,6 +222,8 @@ const ResellerDashboard: React.FC = () => {
         isSidebarOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         brandColor="#e65c00"
+        user={user || undefined}
+        profile={profile || undefined}
       />
 
       <main className={styles.mainContent}>

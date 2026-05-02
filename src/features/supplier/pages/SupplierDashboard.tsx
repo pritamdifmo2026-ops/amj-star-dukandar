@@ -140,6 +140,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
 const SupplierDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
   const { profile } = useAppSelector(state => state.supplier);
+  const { user } = useAppSelector(state => state.auth);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -296,7 +297,7 @@ const SupplierDashboard: React.FC = () => {
   };
 
   return (
-    <div className={`${styles.dashboardContainer} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
+    <div className={`${styles.dashboardContainer} ${(!isSidebarOpen && !isMobile) ? styles.sidebarCollapsed : ''}`}>
       <Sidebar
         title="Supplier Hub"
         logoSrc="/favicon.jpeg"
@@ -308,6 +309,8 @@ const SupplierDashboard: React.FC = () => {
         isSidebarOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         brandColor="#0284c7"
+        user={user || undefined}
+        profile={profile || undefined}
       />
 
       <header className={styles.mobileHeader}>
@@ -316,43 +319,46 @@ const SupplierDashboard: React.FC = () => {
           onClick={() => setIsSidebarOpen(true)}
           aria-label="Open menu"
         >
-          <Menu size={24} />
+          <Menu size={20} />
         </button>
-        <div className={styles.mobileTitle}>Supplier Center</div>
+        <div className={styles.mobileTitle}>Supplier Hub</div>
+        <div style={{ width: 40 }}></div> {/* Spacer for symmetry */}
       </header>
 
-      {isSidebarOpen && window.innerWidth <= 1024 && (
+      {isSidebarOpen && isMobile && (
         <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
       )}
 
       <main className={styles.mainContent}>
-        <div className={styles.header}>
-          <div>
-            <h1>Welcome back, {profile?.businessName || 'Supplier'}</h1>
-            {isTrusted ? (
-              <div className={styles.trustedBadge}>
-                <ShieldCheck size={16} />
-                <span>Trusted Supplier</span>
-              </div>
-            ) : (
-              <p>Manage your products and orders from your command center.</p>
-            )}
-            {isTrusted && (
-              <div className={styles.autoApprovalNotice}>
-                <Zap size={14} />
-                <span><strong>Auto-Upload Active:</strong> Your products will now be live instantly!</span>
-              </div>
-            )}
+        {!(activeView === 'add-product' || activeView === 'edit-product') && (
+          <div className={styles.header}>
+            <div className={styles.headerInfo}>
+              <h1>Welcome, {profile?.businessName || 'Supplier'}</h1>
+              {isTrusted ? (
+                <div className={styles.trustedBadge}>
+                  <ShieldCheck size={14} />
+                  <span>Trusted Verified Supplier</span>
+                </div>
+              ) : (
+                <p>Manage your inventory and partnerships from one central dashboard.</p>
+              )}
+              {isTrusted && (
+                <div className={styles.autoApprovalNotice}>
+                  <Zap size={14} />
+                  <span><strong>Priority Status:</strong> Your products are automatically live!</span>
+                </div>
+              )}
+            </div>
+            <div className={styles.headerActions}>
+              <Button variant="outline" onClick={handleRefresh} className={styles.refreshBtn}>
+                <RefreshCw size={16} /> Refresh
+              </Button>
+              <Button onClick={() => setActiveView('add-product')} className={styles.addBtn}>
+                <Plus size={18} /> Add Product
+              </Button>
+            </div>
           </div>
-          <div className={styles.headerActions}>
-            <Button variant="outline" onClick={handleRefresh} className={styles.refreshBtn}>
-              <RefreshCw size={18} /> Refresh
-            </Button>
-            <Button onClick={() => setActiveView('add-product')} className={styles.addBtn}>
-              <Plus size={20} /> Add New Product
-            </Button>
-          </div>
-        </div>
+        )}
 
         {error && (
           <div className={styles.errorBanner}>
@@ -410,15 +416,17 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'partnerships' && <SupplierPartnerships />}
-      </main>
 
-      {(activeView === 'add-product' || activeView === 'edit-product') && (
-        <AddProductForm
-          onBack={() => { setActiveView('inventory'); setEditingProduct(null); }}
-          onSuccess={handleFormSuccess}
-          editingProduct={editingProduct}
-        />
-      )}
+        {(activeView === 'add-product' || activeView === 'edit-product') && (
+          <div className={styles.fullPageOverlay}>
+            <AddProductForm
+              onBack={() => { setActiveView('inventory'); setEditingProduct(null); }}
+              onSuccess={handleFormSuccess}
+              editingProduct={editingProduct}
+            />
+          </div>
+        )}
+      </main>
 
       <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Product">
         <div className={styles.logoutModalContent}>

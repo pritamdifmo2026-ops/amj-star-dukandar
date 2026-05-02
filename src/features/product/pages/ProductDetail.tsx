@@ -156,7 +156,7 @@ const ProductDetail: React.FC = () => {
                 <span className={styles.categoryBadge}>{product.category}</span>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div className={styles.headerRow}>
                 <h1 className={styles.title}>{product.name}</h1>
                 <button 
                   className={`${styles.wishlistBtn} ${isWishlisted ? styles.active : ''}`}

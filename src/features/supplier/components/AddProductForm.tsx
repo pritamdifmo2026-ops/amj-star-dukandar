@@ -7,7 +7,7 @@ import uploadService from '@/features/product/services/upload.service';
 import ImageCropper from '@/features/product/components/ImageCropper';
 import Modal from '@/shared/components/ui/Modal';
 import { X, Plus, ChevronLeft, Save, Package } from 'lucide-react';
-import styles from '../pages/SupplierDashboard.module.css';
+import styles from './AddProductForm.module.css';
 
 interface AddProductFormProps {
   onBack: () => void;
