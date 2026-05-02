@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import authService from '../services/auth.service';
 import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/auth.slice';
+import { ROUTES } from '@/shared/constants/routes';
 import styles from '../components/Auth.module.css';
 
 const VerifyOtp: React.FC = () => {
@@ -54,9 +55,9 @@ const VerifyOtp: React.FC = () => {
           if (mode) localStorage.removeItem('auth_mode');
         }
       } else if (user.role === 'supplier') {
-        navigate('/supplier/onboarding');
+        navigate(ROUTES.SUPPLIER_DASHBOARD);
       } else if (user.role === 'reseller') {
-        navigate('/reseller/onboarding');
+        navigate(ROUTES.RESELLER_DASHBOARD);
       } else {
         navigate('/');
       }
@@ -100,7 +101,6 @@ const VerifyOtp: React.FC = () => {
           type="button" 
           className={styles.linkButton} 
           onClick={() => navigate('/login')}
-          style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', marginTop: '10px' }}
         >
           Change Phone Number
         </button>

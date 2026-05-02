@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import adminService from '../services/admin.service';
 import type { AdminStats } from '../services/admin.service';
-import { useAppDispatch } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import { useSearchParams } from 'react-router-dom';
 import Button from '@/shared/components/ui/Button';
@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
+  const { user } = useAppSelector(state => state.auth);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get('tab') as any) || 'stats';
 
@@ -238,6 +239,8 @@ const AdminDashboard: React.FC = () => {
         isSidebarOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         brandColor="#0284c7"
+        user={user || undefined}
+        theme="admin"
       />
 
       <header className={styles.mobileHeader}>

@@ -50,9 +50,9 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default' }) => {
           aria-label="Add to wishlist"
         >
           <Heart 
-            size={20} 
-            fill={isWishlisted ? 'var(--color-primary)' : 'none'} 
-            color={isWishlisted ? 'var(--color-primary)' : '#888'} 
+            size={18} 
+            fill={isWishlisted ? '#e65c00' : 'none'} 
+            color={isWishlisted ? '#e65c00' : '#94a3b8'} 
           />
         </button>
         {product.imageUrl ? (
