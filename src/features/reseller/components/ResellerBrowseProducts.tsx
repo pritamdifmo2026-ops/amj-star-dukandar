@@ -1,6 +1,6 @@
 // ResellerBrowseProducts.tsx (unchanged, only CSS changes)
 import React, { useState, useEffect } from 'react';
-import { Search, Package, MapPin, Phone, Building, ExternalLink, CheckCircle, Truck, Shield } from 'lucide-react';
+import { Search, Package, MapPin, Phone, ExternalLink, CheckCircle, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '@/shared/components/ui/Button';
 import apiClient from '@/api/client';
@@ -79,7 +79,7 @@ const ResellerBrowseProducts: React.FC = () => {
 
   // Pagination Logic
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 16;
+  const ITEMS_PER_PAGE = 8;
   const totalItems = filteredProducts.length;
   const paginatedProducts = filteredProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -122,85 +122,143 @@ const ResellerBrowseProducts: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className={styles.grid}>
+          <div className={styles.tableCard}>
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Min. Order</th>
+                    <th>Supplier</th>
+                    <th className={styles.textRight}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedProducts.map(product => {
+                    const status = requestStatuses[product._id];
+                    const supplier = product.supplierId || {};
+
+                    return (
+                      <tr key={product._id} className={styles.tableRow}>
+                        <td>
+                          <div className={styles.productCell}>
+                            <div className={styles.productImgWrapper}>
+                              {product.images?.[0] ? (
+                                <img src={product.images[0]} alt={product.name} />
+                              ) : (
+                                <Package size={20} className={styles.placeholderIcon} />
+                              )}
+                            </div>
+                            <div className={styles.productInfo}>
+                              <span className={styles.name}>{product.name}</span>
+                              {supplier.isVerified && (
+                                <span className={styles.verifiedTag}>
+                                  <Shield size={10} /> Verified
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={styles.categoryTag}>{product.category}</span>
+                        </td>
+                        <td>
+                          <div className={styles.priceCell}>
+                            <span className={styles.price}>₹{product.basePrice?.toLocaleString()}</span>
+                            <span className={styles.unit}>/ {product.unit}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={styles.moqText}>{product.moq} {product.unit}</span>
+                        </td>
+                        <td>
+                          <div className={styles.supplierCell}>
+                            <span className={styles.supplierName}>{supplier.businessName || 'Verified Supplier'}</span>
+                            <span className={styles.supplierLoc}>
+                              <MapPin size={10} /> {supplier.businessDetails?.city || 'India'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className={styles.textRight}>
+                          {status === 'APPROVED' ? (
+                            <span className={styles.statusBadgeApproved}>
+                              <CheckCircle size={14} /> Added
+                            </span>
+                          ) : status === 'PENDING' ? (
+                            <span className={styles.statusBadgePending}>
+                              <CheckCircle size={14} /> Pending
+                            </span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleRequestClick(product)}
+                              disabled={requestingId === product._id}
+                              className={styles.actionBtn}
+                            >
+                              {requestingId === product._id ? '...' : 'Request'}
+                              <ExternalLink size={14} />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className={styles.mobileGrid}>
             {paginatedProducts.map(product => {
               const status = requestStatuses[product._id];
               const supplier = product.supplierId || {};
 
               return (
-                <div key={product._id} className={styles.card}>
-                  <div className={styles.imageContainer}>
-                    {product.images?.[0] ? (
-                      <img src={product.images[0]} alt={product.name} loading="lazy" />
-                    ) : (
-                      <div className={styles.placeholderImage}>
-                        <Package size={48} strokeWidth={1} />
-                      </div>
-                    )}
-                    <span className={styles.categoryBadge}>{product.category}</span>
-                    {product.stock && product.stock > 0 && (
-                      <span className={styles.stockBadge}>In Stock</span>
-                    )}
-                  </div>
-
-                  <div className={styles.cardContent}>
-                    <div className={styles.productHeader}>
-                      <h3 className={styles.productName}>{product.name}</h3>
-                      {supplier.isVerified && (
-                        <span className={styles.verifiedBadge} title="Verified Supplier">
-                          <Shield size={14} />
-                        </span>
+                <div key={product._id} className={styles.mobileCard}>
+                  <div className={styles.mobileCardHeader}>
+                    <div className={styles.mobileCardImg}>
+                      {product.images?.[0] ? (
+                        <img src={product.images[0]} alt={product.name} />
+                      ) : (
+                        <Package size={24} />
                       )}
                     </div>
-
-                    <div className={styles.priceSection}>
-                      <div className={styles.priceRow}>
-                        <span className={styles.price}>₹{product.basePrice?.toLocaleString()}</span>
-                        <span className={styles.unit}>/ {product.unit}</span>
-                      </div>
-                      <div className={styles.moq}>
-                        <Truck size={12} />
-                        <span>Min order: {product.moq} {product.unit}</span>
-                      </div>
+                    <div className={styles.mobileCardTitle}>
+                      <h4>{product.name}</h4>
+                      <span className={styles.mobileCategory}>{product.category}</span>
                     </div>
-
-                    <div className={styles.supplierDetails}>
-                      <div className={styles.supplierHeader}>
-                        <Building size={14} />
-                        <h4>Supplier</h4>
-                      </div>
-                      <div className={styles.supplierInfo}>
-                        <p className={styles.businessName}>
-                          {supplier.businessName || 'Verified Supplier'}
-                        </p>
-                        {supplier.businessDetails?.city && (
-                          <div className={styles.supplierInfoRow}>
-                            <MapPin size={12} />
-                            <span>{supplier.businessDetails.city}, {supplier.businessDetails.state}</span>
-                          </div>
-                        )}
-                      </div>
+                  </div>
+                  
+                  <div className={styles.mobileCardBody}>
+                    <div className={styles.mobileInfoRow}>
+                      <span className={styles.mobileLabel}>Price</span>
+                      <span className={styles.mobilePrice}>₹{product.basePrice?.toLocaleString()} <small>/ {product.unit}</small></span>
+                    </div>
+                    <div className={styles.mobileInfoRow}>
+                      <span className={styles.mobileLabel}>Min Order</span>
+                      <span className={styles.mobileMoq}>{product.moq} {product.unit}</span>
+                    </div>
+                    <div className={styles.mobileInfoRow}>
+                      <span className={styles.mobileLabel}>Supplier</span>
+                      <span className={styles.mobileSupplier}>{supplier.businessName || 'Verified'}</span>
                     </div>
                   </div>
 
-                  <div className={styles.cardFooter}>
+                  <div className={styles.mobileCardFooter}>
                     {status === 'APPROVED' ? (
-                      <Button variant="outline" className={styles.approvedBtn} disabled>
-                        <CheckCircle size={16} /> Added to Store
-                      </Button>
+                      <span className={styles.mobileStatusApproved}><CheckCircle size={14} /> Added</span>
                     ) : status === 'PENDING' ? (
-                      <Button variant="outline" className={styles.requestedBtn} disabled>
-                        <CheckCircle size={16} /> Request Sent
-                      </Button>
+                      <span className={styles.mobileStatusPending}><CheckCircle size={14} /> Pending</span>
                     ) : (
-                      <Button
+                      <button 
+                        className={styles.mobileRequestBtn}
                         onClick={() => handleRequestClick(product)}
                         disabled={requestingId === product._id}
-                        className={styles.requestBtn}
                       >
-                        {requestingId === product._id ? 'Sending...' : 'Request to Add'}
-                        <ExternalLink size={16} />
-                      </Button>
+                        {requestingId === product._id ? 'Processing...' : 'Request to Add'}
+                      </button>
                     )}
                   </div>
                 </div>

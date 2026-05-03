@@ -1,39 +1,24 @@
-.container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: calc(100vh - 200px);
-  padding: 20px;
-  background-color: var(--bg-secondary, #f8f9fa);
-}
-
-.card {
-  background: white;
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-  width: 100%;
-  max-width: 400px;
-  text-align: center;
-}
-
+/* Auth.module.css */
 .title {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 8px;
-  color: var(--text-primary, #1a1a1a);
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 
 .subtitle {
-  font-size: 14px;
-  color: var(--text-secondary, #666);
-  margin-bottom: 32px;
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 2.5rem;
+  line-height: 1.5;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
 }
 
 .inputGroup {
@@ -42,102 +27,151 @@
 
 .label {
   display: block;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: var(--text-primary, #333);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  color: #475569;
+  letter-spacing: 0.02em;
 }
 
 .input {
   width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 0.2s;
+  padding: 14px 18px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  color: #0f172a;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #f8fafc;
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--primary-color, #007bff);
+  border-color: #e65c00;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(230, 92, 0, 0.1);
+}
+
+.input::placeholder {
+  color: #94a3b8;
 }
 
 .button {
-  background: var(--primary-color, #007bff);
+  background: linear-gradient(135deg, #e65c00 0%, #cc5200 100%);
   color: white;
-  padding: 14px;
+  padding: 16px;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 16px -4px rgba(230, 92, 0, 0.3);
+  margin-top: 0.5rem;
 }
 
-.button:hover {
-  opacity: 0.9;
+.button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -6px rgba(230, 92, 0, 0.4);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .button:disabled {
-  background: #ccc;
+  background: #cbd5e1;
+  color: #94a3b8;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .roleGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 1rem;
 }
 
 .roleOption {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
-  border: 2px solid #eee;
-  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  background: white;
 }
 
 .roleOption:hover {
-  border-color: var(--primary-color, #007bff);
-  background: #f0f7ff;
+  border-color: #fb923c;
+  background: #fffaf5;
+  transform: translateY(-4px);
 }
 
 .roleOption.selected {
-  border-color: var(--primary-color, #007bff);
-  background: #f0f7ff;
+  border-color: #e65c00;
+  background: #fff7ed;
+  box-shadow: 0 8px 20px rgba(230, 92, 0, 0.08);
 }
 
 .roleName {
-  font-weight: 600;
-  margin-top: 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-top: 1rem;
 }
 
 .error {
-  color: #dc3545;
-  font-size: 14px;
-  margin-top: 8px;
+  color: #ef4444;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
   text-align: left;
+  background: #fef2f2;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #fee2e2;
 }
 
 .backWrapper {
   display: flex;
-  margin-bottom: 20px;
+  margin-bottom: 2rem;
 }
 
 .backLink {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   text-decoration: none;
   color: #64748b;
-  font-size: 14px;
-  font-weight: 500;
-  transition: color 0.2s;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.2s;
 }
 
 .backLink:hover {
-  color: var(--primary-color, #007bff);
+  color: #e65c00;
+  transform: translateX(-4px);
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin: 1.5rem auto 0;
+  transition: all 0.2s;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  display: block;
+  width: fit-content;
+}
+
+.linkButton:hover {
+  color: #e65c00;
+  background: #fff7ed;
 }

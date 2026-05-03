@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Handshake, Store, MapPin } from 'lucide-react';
+import { CheckCircle, XCircle, Handshake, Store, MapPin, Phone, Mail, Package } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import toast from 'react-hot-toast';
@@ -56,7 +56,12 @@ const SupplierPartnerships: React.FC = () => {
   };
 
   if (loading) {
-    return <div className={styles.loading}>Loading partnerships...</div>;
+    return (
+      <div className={styles.loading}>
+        <div className={styles.loader}></div>
+        <p>Loading your reseller network...</p>
+      </div>
+    );
   }
 
   const pendingRequests = requests.filter(r => r.status === 'PENDING');
@@ -68,14 +73,14 @@ const SupplierPartnerships: React.FC = () => {
           className={`${styles.tab} ${activeTab === 'requests' ? styles.activeTab : ''}`}
           onClick={() => setActiveTab('requests')}
         >
-          New Requests 
+          Partnership Requests 
           {pendingRequests.length > 0 && <span className={styles.badge}>{pendingRequests.length}</span>}
         </button>
         <button 
           className={`${styles.tab} ${activeTab === 'partners' ? styles.activeTab : ''}`}
           onClick={() => setActiveTab('partners')}
         >
-          My Reseller Partners
+          My Reseller Network
         </button>
       </div>
 
@@ -83,9 +88,9 @@ const SupplierPartnerships: React.FC = () => {
         <div className={styles.list}>
           {pendingRequests.length === 0 ? (
             <div className={styles.emptyState}>
-              <Handshake size={48} />
-              <h3>No pending requests</h3>
-              <p>You have no new requests from resellers at the moment.</p>
+              <div className={styles.emptyIcon}><Handshake size={40} /></div>
+              <h3>No Pending Requests</h3>
+              <p>When resellers request to partner with you, they'll appear here for your review.</p>
             </div>
           ) : (
             pendingRequests.map(req => (
@@ -94,17 +99,23 @@ const SupplierPartnerships: React.FC = () => {
                   {req.product?.images?.[0] ? (
                     <img src={req.product.images[0]} alt={req.product.name} className={styles.productImg} />
                   ) : (
-                    <div className={styles.productPlaceholder}>IMG</div>
+                    <div className={styles.productPlaceholder}><Package size={20} /></div>
                   )}
-                  <div>
+                  <div className={styles.productText}>
                     <h4>{req.product?.name}</h4>
-                    <span className={styles.price}>₹{req.product?.basePrice}</span>
+                    <span className={styles.price}>₹{req.product?.basePrice?.toLocaleString()}</span>
                   </div>
                 </div>
 
                 <div className={styles.resellerInfo}>
-                  <div className={styles.infoRow}><Store size={14}/> <strong>{req.reseller?.storeName}</strong> ({req.reseller?.profileType})</div>
-                  <div className={styles.infoRow}><MapPin size={14}/> {req.reseller?.city}, {req.reseller?.state}</div>
+                  <div className={styles.infoRow}>
+                    <Store size={16}/> 
+                    <strong>{req.reseller?.storeName}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <MapPin size={16}/> 
+                    <span>{req.reseller?.city}, {req.reseller?.state}</span>
+                  </div>
                 </div>
 
                 <div className={styles.actions}>
@@ -125,21 +136,30 @@ const SupplierPartnerships: React.FC = () => {
         <div className={styles.list}>
           {partners.length === 0 ? (
             <div className={styles.emptyState}>
-              <Store size={48} />
-              <h3>No active partners</h3>
-              <p>Approve requests to build your reseller network.</p>
+              <div className={styles.emptyIcon}><Store size={40} /></div>
+              <h3>No Reseller Partners Yet</h3>
+              <p>Accept requests from the 'Requests' tab to start building your distribution network.</p>
             </div>
           ) : (
             partners.map(partner => (
               <div key={partner._id} className={styles.partnerCard}>
                 <div className={styles.partnerHeader}>
-                  <div className={styles.storeName}><Store size={18}/> {partner.reseller?.storeName}</div>
-                  <span className={styles.approvedDate}>Approved on {new Date(partner.respondedAt).toLocaleDateString()}</span>
+                  <div className={styles.storeName}><Store size={20}/> {partner.reseller?.storeName}</div>
+                  <span className={styles.approvedDate}>Active Partner Since {new Date(partner.respondedAt).toLocaleDateString()}</span>
                 </div>
                 <div className={styles.partnerDetails}>
-                  <p><strong>Contact:</strong> {partner.reseller?.user?.name} ({partner.reseller?.user?.phone})</p>
-                  <p><strong>Location:</strong> {partner.reseller?.city}, {partner.reseller?.state}</p>
-                  <p><strong>Approved Product:</strong> {partner.product?.name}</p>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Reseller Name</span>
+                    <span className={styles.detailValue}>{partner.reseller?.user?.name || 'N/A'}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Location</span>
+                    <span className={styles.detailValue}>{partner.reseller?.city}, {partner.reseller?.state}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Authorized Product</span>
+                    <span className={styles.detailValue}>{partner.product?.name}</span>
+                  </div>
                 </div>
               </div>
             ))
@@ -151,17 +171,33 @@ const SupplierPartnerships: React.FC = () => {
         <Modal 
           isOpen={true} 
           onClose={() => setModalType(null)} 
-          title="Approve Partnership Request"
+          title="Approve Partnership"
         >
           <div className={styles.modalContent}>
-            <p>You are approving <strong>{selectedRequest.reseller?.storeName}</strong> to sell <strong>{selectedRequest.product?.name}</strong>.</p>
+            <p className={styles.modalNotice}>
+              You are authorizing <strong>{selectedRequest.reseller?.storeName}</strong> to list and sell <strong>{selectedRequest.product?.name}</strong> on their storefront.
+            </p>
             
-            <div className={styles.modalSupplierDetails}>
-              <h4>Reseller Details</h4>
-              <p><strong>Business Name:</strong> {selectedRequest.reseller?.storeName}</p>
-              <p><strong>Contact Name:</strong> {selectedRequest.reseller?.user?.name || selectedRequest.reseller?.fullName || 'N/A'}</p>
-              <p><strong>Phone:</strong> {selectedRequest.reseller?.user?.phone || 'N/A'}</p>
-              <p><strong>Email:</strong> {selectedRequest.reseller?.user?.email || selectedRequest.reseller?.email || 'N/A'}</p>
+            <div className={styles.modalDetails}>
+              <h4>Partner Profile</h4>
+              <div className={styles.modalGrid}>
+                <div className={styles.modalField}>
+                  <label>Business</label>
+                  <span>{selectedRequest.reseller?.storeName}</span>
+                </div>
+                <div className={styles.modalField}>
+                  <label>Contact</label>
+                  <span>{selectedRequest.reseller?.user?.name || 'N/A'}</span>
+                </div>
+                <div className={styles.modalField}>
+                  <label><Phone size={10} style={{marginRight: 4}} /> Phone</label>
+                  <span>{selectedRequest.reseller?.user?.phone || 'N/A'}</span>
+                </div>
+                <div className={styles.modalField}>
+                  <label><Mail size={10} style={{marginRight: 4}} /> Email</label>
+                  <span>{selectedRequest.reseller?.user?.email || 'N/A'}</span>
+                </div>
+              </div>
             </div>
 
             <div className={styles.modalActions}>
@@ -169,10 +205,10 @@ const SupplierPartnerships: React.FC = () => {
                 href={`tel:${selectedRequest.reseller?.user?.phone}`} 
                 className={`${styles.modalBtn} ${styles.callBtn}`}
               >
-                Call Reseller
+                <Phone size={16} style={{marginRight: 8}} /> Call Reseller
               </a>
               <Button onClick={() => handleRespond(selectedRequest._id, 'APPROVED')} className={styles.modalBtn}>
-                Confirm Approve
+                Confirm Partnership
               </Button>
             </div>
           </div>
@@ -183,17 +219,19 @@ const SupplierPartnerships: React.FC = () => {
         <Modal 
           isOpen={true} 
           onClose={() => setModalType(null)} 
-          title="Reject Partnership Request"
+          title="Decline Partnership"
         >
           <div className={styles.modalContent}>
-            <p>You are rejecting the request from <strong>{selectedRequest.reseller?.storeName}</strong>.</p>
+            <p className={styles.modalNotice}>
+              Declining the request from <strong>{selectedRequest.reseller?.storeName}</strong>. You can provide a reason below.
+            </p>
             
-            <div className={styles.reasonInput}>
-              <label>Reason for rejection (optional, will be visible to reseller)</label>
+            <div className={styles.reasonGroup}>
+              <label>Rejection Note (Optional)</label>
               <textarea 
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="e.g. Please contact us to negotiate pricing before approval."
+                placeholder="e.g. We require a higher MOQ for this product. Please contact us to discuss."
                 rows={4}
                 className={styles.textarea}
               />
@@ -201,13 +239,13 @@ const SupplierPartnerships: React.FC = () => {
 
             <div className={styles.modalActions}>
               <Button variant="outline" onClick={() => setModalType(null)} className={styles.modalBtn}>
-                Cancel
+                Keep Pending
               </Button>
               <Button 
                 onClick={() => handleRespond(selectedRequest._id, 'REJECTED', rejectionReason)} 
                 className={`${styles.modalBtn} ${styles.rejectConfirmBtn}`}
               >
-                Confirm Reject
+                Confirm Decline
               </Button>
             </div>
           </div>

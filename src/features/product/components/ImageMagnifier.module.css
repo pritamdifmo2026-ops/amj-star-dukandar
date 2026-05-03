@@ -69,3 +69,15 @@
   z-index: 100;
   pointer-events: none;
 }
+
+@media (max-width: 1024px) {
+  .zoomPanel, 
+  .lens,
+  .hintText {
+    display: none !important;
+  }
+  
+  .imageContainer {
+    cursor: default;
+  }
+}

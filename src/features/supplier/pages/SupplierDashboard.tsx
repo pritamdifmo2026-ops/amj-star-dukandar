@@ -21,7 +21,9 @@ import {
   Clock,
   AlertCircle,
   ShoppingBag,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 
 import ProductTable from '../components/ProductTable';
@@ -140,6 +142,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
 const SupplierDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
   const { profile } = useAppSelector(state => state.supplier);
+  const { user } = useAppSelector(state => state.auth);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -298,7 +301,7 @@ const SupplierDashboard: React.FC = () => {
   };
 
   return (
-    <div className={`${styles.dashboardContainer} ${!isSidebarOpen ? styles.sidebarCollapsed : ''}`}>
+    <div className={`${styles.dashboardContainer} ${(!isSidebarOpen && !isMobile) ? styles.sidebarCollapsed : ''}`}>
       <Sidebar
         title="Supplier Hub"
         logoSrc="/favicon.jpeg"
@@ -309,7 +312,9 @@ const SupplierDashboard: React.FC = () => {
         onLogout={handleLogout}
         isSidebarOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        brandColor="#0284c7"
+        brandColor="#e65c00"
+        user={user || undefined}
+        profile={profile || undefined}
       />
 
       <header className={styles.mobileHeader}>
@@ -318,16 +323,41 @@ const SupplierDashboard: React.FC = () => {
           onClick={() => setIsSidebarOpen(true)}
           aria-label="Open menu"
         >
-          <Menu size={24} />
+          <Menu size={20} />
         </button>
-        <div className={styles.mobileTitle}>Supplier Center</div>
+        <div className={styles.mobileTitle}>Supplier Hub</div>
+        <div style={{ width: 40 }}></div> {/* Spacer for symmetry */}
       </header>
 
-      {isSidebarOpen && window.innerWidth <= 1024 && (
+      {isSidebarOpen && isMobile && (
         <div className={styles.mobileOverlay} onClick={() => setIsSidebarOpen(false)} />
       )}
 
       <main className={`${styles.mainContent} ${activeView === 'chat' ? styles.noPadding : ''}`}>
+        {!(activeView === 'add-product' || activeView === 'edit-product' || activeView === 'chat') && (
+          <div className={styles.header}>
+            <div className={styles.headerInfo}>
+              <h1>Welcome, {profile?.businessName || 'Supplier'}</h1>
+              {isTrusted ? (
+                <div className={styles.trustedBadge}>
+                  <CheckCircle size={14} />
+                  <span>Trusted Verified Supplier</span>
+                </div>
+              ) : (
+                <p>Manage your inventory and partnerships from one central dashboard.</p>
+              )}
+            </div>
+            <div className={styles.headerActions}>
+              <Button variant="outline" onClick={handleRefresh} className={styles.refreshBtn}>
+                <RefreshCw size={16} /> Refresh
+              </Button>
+              <Button onClick={() => setActiveView('add-product')} className={styles.addBtn}>
+                <Plus size={18} /> Add Product
+              </Button>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className={styles.errorBanner}>
             <AlertCircle size={18} />
@@ -372,7 +402,7 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'chat' && (
-          <div style={{ height: '100vh', width: '100%' }}>
+          <div style={{ height: 'calc(100vh - 64px)', width: '100%' }}>
             <ChatInbox />
           </div>
         )}
@@ -388,15 +418,17 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'partnerships' && <SupplierPartnerships />}
 
         {activeView === 'settings' && <SupplierSettings profile={profile} />}
-      </main>
 
-      {(activeView === 'add-product' || activeView === 'edit-product') && (
-        <AddProductForm
-          onBack={() => { setActiveView('inventory'); setEditingProduct(null); }}
-          onSuccess={handleFormSuccess}
-          editingProduct={editingProduct}
-        />
-      )}
+        {(activeView === 'add-product' || activeView === 'edit-product') && (
+          <div className={styles.fullPageOverlay}>
+            <AddProductForm
+              onBack={() => { setActiveView('inventory'); setEditingProduct(null); }}
+              onSuccess={handleFormSuccess}
+              editingProduct={editingProduct}
+            />
+          </div>
+        )}
+      </main>
 
       <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Product">
         <div className={styles.logoutModalContent}>

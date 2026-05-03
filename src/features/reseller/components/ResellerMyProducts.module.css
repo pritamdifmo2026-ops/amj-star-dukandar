@@ -835,10 +835,195 @@
   color: #0369a1;
 }
 
+/* ─── Responsive Adjustments ─── */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    overflow-x: hidden;
+    width: 100%;
+    gap: 1rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    text-align: left;
+  }
+
+  .header h2 { font-size: 1.25rem; }
+  .header p { font-size: 0.8rem; }
+
+  /* Premium Segmented Tabs for Mobile */
+  .tabs {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding: 0.4rem;
+    background: #f1f5f9;
+    border-radius: 12px;
+    border: none;
+    margin-bottom: 0.5rem;
+  }
+  
+  .tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0.6rem 0.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    background: transparent;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .activeTab {
+    background: white;
+    color: #e65c00;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .activeTab::after {
+    display: none;
+  }
+
+  .badge, .pendingBadge {
+    padding: 1px 6px;
+    font-size: 0.65rem;
+  }
+
+  .drawer {
+    width: 100vw;
+  }
+}
+
 @media (max-width: 640px) {
-  .cardActions { grid-template-columns: 1fr 1fr; }
-  .drawer { width: 100vw; }
-  .priceDisplay { flex-direction: column; }
-  .priceArrow { transform: rotate(90deg); }
-  .perfGrid { grid-template-columns: 1fr; }
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .card {
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+
+  .imageContainer {
+    height: 160px;
+  }
+
+  .pricingRow {
+    padding: 12px;
+    background: linear-gradient(to right, #f8fafc, #ffffff);
+  }
+
+  /* Optimized 2x2 Action Grid for Mobile */
+  .cardActions {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  .actionBtn {
+    padding: 10px 6px;
+    font-size: 0.75rem;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 10px;
+    background: #fcfdfe;
+    border-color: #f1f5f9;
+  }
+
+  .actionBtn svg {
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+  }
+
+  .actionBtn:active {
+    background: #f1f5f9;
+    transform: scale(0.97);
+  }
+
+  .requestItem {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .reqStatus {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .priceDisplay {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .priceArrow {
+    transform: rotate(90deg);
+    margin: 0 auto;
+  }
+
+  .priceBlock {
+    min-width: 0;
+  }
+
+  .perfGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .drawerTabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .pricingRow {
+    padding: 10px;
+  }
+
+  .priceValue {
+    font-size: 0.9rem;
+  }
+
+  .priceLabel {
+    font-size: 0.55rem;
+  }
+
+  .microStats {
+    font-size: 0.7rem;
+    justify-content: flex-start;
+    gap: 1rem;
+  }
+
+  .drawerBody {
+    padding: 1.25rem;
+  }
+
+  .supplierInfoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .drawerTab {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    border: 1px solid #f1f5f9;
+    border-radius: 6px;
+    margin: 2px;
+  }
+  
+  .drawerTabActive::after {
+    display: none;
+  }
 }

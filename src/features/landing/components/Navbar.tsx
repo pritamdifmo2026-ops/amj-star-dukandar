@@ -20,6 +20,8 @@ const Navbar: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSoonModal, setShowSoonModal] = useState(false);
+  const [mobileSignInOpen, setMobileSignInOpen] = useState(false);
+  const [mobileRegisterOpen, setMobileRegisterOpen] = useState(false);
   const navigate = useNavigate();
   const userMenuRef = React.useRef<HTMLDivElement>(null);
 
@@ -175,10 +177,23 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <>
-                <Link to={ROUTES.LOGIN} className={styles.loginBtn}>
-                  <UserPlus size={20} />
-                  <span>Sign In</span>
-                </Link>
+                <div 
+                  className={styles.userMenu} 
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  ref={userMenuRef}
+                >
+                  <div className={styles.loginBtn} style={{ cursor: 'pointer' }}>
+                    <UserPlus size={20} />
+                    <span>Sign In</span>
+                  </div>
+                  {userMenuOpen && (
+                    <div className={styles.dropdown}>
+                      <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.dropdownItem}>Buyer Portal</Link>
+                      <Link to={`${ROUTES.LOGIN}?mode=reseller`} className={styles.dropdownItem}>Reseller Hub</Link>
+                      <Link to={`${ROUTES.LOGIN}?mode=supplier`} className={styles.dropdownItem}>Supplier Dashboard</Link>
+                    </div>
+                  )}
+                </div>
                 <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.registerBtn}>Join Free</Link>
               </>
             )}
@@ -225,8 +240,20 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile menu */}
-      <div className={`${styles.mobileMenuWrapper} ${mobileOpen ? styles.open : ''}`}>
-        <div className={styles.mobileMenu}>
+      <div 
+        className={`${styles.mobileMenuWrapper} ${mobileOpen ? styles.open : ''}`}
+        onClick={() => setMobileOpen(false)}
+      >
+        <div className={styles.mobileMenu} onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+            <button 
+              onClick={() => setMobileOpen(false)} 
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', color: '#64748b' }}
+              aria-label="Close menu"
+            >
+              <X size={24} />
+            </button>
+          </div>
           {isAuth ? (
             <>
               {isSupplier ? (
@@ -242,8 +269,39 @@ const Navbar: React.FC = () => {
             </>
           ) : (
             <>
-              <Link to={ROUTES.LOGIN} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Sign In</Link>
-              <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Register</Link>
+              <div>
+                <button 
+                  className={styles.mobileLink} 
+                  style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                  onClick={() => setMobileSignInOpen(!mobileSignInOpen)}
+                >
+                  Sign In <ChevronDown size={16} style={{ transform: mobileSignInOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                </button>
+                {mobileSignInOpen && (
+                  <div className={styles.mobileSubMenu}>
+                    <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.mobileSubLink} onClick={() => setMobileOpen(false)}>Buyer Portal</Link>
+                    <Link to={`${ROUTES.LOGIN}?mode=reseller`} className={styles.mobileSubLink} onClick={() => setMobileOpen(false)}>Reseller Hub</Link>
+                    <Link to={`${ROUTES.LOGIN}?mode=supplier`} className={styles.mobileSubLink} onClick={() => setMobileOpen(false)}>Supplier Dashboard</Link>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <button 
+                  className={styles.mobileLink} 
+                  style={{ width: '100%', textAlign: 'left', border: 'none', background: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                  onClick={() => setMobileRegisterOpen(!mobileRegisterOpen)}
+                >
+                  Register <ChevronDown size={16} style={{ transform: mobileRegisterOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                </button>
+                {mobileRegisterOpen && (
+                  <div className={styles.mobileSubMenu}>
+                    <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.mobileSubLink} onClick={() => setMobileOpen(false)}>As Buyer</Link>
+                    <Link to={`${ROUTES.LOGIN}?mode=reseller`} className={styles.mobileSubLink} onClick={() => setMobileOpen(false)}>As Reseller</Link>
+                    <Link to={`${ROUTES.LOGIN}?mode=supplier`} className={styles.mobileSubLink} onClick={() => setMobileOpen(false)}>As Supplier</Link>
+                  </div>
+                )}
+              </div>
             </>
           )}
           <hr className={styles.mobileDivider} />

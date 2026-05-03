@@ -96,6 +96,13 @@
   display: flex;
   gap: var(--space-3);
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 4px 0;
+}
+
+.thumbnailGrid::-webkit-scrollbar {
+  display: none;
 }
 
 .thumbWrap {
@@ -152,6 +159,13 @@
   padding: 4px 10px;
   border-radius: 4px;
   text-transform: uppercase;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
 }
 
 .title {
@@ -367,9 +381,117 @@
   max-width: 800px;
 }
 
+/* Responsive Breakpoints */
+@media (max-width: 1200px) {
+  .layout {
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: var(--space-6);
+  }
+}
+
 @media (max-width: 992px) {
   .layout {
     grid-template-columns: 1fr;
     gap: var(--space-8);
+  }
+
+  .imageSection {
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .infoSection {
+    margin-top: var(--space-4);
+  }
+
+  .title {
+    font-size: var(--font-size-xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: var(--space-4) 0 var(--space-12);
+  }
+
+  .backBtn {
+    margin-top: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+
+  .actions {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .buyBtn, .buyNowBtn, .inquiryBtn {
+    width: 100%;
+    flex: none;
+    height: 50px;
+  }
+
+  .stats {
+    flex-wrap: wrap;
+    gap: var(--space-6);
+  }
+
+  .priceValue {
+    font-size: var(--font-size-lg);
+  }
+
+  .descriptionSection {
+    padding-top: var(--space-8);
+    margin-bottom: var(--space-10);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 var(--space-3);
+  }
+
+  .badgeRow {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .verifiedBadge, .categoryBadge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .title {
+    font-size: var(--font-size-lg);
+  }
+
+  .wishlistBtn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .wishlistBtn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .priceCard {
+    padding: var(--space-3);
+  }
+
+  .priceValue {
+    font-size: var(--font-size-base);
+  }
+
+  .totalPrice {
+    font-size: var(--font-size-base);
+  }
+
+  .statItem {
+    width: 100%;
+  }
+
+  .supplierCard {
+    padding: var(--space-4);
   }
 }
