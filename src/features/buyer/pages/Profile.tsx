@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { useSearchParams } from 'react-router-dom';
-import { 
-  User, Package, MapPin, CreditCard, Settings, Bell, Heart, 
-  X, Mail, Phone, ShoppingBag, 
+import {
+  User, Package, MapPin, CreditCard, Settings, Bell, Heart,
+  X, Mail, Phone, ShoppingBag,
   LogOut, ChevronRight, Star, Clock, Check, MessageCircle
 } from 'lucide-react';
 import { setCredentials } from '@/store/slices/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import ProductCard from '@/features/product/components/ProductCard';
 import ChatInbox from '@/features/chat/components/ChatInbox';
+import { useSocket } from '@/shared/contexts/SocketContext';
+import { chatApi } from '@/shared/services/chat.api';
 import adminService from '@/features/admin/services/admin.service';
 import { Camera, Loader2 } from 'lucide-react';
 import styles from './Profile.module.css';
@@ -19,7 +21,7 @@ const Profile: React.FC = () => {
   const user = useAppSelector((state) => state.auth.user);
   const wishlistItems = useAppSelector((state) => state.wishlist.items);
   const dispatch = useAppDispatch();
-  
+
   const activeTab = searchParams.get('tab') || 'overview';
 
   const setActiveTab = (tab: string) => {
@@ -42,6 +44,36 @@ const Profile: React.FC = () => {
   const orderCount = 0;
   const memberSince = 'January 2024';
   const isEmailVerified = user?.isEmailVerified || false;
+  const { socket } = useSocket();
+  const [totalUnread, setTotalUnread] = useState(0);
+
+  // Fetch unread count for the sidebar badge
+  const fetchUnreadCount = async () => {
+    try {
+      const conversations = await chatApi.getConversations();
+      const count = conversations.reduce((acc: number, conv: any) => {
+        const userId = user?.id;
+        const unread = userId ? (conv.unreadCount?.[userId] || 0) : 0;
+        return acc + unread;
+      }, 0);
+      setTotalUnread(count);
+    } catch (err) {
+      console.error('Failed to fetch unread count for profile badge');
+    }
+  };
+
+  React.useEffect(() => {
+    if (user) {
+      fetchUnreadCount();
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    if (!socket) return;
+    const handleNewMsg = () => fetchUnreadCount();
+    socket.on('new_notification', handleNewMsg);
+    return () => { socket.off('new_notification', handleNewMsg); };
+  }, [socket]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,7 +84,7 @@ const Profile: React.FC = () => {
     try {
       const imageUrl = await adminService.uploadImage(file);
       const response = await authService.updateProfile({ avatar: imageUrl });
-      
+
       dispatch(setCredentials({
         user: response.user
       }));
@@ -133,7 +165,7 @@ const Profile: React.FC = () => {
   const menuItems = [
     { id: 'overview', label: 'Account Overview', icon: User },
     { id: 'orders', label: 'My Orders', icon: Package, badge: orderCount },
-    { id: 'messages', label: 'Messages', icon: MessageCircle },
+    { id: 'messages', label: 'Messages', icon: MessageCircle, badge: totalUnread },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistItems.length },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'payments', label: 'Payment Methods', icon: CreditCard },
@@ -187,7 +219,6 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </aside>
-
       <main className={styles.mainContent}>
         <div className={styles.profileCover}>
           <div className={styles.coverGradient}></div>
@@ -203,11 +234,11 @@ const Profile: React.FC = () => {
                 )}
                 <label className={styles.avatarEditOverlay}>
                   <Camera size={20} />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleAvatarUpload} 
-                    hidden 
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    hidden
                   />
                 </label>
               </div>
@@ -230,8 +261,8 @@ const Profile: React.FC = () => {
                   <Mail size={16} />
                   <span>{user?.email || 'Not provided'}</span>
                   {!isEmailVerified && user?.email && (
-                    <button 
-                      className={styles.verifyEmailBtn} 
+                    <button
+                      className={styles.verifyEmailBtn}
                       onClick={handleSendVerifyEmail}
                       disabled={isSendingEmail}
                     >
@@ -249,36 +280,38 @@ const Profile: React.FC = () => {
           </div>
         </div>
 
-        <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <ShoppingBag size={24} className={styles.statIcon} />
-            <div>
-              <span className={styles.statValue}>{orderCount}</span>
-              <span className={styles.statLabel}>Orders</span>
+        {activeTab === 'overview' && (
+          <div className={styles.statsRow}>
+            <div className={styles.statCard}>
+              <ShoppingBag size={24} className={styles.statIcon} />
+              <div>
+                <span className={styles.statValue}>{orderCount}</span>
+                <span className={styles.statLabel}>Orders</span>
+              </div>
+            </div>
+            <div className={styles.statCard}>
+              <Heart size={24} className={styles.statIcon} />
+              <div>
+                <span className={styles.statValue}>{wishlistItems.length}</span>
+                <span className={styles.statLabel}>Wishlist</span>
+              </div>
+            </div>
+            <div className={styles.statCard}>
+              <Star size={24} className={styles.statIcon} />
+              <div>
+                <span className={styles.statValue}>0</span>
+                <span className={styles.statLabel}>Reviews</span>
+              </div>
+            </div>
+            <div className={styles.statCard}>
+              <Clock size={24} className={styles.statIcon} />
+              <div>
+                <span className={styles.statValue}>0</span>
+                <span className={styles.statLabel}>Pending</span>
+              </div>
             </div>
           </div>
-          <div className={styles.statCard}>
-            <Heart size={24} className={styles.statIcon} />
-            <div>
-              <span className={styles.statValue}>{wishlistItems.length}</span>
-              <span className={styles.statLabel}>Wishlist</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <Star size={24} className={styles.statIcon} />
-            <div>
-              <span className={styles.statValue}>0</span>
-              <span className={styles.statLabel}>Reviews</span>
-            </div>
-          </div>
-          <div className={styles.statCard}>
-            <Clock size={24} className={styles.statIcon} />
-            <div>
-              <span className={styles.statValue}>0</span>
-              <span className={styles.statLabel}>Pending</span>
-            </div>
-          </div>
-        </div>
+        )}
 
         {activeTab === 'overview' && (
           <div className={styles.overviewContent}>
@@ -345,7 +378,7 @@ const Profile: React.FC = () => {
         )}
 
         {activeTab === 'messages' && (
-          <div style={{ height: '70vh', minHeight: '500px' }}>
+          <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px', margin: '-20px' }}>
             <ChatInbox />
           </div>
         )}
@@ -371,13 +404,13 @@ const Profile: React.FC = () => {
             {!showOtpInput ? (
               <div className={styles.modalBody}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>New Phone Number</label>
-                <input 
-                  type="text" 
-                  value={newPhone} 
-                  onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ''))} 
-                  className={styles.editInput} 
-                  placeholder="Enter 10-digit mobile number" 
-                  maxLength={10} 
+                <input
+                  type="text"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ''))}
+                  className={styles.editInput}
+                  placeholder="Enter 10-digit mobile number"
+                  maxLength={10}
                   style={{ width: '100%', marginBottom: '16px' }}
                 />
                 <button onClick={handleSendPhoneOtp} className={styles.modalPrimaryBtn} style={{ width: '100%' }}>Send OTP</button>
@@ -385,13 +418,13 @@ const Profile: React.FC = () => {
             ) : (
               <div className={styles.modalBody}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Enter OTP sent to {newPhone}</label>
-                <input 
-                  type="text" 
-                  value={phoneOtp} 
-                  onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ''))} 
-                  className={styles.editInput} 
-                  placeholder="Enter 123456" 
-                  maxLength={6} 
+                <input
+                  type="text"
+                  value={phoneOtp}
+                  onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ''))}
+                  className={styles.editInput}
+                  placeholder="Enter 123456"
+                  maxLength={6}
                   style={{ width: '100%', marginBottom: '16px' }}
                 />
                 <button onClick={handleVerifyPhoneOtp} className={styles.modalPrimaryBtn} style={{ width: '100%' }}>Verify & Update</button>

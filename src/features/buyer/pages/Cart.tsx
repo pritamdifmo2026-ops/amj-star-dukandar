@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { 
   Trash2, Plus, Minus, CreditCard, 
-  ArrowRight, ShoppingBag, Box, Tag, ShoppingCart
+  ArrowRight, ShoppingBag, Box, ShoppingCart
 } from 'lucide-react';
 import { 
   removeFromCartAsync, 

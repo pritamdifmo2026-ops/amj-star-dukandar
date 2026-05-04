@@ -6,11 +6,7 @@ import {
   Plus, 
   Pencil, 
   Trash2, 
-  Upload, 
-  ExternalLink,
-  ChevronUp,
-  ChevronDown,
-  X
+  Upload
 } from 'lucide-react';
 import styles from './BannerManagement.module.css';
 

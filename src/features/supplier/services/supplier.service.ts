@@ -7,7 +7,7 @@ const supplierService = {
     return response.data;
   },
 
-  onboard: async (data: { businessName: string; phone: string; ownerName: string; email: string; isWomenEntrepreneur: boolean }) => {
+  onboard: async (data: { businessName: string; phone: string; ownerName: string; email: string }) => {
     const response = await apiClient.post('/supplier/onboard', data);
     return response.data;
   },
@@ -48,6 +48,26 @@ const supplierService = {
 
   getPartners: async () => {
     const response = await apiClient.get('/partnership/partners');
+    return response.data;
+  },
+  
+  requestEmailChange: async (newEmail: string) => {
+    const response = await apiClient.post('/supplier/request-email-change', { newEmail });
+    return response.data;
+  },
+
+  verifyEmailChange: async (token: string) => {
+    const response = await apiClient.get(`/supplier/verify-email-change?token=${token}`);
+    return response.data;
+  },
+
+  requestPhoneChange: async (newPhone: string) => {
+    const response = await apiClient.post('/supplier/request-phone-change', { newPhone });
+    return response.data;
+  },
+
+  verifyPhoneChange: async (otp: string) => {
+    const response = await apiClient.post('/supplier/verify-phone-change', { otp });
     return response.data;
   }
 };

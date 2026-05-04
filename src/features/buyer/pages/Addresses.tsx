@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Plus, MapPin, Phone, User, 
-  Trash2, Home, CheckCircle2, 
+  Plus, Phone, 
+  Trash2, CheckCircle2, 
   ChevronRight, ArrowLeft, Loader2,
   BookUser
 } from 'lucide-react';
 import { addressApi } from '@/shared/services/address.api';
-import { ROUTES } from '@/shared/constants/routes';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 import styles from './Addresses.module.css';

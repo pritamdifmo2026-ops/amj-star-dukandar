@@ -9,6 +9,7 @@ interface AuthUser {
   phone?: string;
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
+  avatar?: string;
 }
 
 interface AuthState {

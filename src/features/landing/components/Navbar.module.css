@@ -11,7 +11,8 @@
 .topStrip {
   background: #0f172a;
   color: white;
-  padding: 0.35rem 0; /* Reduced spacing */
+  padding: 0.35rem 0;
+  /* Reduced spacing */
   font-size: 0.7rem;
 }
 
@@ -46,7 +47,8 @@
 }
 
 .topLink:hover {
-  color: #fb923c; /* Orange hover */
+  color: #fb923c;
+  /* Orange hover */
 }
 
 .sep {
@@ -54,7 +56,8 @@
 }
 
 .navbar {
-  padding: 0.75rem 0; /* Reduced spacing */
+  padding: 0.75rem 0;
+  /* Reduced spacing */
 }
 
 .logo {
@@ -77,7 +80,8 @@
 }
 
 .searchForm:focus-within {
-  border-color: #e65c00; /* Orange border */
+  border-color: #e65c00;
+  /* Orange border */
   background: white;
   box-shadow: 0 0 0 3px rgba(230, 92, 0, 0.1);
 }
@@ -92,7 +96,8 @@
   font-size: 0.8rem;
   font-weight: 800;
   cursor: pointer;
-  height: 36px; /* More compact */
+  height: 36px;
+  /* More compact */
 }
 
 .searchInput {
@@ -106,9 +111,11 @@
 }
 
 .searchBtn {
-  width: 40px; /* More compact */
+  width: 40px;
+  /* More compact */
   height: 40px;
-  background: #e65c00; /* Primary Orange */
+  background: #e65c00;
+  /* Primary Orange */
   border: none;
   border-radius: 8px;
   color: white;
@@ -152,7 +159,7 @@
   width: 200px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   border: 1px solid #f1f5f9;
   padding: 0.5rem;
   margin-top: 0.75rem;
@@ -160,8 +167,15 @@
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdownItem {
@@ -189,7 +203,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #e65c00; /* Orange */
+  color: #e65c00;
+  /* Orange */
   text-decoration: none;
   font-weight: 800;
   font-size: 0.9rem;
@@ -249,7 +264,8 @@
 .catList {
   list-style: none;
   margin: 0;
-  padding: 0.5rem 0; /* Reduced spacing */
+  padding: 0.5rem 0;
+  /* Reduced spacing */
   display: flex;
   gap: 1.75rem;
 }
@@ -275,15 +291,18 @@
   .searchForm {
     display: none;
   }
+
   .catBar {
     display: none;
   }
+
   .menuToggle {
     display: flex;
     background: none;
     border: none;
     color: #475569;
   }
+
   .actions {
     margin-left: auto;
   }
@@ -318,7 +337,7 @@
   background: white;
   display: flex;
   flex-direction: column;
-  box-shadow: -10px 0 40px rgba(0,0,0,0.2);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.2);
   transform: translateX(100%);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }

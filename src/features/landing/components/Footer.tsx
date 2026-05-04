@@ -13,11 +13,9 @@ import {
 } from 'lucide-react';
 import appConfig from '@/config/app.config';
 import { ROUTES } from '@/shared/constants/routes';
-import { useAppSelector } from '@/store/hooks';
 import styles from './Footer.module.css';
 
 const Footer: React.FC = () => {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

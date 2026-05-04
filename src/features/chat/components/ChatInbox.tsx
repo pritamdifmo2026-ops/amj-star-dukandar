@@ -23,8 +23,10 @@ const ChatInbox: React.FC = () => {
 
   // ─── Load conversations ───────────────────────────────────────────
   useEffect(() => {
-    loadConversations();
-  }, []);
+    if (user) {
+      loadConversations();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!socket) return;
@@ -47,7 +49,10 @@ const ChatInbox: React.FC = () => {
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesEndRef.current?.parentElement;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages]);
 
   // ─── Helpers ──────────────────────────────────────────────────────
@@ -66,10 +71,20 @@ const ChatInbox: React.FC = () => {
 
   const filteredConversations = conversations.filter((conv) => {
     const other = getOtherParticipant(conv);
-    const matchesSearch = other?.name?.toLowerCase().includes(search.toLowerCase());
+    const otherName = other?.name || 'User';
+    
+    const matchesSearch = otherName.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === 'all' || getUnread(conv) > 0;
+    
     return matchesSearch && matchesFilter;
   });
+
+  useEffect(() => {
+    console.log('[ChatInbox] Rendering with conversations:', conversations.length, {
+      all: conversations,
+      filtered: filteredConversations
+    });
+  }, [conversations, filteredConversations]);
 
   const handleSelectConv = (conv: any) => {
     setActiveConv(conv);
@@ -156,7 +171,7 @@ const ChatInbox: React.FC = () => {
                       </span>
                     )}
                     <div className={styles.convName}>
-                      <span>{other?.name || 'User'}</span>
+                      <span>{other?.name || (conv.productId?.name ? 'Supplier' : 'User')}</span>
                       <span className={styles.convTime}>
                         {new Date(conv.lastMessageAt).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -165,7 +180,7 @@ const ChatInbox: React.FC = () => {
                       </span>
                     </div>
                     <div className={styles.convPreview}>
-                      <span>{conv.lastMessage || 'Start of conversation'}</span>
+                      <span className={styles.previewText}>{conv.lastMessage || 'Start of conversation'}</span>
                       {unread > 0 && (
                         <span className={styles.unreadBadge}>{unread}</span>
                       )}
@@ -203,7 +218,7 @@ const ChatInbox: React.FC = () => {
               </div>
               <div className={styles.chatHeaderInfo}>
                 <span className={styles.chatHeaderName}>
-                  {getOtherParticipant(activeConv)?.name || 'User'}
+                  {getOtherParticipant(activeConv)?.name || (activeConv.productId?.name ? 'Supplier' : 'User')}
                 </span>
                 <span className={styles.chatHeaderSub}>
                   {isTyping

@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
 import { 
   ShoppingBag, MapPin, Plus, 
-  CreditCard, Wallet, Truck, ArrowLeft,
-  CheckCircle2
+  CreditCard, Wallet, Truck, ArrowLeft
 } from 'lucide-react';
 import { ROUTES } from '@/shared/constants/routes';
 import { addressApi } from '@/shared/services/address.api';
@@ -15,7 +14,6 @@ const Checkout: React.FC = () => {
   const cartItems = useAppSelector((state) => state.cart.items);
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'online'>('online');
   const [addresses, setAddresses] = useState<any[]>([]);
-  const [loadingAddresses, setLoadingAddresses] = useState(true);
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = subtotal > 1000 ? 0 : 50;
@@ -30,8 +28,6 @@ const Checkout: React.FC = () => {
         setAddresses(data);
       } catch (error) {
         console.error('Failed to fetch addresses', error);
-      } finally {
-        setLoadingAddresses(false);
       }
     };
     fetchAddresses();
