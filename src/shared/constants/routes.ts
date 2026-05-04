@@ -29,4 +29,7 @@ export const ROUTES = {
   // Product
   PRODUCT_LIST: '/products',
   PRODUCT_DETAIL: '/products/:id',
+  CART: '/cart',
+  CHECKOUT: '/checkout',
+  ADDRESSES: '/addresses',
 } as const;

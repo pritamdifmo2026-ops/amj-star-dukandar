@@ -16,6 +16,7 @@ import UserManagement from '../components/UserManagement';
 import ProductQueue from '../components/ProductQueue';
 import CategoryManagement from '../components/CategoryManagement';
 import ResellerVerification from '../components/ResellerVerification';
+import BannerManagement from '../components/BannerManagement';
 
 import styles from './AdminDashboard.module.css';
 import {
@@ -24,7 +25,8 @@ import {
   BarChart3,
   Package,
   Tags,
-  Menu
+  Menu,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -64,6 +66,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'users', label: 'User Management', icon: Users },
     { id: 'products', label: 'Product Queue', icon: Package },
     { id: 'categories', label: 'Categories', icon: Tags },
+    { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
   ];
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -269,6 +272,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'users' && 'User Management'}
             {activeTab === 'products' && 'Product Queue'}
             {activeTab === 'categories' && 'Category Management'}
+            {activeTab === 'banners' && 'Banner Management'}
           </h2>
 
         </header>
@@ -309,6 +313,7 @@ const AdminDashboard: React.FC = () => {
                 onAddCategory={handleAddCategory}
               />
             )}
+            {activeTab === 'banners' && <BannerManagement />}
           </div>
         )}
       </main>

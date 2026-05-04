@@ -10,6 +10,8 @@ import { setCredentials } from '@/store/slices/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import ProductCard from '@/features/product/components/ProductCard';
 import ChatInbox from '@/features/chat/components/ChatInbox';
+import adminService from '@/features/admin/services/admin.service';
+import { Camera, Loader2 } from 'lucide-react';
 import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
@@ -40,6 +42,28 @@ const Profile: React.FC = () => {
   const orderCount = 0;
   const memberSince = 'January 2024';
   const isEmailVerified = user?.isEmailVerified || false;
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const imageUrl = await adminService.uploadImage(file);
+      const response = await authService.updateProfile({ avatar: imageUrl });
+      
+      dispatch(setCredentials({
+        user: response.user
+      }));
+      alert('Profile picture updated successfully!');
+    } catch (err) {
+      console.error('Failed to upload avatar:', err);
+      alert('Failed to update profile picture.');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const handleSaveInfo = async () => {
     if (user) {
@@ -126,7 +150,11 @@ const Profile: React.FC = () => {
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarAvatar}>
-            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            {user?.avatar ? (
+              <img src={user.avatar} alt={user.name} className={styles.avatarImg} />
+            ) : (
+              user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+            )}
           </div>
           <div className={styles.sidebarUserInfo}>
             <h4>{user?.name?.split(' ')[0] || 'Guest'}</h4>
@@ -164,8 +192,25 @@ const Profile: React.FC = () => {
         <div className={styles.profileCover}>
           <div className={styles.coverGradient}></div>
           <div className={styles.profileHeader}>
-            <div className={styles.avatar}>
-              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+            <div className={styles.avatarWrapper}>
+              <div className={styles.avatar}>
+                {isUploadingAvatar ? (
+                  <Loader2 className={styles.spinner} />
+                ) : user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className={styles.avatarImg} />
+                ) : (
+                  user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+                )}
+                <label className={styles.avatarEditOverlay}>
+                  <Camera size={20} />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleAvatarUpload} 
+                    hidden 
+                  />
+                </label>
+              </div>
             </div>
             <div className={styles.userInfo}>
               <div className={styles.nameSection}>

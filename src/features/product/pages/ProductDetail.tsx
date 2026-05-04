@@ -5,7 +5,7 @@ import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { addToCart } from '@/store/slices/cart.slice';
+import { addToCartAsync } from '@/store/slices/cart.slice';
 import { toggleWishlist } from '@/store/slices/wishlist.slice';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { chatApi } from '@/shared/services/chat.api';
@@ -15,6 +15,7 @@ import ErrorState from '@/shared/components/feedback/ErrorState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 import ImageMagnifier from '../components/ImageMagnifier';
+import { ROUTES } from '@/shared/constants/routes';
 import styles from './ProductDetail.module.css';
 
 const ProductDetail: React.FC = () => {
@@ -27,12 +28,16 @@ const ProductDetail: React.FC = () => {
 
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const user = useAppSelector(state => state.auth.user);
 
   React.useEffect(() => {
     setSelectedImage(null);
   }, [id]);
   
   const isWishlisted = product ? wishlistItems.some(item => item.id === product.id) : false;
+
+  const cartItems = useAppSelector(state => state.cart.items);
+  const isInCart = product ? cartItems.some(item => item.productId === product.id) : false;
 
   const handleToggleWishlist = () => {
     if (product) {
@@ -84,8 +89,20 @@ const ProductDetail: React.FC = () => {
 
   // Handlers that use currentImage - defined AFTER currentImage
   const handleAddToCart = () => {
+    if (!product) return;
+    
+    if (isInCart) {
+      navigate(ROUTES.CART);
+      return;
+    }
+
+    if (!user) {
+      navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`);
+      return;
+    }
+
     dispatch(
-      addToCart({
+      addToCartAsync({
         productId: product.id,
         name: product.name,
         price: product.price,
@@ -98,8 +115,15 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
+
+    if (!user) {
+      navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`);
+      return;
+    }
+
     dispatch(
-      addToCart({
+      addToCartAsync({
         productId: product.id,
         name: product.name,
         price: product.price,
@@ -109,7 +133,7 @@ const ProductDetail: React.FC = () => {
         imageUrl: currentImage,
       })
     );
-    // navigate('/checkout');
+    navigate(ROUTES.CHECKOUT);
   };
 
   const gstAmount = calculateGST(product.price, product.gstRate);
@@ -206,7 +230,7 @@ const ProductDetail: React.FC = () => {
               <div className={styles.actions}>
                 <Button size="lg" className={styles.buyBtn} onClick={handleAddToCart}>
                   <ShoppingCart size={20} />
-                  Add to Cart
+                  {isInCart ? 'Go to Cart' : 'Add to Cart'}
                 </Button>
                 <Button size="lg" variant="primary" className={styles.buyNowBtn} onClick={handleBuyNow}>
                   <CreditCard size={20} />

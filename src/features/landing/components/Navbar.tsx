@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, ChevronDown, Phone, Menu, X, UserPlus } from 'lucide-react';
+import { Search, ShoppingCart, ChevronDown, Phone, Menu, X, UserPlus, User, LogOut, Tag } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
@@ -145,16 +145,16 @@ const Navbar: React.FC = () => {
           {/* Right actions */}
           <div className={styles.actions}>
             {isAuth ? (
-              <div 
-                className={styles.userMenu} 
+              <div
+                className={styles.userMenu}
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
                 ref={userMenuRef}
               >
                 <span className={styles.userName}>
-                  {isSupplier 
-                    ? (supplierProfile?.businessName || 'Supplier') 
-                    : isReseller 
-                      ? (resellerProfile?.fullName || resellerProfile?.storeName || user?.name || 'Reseller') 
+                  {isSupplier
+                    ? (supplierProfile?.businessName || 'Supplier')
+                    : isReseller
+                      ? (resellerProfile?.fullName || resellerProfile?.storeName || user?.name || 'Reseller')
                       : (user?.name || 'User')
                   }
                 </span>
@@ -182,10 +182,10 @@ const Navbar: React.FC = () => {
                 <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.registerBtn}>Join Free</Link>
               </>
             )}
-            <div 
-              className={styles.cartIcon} 
-              aria-label="Cart" 
-              onClick={() => setShowSoonModal(true)}
+            <div
+              className={styles.cartIcon}
+              aria-label="Cart"
+              onClick={() => navigate(ROUTES.CART)}
               style={{ cursor: 'pointer' }}
             >
               <ShoppingCart size={20} />
@@ -198,7 +198,7 @@ const Navbar: React.FC = () => {
         </div>
       </nav>
 
-      <MessageModal 
+      <MessageModal
         isOpen={showSoonModal}
         onClose={() => setShowSoonModal(false)}
         title="Coming Soon"
@@ -225,38 +225,91 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Mobile menu */}
-      <div className={`${styles.mobileMenuWrapper} ${mobileOpen ? styles.open : ''}`}>
-        <div className={styles.mobileMenu}>
-          {isAuth ? (
-            <>
-              {isSupplier ? (
-                <Link to="/supplier/onboarding" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Dashboard</Link>
-              ) : isReseller ? (
-                <Link to="/reseller/dashboard" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Dashboard</Link>
-              ) : isAdmin ? (
-                <Link to="/admin/dashboard" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Control Panel</Link>
+      <div
+        className={`${styles.mobileMenuWrapper} ${mobileOpen ? styles.open : ''}`}
+        onClick={() => setMobileOpen(false)}
+      >
+        <div className={styles.mobileMenu} onClick={(e) => e.stopPropagation()}>
+          <header className={styles.mobileHeader}>
+            {isAuth ? (
+              <div className={styles.mobileUser}>
+                <div className={styles.mobileAvatar}>
+                  {(isSupplier ? (supplierProfile?.businessName?.[0]) : isReseller ? (resellerProfile?.fullName?.[0] || resellerProfile?.storeName?.[0]) : (user?.name?.[0]))?.toUpperCase() || 'U'}
+                </div>
+                <div className={styles.mobileUserInfo}>
+                  <span className={styles.mobileUserName}>
+                    {isSupplier
+                      ? (supplierProfile?.businessName || 'Supplier')
+                      : isReseller
+                        ? (resellerProfile?.fullName || resellerProfile?.storeName || user?.name || 'Reseller')
+                        : (user?.name || 'User')
+                    }
+                  </span>
+                  <span className={styles.mobileUserRole}>{user?.role}</span>
+                </div>
+              </div>
+            ) : (
+              <img src="/favicon.jpeg" alt="Logo" className={styles.mobileLogo} />
+            )}
+            <button className={styles.closeMenuBtn} onClick={() => setMobileOpen(false)}>
+              <X size={20} />
+            </button>
+          </header>
+
+          <div className={styles.mobileContent}>
+            <div className={styles.menuSection}>
+              <div className={styles.sectionLabel}>Account & Settings</div>
+              {isAuth ? (
+                <>
+                  <Link
+                    to={isSupplier ? "/supplier/onboarding" : isReseller ? "/reseller/dashboard" : isAdmin ? "/admin/dashboard" : "/profile"}
+                    className={styles.mobileLink}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <User size={18} />
+                    <span>{isAdmin ? 'Control Panel' : 'My Profile'}</span>
+                  </Link>
+                </>
               ) : (
-                <Link to="/profile" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Profile</Link>
+                <>
+                  <Link to={ROUTES.LOGIN} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
+                    <UserPlus size={18} />
+                    <span>Sign In</span>
+                  </Link>
+                  <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
+                    <UserPlus size={18} />
+                    <span>Register</span>
+                  </Link>
+                </>
               )}
-              <button className={styles.mobileLink} style={{ textAlign: 'left', border: 'none', background: 'none' }} onClick={() => { setShowLogoutModal(true); setMobileOpen(false); }}>Sign Out</button>
-            </>
-          ) : (
-            <>
-              <Link to={ROUTES.LOGIN} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Sign In</Link>
-              <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>Register</Link>
-            </>
+            </div>
+
+            <hr className={styles.mobileDivider} />
+
+            <div className={styles.menuSection}>
+              <div className={styles.sectionLabel}>Browse Categories</div>
+              {CATEGORIES.map((cat) => (
+                <Link
+                  key={cat}
+                  to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat)}`}
+                  className={styles.mobileLink}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <Tag size={18} />
+                  <span>{cat}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {isAuth && (
+            <footer className={styles.mobileFooter}>
+              <button className={styles.signOutBtn} onClick={handleSignOut}>
+                <LogOut size={18} />
+                <span>Sign Out</span>
+              </button>
+            </footer>
           )}
-          <hr className={styles.mobileDivider} />
-          {CATEGORIES.map((cat) => (
-            <Link
-              key={cat}
-              to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat)}`}
-              className={styles.mobileLink}
-              onClick={() => setMobileOpen(false)}
-            >
-              {cat}
-            </Link>
-          ))}
         </div>
       </div>
 

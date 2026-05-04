@@ -74,7 +74,7 @@ const ProductList: React.FC = () => {
             ) : (
               <div className={styles.grid}>
                 {products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} showAddToCart={false} />
                 ))}
               </div>
             )}

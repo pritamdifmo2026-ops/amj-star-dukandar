@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
+import BannerSlider from '../components/BannerSlider';
 import Footer from '../components/Footer';
 import ProductCard from '@/features/product/components/ProductCard';
 import { ROUTES } from '@/shared/constants/routes';
@@ -41,6 +42,9 @@ const Landing: React.FC = () => {
       <Navbar />
 
       <main>
+        <div className={styles.container}>
+          <BannerSlider />
+        </div>
         <Hero />
 
         {/* Category: Electronics */}
@@ -57,7 +61,7 @@ const Landing: React.FC = () => {
                 .filter(p => p.category === 'Electronics')
                 .slice(0, 4)
                 .map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} showAddToCart={false} />
                 ))}
             </div>
           </div>
@@ -77,7 +81,7 @@ const Landing: React.FC = () => {
                 .filter(p => p.category === 'Bulk Essentials')
                 .slice(0, 4)
                 .map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} showAddToCart={false} />
                 ))}
             </div>
           </div>
@@ -97,7 +101,7 @@ const Landing: React.FC = () => {
                 .filter(p => p.category === 'Bulk Textiles')
                 .slice(0, 4)
                 .map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} showAddToCart={false} />
                 ))}
             </div>
           </div>
@@ -137,7 +141,7 @@ const Landing: React.FC = () => {
                 .filter(p => p.category === 'Textiles')
                 .slice(0, 4)
                 .map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} showAddToCart={false} />
                 ))}
             </div>
           </div>
@@ -157,7 +161,7 @@ const Landing: React.FC = () => {
                 .filter(p => p.category === 'Machinery')
                 .slice(0, 4)
                 .map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} showAddToCart={false} />
                 ))}
             </div>
           </div>
@@ -177,7 +181,7 @@ const Landing: React.FC = () => {
                 .filter(p => p.category === 'Food & Beverages')
                 .slice(0, 4)
                 .map(product => (
-                  <ProductCard key={product.id} product={product} />
+                  <ProductCard key={product.id} product={product} showAddToCart={false} />
                 ))}
             </div>
           </div>
