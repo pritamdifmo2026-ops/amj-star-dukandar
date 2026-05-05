@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, ShoppingCart, ChevronDown, Phone, Menu, X, UserPlus, User, LogOut, Tag, 
-  Store, ShoppingBag, Truck, List, Shirt, Monitor, Trophy, Footprints, Briefcase, 
-  Home as HomeIcon, Sprout, Settings, Utensils, Layers, FlaskConical, Armchair,
-  Star
+  Search, ShoppingCart, ChevronDown, Phone, Menu, X, UserPlus, User, LogOut,
+  Store, ShoppingBag, Truck, List, Monitor,
+  Sprout, Utensils, FlaskConical, Armchair
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
