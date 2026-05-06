@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, ShoppingCart, ChevronDown, Phone, Menu, X, UserPlus, User, LogOut,
-  Store, ShoppingBag, Truck, List, Monitor,
-  Sprout, Utensils, FlaskConical, Armchair
+  Search, ShoppingCart, ChevronDown, ChevronRight, Phone, Menu, X, User, LogOut,
+  Store, ShoppingBag, Truck, List
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
@@ -12,15 +11,8 @@ import { ROUTES } from '@/shared/constants/routes';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import MessageModal from '@/shared/components/ui/MessageModal';
+import categoryService from '@/features/product/services/category.service';
 import styles from './Navbar.module.css';
-
-const CATEGORY_LIST = [
-  { name: 'Agriculture', icon: Sprout },
-  { name: 'Chemicals', icon: FlaskConical },
-  { name: 'Electronics', icon: Monitor },
-  { name: 'Food & Beverages', icon: Utensils },
-  { name: 'Furniture', icon: Armchair },
-];
 
 const Navbar: React.FC = () => {
   const [query, setQuery] = useState('');
@@ -28,20 +20,23 @@ const Navbar: React.FC = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSoonModal, setShowSoonModal] = useState(false);
-  const [signInOpen, setSignInOpen] = useState(false);
   const [allCatsOpen, setAllCatsOpen] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
   const navigate = useNavigate();
   const userMenuRef = React.useRef<HTMLDivElement>(null);
-  const signInRef = React.useRef<HTMLDivElement>(null);
+
   const allCatsRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    categoryService.getAll().then(res => {
+      if (res.categories) setCategories(res.categories);
+    }).catch(err => console.error('Failed to fetch categories navbar', err));
+  }, []);
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
-      }
-      if (signInRef.current && !signInRef.current.contains(event.target as Node)) {
-        setSignInOpen(false);
       }
       if (allCatsRef.current && !allCatsRef.current.contains(event.target as Node)) {
         setAllCatsOpen(false);
@@ -198,56 +193,13 @@ const Navbar: React.FC = () => {
                 )}
               </div>
             ) : (
-              <>
-                <div className={styles.signInWrapper} ref={signInRef}>
-                  <button
-                    className={styles.loginBtn}
-                    onClick={() => setSignInOpen(!signInOpen)}
-                  >
-                    <UserPlus size={20} />
-                    <span>Sign In</span>
-                    <ChevronDown size={14} />
-                  </button>
-                  {signInOpen && (
-                    <div className={styles.signInDropdown}>
-                      <Link
-                        to={`${ROUTES.LOGIN}?mode=buyer`}
-                        className={styles.signInRole}
-                        onClick={() => setSignInOpen(false)}
-                      >
-                        <ShoppingBag size={18} />
-                        <div>
-                          <span className={styles.roleName}>Buyer</span>
-                          <span className={styles.roleDesc}>Browse & buy wholesale</span>
-                        </div>
-                      </Link>
-                      <Link
-                        to={`${ROUTES.LOGIN}?mode=seller`}
-                        className={styles.signInRole}
-                        onClick={() => setSignInOpen(false)}
-                      >
-                        <Store size={18} />
-                        <div>
-                          <span className={styles.roleName}>Supplier</span>
-                          <span className={styles.roleDesc}>List & sell products</span>
-                        </div>
-                      </Link>
-                      <Link
-                        to={`${ROUTES.LOGIN}?mode=reseller`}
-                        className={styles.signInRole}
-                        onClick={() => setSignInOpen(false)}
-                      >
-                        <Truck size={18} />
-                        <div>
-                          <span className={styles.roleName}>Reseller</span>
-                          <span className={styles.roleDesc}>Resell & earn margins</span>
-                        </div>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-                <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.registerBtn}>Join Free</Link>
-              </>
+              <div className={styles.guestNav}>
+                <Link to="/about" className={styles.navLink}>About</Link>
+                <Link to={ROUTES.BUYERS} className={styles.navLink}>For Buyers</Link>
+                <Link to={ROUTES.RESELLERS} className={styles.navLink}>For Resellers</Link>
+                <Link to={ROUTES.SUPPLIERS} className={styles.navLink}>For Suppliers</Link>
+                <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.joinBtn}>Join Free</Link>
+              </div>
             )}
             <div
               className={styles.cartIcon}
@@ -288,16 +240,36 @@ const Navbar: React.FC = () => {
 
             {allCatsOpen && (
               <div className={styles.allCatsDropdown}>
-                {CATEGORY_LIST.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(item.name)}`}
-                    className={styles.allCatItem}
-                    onClick={() => setAllCatsOpen(false)}
-                  >
-                    <span>{item.name}</span>
-                  </Link>
-                ))}
+                {categories.map((cat) => {
+                  const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+                  return (
+                    <div key={cat._id} className={styles.catGroup}>
+                      <Link
+                        to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                        className={styles.allCatItem}
+                        onClick={() => setAllCatsOpen(false)}
+                      >
+                        <span>{cat.name}</span>
+                        {hasSubs && <ChevronRight size={14} className={styles.catArrow} />}
+                      </Link>
+                      {hasSubs && (
+                        <div className={styles.subCatFlyout}>
+                          <div className={styles.flyoutHeader}>{cat.name}</div>
+                          {cat.subcategories.map((sub: any) => (
+                            <Link
+                              key={sub._id}
+                              to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                              className={styles.flyoutItem}
+                              onClick={() => setAllCatsOpen(false)}
+                            >
+                              {sub.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -342,7 +314,15 @@ const Navbar: React.FC = () => {
 
           <div className={styles.mobileContent}>
             <div className={styles.menuSection}>
-              <div className={styles.sectionLabel}>Account & Settings</div>
+              <div className={styles.sectionLabel}>Quick Links</div>
+              <Link to="/about" className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
+                <List size={18} />
+                <span>About AMJStar</span>
+              </Link>
+            </div>
+
+            <div className={styles.menuSection}>
+              <div className={styles.sectionLabel}>Join as Partner</div>
               {isAuth ? (
                 <>
                   <Link
@@ -356,17 +336,17 @@ const Navbar: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
+                  <Link to={ROUTES.BUYERS} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
                     <ShoppingBag size={18} />
-                    <span>Sign in as Buyer</span>
+                    <span>For Buyers</span>
                   </Link>
-                  <Link to={`${ROUTES.LOGIN}?mode=seller`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
+                  <Link to={ROUTES.SUPPLIERS} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
                     <Store size={18} />
-                    <span>Sign in as Supplier</span>
+                    <span>For Suppliers</span>
                   </Link>
-                  <Link to={`${ROUTES.LOGIN}?mode=reseller`} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
+                  <Link to={ROUTES.RESELLERS} className={styles.mobileLink} onClick={() => setMobileOpen(false)}>
                     <Truck size={18} />
-                    <span>Sign in as Reseller</span>
+                    <span>For Resellers</span>
                   </Link>
                 </>
               )}
@@ -376,16 +356,27 @@ const Navbar: React.FC = () => {
 
             <div className={styles.menuSection}>
               <div className={styles.sectionLabel}>Browse Categories</div>
-              {CATEGORY_LIST.map((cat) => (
-                <Link
-                  key={cat.name}
-                  to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                  className={styles.mobileLink}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <cat.icon size={18} />
-                  <span>{cat.name}</span>
-                </Link>
+              {categories.map((cat) => (
+                <div key={cat._id}>
+                  <Link
+                    to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                    className={styles.mobileLink}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <List size={18} />
+                    <span>{cat.name}</span>
+                  </Link>
+                  {(cat.subcategories || []).map((sub: any) => (
+                    <Link
+                      key={sub._id}
+                      to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                      className={`${styles.mobileLink} ${styles.mobileSubLink}`}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <span>- {sub.name}</span>
+                    </Link>
+                  ))}
+                </div>
               ))}
             </div>
           </div>

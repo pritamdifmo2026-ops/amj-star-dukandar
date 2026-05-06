@@ -7,6 +7,11 @@ export const ROUTES = {
   SELECT_ROLE: '/select-role',
   REGISTER: '/register',
 
+  // Landing pages for roles
+  BUYERS: '/buyers',
+  RESELLERS: '/resellers',
+  SUPPLIERS: '/suppliers',
+
   // Reseller
   RESELLER_DASHBOARD: '/reseller/dashboard',
   RESELLER_ONBOARDING: '/reseller/onboarding',

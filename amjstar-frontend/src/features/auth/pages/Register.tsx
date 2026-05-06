@@ -22,7 +22,7 @@ const Register: React.FC = () => {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!form.name.trim()) newErrors.name = 'Full name is required';
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) newErrors.email = 'Valid email is required';
+    if (!/^[a-z0-9]+@[a-z0-9]+\.[a-z]{2,}$/.test(form.email)) newErrors.email = 'Please enter a valid email address';
     if (!/^\d{10}$/.test(form.phone)) newErrors.phone = 'Valid 10-digit phone number is required';
     if (form.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
 
@@ -31,7 +31,12 @@ const Register: React.FC = () => {
   };
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const val = e.target.value;
+    let val = e.target.value;
+    if (field === 'email') {
+      val = val.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+      val = val.replace(/[@.]{2,}/g, (match) => match[0]);
+      if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
+    }
     setForm((prev) => ({ ...prev, [field]: val }));
     if (errors[field]) {
       setErrors(prev => {

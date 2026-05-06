@@ -8,33 +8,34 @@ import Footer from '../components/Footer';
 import ProductCard from '@/features/product/components/ProductCard';
 import { ROUTES } from '@/shared/constants/routes';
 import { productApi } from '@/features/product/services/product.api';
+import categoryService from '@/features/product/services/category.service';
 import type { Product } from '@/features/product/types';
 import styles from './Landing.module.css';
 
-const CATEGORIES = [
-  { name: 'Electronics', icon: '💻', color: '#e3f2fd' },
-  { name: 'Textiles', icon: '👕', color: '#f3e5f5' },
-  { name: 'Machinery', icon: '⚙️', color: '#fff3e0' },
-  { name: 'Furniture', icon: '🛋️', color: '#efebe9' },
-  { name: 'Agriculture', icon: '🌾', color: '#e8f5e9' },
-];
+const DEFAULT_ICONS = ['💻', '👕', '⚙️', '🛋️', '🌾', '🧪', '🍔', '📦'];
+const DEFAULT_COLORS = ['#e3f2fd', '#f3e5f5', '#fff3e0', '#efebe9', '#e8f5e9', '#e0f7fa', '#ffebee', '#f5f5f5'];
 
 const Landing: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
-        const response = await productApi.list({ pageSize: 50 });
-        setProducts(response.data || []);
+        const [prodRes, catRes] = await Promise.all([
+          productApi.list({ pageSize: 50 }),
+          categoryService.getAll()
+        ]);
+        setProducts(prodRes.data || []);
+        if (catRes.categories) setCategories(catRes.categories);
       } catch (error) {
-        console.error('Failed to fetch products:', error);
+        console.error('Failed to fetch landing data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
+    fetchData();
   }, []);
 
   return (
@@ -47,79 +48,40 @@ const Landing: React.FC = () => {
         </div>
         <Hero />
 
-        {/* Category: Electronics */}
-        <section className={styles.categoryHub}>
-          <div className={styles.container}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Electronics Hub</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Electronics')}`} className={styles.viewAll}>
-                See more
-              </Link>
+        {categories.slice(0, 3).map((cat) => (
+          <section key={cat._id} className={styles.categoryHub}>
+            <div className={styles.container}>
+              <div className={styles.sectionHeader}>
+                <h2 className={styles.sectionTitle}>{cat.name}</h2>
+                <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`} className={styles.viewAll}>
+                  See more
+                </Link>
+              </div>
+              <div className={styles.productGrid}>
+                {loading ? <p>Loading products...</p> : products
+                  .filter(p => p.category === cat.name)
+                  .slice(0, 4)
+                  .map(product => (
+                    <ProductCard key={product.id} product={product} showAddToCart={false} />
+                  ))}
+              </div>
             </div>
-            <div className={styles.productGrid}>
-              {loading ? <p>Loading products...</p> : products
-                .filter(p => p.category === 'Electronics')
-                .slice(0, 4)
-                .map(product => (
-                  <ProductCard key={product.id} product={product} showAddToCart={false} />
-                ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Category: Daily Essentials Bulk */}
-        <section className={styles.categoryHub}>
-          <div className={styles.container}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Daily Essentials Bulk</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Bulk Essentials')}`} className={styles.viewAll}>
-                See more
-              </Link>
-            </div>
-            <div className={styles.productGrid}>
-              {loading ? <p>Loading products...</p> : products
-                .filter(p => p.category === 'Bulk Essentials')
-                .slice(0, 4)
-                .map(product => (
-                  <ProductCard key={product.id} product={product} showAddToCart={false} />
-                ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Category: Bulk Textiles & Fabrics */}
-        <section className={styles.categoryHub}>
-          <div className={styles.container}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Bulk Textiles & Fabrics</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Bulk Textiles')}`} className={styles.viewAll}>
-                See more
-              </Link>
-            </div>
-            <div className={styles.productGrid}>
-              {loading ? <p>Loading products...</p> : products
-                .filter(p => p.category === 'Bulk Textiles')
-                .slice(0, 4)
-                .map(product => (
-                  <ProductCard key={product.id} product={product} showAddToCart={false} />
-                ))}
-            </div>
-          </div>
-        </section>
+          </section>
+        ))}
 
         {/* Global Categories Navigation (The middle break) */}
         <section className={styles.middleNavigation}>
           <div className={styles.container}>
             <h2 className={styles.sectionTitleCenter}>Browse by Industry</h2>
             <div className={styles.categoryStrip}>
-              {CATEGORIES.map((cat) => (
+              {categories.map((cat, i) => (
                 <Link
                   key={cat.name}
                   to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
                   className={styles.industryCard}
-                  style={{ '--bg-color': cat.color } as any}
+                  style={{ '--bg-color': DEFAULT_COLORS[i % DEFAULT_COLORS.length] } as any}
                 >
-                  <span className={styles.industryIcon}>{cat.icon}</span>
+                  <span className={styles.industryIcon}>{DEFAULT_ICONS[i % DEFAULT_ICONS.length]}</span>
                   <span className={styles.industryName}>{cat.name}</span>
                 </Link>
               ))}
@@ -127,65 +89,26 @@ const Landing: React.FC = () => {
           </div>
         </section>
 
-        {/* Category: Textiles */}
-        <section className={styles.categoryHub}>
-          <div className={styles.container}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Textiles & Apparel</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Textiles')}`} className={styles.viewAll}>
-                See more
-              </Link>
+        {categories.slice(3, 6).map((cat) => (
+          <section key={cat._id} className={styles.categoryHub}>
+            <div className={styles.container}>
+              <div className={styles.sectionHeader}>
+                <h2 className={styles.sectionTitle}>{cat.name}</h2>
+                <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`} className={styles.viewAll}>
+                  See more
+                </Link>
+              </div>
+              <div className={styles.productGrid}>
+                {loading ? <p>Loading products...</p> : products
+                  .filter(p => p.category === cat.name)
+                  .slice(0, 4)
+                  .map(product => (
+                    <ProductCard key={product.id} product={product} showAddToCart={false} />
+                  ))}
+              </div>
             </div>
-            <div className={styles.productGrid}>
-              {loading ? <p>Loading products...</p> : products
-                .filter(p => p.category === 'Textiles')
-                .slice(0, 4)
-                .map(product => (
-                  <ProductCard key={product.id} product={product} showAddToCart={false} />
-                ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Category: Machinery */}
-        <section className={styles.categoryHub}>
-          <div className={styles.container}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Industrial Machinery</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Machinery')}`} className={styles.viewAll}>
-                See more
-              </Link>
-            </div>
-            <div className={styles.productGrid}>
-              {loading ? <p>Loading products...</p> : products
-                .filter(p => p.category === 'Machinery')
-                .slice(0, 4)
-                .map(product => (
-                  <ProductCard key={product.id} product={product} showAddToCart={false} />
-                ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Category: Food & Beverages */}
-        <section className={styles.categoryHub}>
-          <div className={styles.container}>
-            <div className={styles.sectionHeader}>
-              <h2 className={styles.sectionTitle}>Food & Beverages</h2>
-              <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent('Food & Beverages')}`} className={styles.viewAll}>
-                See more
-              </Link>
-            </div>
-            <div className={styles.productGrid}>
-              {loading ? <p>Loading products...</p> : products
-                .filter(p => p.category === 'Food & Beverages')
-                .slice(0, 4)
-                .map(product => (
-                  <ProductCard key={product.id} product={product} showAddToCart={false} />
-                ))}
-            </div>
-          </div>
-        </section>
+          </section>
+        ))}
 
         {/* Features Section */}
         <section className={styles.featuresSection}>

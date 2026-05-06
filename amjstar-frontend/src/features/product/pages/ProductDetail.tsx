@@ -31,17 +31,29 @@ const ProductDetail: React.FC = () => {
   const user = useAppSelector(state => state.auth.user);
 
   React.useEffect(() => {
+    if (id === 'undefined') {
+      navigate('/');
+      return;
+    }
     setSelectedImage(null);
-  }, [id]);
+  }, [id, navigate]);
   
-  const isWishlisted = product ? wishlistItems.some(item => item.id === product.id) : false;
+  const currentProductId = product?.id || (product as any)?._id;
+  const isWishlisted = product ? wishlistItems.some(item => {
+    const itemId = item.id || (item as any)._id;
+    return itemId && currentProductId && itemId === currentProductId;
+  }) : false;
 
   const cartItems = useAppSelector(state => state.cart.items);
-  const isInCart = product ? cartItems.some(item => item.productId === product.id) : false;
+  const isInCart = currentProductId ? cartItems.some(item => item.productId === currentProductId) : false;
 
   const handleToggleWishlist = () => {
-    if (product) {
-      dispatch(toggleWishlistItem(product.id));
+    if (product && currentProductId) {
+      if (!user) {
+        navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`);
+        return;
+      }
+      dispatch(toggleWishlistItem(product));
     }
   };
 
@@ -103,7 +115,7 @@ const ProductDetail: React.FC = () => {
 
     dispatch(
       addToCartAsync({
-        productId: product.id,
+        productId: currentProductId,
         name: product.name,
         price: product.price,
         quantity: product.minOrderQty,
@@ -124,7 +136,7 @@ const ProductDetail: React.FC = () => {
 
     dispatch(
       addToCartAsync({
-        productId: product.id,
+        productId: currentProductId,
         name: product.name,
         price: product.price,
         quantity: product.minOrderQty,

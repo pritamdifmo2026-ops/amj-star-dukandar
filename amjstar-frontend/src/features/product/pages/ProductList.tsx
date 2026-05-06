@@ -14,10 +14,12 @@ const ProductList: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const category = searchParams.get('category') || undefined;
+  const subcategory = searchParams.get('subcategory') || undefined;
   const searchQuery = searchParams.get('search') || undefined;
   
   const { data, isLoading, isError, refetch } = useProducts({
     category,
+    subcategory,
     search: searchQuery,
   });
 
@@ -34,13 +36,13 @@ const ProductList: React.FC = () => {
             <div className={styles.titleArea}>
               <div className={styles.titleRow}>
                 <h1 className={styles.title}>
-                  {searchQuery ? `Results for "${searchQuery}"` : category || 'All Products'}
+                  {searchQuery ? `Results for "${searchQuery}"` : subcategory || category || 'All Products'}
                 </h1>
-                {(category || searchQuery) && (
+                {(category || subcategory || searchQuery) && (
                   <button 
                     className={styles.clearBtn} 
-                    onClick={() => navigate('/')}
-                    title="Go to Home"
+                    onClick={() => navigate('/products')}
+                    title="View All Products"
                   >
                     <X size={16} />
                     <span>View All</span>
@@ -63,21 +65,25 @@ const ProductList: React.FC = () => {
           </div>
 
           <div className={styles.content}>
-            {isLoading ? (
-              <div className={styles.center}>
-                <Loader size="lg" />
-              </div>
-            ) : isError ? (
-              <ErrorState onRetry={() => refetch()} />
-            ) : products.length === 0 ? (
-              <EmptyState title="No products found in this category." />
-            ) : (
-              <div className={styles.grid}>
-                {products.map((product) => (
-                  <ProductCard key={product.id} product={product} showAddToCart={false} />
-                ))}
-              </div>
-            )}
+
+
+            <div className={styles.mainGrid}>
+              {isLoading ? (
+                <div className={styles.center}>
+                  <Loader size="lg" />
+                </div>
+              ) : isError ? (
+                <ErrorState onRetry={() => refetch()} />
+              ) : products.length === 0 ? (
+                <EmptyState title="No products found in this category." />
+              ) : (
+                <div className={styles.grid}>
+                  {products.map((product: any) => (
+                    <ProductCard key={product._id || product.id} product={product} showAddToCart={false} />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

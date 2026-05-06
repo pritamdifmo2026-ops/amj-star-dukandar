@@ -150,13 +150,24 @@ const ResellerOnboarding: React.FC = () => {
     const errors: Record<string, string> = {};
     
     if (step === 1) {
-      if (!fullName.trim()) errors.fullName = 'Full name is required';
+      if (!fullName.trim()) {
+        errors.fullName = 'Full name is required';
+      } else if (fullName.trim().split(' ').length < 2) {
+        errors.fullName = 'Please enter your full name (First & Last Name)';
+      }
+      
       if (!email.trim()) {
         errors.email = 'Email address is required';
-      } else if (!/\S+@\S+\.\S+/.test(email)) {
-        errors.email = 'Please enter a valid email address';
+      } else if (!/^[a-z0-9]+@[a-z0-9]+\.[a-z]{2,}$/.test(email)) {
+        errors.email = 'Please enter a valid email address (e.g. name@example.com)';
       }
-      if (!address.trim()) errors.address = 'Proper address is required';
+      
+      if (!address.trim()) {
+        errors.address = 'Proper address is required';
+      } else if (address.length < 10) {
+        errors.address = 'Detailed address (min 10 characters) is required';
+      }
+      
       if (!state) errors.state = 'State is required';
       if (!city) errors.city = 'City is required';
     }
@@ -182,7 +193,7 @@ const ResellerOnboarding: React.FC = () => {
       if (!accountNumber.trim()) {
         errors.accountNumber = 'Account number is required';
       } else if (!/^\d{9,18}$/.test(accountNumber)) {
-        errors.accountNumber = 'Account number must be 9–18 digits';
+        errors.accountNumber = 'Account number must be between 9 and 18 digits';
       }
       if (!ifscCode.trim()) {
         errors.ifscCode = 'IFSC code is required';
@@ -196,7 +207,7 @@ const ResellerOnboarding: React.FC = () => {
       }
       
       if (gstNumber && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstNumber)) {
-        errors.gstNumber = 'Invalid GST format (15 characters)';
+        errors.gstNumber = 'Invalid GST format (e.g. 22AAAAA0000A1Z5)';
       }
     }
     
@@ -360,7 +371,10 @@ const ResellerOnboarding: React.FC = () => {
                 <input 
                   value={email} 
                   onChange={e => {
-                    setEmail(e.target.value);
+                    let val = e.target.value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+                    val = val.replace(/[@.]{2,}/g, (match) => match[0]);
+                    if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
+                    setEmail(val);
                     clearError('email');
                   }} 
                   placeholder="email@example.com" 

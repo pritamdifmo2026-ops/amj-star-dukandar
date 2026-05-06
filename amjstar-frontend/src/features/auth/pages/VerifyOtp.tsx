@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import authService from '../services/auth.service';
 import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/auth.slice';
@@ -10,18 +10,45 @@ const VerifyOtp: React.FC = () => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [phone, setPhone] = useState('');
+  const [timer, setTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const [searchParams] = useSearchParams();
+  
+  const phone = searchParams.get('phone') || '';
+  const mode = searchParams.get('mode') || 'buyer';
 
   useEffect(() => {
-    const storedPhone = localStorage.getItem('temp_phone');
-    if (!storedPhone) {
+    if (!phone) {
       navigate('/login');
-    } else {
-      setPhone(storedPhone);
     }
-  }, [navigate]);
+  }, [phone, navigate]);
+
+  useEffect(() => {
+    if (timer > 0) {
+      const interval = setInterval(() => setTimer(t => t - 1), 1000);
+      return () => clearInterval(interval);
+    } else {
+      setCanResend(true);
+    }
+  }, [timer]);
+
+  const handleResend = async () => {
+    if (!canResend) return;
+    setLoading(true);
+    setError('');
+    try {
+      await authService.sendOtp({ phone });
+      setTimer(60);
+      setCanResend(false);
+    } catch (err: any) {
+      setError('Failed to resend OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,53 +61,32 @@ const VerifyOtp: React.FC = () => {
     setError('');
     try {
       const response = await authService.verifyOtp({ phone, otp });
-      
       const user = response.user;
-      const mode = localStorage.getItem('auth_mode');
 
-      // Role Validation: Ensure user role matches the intended login mode
-      if (user.role) {
-        const isSupplier = user.role === 'supplier';
-        const isReseller = user.role === 'reseller';
-        const isBuyer = user.role === 'buyer';
-
-        if (mode === 'buyer' && !isBuyer && user.role !== 'admin') {
-          setError(`This number is registered as a ${user.role}. Please login as a ${user.role}.`);
-          setLoading(false);
-          return;
-        }
-        if (mode === 'seller' && !isSupplier && user.role !== 'admin') {
-          setError(`This number is registered as a ${user.role || 'buyer'}. Please login as a ${user.role || 'buyer'}.`);
-          setLoading(false);
-          return;
-        }
-        if (mode === 'reseller' && !isReseller && user.role !== 'admin') {
-          setError(`This number is registered as a ${user.role || 'buyer'}. Please login as a ${user.role || 'buyer'}.`);
-          setLoading(false);
-          return;
-        }
-      }
-      
-      localStorage.removeItem('temp_phone');
-      localStorage.removeItem('auth_mode'); // Clear mode after successful validation
-      
       // Update Redux state
       dispatch(setCredentials({ user }));
       
-      // Redirect based on role or if role is missing
-      if (!user.role) {
-        if (mode === 'buyer') {
-          // Auto-assign buyer role
-          const roleResponse = await authService.selectRole({ role: 'buyer' });
-          dispatch(setCredentials({ user: roleResponse.user }));
-          navigate('/profile');
+      // Auto-assign role if they chose seller/reseller during login but don't have one
+      if (user.role === 'buyer' && (mode === 'seller' || mode === 'reseller')) {
+        const assignedRole = mode === 'seller' ? 'supplier' : 'reseller';
+        const roleResponse = await authService.selectRole({ role: assignedRole });
+        dispatch(setCredentials({ user: roleResponse.user }));
+        
+        if (assignedRole === 'supplier') {
+          navigate('/supplier/onboarding');
         } else {
-          navigate(mode ? `/select-role?mode=${mode}` : '/select-role');
+          navigate(ROUTES.RESELLER_DASHBOARD);
         }
-      } else if (user.role === 'supplier') {
-        navigate(ROUTES.SUPPLIER_DASHBOARD);
+        return;
+      }
+
+      // Redirect based on existing role
+      if (user.role === 'supplier') {
+        navigate('/supplier/onboarding');
       } else if (user.role === 'reseller') {
         navigate(ROUTES.RESELLER_DASHBOARD);
+      } else if (user.role === 'admin') {
+        navigate('/admin/dashboard');
       } else {
         navigate('/');
       }
@@ -92,9 +98,12 @@ const VerifyOtp: React.FC = () => {
   };
 
   return (
-    <>
+    <div className={styles.container}>
       <h1 className={styles.title}>Verify OTP</h1>
-      <p className={styles.subtitle}>Enter the 6-digit code sent to {phone}</p>
+      <p className={styles.subtitle}>
+        Enter the 6-digit code sent to <br/>
+        <strong>{phone}</strong>
+      </p>
       
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.inputGroup}>
@@ -119,16 +128,32 @@ const VerifyOtp: React.FC = () => {
         >
           {loading ? 'Verifying...' : 'Verify OTP'}
         </button>
+
+        <div className={styles.resendWrapper}>
+          {timer > 0 ? (
+            <p className={styles.timerText}>Resend OTP in <strong>{timer}s</strong></p>
+          ) : (
+            <button 
+              type="button" 
+              className={styles.linkButton} 
+              onClick={handleResend}
+              disabled={loading}
+            >
+              Resend OTP
+            </button>
+          )}
+        </div>
         
         <button 
           type="button" 
           className={styles.linkButton} 
           onClick={() => navigate('/login')}
+          style={{ marginTop: '0.5rem' }}
         >
-          Change Phone Number
+          Change Details
         </button>
       </form>
-    </>
+    </div>
   );
 };
 

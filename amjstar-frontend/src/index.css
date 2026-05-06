@@ -2,13 +2,13 @@
   /* Colors from reference */
   --accent: oklch(0.55 0.16 38); /* Terracotta */
   --text-h: oklch(0.18 0.02 50); /* Deep Charcoal */
-  --bg: oklch(0.96 0.02 75);     /* Warmer Peachy Cream */
+  --bg: #ffffff;     /* Changed to white */
   --text: oklch(0.45 0.02 50);   /* Muted Body Text */
   --border: oklch(0.92 0.01 70); /* Subtle Border */
   
   --accent-hover: oklch(0.50 0.16 38);
   --accent-soft: oklch(0.55 0.16 38 / 0.1);
-  --white: oklch(0.99 0.01 80); /* Refined off-white from image */
+  --white: #ffffff; /* Changed to white */
 
   --container-max: 1280px;
 

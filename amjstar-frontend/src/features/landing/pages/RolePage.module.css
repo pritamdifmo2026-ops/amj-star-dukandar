@@ -1,0 +1,236 @@
+.page {
+  background: var(--color-bg);
+  min-height: 100vh;
+}
+
+.hero {
+  background: linear-gradient(135deg, #ffffff 0%, oklch(0.97 0.02 75) 100%);
+  padding: 120px 0 80px;
+  text-align: center;
+}
+
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.title {
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--color-secondary);
+  line-height: 1.2;
+  margin-bottom: 24px;
+}
+
+.highlight {
+  color: var(--color-primary);
+}
+
+.subtitle {
+  font-size: 20px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 700px;
+  margin: 0 auto 40px;
+}
+
+.joinBtn {
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  padding: 16px 40px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.joinBtn:hover {
+  transform: translateY(-2px);
+}
+
+.contentSection {
+  padding: 80px 0;
+  background: white;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 40px;
+}
+
+.featureCard {
+  background: var(--color-bg);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.iconWrapper {
+  width: 64px;
+  height: 64px;
+  background: var(--accent-soft);
+  color: var(--color-primary);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.featureCard h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-secondary);
+  margin-bottom: 16px;
+}
+
+.featureCard p {
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .title { font-size: 36px; }
+  .contentGrid { grid-template-columns: 1fr; }
+}
+
+/* New Sections Styles */
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.sectionTitleSmall {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-secondary);
+  margin-bottom: 16px;
+}
+
+.sectionSubtitle {
+  font-size: 18px;
+  color: var(--color-text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.stepsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 32px;
+  margin-top: 40px;
+}
+
+.stepCard {
+  position: relative;
+  padding: 40px;
+  background: white;
+  border-radius: 20px;
+  border: 1px solid var(--color-border);
+  transition: all 0.3s;
+}
+
+.stepCard:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.stepNumber {
+  width: 40px;
+  height: 40px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 24px;
+}
+
+.listGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+  margin-top: 40px;
+}
+
+@media (max-width: 600px) {
+  .listGrid { grid-template-columns: 1fr; }
+}
+
+.listItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+}
+
+.checkIcon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.listItemText h4 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-secondary);
+  margin-bottom: 4px;
+}
+
+.listItemText p {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.ctaSection {
+  padding: 100px 0;
+  background: var(--color-secondary);
+  color: white;
+  text-align: center;
+}
+
+.ctaSection h2 {
+  font-size: 40px;
+  font-weight: 800;
+  margin-bottom: 24px;
+}
+
+.ctaSection p {
+  font-size: 18px;
+  opacity: 0.9;
+  max-width: 600px;
+  margin: 0 auto 40px;
+}
+
+.lightBtn {
+  background: white;
+  color: var(--color-secondary);
+  padding: 16px 48px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.2s;
+}
+
+.lightBtn:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: scale(1.05);
+}

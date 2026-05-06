@@ -200,8 +200,13 @@ const ChatInbox: React.FC = () => {
       >
         {!activeConv ? (
           <div className={styles.noChat}>
-            <Inbox size={48} strokeWidth={1} />
-            <p>Select a conversation to start chatting</p>
+            <div className={styles.emptyStateCard}>
+              <div className={styles.emptyStateIcon}>
+                <Inbox size={40} strokeWidth={1.5} />
+              </div>
+              <h3>Your Messages</h3>
+              <p>Select a conversation from the list to view chat history and start messaging.</p>
+            </div>
           </div>
         ) : (
           <>

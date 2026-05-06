@@ -1,92 +1,199 @@
-/* AuthLayout.module.css */
-.layout {
+.splitContainer {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
   min-height: 100vh;
+  width: 100%;
+  background: white;
+}
+
+.sideImage {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sideImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imageOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0.4) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 60px;
+}
+
+.overlayContent {
+  color: white;
+  width: 100%;
+}
+
+.overlayBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 60px;
+}
+
+.brandIcon {
+  background: var(--color-primary);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.overlayBrand h2 {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  color: white;
+  margin: 0;
+}
+
+.overlayBrand span {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+
+.mainHeadline {
+  font-family: var(--font-display);
+  font-size: 64px;
+  line-height: 1.1;
+  font-weight: 800;
+  margin-bottom: 24px;
+  color: white;
+  letter-spacing: -0.04em;
+}
+
+.mainSubline {
+  font-size: 20px;
+  opacity: 0.8;
+  max-width: 450px;
+  margin-bottom: 60px;
+}
+
+.featuresList {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.featureIcon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.featureText h4 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: white;
+}
+
+.featureText p {
+  font-size: 14px;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.helpFooter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 32px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  width: fit-content;
+  margin-top: auto;
+}
+
+.helpText span {
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.helpText p {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.contentSide {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
   position: relative;
-  overflow: hidden;
+  padding: 40px;
+  background: #ffffff;
 }
 
-.layout::before {
-  content: '';
+.brandFloating {
   position: absolute;
-  top: -10%;
-  right: -5%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(230, 92, 0, 0.05) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
+  top: 40px;
+  left: 40px;
 }
 
-.brand {
-  margin-bottom: 40px;
-  z-index: 1;
-}
-
-.brandRow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  background: oklch(0.99 0.01 80);
-  padding: 12px 24px;
-  border-radius: 99px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-}
-
-.logoImage {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  border-radius: 8px;
-}
-
-.tagline {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #1e293b;
-  margin: 0;
-  letter-spacing: -0.02em;
+.brandFloating img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .card {
   width: 100%;
-  max-width: 460px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(20px);
-  padding: 48px;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-  z-index: 1;
-  transition: transform 0.3s ease;
+  max-width: 480px;
+  padding: 40px;
+  /* Remove shadow/border since it's a split view now */
 }
 
-@media (max-width: 640px) {
-  .layout {
-    padding: 20px;
+@media (max-width: 1024px) {
+  .splitContainer {
+    grid-template-columns: 1fr;
   }
-
-  .brand {
-    margin-bottom: 24px;
+  
+  .sideImage {
+    display: none;
   }
-
-  .brandRow {
-    padding: 8px 16px;
-    gap: 10px;
+  
+  .contentSide {
+    padding: 24px;
   }
-
-  .tagline {
-    font-size: 1rem;
+  
+  .brandFloating {
+    top: 24px;
+    left: 24px;
   }
-
+  
   .card {
-    padding: 32px 24px;
-    border-radius: 20px;
+    padding: 0;
+    margin-top: 60px;
   }
 }

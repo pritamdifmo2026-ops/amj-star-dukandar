@@ -22,6 +22,7 @@ export interface Product {
 
 export interface ProductFilters {
   category?: string;
+  subcategory?: string;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -37,6 +38,8 @@ export interface CreateProductPayload {
   minOrderQty: number;
   stock: number;
   category: string;
+  categoryId?: string;
+  subcategoryId?: string;
   gstRate: number;
   images: string[];
 }

@@ -102,7 +102,13 @@ const Profile: React.FC = () => {
       try {
         const payload: any = {};
         if (editName && editName.trim().length >= 2) payload.name = editName.trim();
-        if (editEmail && editEmail.trim().length > 0) payload.email = editEmail.trim();
+        if (editEmail && editEmail.trim().length > 0) {
+          if (!/^[a-z0-9]+@[a-z0-9]+\.[a-z]{2,}$/.test(editEmail.trim())) {
+            alert('Please enter a valid email address');
+            return;
+          }
+          payload.email = editEmail.trim();
+        }
 
         const response = await authService.updateProfile(payload);
 
@@ -339,7 +345,17 @@ const Profile: React.FC = () => {
                 <div className={styles.infoField}>
                   <label>Email</label>
                   {isEditingInfo ? (
-                    <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className={styles.editInput} />
+                    <input 
+                      type="email" 
+                      value={editEmail} 
+                      onChange={(e) => {
+                        let val = e.target.value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+                        val = val.replace(/[@.]{2,}/g, (match) => match[0]);
+                        if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
+                        setEditEmail(val);
+                      }} 
+                      className={styles.editInput} 
+                    />
                   ) : (
                     <p>{user?.email || 'Not provided'}</p>
                   )}

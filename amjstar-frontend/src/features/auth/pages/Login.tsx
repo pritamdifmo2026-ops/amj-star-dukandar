@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import authService from '../services/auth.service';
 import styles from '../components/Auth.module.css';
@@ -10,29 +10,26 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode');
+  const mode = searchParams.get('mode') || 'buyer';
 
-  React.useEffect(() => {
-    if (mode) {
-      localStorage.setItem('auth_mode', mode);
-    } else {
-      localStorage.removeItem('auth_mode');
+  const validateForm = () => {
+    if (!/^\d{10}$/.test(phone)) {
+      setError('Please enter a valid 10-digit phone number');
+      return false;
     }
-  }, [mode]);
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.length < 10) {
-      setError('Please enter a valid phone number');
-      return;
-    }
-
-    setLoading(true);
     setError('');
+
+    if (!validateForm()) return;
+
     try {
+      setLoading(true);
       await authService.sendOtp({ phone });
-      localStorage.setItem('temp_phone', phone);
-      navigate('/verify-otp');
+      navigate(`/verify-otp?phone=${phone}&mode=${mode}`);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
     } finally {
@@ -41,16 +38,14 @@ const Login: React.FC = () => {
   };
 
   return (
-    <>
-      <div className={styles.backWrapper}>
-        <Link to="/" className={styles.backLink}>
-          <ArrowLeft size={18} /> Back to Home
-        </Link>
-      </div>
+    <div className={styles.container}>
+      <button className={styles.backButton} onClick={() => navigate('/')}>
+        <ArrowLeft size={20} />
+        Back to Home
+      </button>
+
       <h1 className={styles.title}>
-        {mode === 'seller' ? 'Join AMJStar as Partner' : 
-         mode === 'buyer' ? 'Join AMJStar as Buyer' :
-         mode === 'register' ? 'Register on AMJ' : 'Login to AMJ'}
+        {mode === 'seller' ? 'Join AMJStar as Partner' : 'Welcome to AMJStar'}
       </h1>
       <p className={styles.subtitle}>Enter your phone number to receive an OTP</p>
       
@@ -60,11 +55,14 @@ const Login: React.FC = () => {
           <input
             type="tel"
             className={styles.input}
-            placeholder="e.g. 9876543210"
             value={phone}
-            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-            maxLength={10}
+            onChange={(e) => {
+              setPhone(e.target.value.replace(/\D/g, '').slice(0, 10));
+              setError('');
+            }}
+            placeholder="Enter 10-digit mobile number"
             required
+            disabled={loading}
           />
         </div>
 
@@ -78,7 +76,7 @@ const Login: React.FC = () => {
           {loading ? 'Sending...' : 'Send OTP'}
         </button>
       </form>
-    </>
+    </div>
   );
 };
 

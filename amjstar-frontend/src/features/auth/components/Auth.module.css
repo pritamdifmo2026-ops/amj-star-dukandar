@@ -175,3 +175,19 @@
   color: #e65c00;
   background: oklch(0.99 0.01 80)7ed;
 }
+.resendWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.timerText {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.timerText strong {
+  color: #e65c00;
+}

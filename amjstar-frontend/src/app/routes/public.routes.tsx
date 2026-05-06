@@ -3,7 +3,6 @@ import { ROUTES } from '@/shared/constants/routes';
 import AuthLayout from '@/shared/layout/AuthLayout';
 import Login from '@/features/auth/pages/Login';
 import VerifyOtp from '@/features/auth/pages/VerifyOtp';
-import SelectRole from '@/features/auth/pages/SelectRole';
 import Register from '@/features/auth/pages/Register';
 import VerifyEmail from '@/features/auth/pages/VerifyEmail';
 import Landing from '@/features/landing/pages/Landing';
@@ -17,11 +16,31 @@ import Cart from '@/features/buyer/pages/Cart';
 import Checkout from '@/features/order/pages/Checkout';
 import Payment from '@/features/order/pages/Payment';
 import Addresses from '@/features/buyer/pages/Addresses';
+import About from '@/features/landing/pages/About';
+import Buyers from '@/features/landing/pages/Buyers';
+import Resellers from '@/features/landing/pages/Resellers';
+import Suppliers from '@/features/landing/pages/Suppliers';
 
 export const publicRoutes: RouteObject[] = [
   {
     path: ROUTES.HOME,
     element: <Landing />,
+  },
+  {
+    path: '/about',
+    element: <About />,
+  },
+  {
+    path: ROUTES.BUYERS,
+    element: <Buyers />,
+  },
+  {
+    path: ROUTES.RESELLERS,
+    element: <Resellers />,
+  },
+  {
+    path: ROUTES.SUPPLIERS,
+    element: <Suppliers />,
   },
   {
     element: <AuthLayout />,
@@ -39,10 +58,6 @@ export const publicRoutes: RouteObject[] = [
         element: <Register />,
       },
     ],
-  },
-  {
-    path: ROUTES.SELECT_ROLE,
-    element: <SelectRole />,
   },
   {
     path: ROUTES.PRODUCT_LIST,

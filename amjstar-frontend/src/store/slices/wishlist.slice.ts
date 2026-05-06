@@ -29,8 +29,9 @@ export const fetchWishlist = createAsyncThunk(
 
 export const toggleWishlistItem = createAsyncThunk(
   'wishlist/toggle',
-  async (productId: string, { rejectWithValue }) => {
+  async (product: Product, { rejectWithValue }) => {
     try {
+      const productId = product.id || (product as any)._id;
       const response = await wishlistApi.toggleWishlist(productId);
       return response.data.products; // Returns the updated populated products array
     } catch (error: any) {
@@ -38,6 +39,16 @@ export const toggleWishlistItem = createAsyncThunk(
     }
   }
 );
+
+const mapWishlistProducts = (products: any[]): Product[] => {
+  return (products || []).map(p => {
+    const finalId = p.id || p._id || (p as any)._id || (p as any).id;
+    return {
+      ...p,
+      id: finalId ? String(finalId) : ''
+    };
+  }).filter(p => p.id && p.id !== 'undefined');
+};
 
 const wishlistSlice = createSlice({
   name: 'wishlist',
@@ -56,9 +67,9 @@ const wishlistSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchWishlist.fulfilled, (state, action: PayloadAction<Product[]>) => {
+      .addCase(fetchWishlist.fulfilled, (state, action: PayloadAction<any[]>) => {
         state.loading = false;
-        state.items = action.payload;
+        state.items = mapWishlistProducts(action.payload);
       })
       .addCase(fetchWishlist.rejected, (state, action) => {
         state.loading = false;
@@ -66,11 +77,31 @@ const wishlistSlice = createSlice({
       })
       // Toggle Wishlist - Optimistic Update
       .addCase(toggleWishlistItem.pending, (state, action) => {
-        const productId = action.meta.arg;
-        state.items = state.items.filter(item => item.id !== productId);
+        const product = action.meta.arg;
+        const currentProductId = product.id || (product as any)._id;
+        if (!currentProductId) return;
+
+        const exists = state.items.some(item => {
+          const itemId = item.id || (item as any)._id;
+          return itemId === currentProductId;
+        });
+        
+        if (exists) {
+          // Optimistically remove
+          state.items = state.items.filter(item => {
+            const itemId = item.id || (item as any)._id;
+            return itemId !== currentProductId;
+          });
+        } else {
+          // Optimistically add
+          state.items.push(product);
+        }
       })
-      .addCase(toggleWishlistItem.fulfilled, (state, action: PayloadAction<Product[]>) => {
-        state.items = action.payload;
+      .addCase(toggleWishlistItem.fulfilled, (state, action: PayloadAction<any[]>) => {
+        state.items = mapWishlistProducts(action.payload);
+      })
+      .addCase(toggleWishlistItem.rejected, (state, action) => {
+        state.error = action.payload as string;
       })
       // Clear on logout
       .addCase(logout, (state) => {

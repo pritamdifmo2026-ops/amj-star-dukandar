@@ -7,8 +7,9 @@
   --color-secondary-light: oklch(0.25 0.02 50);
 
   /* Neutral */
-  --color-bg: oklch(0.96 0.02 75); /* Warmer Peachy Cream */
-  --color-surface: oklch(0.99 0.01 80); /* Refined off-white */
+  --color-bg: #ffffff; /* Changed to white */
+  --color-surface: #ffffff; /* Changed to white */
+  --color-brand-cream: oklch(0.99 0.01 80); /* Re-defined for Nav/Footer */
   --color-border: oklch(0.92 0.01 70);
   --color-border-light: oklch(0.95 0.01 70);
 

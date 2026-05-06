@@ -4,12 +4,12 @@ import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 import styles from './MainLayout.module.css';
 
-const MainLayout: React.FC = () => {
+const MainLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return (
     <div className={styles.layout}>
       <Navbar />
       <main className={styles.main}>
-        <Outlet />
+        {children || <Outlet />}
       </main>
       <Footer />
     </div>

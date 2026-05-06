@@ -18,6 +18,7 @@ interface AddProductFormProps {
 const AddProductForm: React.FC<AddProductFormProps> = ({ onBack, onSuccess, editingProduct }) => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const [availableSubcategories, setAvailableSubcategories] = useState<any[]>([]);
   const [formData, setFormData] = useState<ProductInput>({
     name: '',
     description: '',
@@ -44,8 +45,37 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onBack, onSuccess, edit
       try {
         const data = await categoryService.getAll();
         setCategories(data.categories);
-        if (data.categories.length > 0 && !editingProduct) {
-          setFormData(prev => ({ ...prev, category: data.categories[0].name }));
+        
+        if (editingProduct) {
+          setFormData({
+            name: editingProduct.name || '',
+            description: editingProduct.description || '',
+            hsnCode: editingProduct.hsnCode || '',
+            basePrice: editingProduct.basePrice || 0,
+            moq: editingProduct.moq || 1,
+            unit: editingProduct.unit || 'pcs',
+            category: editingProduct.category || '',
+            categoryId: editingProduct.categoryId || '',
+            subcategoryId: editingProduct.subcategoryId || '',
+            images: editingProduct.images || [],
+          });
+          
+          if (editingProduct.categoryId) {
+            const cat = data.categories.find((c: any) => c._id === editingProduct.categoryId);
+            if (cat && cat.subcategories) setAvailableSubcategories(cat.subcategories);
+          } else if (editingProduct.category) {
+            const cat = data.categories.find((c: any) => c.name === editingProduct.category);
+            if (cat && cat.subcategories) setAvailableSubcategories(cat.subcategories);
+          }
+        } else if (data.categories.length > 0) {
+          setFormData(prev => ({ 
+            ...prev, 
+            category: data.categories[0].name,
+            categoryId: data.categories[0]._id 
+          }));
+          if (data.categories[0].subcategories) {
+            setAvailableSubcategories(data.categories[0].subcategories);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch categories');
@@ -54,20 +84,28 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onBack, onSuccess, edit
     fetchCategories();
   }, [editingProduct]);
 
-  useEffect(() => {
-    if (editingProduct) {
-      setFormData({
-        name: editingProduct.name || '',
-        description: editingProduct.description || '',
-        hsnCode: editingProduct.hsnCode || '',
-        basePrice: editingProduct.basePrice || 0,
-        moq: editingProduct.moq || 1,
-        unit: editingProduct.unit || 'pcs',
-        category: editingProduct.category || '',
-        images: editingProduct.images || [],
-      });
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value;
+    const cat = categories.find(c => c._id === selectedId);
+    
+    if (cat) {
+      setFormData(prev => ({ 
+        ...prev, 
+        categoryId: cat._id, 
+        category: cat.name,
+        subcategoryId: ''
+      }));
+      setAvailableSubcategories(cat.subcategories || []);
+    } else {
+      setFormData(prev => ({ 
+        ...prev, 
+        categoryId: '', 
+        category: '',
+        subcategoryId: '' 
+      }));
+      setAvailableSubcategories([]);
     }
-  }, [editingProduct]);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -110,11 +148,21 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onBack, onSuccess, edit
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.category) {
+    if (!formData.categoryId && !formData.category) {
       setMessageModal({
         isOpen: true,
         title: 'Validation Error',
         message: 'Please select a category for your product.',
+        type: 'error'
+      });
+      return;
+    }
+
+    if (availableSubcategories.length > 0 && !formData.subcategoryId) {
+      setMessageModal({
+        isOpen: true,
+        title: 'Validation Error',
+        message: 'Please select a subcategory for your product.',
         type: 'error'
       });
       return;
@@ -205,14 +253,31 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onBack, onSuccess, edit
               <div className={styles.formGroup}>
                 <label>Product Category <span className={styles.required}>*</span></label>
                 <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  value={formData.categoryId || formData.category}
+                  onChange={handleCategoryChange}
                   required
                 >
                   <option value="" disabled>Select a category</option>
-                  {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                  {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                  {!categories.some(c => c.name === formData.category || c._id === formData.categoryId) && formData.category && (
+                    <option value={formData.category}>{formData.category}</option>
+                  )}
                 </select>
               </div>
+              
+              {availableSubcategories.length > 0 && (
+                <div className={styles.formGroup}>
+                  <label>Subcategory <span className={styles.required}>*</span></label>
+                  <select
+                    value={formData.subcategoryId || ''}
+                    onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
+                    required
+                  >
+                    <option value="" disabled>Select a subcategory</option>
+                    {availableSubcategories.map(sub => <option key={sub._id} value={sub._id}>{sub.name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 

@@ -25,14 +25,27 @@ const ProductCard: React.FC<Props> = ({
   const dispatch = useAppDispatch();
   const wishlistItems = useAppSelector(state => state.wishlist.items);
   const cartItems = useAppSelector(state => state.cart.items);
-  const isWishlisted = wishlistItems.some(item => item.id === product.id);
-  const isInCart = cartItems.some(item => item.productId === product.id);
+  const currentProductId = product.id || (product as any)._id;
+  const isWishlisted = wishlistItems.some(item => {
+    const itemId = String(item.id || (item as any)._id || '');
+    const targetId = String(currentProductId || '');
+    return itemId && targetId && itemId === targetId;
+  });
+  const isInCart = cartItems.some(item => item.productId === currentProductId);
   const user = useAppSelector(state => state.auth.user);
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    dispatch(toggleWishlistItem(product.id));
+
+    if (!user) {
+      navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`);
+      return;
+    }
+
+    if (currentProductId) {
+      dispatch(toggleWishlistItem(product));
+    }
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -50,7 +63,7 @@ const ProductCard: React.FC<Props> = ({
 
     dispatch(
       addToCartAsync({
-        productId: product.id,
+        productId: currentProductId,
         name: product.name,
         price: product.price,
         quantity: product.minOrderQty,
@@ -62,7 +75,7 @@ const ProductCard: React.FC<Props> = ({
   };
 
   return (
-    <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', product.id)} className={styles.card}>
+    <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', currentProductId)} className={styles.card}>
       <div className={styles.imageWrap}>
         <button 
           className={`${styles.wishlistBtn} ${isWishlisted ? styles.active : ''}`} 
@@ -90,7 +103,7 @@ const ProductCard: React.FC<Props> = ({
         </div>
         <p className={styles.supplier}>{product.supplierName}</p>
       </div>
-      {variant !== 'wishlist' && showAddToCart && (
+      {showAddToCart && variant !== 'wishlist' && (
         <div className={styles.footer}>
           <Button
             variant="secondary"

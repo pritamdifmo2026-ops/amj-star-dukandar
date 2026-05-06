@@ -21,9 +21,7 @@ import {
   Clock,
   AlertCircle,
   ShoppingBag,
-  Settings as SettingsIcon,
-  Plus,
-  RefreshCw
+  Settings as SettingsIcon
 } from 'lucide-react';
 
 import ProductTable from '../components/ProductTable';
@@ -334,29 +332,7 @@ const SupplierDashboard: React.FC = () => {
       )}
 
       <main className={`${styles.mainContent} ${activeView === 'chat' ? styles.noPadding : ''}`}>
-        {!(activeView === 'add-product' || activeView === 'edit-product' || activeView === 'chat') && (
-          <div className={styles.header}>
-            <div className={styles.headerInfo}>
-              <h1>Welcome, {profile?.businessName || 'Supplier'}</h1>
-              {isTrusted ? (
-                <div className={styles.trustedBadge}>
-                  <CheckCircle size={14} />
-                  <span>Trusted Verified Supplier</span>
-                </div>
-              ) : (
-                <p>Manage your inventory and partnerships from one central dashboard.</p>
-              )}
-            </div>
-            <div className={styles.headerActions}>
-              <Button variant="outline" onClick={handleRefresh} className={styles.refreshBtn}>
-                <RefreshCw size={16} /> Refresh
-              </Button>
-              <Button onClick={() => setActiveView('add-product')} className={styles.addBtn}>
-                <Plus size={18} /> Add Product
-              </Button>
-            </div>
-          </div>
-        )}
+
 
         {error && (
           <div className={styles.errorBanner}>

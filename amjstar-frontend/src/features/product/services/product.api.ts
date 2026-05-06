@@ -3,36 +3,45 @@ import { ENDPOINTS } from '@/api/endpoints';
 import type { Product, ProductFilters, CreateProductPayload } from '../types';
 import type { PaginatedResponse } from '@/shared/types/global.d';
 
-const mapProduct = (item: any): Product => ({
-  id: item._id,
-  name: item.name,
-  description: item.description,
-  price: item.basePrice || 0,
-  unit: item.unit || 'Piece',
-  minOrderQty: item.moq || 1,
-  stock: item.stock || 0,
-  category: item.category || 'Other',
-  imageUrl: item.images?.[0],
-  images: item.images || [],
-  supplierId: item.supplierId?._id || item.supplierId,
-  supplierName: item.supplierId?.businessName || 'Verified Supplier',
-  isVerified: item.supplierId?.verifiedByAdmin ?? true,
-  rating: item.rating || 5,
-  gstRate: item.gstRate || 18,
-  createdAt: item.createdAt,
-  updatedAt: item.updatedAt,
-});
+const mapProduct = (item: any): Product => {
+  // Extremely robust ID extraction
+  const rawId = item.id || item._id || item.productId || (item as any)._id || (item as any).id;
+  const finalId = (rawId && rawId !== 'undefined') ? String(rawId) : '';
+  
+  return {
+    id: finalId,
+    name: item.name || 'Unknown Product',
+    description: item.description || '',
+    price: item.basePrice || item.price || 0,
+    unit: item.unit || 'Piece',
+    minOrderQty: item.moq || item.minOrderQty || 1,
+    stock: item.stock || 0,
+    category: item.category || 'Other',
+    imageUrl: item.images?.[0] || item.imageUrl,
+    images: item.images || [],
+    supplierId: item.supplierId?.id || item.supplierId?._id || item.supplierId,
+    supplierName: item.supplierId?.businessName || item.supplierName || 'Verified Supplier',
+    isVerified: item.supplierId?.verifiedByAdmin ?? item.isVerified ?? true,
+    rating: item.rating || 5,
+    gstRate: item.gstRate || 18,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  };
+};
 
 export const productApi = {
   list: async (filters?: ProductFilters): Promise<PaginatedResponse<Product>> => {
-
     const res = await apiClient.get(ENDPOINTS.PRODUCTS.LIST, { params: filters });
     
-    const rawProducts = res.data.products || [];
+    // Support both { products: [] } and raw [] responses
+    const productsData = res.data?.products || (Array.isArray(res.data) ? res.data : []);
+    const rawProducts = Array.isArray(productsData) ? productsData : [];
+    
+    const mappedProducts = rawProducts.map(mapProduct).filter(p => p.id && p.id !== 'undefined');
     
     return {
-      data: rawProducts.map(mapProduct),
-      total: rawProducts.length,
+      data: mappedProducts,
+      total: mappedProducts.length,
       page: filters?.page || 1,
       pageSize: filters?.pageSize || 10,
       totalPages: 1
@@ -40,8 +49,15 @@ export const productApi = {
   },
 
   detail: async (id: string): Promise<Product> => {
+    if (!id || id === 'undefined') {
+      throw new Error('Invalid product ID');
+    }
     const res = await apiClient.get(ENDPOINTS.PRODUCTS.DETAIL(id));
-    return mapProduct(res.data.product);
+    const product = mapProduct(res.data.product || res.data);
+    if (!product.id || product.id === 'undefined') {
+      throw new Error('Product not found or invalid');
+    }
+    return product;
   },
 
   create: async (payload: CreateProductPayload): Promise<Product> => {

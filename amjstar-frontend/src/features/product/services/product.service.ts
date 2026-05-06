@@ -7,6 +7,8 @@ export interface ProductInput {
   moq: number;
   unit: string;
   category: string;
+  categoryId?: string;
+  subcategoryId?: string;
   hsnCode: string;
   images?: string[];
   specifications?: Record<string, string>;

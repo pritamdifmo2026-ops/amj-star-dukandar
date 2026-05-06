@@ -213,12 +213,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleAddCategory = async (name: string) => {
-    const { categoryService } = await import('@/features/product/services/category.service');
-    await categoryService.create(name);
-    const data = await categoryService.getAll();
-    setCategories(data.categories);
-  };
+
 
   const handleSignOut = () => {
     dispatch(logout());
@@ -310,7 +305,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'categories' && (
               <CategoryManagement
                 categories={categories}
-                onAddCategory={handleAddCategory}
+                onRefresh={fetchData}
               />
             )}
             {activeTab === 'banners' && <BannerManagement />}

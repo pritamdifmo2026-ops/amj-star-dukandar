@@ -2,11 +2,16 @@ export type UserRole = 'buyer' | 'supplier' | 'reseller' | 'admin';
 
 export interface SendOtpPayload {
   phone: string;
+  email?: string;
+  companyName?: string;
+  mode?: string;
 }
 
 export interface VerifyOtpPayload {
   phone: string;
   otp: string;
+  email?: string;
+  companyName?: string;
 }
 
 export interface SelectRolePayload {

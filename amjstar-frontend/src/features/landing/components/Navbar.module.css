@@ -2,12 +2,12 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: var(--color-surface);
+  background: var(--color-brand-cream);
   /* Matches the top lighter part of your image */
 }
 
 .topStrip {
-  background: var(--color-surface);
+  background: var(--color-brand-cream);
   border-bottom: 1px solid var(--color-border);
   padding: 8px 0;
 }
@@ -149,71 +149,26 @@
   color: var(--color-primary);
 }
 
-.signInDropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 12px;
-  background: oklch(0.99 0.01 80);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
-  min-width: 260px;
-  padding: 8px;
-  z-index: 100;
-  animation: dropIn 0.15s ease-out;
-}
-
-@keyframes dropIn {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.signInRole {
+.guestNav {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  text-decoration: none;
+  gap: 28px;
+}
+
+.navLink {
+  font-size: 15px;
+  font-weight: 500;
   color: var(--color-text-primary);
-  transition: background 0.15s;
+  text-decoration: none;
+  transition: color 0.2s;
+  white-space: nowrap;
 }
 
-.signInRole:hover {
-  background: oklch(0.96 0.02 75);
-}
-
-.signInRole svg {
+.navLink:hover {
   color: var(--color-primary);
-  flex-shrink: 0;
 }
 
-.signInRole div {
-  display: flex;
-  flex-direction: column;
-}
-
-.roleName {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-secondary);
-}
-
-.roleDesc {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-top: 2px;
-}
-
-.registerBtn {
+.joinBtn {
   background: var(--color-secondary);
   color: white;
   padding: 10px 24px;
@@ -221,11 +176,13 @@
   text-decoration: none;
   font-weight: 600;
   font-size: 15px;
-  transition: opacity 0.2s;
+  transition: transform 0.2s, opacity 0.2s;
+  margin-left: 8px;
 }
 
-.registerBtn:hover {
+.joinBtn:hover {
   opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .cartIcon {
@@ -312,13 +269,12 @@
   top: 100%;
   left: 0;
   width: 280px;
-  max-height: 480px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-top: none;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   z-index: 100;
-  overflow-y: auto;
+  overflow: visible;
   padding: 8px 0;
   animation: slideDown 0.2s ease-out;
 }
@@ -341,6 +297,104 @@
 
 .allCatItem:hover {
   background: oklch(0.96 0.01 80);
+}
+
+.catGroup {
+  position: relative;
+}
+
+.catGroup:hover > .subCatFlyout {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.catGroup:hover > .allCatItem {
+  background: #f8fafc;
+  color: var(--color-primary);
+}
+
+.allCatItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  transition: all 0.15s;
+}
+
+.allCatItem span {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.catArrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.catGroup:hover .catArrow {
+  color: var(--color-primary);
+}
+
+/* Flyout subcategory panel */
+.subCatFlyout {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: 240px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 2px solid var(--color-primary);
+  box-shadow: 8px 4px 24px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  z-index: 110;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-8px);
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.flyoutHeader {
+  padding: 10px 20px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.flyoutItem {
+  display: block;
+  padding: 9px 20px;
+  font-size: 14px;
+  color: #475569;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.flyoutItem:hover {
+  background: #fff7ed;
+  color: var(--color-primary);
+  padding-left: 24px;
+}
+
+.mobileSubLink {
+  padding-left: 36px !important;
+  font-size: 14px !important;
+  color: #64748b !important;
+}
+
+.mobileSubLink:active {
+  color: var(--color-primary) !important;
 }
 
 .allCatIcon {

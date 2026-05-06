@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: oklch(0.99 0.01 80);
+  background: #ffffff;
 }
 
 .container {
@@ -24,11 +24,11 @@
   padding: var(--space-16) 0;
   margin-bottom: var(--space-20);
   /* Large margin to separate from next section */
-  background: oklch(0.99 0.01 80);
+  background: #ffffff;
 }
 
 .categoryHub:nth-of-type(even) {
-  background: oklch(0.99 0.01 80);
+  background: #ffffff;
 }
 
 .sectionHeader {
@@ -73,7 +73,7 @@
   padding: var(--space-16) 0;
   margin: var(--space-20) 0;
   /* Margin top and bottom */
-  background: oklch(0.99 0.01 80);
+  background: #ffffff;
 }
 
 .sectionTitleCenter {
@@ -123,7 +123,7 @@
 /* Features Section - Clean Standard Look */
 .featuresSection {
   padding: var(--space-20) 0 var(--space-24);
-  background: oklch(0.99 0.01 80);
+  background: #ffffff;
   border-top: 1px solid #f0f0f0;
   margin-bottom: 80px;
 }
@@ -145,7 +145,7 @@
 .featureIcon {
   width: 80px;
   height: 80px;
-  background: oklch(0.99 0.01 80);
+  background: #ffffff;
   border: 1px solid var(--color-border);
   color: var(--color-primary);
   border-radius: var(--radius-md);

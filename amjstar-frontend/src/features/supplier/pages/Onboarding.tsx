@@ -159,7 +159,7 @@ const Onboarding: React.FC = () => {
     const newErrs: Record<string, string> = {};
     if (!ownerName.trim()) newErrs.ownerName = "Owner name is required";
     if (!businessName.trim()) newErrs.businessName = "Business name is required";
-    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email)) newErrs.email = "Valid email is required";
+    if (!email.trim() || !/^[a-z0-9]+@[a-z0-9]+\.[a-z]{2,}$/.test(email)) newErrs.email = "Valid email address is required (e.g. name@company.com)";
     if (!isPhoneVerified) newErrs.phone = "Phone must be verified";
     if (countryCode === '+91' && !/^\d{10}$/.test(phone)) newErrs.phone = "Enter a valid 10-digit number";
 
@@ -169,17 +169,17 @@ const Onboarding: React.FC = () => {
 
   const validateBusinessDetails = () => {
     const newErrs: Record<string, string> = {};
-    if (!address.trim() || address.length < 5) newErrs.address = "Detailed address is required";
-    if (!pinCode.trim() || pinCode.length < 6) newErrs.pinCode = "Valid PIN is required";
+    if (!address.trim() || address.length < 10) newErrs.address = "Detailed address (min 10 chars) is required";
+    if (!pinCode.trim() || pinCode.length !== 6) newErrs.pinCode = "Valid 6-digit PIN is required";
     if (!state) newErrs.state = "State is required";
     if (!city) newErrs.city = "City is required";
 
     if (gstin.trim() && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)) {
-      newErrs.gstin = "Invalid GSTIN format";
+      newErrs.gstin = "Invalid GSTIN format (15 characters)";
     }
 
     if (!pan.trim() || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
-      newErrs.pan = "Valid 10-digit PAN is required";
+      newErrs.pan = "Valid 10-character PAN is required (e.g. ABCDE1234F)";
     }
 
     setErrors(newErrs);
@@ -189,12 +189,20 @@ const Onboarding: React.FC = () => {
   const validateProfileInfo = () => {
     const newErrs: Record<string, string> = {};
 
+    if (yearOfEstablishment.trim()) {
+      const year = parseInt(yearOfEstablishment);
+      const currentYear = new Date().getFullYear();
+      if (isNaN(year) || year < 1900 || year > currentYear) {
+        newErrs.yearOfEstablishment = `Enter a valid year between 1900 and ${currentYear}`;
+      }
+    }
+
     if (isFoodSupplier) {
       if (!fssaiLicenseNumber.trim() || fssaiLicenseNumber.length !== 14) {
-        newErrs.fssaiLicenseNumber = "FSSAI License Number must be 14 digits";
+        newErrs.fssaiLicenseNumber = "FSSAI License Number must be exactly 14 digits";
       }
       if (!fssaiCertificate && !fssaiCertificateUrl) {
-        newErrs.fssaiCertificate = "FSSAI Certificate is required for food suppliers";
+        newErrs.fssaiCertificate = "FSSAI Certificate is required for food products";
       }
     }
 
@@ -332,7 +340,14 @@ const Onboarding: React.FC = () => {
                     type="email"
                     className={`${styles.input} ${styles.inputWithIcon} ${errors.email ? styles.inputError : ''}`}
                     value={email}
-                    onChange={handleChange(setEmail)}
+                    onChange={(e) => {
+                      let val = e.target.value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+                      // Prevent consecutive @ or . and starting with them
+                      val = val.replace(/[@.]{2,}/g, (match) => match[0]); 
+                      if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
+                      setEmail(val);
+                      setErrors(prev => ({ ...prev, email: '' }));
+                    }}
                     placeholder="name@company.com"
                   />
                 </div>
@@ -622,12 +637,17 @@ const Onboarding: React.FC = () => {
               <div className={styles.formGroup}>
                 <label>Year of Establishment (Optional)</label>
                 <input
+                  name="yearOfEstablishment"
                   type="number"
-                  className={styles.input}
+                  className={`${styles.input} ${errors.yearOfEstablishment ? styles.inputError : ''}`}
                   value={yearOfEstablishment}
-                  onChange={(e) => setYearOfEstablishment(e.target.value)}
+                  onChange={(e) => {
+                    setYearOfEstablishment(e.target.value);
+                    setErrors(prev => ({ ...prev, yearOfEstablishment: '' }));
+                  }}
                   placeholder="e.g. 2010"
                 />
+                {errors.yearOfEstablishment && <span className={styles.errorText}>{errors.yearOfEstablishment}</span>}
               </div>
 
               <div className={styles.buttonGroup}>

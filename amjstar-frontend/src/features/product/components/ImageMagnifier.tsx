@@ -19,7 +19,7 @@ interface ImageMagnifierProps {
 const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
   src,
   alt = 'Product image',
-  zoomLevel = 2.5,
+  zoomLevel = 2.0,
   lensSize = 180,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -61,9 +61,9 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
       const zoomedW = rect.width * zoomLevel;
       const zoomedH = rect.height * zoomLevel;
 
-      // zoom panel size (30% bigger than the left image)
-      const panelW = rect.width * 1.3;
-      const panelH = rect.height * 1.3;
+      // zoom panel size (same as the left image)
+      const panelW = rect.width * 1.0;
+      const panelH = rect.height * 1.0;
 
       // background offset: center the cursor point in the zoom panel
       let bgX = ratioX * zoomedW - panelW / 2;
