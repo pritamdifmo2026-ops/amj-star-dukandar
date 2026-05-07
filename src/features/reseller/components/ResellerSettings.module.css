@@ -30,7 +30,7 @@
 
 .section {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #eef2f6;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -125,7 +125,7 @@
   font-weight: 700;
   background: #ecfdf5;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 10px;
   width: fit-content;
 }
 
@@ -133,7 +133,7 @@
 .otpSection {
   background: #f1f5f9;
   border: 1px solid #fef3c7;
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -182,7 +182,7 @@
 .planCard {
   background: #ffffff;
   border: 2px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 2rem;
   display: flex;
   justify-content: space-between;
@@ -250,7 +250,7 @@
 .planSmallCard {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -319,3 +319,4 @@
     grid-template-columns: 1fr;
   }
 }
+

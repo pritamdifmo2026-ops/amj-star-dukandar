@@ -14,6 +14,7 @@ export const ENDPOINTS = {
     CREATE: '/products',
     UPDATE: (id: string | number) => `/products/${id}`,
     DELETE: (id: string | number) => `/products/${id}`,
+    SUGGESTIONS: '/products/suggestions',
   },
 
   // Orders

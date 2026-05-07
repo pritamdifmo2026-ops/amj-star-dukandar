@@ -2,7 +2,7 @@
   width: 100%;
   max-width: 700px;
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 6px;
   padding: 48px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -17,7 +17,7 @@
   height: 64px;
   background: #f1f5f9;
   color: var(--color-primary);
-  border-radius: 16px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -61,7 +61,7 @@
 .inputGroup textarea {
   padding: 12px 16px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 15px;
   color: var(--color-text-main);
   background: var(--color-bg-secondary);
@@ -127,7 +127,7 @@
 .radioLabel {
   padding: 16px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -184,7 +184,7 @@
   padding: 16px;
   text-align: center;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 700;
   color: var(--color-text-muted);
@@ -242,7 +242,7 @@
   background: var(--color-primary);
   color: white;
   padding: 14px 28px;
-  border-radius: 12px;
+  border-radius: 6px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -266,7 +266,7 @@
 
 .uploadSection {
   border: 2px dashed var(--color-border-dark);
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 40px;
   text-align: center;
   transition: all 0.2s;
@@ -310,7 +310,7 @@
 .planCard {
   padding: 24px;
   border: 1px solid var(--color-border);
-  border-radius: 20px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s;
   position: relative;
@@ -371,7 +371,7 @@
 .successCard {
   background: var(--color-bg);
   padding: 48px;
-  border-radius: 24px;
+  border-radius: 6px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
   width: 100%;
   max-width: 500px;
@@ -413,7 +413,7 @@
   background: #f1f5f9;
   border: 1px solid #bbf7d0;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 6px;
   margin: 16px 0;
   text-align: left;
   width: 100%;
@@ -440,7 +440,7 @@
   width: 100%;
   border: none;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: 6px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -455,7 +455,7 @@
   width: 100%;
   border: none;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: 6px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -568,3 +568,4 @@
     padding: 24px 20px;
   }
 }
+

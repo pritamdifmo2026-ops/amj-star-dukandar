@@ -121,8 +121,8 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
         <div
           className={styles.zoomPanel}
           style={{
-            width: imgSize.w * 1.3,
-            height: imgSize.h * 1.3,
+            width: imgSize.w * 1.0,
+            height: imgSize.h * 1.0,
             backgroundImage: `url('${src}')`,
             backgroundSize: `${imgSize.w * zoomLevel}px ${imgSize.h * zoomLevel}px`,
             backgroundPosition: `-${bgPos.x}px -${bgPos.y}px`,

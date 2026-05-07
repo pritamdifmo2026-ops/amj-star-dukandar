@@ -52,7 +52,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
               <td>₹{product.basePrice}</td>
               <td>{product.moq} {product.unit}</td>
               <td>
-                <span className={`${styles.statusBadge} ${styles[product.status.toLowerCase()]}`}>
+                <span className={`${styles.statusBadge} ${styles[product.status?.toLowerCase() || 'pending']}`}>
                   {product.status}
                 </span>
               </td>

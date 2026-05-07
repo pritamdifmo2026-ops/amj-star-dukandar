@@ -73,4 +73,11 @@ export const productApi = {
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(ENDPOINTS.PRODUCTS.DELETE(id));
   },
+
+  getSuggestions: async (q: string, category?: string): Promise<any[]> => {
+    const res = await apiClient.get(ENDPOINTS.PRODUCTS.SUGGESTIONS, { 
+      params: { q, category: category === 'All' ? undefined : category } 
+    });
+    return res.data.suggestions || [];
+  },
 };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { toast } from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import {
   User, Package, MapPin, CreditCard, Settings, Bell, Heart,
@@ -105,10 +106,10 @@ const Profile: React.FC = () => {
       dispatch(setCredentials({
         user: response.user
       }));
-      alert('Profile picture updated successfully!');
+      toast.success('Profile picture updated successfully!');
     } catch (err) {
       console.error('Failed to upload avatar:', err);
-      alert('Failed to update profile picture.');
+      toast.error('Failed to update profile picture.');
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -121,7 +122,7 @@ const Profile: React.FC = () => {
         if (editName && editName.trim().length >= 2) payload.name = editName.trim();
         if (editEmail && editEmail.trim().length > 0) {
           if (!/^[a-z0-9]+@[a-z0-9]+\.[a-z]{2,}$/.test(editEmail.trim())) {
-            alert('Please enter a valid email address');
+            toast.error('Please enter a valid email address');
             return;
           }
           payload.email = editEmail.trim();
@@ -134,10 +135,10 @@ const Profile: React.FC = () => {
         }));
         setIsEditingInfo(false);
         if (editEmail !== user.email && editEmail) {
-          alert(`Verification email sent to ${editEmail}. Please check your inbox.`);
+          toast.success(`Verification email sent to ${editEmail}. Please check your inbox.`);
         }
       } catch (err) {
-        alert('Failed to update profile.');
+        toast.error('Failed to update profile.');
       }
     }
   };
@@ -146,9 +147,9 @@ const Profile: React.FC = () => {
     setIsSendingEmail(true);
     try {
       await authService.sendVerificationEmail();
-      alert('Verification email sent! Please check your inbox.');
+      toast.success('Verification email sent! Please check your inbox.');
     } catch (err) {
-      alert('Failed to send verification email.');
+      toast.error('Failed to send verification email.');
     } finally {
       setIsSendingEmail(false);
     }
@@ -158,7 +159,7 @@ const Profile: React.FC = () => {
     if (newPhone.length >= 10) {
       setShowOtpInput(true);
     } else {
-      alert('Please enter a valid 10-digit phone number');
+      toast.error('Please enter a valid 10-digit phone number');
     }
   };
 
@@ -176,12 +177,12 @@ const Profile: React.FC = () => {
         setShowOtpInput(false);
         setNewPhone('');
         setPhoneOtp('');
-        alert('Phone number updated successfully!');
+        toast.success('Phone number updated successfully!');
       } catch (err) {
-        alert('Failed to update phone number.');
+        toast.error('Failed to update phone number.');
       }
     } else {
-      alert('Invalid OTP. Please use 123456 for testing.');
+      toast.error('Invalid OTP. Please use 123456 for testing.');
     }
   };
 

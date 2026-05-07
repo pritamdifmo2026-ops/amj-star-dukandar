@@ -37,7 +37,7 @@
 .mobileTitle {
   font-weight: 700;
   color: #0f172a;
-  font-size: 16px;
+  font-size: 14px;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -85,7 +85,7 @@
 }
 
 .header h1 {
-  font-size: 28px;
+  font-size: 24px;
   color: #0f172a;
   margin: 0 0 8px 0;
   font-weight: 700;
@@ -115,7 +115,7 @@
 .statCard {
   background: #ffffff;
   padding: 24px;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
@@ -126,14 +126,14 @@
 .statIcon {
   width: 54px;
   height: 54px;
-  border-radius: 12px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .statInfo label {
-  font-size: 13px;
+  font-size: 11px;
   color: #64748b;
   font-weight: 600;
   display: block;
@@ -141,7 +141,7 @@
 }
 
 .statInfo h3 {
-  font-size: 26px;
+  font-size: 22px;
   margin: 0;
   color: #0f172a;
   font-weight: 800;
@@ -164,7 +164,7 @@
 
 .mainSection {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
   padding: 32px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
@@ -178,7 +178,7 @@
 }
 
 .sectionHeader h2 {
-  font-size: 20px;
+  font-size: 18px;
   color: #0f172a;
   font-weight: 700;
   margin: 0;
@@ -190,7 +190,7 @@
   color: #475569;
   font-weight: 600;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 11px;
   padding: 8px 16px;
   border-radius: 8px;
 }
@@ -210,7 +210,7 @@
 }
 
 .emptyState h3 {
-  font-size: 18px;
+  font-size: 16px;
   color: #334155;
   margin-bottom: 8px;
 }
@@ -236,14 +236,14 @@
 
 .profileSummary {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
   padding: 24px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
 .profileSummary h3 {
-  font-size: 16px;
+  font-size: 14px;
   color: #0f172a;
   font-weight: 700;
   margin-bottom: 20px;
@@ -256,7 +256,7 @@
 }
 
 .infoRow label {
-  font-size: 12px;
+  font-size: 10px;
   color: #64748b;
   font-weight: 600;
   text-transform: uppercase;
@@ -266,7 +266,7 @@
 }
 
 .infoRow p {
-  font-size: 15px;
+  font-size: 13px;
   color: #0f172a;
   font-weight: 600;
   margin: 0;
@@ -278,7 +278,7 @@
   background: #f1f5f9;
   color: var(--color-primary);
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -293,7 +293,7 @@
   border: none;
   color: var(--color-primary);
   font-weight: 600;
-  font-size: 13px;
+  font-size: 11px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -308,7 +308,7 @@
 .supportCard {
   background: #f0f9ff;
   border: 1px solid #bae6fd;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 20px;
 }
 
@@ -321,13 +321,13 @@
 }
 
 .supportHeader h3 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   margin: 0;
 }
 
 .supportCard p {
-  font-size: 13px;
+  font-size: 11px;
   color: #0c4a6e;
   margin: 0 0 16px 0;
   line-height: 1.5;
@@ -345,7 +345,7 @@
   gap: 8px;
   color: #0369a1;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   padding: 8px 12px;
   background: #ffffff;
@@ -472,3 +472,4 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+

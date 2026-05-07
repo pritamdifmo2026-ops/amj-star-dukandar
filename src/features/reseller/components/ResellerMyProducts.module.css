@@ -103,7 +103,7 @@
 
 .card {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid #e2e8f0;
   overflow: hidden;
   display: flex;
@@ -402,7 +402,7 @@
   text-align: center;
   padding: 4rem 2rem;
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px dashed #e2e8f0;
   color: #64748b;
   grid-column: 1 / -1;
@@ -568,7 +568,7 @@
   align-items: center;
   gap: 0.75rem;
   background: #f8fafc;
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 1.1rem;
   border: 1px solid #e2e8f0;
   flex-wrap: wrap;
@@ -799,7 +799,7 @@
 .perfCard {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 1.1rem;
   display: flex;
   flex-direction: column;
@@ -865,7 +865,7 @@
     gap: 0.5rem;
     padding: 0.4rem;
     background: #f1f5f9;
-    border-radius: 12px;
+    border-radius: 6px;
     border: none;
     margin-bottom: 0.5rem;
   }
@@ -909,7 +909,7 @@
   }
 
   .card {
-    border-radius: 16px;
+    border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.03);
   }
 
@@ -954,7 +954,7 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 1rem;
-    border-radius: 12px;
+    border-radius: 6px;
   }
 
   .reqStatus {
@@ -1027,3 +1027,4 @@
     display: none;
   }
 }
+

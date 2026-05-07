@@ -22,7 +22,7 @@
   flex-shrink: 0;
   background: #ffffff;
   border: 1px solid var(--profile-border);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 24px 0;
   height: fit-content;
 }
@@ -147,7 +147,7 @@
 .profileCover {
   background: #ffffff;
   border: 1px solid var(--profile-border);
-  border-radius: 12px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
@@ -172,7 +172,7 @@
   height: 100px;
   background: #f3742a;
   color: white;
-  border-radius: 12px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -284,7 +284,7 @@
   background: #ffffff;
   padding: 20px;
   border: 1px solid var(--profile-border);
-  border-radius: 12px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -309,7 +309,7 @@
 .infoCard {
   background: #ffffff;
   border: 1px solid var(--profile-border);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 24px;
 }
 
@@ -404,7 +404,7 @@
 .wishlistTab {
   background: #ffffff;
   border: 1px solid var(--profile-border);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 24px;
 }
 
@@ -423,7 +423,7 @@
 .placeholderCard {
   background: #ffffff;
   border: 1px solid var(--profile-border);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 60px 20px;
   text-align: center;
 }
@@ -460,7 +460,7 @@
 .modal {
   background: #ffffff;
   width: 400px;
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 24px;
 }
 
@@ -526,3 +526,4 @@
     gap: 8px;
   }
 }
+

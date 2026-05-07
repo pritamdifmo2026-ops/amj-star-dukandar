@@ -10,7 +10,7 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 14px;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: none;
   text-size-adjust: none;
@@ -79,3 +79,4 @@ input, textarea, select {
   border-bottom: 2px solid var(--color-primary);
   display: inline-block;
 }
+

@@ -170,8 +170,13 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onBack, onSuccess, edit
     
     setLoading(true);
     try {
+      // Clean data: remove empty ObjectId fields to avoid Mongoose cast errors
+      const cleanData: any = { ...formData };
+      if (!cleanData.categoryId) delete cleanData.categoryId;
+      if (!cleanData.subcategoryId) delete cleanData.subcategoryId;
+
       if (editingProduct) {
-        await productService.updateProduct(editingProduct._id, formData);
+        await productService.updateProduct(editingProduct.id || editingProduct._id, cleanData);
       } else {
         await productService.createProduct(formData);
       }

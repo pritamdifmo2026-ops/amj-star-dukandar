@@ -86,7 +86,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
   return (
     <div className={styles.productGrid}>
       {products.map((product) => (
-        <div key={product._id} className={styles.productCard}>
+        <div key={product.id || product._id} className={styles.productCard}>
           {/* Small fixed-size image */}
           <div className={styles.cardImage}>
             {product.images && product.images[0] ? (
@@ -250,7 +250,7 @@ const SupplierDashboard: React.FC = () => {
   const confirmDelete = async () => {
     if (!productToDelete) return;
     try {
-      await productService.deleteProduct(productToDelete._id);
+      await productService.deleteProduct(productToDelete.id || productToDelete._id);
       await fetchProducts();
       setShowDeleteModal(false);
       setProductToDelete(null);

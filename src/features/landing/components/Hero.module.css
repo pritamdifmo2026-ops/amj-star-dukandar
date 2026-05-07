@@ -1,6 +1,6 @@
 .hero {
   background: var(--color-bg);
-  padding: 80px 0;
+  padding: 40px 0;
   overflow: hidden;
 }
 
@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 80px;
+  gap: 40px;
 }
 
 .content {
@@ -21,18 +21,18 @@
 .topBadge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: 6px;
+  padding: 4px 12px;
   background: oklch(0.99 0.01 80);
   border: 1px solid var(--color-border);
   border-radius: 99px;
   font-family: var(--font-sans);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
   color: var(--color-primary);
-  margin-bottom: 32px;
+  margin-bottom: 16px;
 }
 
 .dot {
@@ -44,10 +44,10 @@
 
 .title {
   font-family: var(--font-display);
-  font-size: clamp(3.5rem, 8vw, 5.5rem);
-  line-height: 0.95;
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  line-height: 1;
   color: var(--color-secondary);
-  margin-bottom: 32px;
+  margin-bottom: 16px;
   font-weight: 400;
 }
 
@@ -60,7 +60,7 @@
   font-family: var(--font-sans);
   font-size: 14px;
   color: var(--color-text-secondary); /* oklch(0.45 0.02 50) */
-  margin-bottom: 48px;
+  margin-bottom: 24px;
   max-width: 600px;
   line-height: 1.5;
 }
@@ -68,14 +68,14 @@
 .actions {
   display: flex;
   gap: 16px;
-  margin-bottom: 64px;
+  margin-bottom: 32px;
 }
 
 .primaryBtn {
   background: var(--color-primary);
   color: white;
-  padding: 16px 32px;
-  font-size: 18px;
+  padding: 12px 24px;
+  font-size: 14px;
   font-weight: 600;
   border-radius: 99px;
   text-decoration: none;
@@ -94,8 +94,8 @@
 .secondaryBtn {
   background: oklch(0.99 0.01 80);
   color: var(--color-secondary);
-  padding: 16px 32px;
-  font-size: 18px;
+  padding: 12px 24px;
+  font-size: 14px;
   font-weight: 600;
   border-radius: 99px;
   text-decoration: none;
@@ -111,7 +111,7 @@
 .stats {
   display: flex;
   align-items: center;
-  gap: 40px;
+  gap: 24px;
 }
 
 .statBox {
@@ -121,19 +121,19 @@
 
 .statValue {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 24px;
   color: var(--color-secondary);
   line-height: 1;
 }
 
 .statLabel {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--color-text-muted);
 }
 
 .statDivider {
   width: 1px;
-  height: 40px;
+  height: 24px;
   background: var(--color-border);
 }
 
@@ -146,7 +146,7 @@
 .imageCard {
   position: relative;
   width: 100%;
-  max-width: 600px;
+  max-width: 480px;
 }
 
 .heroImage {
@@ -159,11 +159,11 @@
 
 .floatingCard {
   position: absolute;
-  bottom: 40px;
-  left: -40px;
+  bottom: 20px;
+  left: -20px;
   background: oklch(0.99 0.01 80);
-  padding: 24px;
-  border-radius: 24px;
+  padding: 16px;
+  border-radius: 6px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -173,7 +173,7 @@
 
 .floatValue {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 24px;
   color: var(--color-secondary);
   line-height: 1;
   margin-bottom: 4px;
@@ -239,3 +239,4 @@
     display: none;
   }
 }
+

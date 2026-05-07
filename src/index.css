@@ -17,8 +17,8 @@
   --font-sans: 'Inter', system-ui, sans-serif;
   
   font-family: var(--font-sans);
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--text);
   background-color: var(--bg);
   
@@ -81,13 +81,13 @@ h1, h2, h3, h4 {
 }
 
 h1 {
-  font-size: clamp(3rem, 8vw, 5rem);
+  font-size: clamp(2rem, 6vw, 3rem);
   line-height: 0.95;
   letter-spacing: -0.02em;
 }
 
 h2 {
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(1.75rem, 4.5vw, 3rem);
   line-height: 1.1;
 }
 
@@ -130,8 +130,9 @@ button {
 
 .card {
   background: var(--white);
-  border-radius: 24px;
-  padding: 32px;
+  border-radius: 6px;
+  padding: 20px;
   border: 1px solid var(--border);
   box-shadow: 0 4px 24px -4px oklch(0 0 0 / 0.05);
 }
+

@@ -38,7 +38,7 @@
   width: 100%;
   padding: 14px 18px;
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 1rem;
   color: #0f172a;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -61,7 +61,7 @@
   color: white;
   padding: 16px;
   border: none;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
@@ -98,7 +98,7 @@
   align-items: center;
   padding: 1.5rem;
   border: 2px solid #f1f5f9;
-  border-radius: 16px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
   background: oklch(0.99 0.01 80);
@@ -191,3 +191,4 @@
 .timerText strong {
   color: #e65c00;
 }
+

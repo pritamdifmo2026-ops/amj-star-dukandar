@@ -127,7 +127,7 @@
 .helpBox {
   margin-top: auto;
   border: 1px solid #1e293b;
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 16px;
   display: flex;
   align-items: center;
@@ -252,3 +252,4 @@
     height: auto;
   }
 }
+

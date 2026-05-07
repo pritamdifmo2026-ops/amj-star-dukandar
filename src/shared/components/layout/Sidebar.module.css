@@ -56,10 +56,10 @@
 }
 
 .logoWrapper {
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   background: oklch(0.99 0.01 80);
-  border-radius: 12px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -75,7 +75,7 @@
 }
 
 .brandTitle {
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 800;
   color: #f8fafc;
   letter-spacing: -0.02em;
@@ -148,13 +148,13 @@
   align-items: center;
   gap: 1rem;
   padding: 0.875rem 1rem;
-  border-radius: 14px;
+  border-radius: 8px;
   border: none;
   background: transparent;
   color: #94a3b8;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 600;
   text-align: left;
   white-space: nowrap;
@@ -217,7 +217,7 @@
   height: 44px;
   background: linear-gradient(135deg, #1e293b, #0f172a);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -232,7 +232,7 @@
 }
 
 .userName {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #f8fafc;
   margin: 0 0 2px 0;
@@ -256,13 +256,13 @@
   gap: 1rem;
   width: 100%;
   padding: 0.875rem 1rem;
-  border-radius: 14px;
+  border-radius: 8px;
   border: 1px solid rgba(239, 68, 68, 0.1);
   background: rgba(239, 68, 68, 0.05);
   color: #f87171;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
@@ -303,3 +303,4 @@
     cursor: pointer;
   }
 }
+

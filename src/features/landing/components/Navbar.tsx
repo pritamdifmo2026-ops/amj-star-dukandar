@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, ShoppingCart, ChevronDown, ChevronRight, Phone, Menu, X, User, LogOut,
+  ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
   Store, ShoppingBag, Truck, List
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
@@ -12,20 +12,19 @@ import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import categoryService from '@/features/product/services/category.service';
+import SearchBar from './SearchBar';
 import styles from './Navbar.module.css';
 
 const Navbar: React.FC = () => {
-  const [query, setQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSoonModal, setShowSoonModal] = useState(false);
-  const [allCatsOpen, setAllCatsOpen] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  
   const navigate = useNavigate();
   const userMenuRef = React.useRef<HTMLDivElement>(null);
 
-  const allCatsRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     categoryService.getAll().then(res => {
@@ -38,13 +37,11 @@ const Navbar: React.FC = () => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
       }
-      if (allCatsRef.current && !allCatsRef.current.contains(event.target as Node)) {
-        setAllCatsOpen(false);
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
   const dispatch = useAppDispatch();
   const cartCount = useAppSelector((s) => s.cart.items.length);
   const isAuth = useAppSelector((s) => s.auth.isAuthenticated);
@@ -97,12 +94,6 @@ const Navbar: React.FC = () => {
     }
   }, [isAuth, dispatch]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      navigate(`${ROUTES.PRODUCT_LIST}?search=${encodeURIComponent(query.trim())}`);
-    }
-  };
 
   const handleSignOut = () => {
     dispatch(logout());
@@ -121,7 +112,7 @@ const Navbar: React.FC = () => {
       <div className={styles.topStrip}>
         <div className={styles.container}>
           <span className={styles.helpline}>
-            <Phone size={12} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
+            <Phone size={10} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
           </span>
           <div className={styles.topLinks}>
             {!isAuth && (
@@ -140,26 +131,11 @@ const Navbar: React.FC = () => {
         <div className={styles.container}>
           {/* Logo */}
           <Link to={ROUTES.HOME} className={styles.logo}>
-            <img src="/favicon.jpeg" alt="AMJStar Logo" style={{ height: '44px', objectFit: 'contain' }} />
+            <img src="/favicon.jpeg" alt="AMJStar Logo" style={{ height: '38px', objectFit: 'contain' }} />
           </Link>
 
           {/* Search */}
-          <form className={styles.searchForm} onSubmit={handleSearch}>
-            <div className={styles.categoryDrop}>
-              <span>All</span>
-              <ChevronDown size={14} />
-            </div>
-            <input
-              className={styles.searchInput}
-              type="text"
-              placeholder="Search products, suppliers, categories..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <button type="submit" className={styles.searchBtn}>
-              <Search size={18} />
-            </button>
-          </form>
+          <SearchBar categories={categories} />
 
           {/* Right actions */}
           <div className={styles.actions}>
@@ -225,53 +201,36 @@ const Navbar: React.FC = () => {
         type="info"
       />
 
-      {/* Category bar */}
       <div className={styles.catBar}>
         <div className={styles.container}>
-          <div className={styles.allCatsWrapper} ref={allCatsRef}>
-            <button 
-              className={`${styles.allCatsBtn} ${allCatsOpen ? styles.active : ''}`}
-              onClick={() => setAllCatsOpen(!allCatsOpen)}
-            >
-              <List size={18} />
-              <span>All categories</span>
-              <ChevronDown size={14} className={allCatsOpen ? styles.rotate : ''} />
-            </button>
-
-            {allCatsOpen && (
-              <div className={styles.allCatsDropdown}>
-                {categories.map((cat) => {
-                  const hasSubs = cat.subcategories && cat.subcategories.length > 0;
-                  return (
-                    <div key={cat._id} className={styles.catGroup}>
-                      <Link
-                        to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                        className={styles.allCatItem}
-                        onClick={() => setAllCatsOpen(false)}
-                      >
-                        <span>{cat.name}</span>
-                        {hasSubs && <ChevronRight size={14} className={styles.catArrow} />}
-                      </Link>
-                      {hasSubs && (
-                        <div className={styles.subCatFlyout}>
-                          <div className={styles.flyoutHeader}>{cat.name}</div>
-                          {cat.subcategories.map((sub: any) => (
-                            <Link
-                              key={sub._id}
-                              to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                              className={styles.flyoutItem}
-                              onClick={() => setAllCatsOpen(false)}
-                            >
-                              {sub.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
+          <div className={styles.categoryNav}>
+            {categories.map((cat) => {
+              const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+              return (
+                <div key={cat._id} className={styles.catItemWrapper}>
+                  <Link
+                    to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                    className={styles.catLinkMain}
+                  >
+                    <span>{cat.name}</span>
+                    {hasSubs && <ChevronDown size={12} />}
+                  </Link>
+                  {hasSubs && (
+                    <div className={styles.subDropdown}>
+                      {cat.subcategories.map((sub: any) => (
+                        <Link
+                          key={sub._id}
+                          to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                          className={styles.subLink}
+                        >
+                          {sub.name}
+                        </Link>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className={styles.promoLinks}>

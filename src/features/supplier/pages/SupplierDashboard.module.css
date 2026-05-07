@@ -74,7 +74,7 @@
   padding: 0.75rem 1rem;
   background-color: #f0fdf4;
   border: 1px solid #bbf7d0;
-  border-radius: 12px;
+  border-radius: 6px;
   color: #166534;
   font-size: 0.85rem;
   display: flex;
@@ -114,7 +114,7 @@
 .statCard {
   background: #ffffff;
   padding: 1.5rem;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #eef2f6;
   display: flex;
   align-items: center;
@@ -132,7 +132,7 @@
 .statIcon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -155,7 +155,7 @@
 /* Sections */
 .section {
   background: #ffffff;
-  border-radius: 20px;
+  border-radius: 10px;
   border: 1px solid #eef2f6;
   padding: 1.75rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -264,7 +264,7 @@
 
 .productCard {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #eef2f6;
   padding: 0.875rem;
   display: flex;
@@ -283,7 +283,7 @@
 .cardImage {
   width: 70px;
   height: 70px;
-  border-radius: 12px;
+  border-radius: 6px;
   overflow: hidden;
   border: 1px solid #f1f5f9;
   background: #f8fafc;
@@ -455,7 +455,7 @@
 
   .section {
     padding: 1.25rem;
-    border-radius: 16px;
+    border-radius: 8px;
   }
 }
 
@@ -515,7 +515,7 @@
   background: #fef2f2;
   border: 1px solid #fecaca;
   padding: 1rem;
-  border-radius: 12px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -556,3 +556,4 @@
   z-index: 999;
   animation: fadeIn 0.3s ease-out;
 }
+

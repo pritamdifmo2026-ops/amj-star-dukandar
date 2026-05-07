@@ -71,7 +71,7 @@
 .requestCard {
   background: #ffffff;
   border: 1px solid #eef2f6;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 1.5rem;
   display: grid;
   grid-template-columns: 1fr 1.5fr auto;
@@ -96,7 +96,7 @@
 .productImg {
   width: 64px;
   height: 64px;
-  border-radius: 12px;
+  border-radius: 6px;
   object-fit: cover;
   border: 1px solid #f1f5f9;
 }
@@ -104,7 +104,7 @@
 .productPlaceholder {
   width: 64px;
   height: 64px;
-  border-radius: 12px;
+  border-radius: 6px;
   background: #f8fafc;
   display: flex;
   align-items: center;
@@ -192,7 +192,7 @@
 .partnerCard {
   background: #ffffff;
   border: 1px solid #eef2f6;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 1.5rem;
   transition: all 0.2s ease;
 }
@@ -265,7 +265,7 @@
   text-align: center;
   padding: 5rem 2rem;
   background: #ffffff;
-  border-radius: 20px;
+  border-radius: 10px;
   border: 1px dashed #cbd5e1;
   color: #64748b;
 }
@@ -316,7 +316,7 @@
 .modalDetails {
   background: #f8fafc;
   padding: 1.25rem;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid #e2e8f0;
 }
 
@@ -468,3 +468,4 @@
     grid-template-columns: 1fr;
   }
 }
+
