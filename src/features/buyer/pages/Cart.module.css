@@ -28,7 +28,7 @@
 
 .itemsSection {
   background: oklch(0.99 0.01 80);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -66,7 +66,7 @@
   width: 120px;
   height: 120px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 6px;
   background: var(--color-bg);
   border: 1px solid oklch(from var(--color-primary) l c h / 0.1);
 }
@@ -175,7 +175,7 @@
   display: flex;
   align-items: center;
   background: var(--color-bg);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 4px;
   border: 1px solid #e2e8f0;
 }
@@ -251,7 +251,7 @@
 /* Summary Section */
 .summarySection {
   background: oklch(0.99 0.01 80);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 24px;
   height: fit-content;
   position: sticky;
@@ -301,7 +301,7 @@
   color: #fff;
   border: none;
   padding: 18px;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 1.1rem;
   font-weight: 700;
   margin-top: 24px;
@@ -325,7 +325,7 @@
   padding: 80px 0;
   background: oklch(0.99 0.01 80);
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
 .emptyCart h2 {
@@ -371,3 +371,4 @@
     justify-content: center;
   }
 }
+

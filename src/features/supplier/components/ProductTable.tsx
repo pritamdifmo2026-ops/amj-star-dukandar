@@ -38,7 +38,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
         </thead>
         <tbody>
           {products.map(product => (
-            <tr key={product._id}>
+            <tr key={product.id || product._id}>
               <td>
                 <div className={styles.productCell}>
                   {product.images && product.images.length > 0 ? (
@@ -52,7 +52,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
               <td>₹{product.basePrice}</td>
               <td>{product.moq} {product.unit}</td>
               <td>
-                <span className={`${styles.statusBadge} ${styles[product.status.toLowerCase()]}`}>
+                <span className={`${styles.statusBadge} ${styles[product.status?.toLowerCase() || 'pending']}`}>
                   {product.status}
                 </span>
               </td>

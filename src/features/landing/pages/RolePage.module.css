@@ -5,7 +5,7 @@
 
 .hero {
   background: linear-gradient(135deg, #ffffff 0%, oklch(0.97 0.02 75) 100%);
-  padding: 120px 0 80px;
+  padding: 80px 0 48px;
   text-align: center;
 }
 
@@ -16,11 +16,11 @@
 }
 
 .title {
-  font-size: 56px;
+  font-size: 42px;
   font-weight: 800;
   color: var(--color-secondary);
-  line-height: 1.2;
-  margin-bottom: 24px;
+  line-height: 1.1;
+  margin-bottom: 16px;
 }
 
 .highlight {
@@ -28,21 +28,21 @@
 }
 
 .subtitle {
-  font-size: 20px;
+  font-size: 16px;
   color: var(--color-text-secondary);
-  line-height: 1.6;
-  max-width: 700px;
-  margin: 0 auto 40px;
+  line-height: 1.5;
+  max-width: 600px;
+  margin: 0 auto 32px;
 }
 
 .joinBtn {
   background: var(--color-primary);
   color: white;
   border: none;
-  padding: 16px 40px;
-  border-radius: 12px;
+  padding: 12px 32px;
+  border-radius: 6px;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
@@ -54,7 +54,7 @@
 }
 
 .contentSection {
-  padding: 80px 0;
+  padding: 60px 0;
   background: white;
 }
 
@@ -66,29 +66,29 @@
 
 .featureCard {
   background: var(--color-bg);
-  padding: 40px;
-  border-radius: 20px;
+  padding: 32px;
+  border-radius: 10px;
   border: 1px solid var(--color-border);
   text-align: left;
 }
 
 .iconWrapper {
-  width: 64px;
-  height: 64px;
+  width: 52px;
+  height: 52px;
   background: var(--accent-soft);
   color: var(--color-primary);
-  border-radius: 16px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .featureCard h3 {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--color-secondary);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .featureCard p {
@@ -109,10 +109,10 @@
 }
 
 .sectionTitleSmall {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 800;
   color: var(--color-secondary);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .sectionSubtitle {
@@ -133,7 +133,7 @@
   position: relative;
   padding: 40px;
   background: white;
-  border-radius: 20px;
+  border-radius: 10px;
   border: 1px solid var(--color-border);
   transition: all 0.3s;
 }
@@ -175,7 +175,7 @@
   gap: 16px;
   padding: 24px;
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
 }
 
 .checkIcon {
@@ -198,16 +198,16 @@
 }
 
 .ctaSection {
-  padding: 100px 0;
+  padding: 80px 0;
   background: var(--color-secondary);
   color: white;
   text-align: center;
 }
 
 .ctaSection h2 {
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 800;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .ctaSection p {
@@ -221,7 +221,7 @@
   background: white;
   color: var(--color-secondary);
   padding: 16px 48px;
-  border-radius: 12px;
+  border-radius: 6px;
   font-weight: 700;
   font-size: 18px;
   text-decoration: none;
@@ -234,3 +234,4 @@
   color: white;
   transform: scale(1.05);
 }
+

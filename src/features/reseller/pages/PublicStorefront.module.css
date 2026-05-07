@@ -66,7 +66,7 @@
   background: linear-gradient(to right, #1a3c5e, #0f2440);
   color: white;
   padding: 2rem;
-  border-radius: 16px;
+  border-radius: 8px;
   text-align: center;
   margin-bottom: 3rem;
   position: relative;
@@ -99,7 +99,7 @@
 
 .productCard {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid #e2e8f0;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -163,3 +163,4 @@
 }
 
 .footer p { margin: 0; font-weight: 600; }
+

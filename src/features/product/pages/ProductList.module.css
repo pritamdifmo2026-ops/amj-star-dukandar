@@ -82,7 +82,7 @@
   gap: var(--space-4);
   background: #ffffff;
   padding: 24px;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid var(--color-border);
   box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
@@ -163,7 +163,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-6);
 }
 
@@ -181,7 +181,7 @@
   border: 1px solid var(--color-primary);
   color: var(--color-primary);
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -238,3 +238,4 @@
     gap: var(--space-3);
   }
 }
+

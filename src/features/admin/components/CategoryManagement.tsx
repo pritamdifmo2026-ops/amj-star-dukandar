@@ -20,6 +20,13 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   
+  // Custom Modal State
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalValue, setModalValue] = useState('');
+  const [modalType, setModalType] = useState<'add-sub' | 'edit-cat' | 'edit-sub' | null>(null);
+  const [activeId, setActiveId] = useState('');
+  
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
   const pagedCategories = categories.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -67,42 +74,46 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
     }
   };
 
-  const handleAddSubcategoryToExisting = async (categoryId: string) => {
-    const name = window.prompt('Enter new subcategory name:');
-    if (name && name.trim()) {
-      setActionLoading(`add-sub-${categoryId}`);
-      try {
-        await categoryService.createSubcategory(categoryId, name);
-        await onRefresh();
-      } finally {
-        setActionLoading(null);
-      }
-    }
+  const handleAddSubcategoryToExisting = (categoryId: string) => {
+    setModalType('add-sub');
+    setActiveId(categoryId);
+    setModalValue('');
+    setModalTitle('Add New Subcategory');
+    setModalOpen(true);
   };
 
-  const handleEditCategory = async (id: string, currentName: string) => {
-    const newName = window.prompt('Enter new category name:', currentName);
-    if (newName && newName.trim() && newName !== currentName) {
-      setActionLoading(`edit-cat-${id}`);
-      try {
-        await categoryService.update(id, { name: newName });
-        await onRefresh();
-      } finally {
-        setActionLoading(null);
-      }
-    }
+  const handleEditCategory = (id: string, currentName: string) => {
+    setModalType('edit-cat');
+    setActiveId(id);
+    setModalValue(currentName);
+    setModalTitle('Edit Category');
+    setModalOpen(true);
   };
 
-  const handleEditSubcategory = async (subId: string, currentName: string) => {
-    const newName = window.prompt('Enter new subcategory name:', currentName);
-    if (newName && newName.trim() && newName !== currentName) {
-      setActionLoading(`edit-sub-${subId}`);
-      try {
-        await categoryService.updateSubcategory(subId, { name: newName });
-        await onRefresh();
-      } finally {
-        setActionLoading(null);
+  const handleEditSubcategory = (subId: string, currentName: string) => {
+    setModalType('edit-sub');
+    setActiveId(subId);
+    setModalValue(currentName);
+    setModalTitle('Edit Subcategory');
+    setModalOpen(true);
+  };
+
+  const handleModalSubmit = async () => {
+    if (!modalValue.trim()) return;
+    
+    setActionLoading('modal-action');
+    try {
+      if (modalType === 'add-sub') {
+        await categoryService.createSubcategory(activeId, modalValue.trim());
+      } else if (modalType === 'edit-cat') {
+        await categoryService.update(activeId, { name: modalValue.trim() });
+      } else if (modalType === 'edit-sub') {
+        await categoryService.updateSubcategory(activeId, { name: modalValue.trim() });
       }
+      await onRefresh();
+      setModalOpen(false);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -284,6 +295,42 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
           styles={styles}
         />
       </div>
+
+      {/* Custom Modal Popup */}
+      {modalOpen && (
+        <div className={localStyles.modalOverlay} onClick={() => setModalOpen(false)}>
+          <div className={localStyles.modalContent} onClick={e => e.stopPropagation()}>
+            <h3 className={localStyles.modalHeader}>{modalTitle}</h3>
+            <div className={localStyles.inputGroup}>
+              <input
+                type="text"
+                autoFocus
+                value={modalValue}
+                onChange={(e) => setModalValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleModalSubmit()}
+                placeholder="Enter name..."
+                className={localStyles.inputField}
+              />
+            </div>
+            <div className={localStyles.modalActions}>
+              <button 
+                onClick={() => setModalOpen(false)} 
+                className={localStyles.cancelBtn}
+                disabled={actionLoading !== null}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleModalSubmit} 
+                className={localStyles.confirmBtn}
+                disabled={actionLoading !== null || !modalValue.trim()}
+              >
+                {actionLoading ? 'Saving...' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

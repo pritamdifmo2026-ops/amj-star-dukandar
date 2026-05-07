@@ -64,44 +64,43 @@
 
 .productGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-6);
 }
 
 /* Middle Navigation (Browse by Industry) */
 .middleNavigation {
-  padding: var(--space-16) 0;
-  margin: var(--space-20) 0;
+  padding: 20px 0;
+  margin: 20px 0;
   /* Margin top and bottom */
   background: #ffffff;
 }
 
 .sectionTitleCenter {
   text-align: center;
-  font-size: var(--font-size-3xl);
+  font-size: 24px;
   font-weight: 800;
   color: var(--color-secondary);
-  margin-bottom: var(--space-16);
+  margin-bottom: 24px;
 }
 
 .categoryStrip {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  /* Wraps naturally like Amazon */
-  gap: var(--space-8);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-6);
 }
 
 .industryCard {
   background: var(--bg-color);
-  padding: var(--space-10) var(--space-4);
-  border-radius: var(--radius-md);
+  padding: 20px 12px;
+  border-radius: 12px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-5);
-  transition: transform 0.3s, box-shadow 0.3s;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 .industryCard:hover {
@@ -110,14 +109,29 @@
   border-color: var(--color-primary);
 }
 
-.industryIcon {
-  font-size: 48px;
+.iconCircle {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-secondary);
+  transition: all 0.3s;
+}
+
+.industryCard:hover .iconCircle {
+  background: white;
+  transform: scale(1.1);
+  color: var(--color-primary);
 }
 
 .industryName {
-  font-weight: 800;
+  font-weight: 600;
   color: var(--color-secondary);
-  font-size: var(--font-size-base);
+  font-size: 13px;
+  line-height: 1.2;
 }
 
 /* Features Section - Clean Standard Look */
@@ -168,7 +182,7 @@
 
 @media (max-width: 1024px) {
   .categoryStrip {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   }
 
   .featuresGrid {
@@ -246,3 +260,4 @@
     display: none;
   }
 }
+

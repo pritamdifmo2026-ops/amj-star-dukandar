@@ -64,7 +64,7 @@
   padding: 20px;
   background: var(--color-surface);
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -140,7 +140,7 @@
 .detailsPanel {
   background: var(--color-surface);
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 32px;
   position: sticky;
   top: 100px;
@@ -163,7 +163,7 @@
 
 .upiItem {
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 16px;
   display: flex;
   align-items: center;
@@ -326,7 +326,7 @@
   background: #D94F00;
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
@@ -336,3 +336,4 @@
 .payNowBtn:hover {
   background: #bf4500;
 }
+

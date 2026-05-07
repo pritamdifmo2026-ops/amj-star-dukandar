@@ -83,7 +83,7 @@ const ProductCard: React.FC<Props> = ({
           aria-label="Add to wishlist"
         >
           <Heart 
-            size={18} 
+            size={14} 
             fill={isWishlisted ? '#e65c00' : 'none'} 
             color={isWishlisted ? '#e65c00' : '#94a3b8'} 
           />

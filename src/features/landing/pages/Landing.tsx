@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
+import { 
+  ShieldCheck, Truck, BadgeCheck, Sprout, Cpu, Utensils, 
+  Armchair, Home, Settings, Shirt, Layers 
+} from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import BannerSlider from '../components/BannerSlider';
@@ -12,8 +15,23 @@ import categoryService from '@/features/product/services/category.service';
 import type { Product } from '@/features/product/types';
 import styles from './Landing.module.css';
 
-const DEFAULT_ICONS = ['💻', '👕', '⚙️', '🛋️', '🌾', '🧪', '🍔', '📦'];
-const DEFAULT_COLORS = ['#e3f2fd', '#f3e5f5', '#fff3e0', '#efebe9', '#e8f5e9', '#e0f7fa', '#ffebee', '#f5f5f5'];
+const getCategoryIcon = (name: string) => {
+  const iconMap: { [key: string]: any } = {
+    'Agriculture': Sprout,
+    'Electronics': Cpu,
+    'Food & Beverages': Utensils,
+    'Furniture': Armchair,
+    'Home Furnishing': Home,
+    'Machinery': Settings,
+    'Textiles': Shirt,
+  };
+  return iconMap[name] || Layers;
+};
+
+const DEFAULT_COLORS = [
+  '#E3F2FD', '#F3E5F5', '#FFF3E0', '#EFEBE9', 
+  '#E8F5E9', '#E0F7FA', '#FFEBEE', '#F1F8E9'
+];
 
 const Landing: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -74,17 +92,22 @@ const Landing: React.FC = () => {
           <div className={styles.container}>
             <h2 className={styles.sectionTitleCenter}>Browse by Industry</h2>
             <div className={styles.categoryStrip}>
-              {categories.map((cat, i) => (
-                <Link
-                  key={cat.name}
-                  to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                  className={styles.industryCard}
-                  style={{ '--bg-color': DEFAULT_COLORS[i % DEFAULT_COLORS.length] } as any}
-                >
-                  <span className={styles.industryIcon}>{DEFAULT_ICONS[i % DEFAULT_ICONS.length]}</span>
-                  <span className={styles.industryName}>{cat.name}</span>
-                </Link>
-              ))}
+              {categories.map((cat, i) => {
+                const Icon = getCategoryIcon(cat.name);
+                return (
+                  <Link
+                    key={cat.name}
+                    to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                    className={styles.industryCard}
+                    style={{ '--bg-color': DEFAULT_COLORS[i % DEFAULT_COLORS.length] } as any}
+                  >
+                    <div className={styles.iconCircle}>
+                      <Icon size={24} strokeWidth={1.5} />
+                    </div>
+                    <span className={styles.industryName}>{cat.name}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>

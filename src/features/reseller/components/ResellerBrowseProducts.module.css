@@ -50,7 +50,7 @@
 /* Table styling */
 .tableCard {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1px solid #eef2f6;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   overflow: hidden;
@@ -157,7 +157,7 @@
   color: #64748b;
   background: #f1f5f9;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: 10px;
 }
 
 .priceCell {
@@ -226,7 +226,7 @@
 /* Mobile Card Styles */
 .mobileCard {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid #eef2f6;
   padding: 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
@@ -274,7 +274,7 @@
   color: #64748b;
   background: #f1f5f9;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
 .mobileCardBody {
@@ -482,3 +482,4 @@
     font-size: 13px;
   }
 }
+

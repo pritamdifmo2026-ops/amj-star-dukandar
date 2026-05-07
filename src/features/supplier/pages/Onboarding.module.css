@@ -206,7 +206,7 @@ textarea.input { height: 70px; resize: vertical; }
   padding: 20px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 6px;
   animation: slideDown 0.3s ease-out;
 }
 
@@ -387,7 +387,7 @@ textarea.input { height: 70px; resize: vertical; }
 .statusBox {
   background: #f1f5f9;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 6px;
   margin-bottom: 16px;
   text-align: center;
   font-size: 0.9rem;
@@ -407,7 +407,7 @@ textarea.input { height: 70px; resize: vertical; }
 .successCard {
   background: #ffffff;
   padding: 32px;
-  border-radius: 20px;
+  border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
   width: 100%;
   max-width: 500px;
@@ -421,7 +421,7 @@ textarea.input { height: 70px; resize: vertical; }
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 6px;
   margin: 16px 0;
   text-align: left;
 }
@@ -457,3 +457,4 @@ textarea.input { height: 70px; resize: vertical; }
   .successCard { padding: 24px 20px; }
   .formRow { flex-direction: column; gap: 16px; }
 }
+

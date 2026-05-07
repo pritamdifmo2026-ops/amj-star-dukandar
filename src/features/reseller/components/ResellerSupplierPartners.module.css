@@ -48,7 +48,7 @@
 
 .tableContainer {
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px solid var(--border-color, #e2e8f0);
   overflow: hidden;
   overflow-x: auto;
@@ -171,7 +171,7 @@
   text-align: center;
   padding: 4rem 2rem;
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 6px;
   border: 1px dashed var(--border-color);
   color: var(--text-secondary);
 }
@@ -211,7 +211,7 @@
   .table tr {
     margin-bottom: 1.5rem;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    border-radius: 6px;
     background: #ffffff;
     padding: 0.5rem;
   }
@@ -270,3 +270,4 @@
     margin-bottom: 0.5rem;
   }
 }
+

@@ -18,7 +18,7 @@
   margin-bottom: 2.5rem;
   background: #ffffff;
   padding: 1.5rem 2rem;
-  border-radius: 20px;
+  border-radius: 10px;
   border: 1px solid #eef2f6;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
@@ -58,7 +58,7 @@
   color: #0284c7;
   background: #f0f9ff;
   padding: 8px;
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
 .titleArea h2 {
@@ -88,7 +88,7 @@
 .formSection {
   background: #ffffff;
   padding: 2rem;
-  border-radius: 24px;
+  border-radius: 6px;
   border: 1px solid #eef2f6;
   box-shadow: 0 1px 3px rgba(0,0,0,0.02);
 }
@@ -134,7 +134,7 @@
   padding: 0.875rem 1rem;
   background-color: #f8fafc;
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 6px;
   font-size: 0.95rem;
   color: #1e293b;
   font-family: inherit;
@@ -188,7 +188,7 @@
 .imageBox {
   aspect-ratio: 1;
   position: relative;
-  border-radius: 16px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1px solid #eef2f6;
   background: #f8fafc;
@@ -228,7 +228,7 @@
 .uploadBox {
   aspect-ratio: 1;
   border: 2px dashed #cbd5e1;
-  border-radius: 16px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -285,3 +285,4 @@
     grid-template-columns: 1fr;
   }
 }
+

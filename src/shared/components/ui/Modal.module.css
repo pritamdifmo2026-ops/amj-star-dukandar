@@ -17,7 +17,7 @@
   background: oklch(0.99 0.01 80);
   width: 90%;
   max-width: 450px;
-  border-radius: 12px;
+  border-radius: 6px;
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   overflow: hidden;
   animation: slideUp 0.3s ease-out;
@@ -76,3 +76,4 @@
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+

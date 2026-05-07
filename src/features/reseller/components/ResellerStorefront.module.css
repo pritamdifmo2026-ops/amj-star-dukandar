@@ -26,7 +26,7 @@
   flex-wrap: wrap;
   gap: 1.5rem;
   background: #1E293B;
-  border-radius: 24px;
+  border-radius: 6px;
   padding: 2rem 2.5rem;
   color: white;
   box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.35);
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.8rem 1.5rem;
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -140,7 +140,7 @@
 /* ─── Preview Card ─── */
 .previewCard {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 6px;
   border: 1px solid #f1f5f9;
   overflow: hidden;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
@@ -229,7 +229,7 @@
 }
 
 .previewItem {
-  border-radius: 12px;
+  border-radius: 6px;
   overflow: hidden;
   background: #ffffff;
   border: 1px solid #f1f5f9;
@@ -298,7 +298,7 @@
 /* ─── Share Card ─── */
 .shareCard {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 6px;
   border: 1px solid #f1f5f9;
   padding: 1.5rem;
   display: flex;
@@ -320,7 +320,7 @@
   padding: 10px;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
 .shareHeader h4 {
@@ -341,7 +341,7 @@
   align-items: center;
   background: #f8fafc;
   border: 2px dashed #e2e8f0;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 4px;
   transition: all 0.2s ease;
 }
@@ -395,7 +395,7 @@
   justify-content: center;
   gap: 0.6rem;
   padding: 0.85rem;
-  border-radius: 14px;
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 700;
   text-decoration: none;
@@ -437,7 +437,7 @@
 .miniStat {
   background: #ffffff;
   border: 1px solid #f1f5f9;
-  border-radius: 20px;
+  border-radius: 10px;
   padding: 1.25rem;
   display: flex;
   align-items: center;
@@ -455,7 +455,7 @@
   color: #1E293B;
   background: #f5f3ff;
   padding: 8px;
-  border-radius: 12px;
+  border-radius: 6px;
   width: 36px;
   height: 36px;
 }
@@ -479,7 +479,7 @@
 /* ─── Products Card ─── */
 .productsCard {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 6px;
   border: 1px solid #f1f5f9;
   overflow: hidden;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
@@ -567,7 +567,7 @@
 .productRowImg img {
   width: 52px;
   height: 52px;
-  border-radius: 12px;
+  border-radius: 6px;
   object-fit: cover;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
@@ -575,7 +575,7 @@
 .productRowPlaceholder {
   width: 52px;
   height: 52px;
-  border-radius: 12px;
+  border-radius: 6px;
   background: #f1f5f9;
   display: flex;
   align-items: center;
@@ -668,7 +668,7 @@
     text-align: center;
     justify-content: center;
     flex-direction: column;
-    border-radius: 20px;
+    border-radius: 10px;
   }
 
   .statusLeft {
@@ -767,3 +767,4 @@
     border-top: 1px dashed #f1f5f9;
   }
 }
+
