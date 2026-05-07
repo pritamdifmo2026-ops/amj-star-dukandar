@@ -12,6 +12,8 @@ import {
 import { ROUTES } from '@/shared/constants/routes';
 import styles from './Payment.module.css';
 
+import toast from 'react-hot-toast';
+
 const Payment: React.FC = () => {
   const navigate = useNavigate();
   const [selectedMethod, setSelectedMethod] = useState<string>('upi');
@@ -32,14 +34,13 @@ const Payment: React.FC = () => {
   ];
 
   const handlePayment = () => {
-    alert(`Payment successful using ${selectedMethod}! (Demo)`);
-    navigate(ROUTES.HOME);
+    toast.error('Please complete the payment through the chat quotation for now.');
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <button className={styles.backBtn} onClick={() => navigate(-1)}>
+        <button className={styles.backBtn} onClick={() => navigate(ROUTES.CHECKOUT)}>
           <ArrowLeft size={18} /> Back to Checkout
         </button>
         <h1>Select Payment Method</h1>

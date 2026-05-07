@@ -37,8 +37,8 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
           </tr>
         </thead>
         <tbody>
-          {products.map(product => (
-            <tr key={product._id}>
+          {products.map((product, idx) => (
+            <tr key={product.id || product._id || `prod-${idx}`}>
               <td>
                 <div className={styles.productCell}>
                   {product.images && product.images.length > 0 ? (

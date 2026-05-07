@@ -496,3 +496,238 @@
   }
 }
 
+/* ─── Quotation Card Styles ───────────────────────────────────────── */
+.quotationCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 8px 0;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.quotationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 8px;
+}
+
+.quotationHeader h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #111827;
+  font-weight: 700;
+}
+
+.quotationStatus {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #fff7f0;
+  color: #e65c00;
+}
+
+.quotationItems {
+  margin-bottom: 12px;
+}
+
+.quotationItem {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.quotationTotal {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 8px;
+  margin-top: 8px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.quotationActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.acceptBtn {
+  flex: 1;
+  background: #e65c00;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.acceptBtn:hover {
+  background: #cf5300;
+}
+
+.rejectBtn {
+  flex: 1;
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quoteBtn {
+  background: #fff7f0;
+  color: #e65c00;
+  border: 1px solid #ffecd9;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.quoteBtn:hover {
+  background: #ffecd9;
+}
+
+/* ─── Modal Styles ───────────────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: #ffffff;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.modalContent h2 {
+  margin: 0 0 24px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.formGroup input, .formGroup textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.formGroup input:focus {
+  border-color: #e65c00;
+  box-shadow: 0 0 0 4px rgba(230, 92, 0, 0.1);
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.cancelBtn {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submitBtn {
+  background: #e65c00;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.orderBadge {
+  margin-top: 12px;
+  background: #ecfdf5;
+  color: #059669;
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid #10b98120;
+}
+
+.paymentBadge {
+  margin-top: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #3b82f620;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.payNowInlineBtn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.payNowInlineBtn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}

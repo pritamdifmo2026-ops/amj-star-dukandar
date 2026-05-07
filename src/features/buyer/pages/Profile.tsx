@@ -14,6 +14,8 @@ import { useSocket } from '@/shared/contexts/SocketContext';
 import { chatApi } from '@/shared/services/chat.api';
 import adminService from '@/features/admin/services/admin.service';
 import { Camera, Loader2 } from 'lucide-react';
+import OrderList from '../components/OrderList';
+import { orderApi } from '@/shared/services/order.api';
 import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
@@ -41,7 +43,7 @@ const Profile: React.FC = () => {
   // Email Verification State
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
-  const orderCount = 0;
+  const [orderCount, setOrderCount] = useState(0);
   const memberSince = 'January 2024';
   const isEmailVerified = user?.isEmailVerified || false;
   const { socket } = useSocket();
@@ -74,6 +76,21 @@ const Profile: React.FC = () => {
     socket.on('new_notification', handleNewMsg);
     return () => { socket.off('new_notification', handleNewMsg); };
   }, [socket]);
+
+  const fetchOrderCount = async () => {
+    try {
+      const orders = await orderApi.getOrders();
+      setOrderCount(orders.length);
+    } catch (err) {
+      console.error('Failed to fetch order count');
+    }
+  };
+
+  React.useEffect(() => {
+    if (user) {
+      fetchOrderCount();
+    }
+  }, [user]);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -397,6 +414,10 @@ const Profile: React.FC = () => {
           <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px', margin: '-20px' }}>
             <ChatInbox />
           </div>
+        )}
+
+        {activeTab === 'orders' && (
+          <OrderList />
         )}
 
         {/* Placeholder for other tabs */}

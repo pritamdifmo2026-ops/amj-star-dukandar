@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import {
   MessageCircle,
   X,
@@ -6,12 +7,15 @@ import {
   Send,
   ArrowLeft,
   Check,
-  CheckCheck
+  CheckCheck,
+  FileText
 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketContext';
 import { useChat } from '../../hooks/useChat';
 import { chatApi } from '../../services/chat.api';
+import { quotationApi } from '../../services/quotation.api';
+import { paymentApi } from '../../services/payment.api';
 import styles from './FloatingChat.module.css';
 
 /**
@@ -38,8 +42,18 @@ export const FloatingChat: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [totalUnread, setTotalUnread] = useState(0);
 
-  const { messages, sendMessage, handleTyping, isTyping } = useChat(activeConv?._id);
+  const { messages, sendMessage, handleTyping, isTyping, loadMessages } = useChat(activeConv?._id);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Quotation State
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [quoteForm, setQuoteForm] = useState({
+    itemName: '',
+    quantity: 1,
+    price: 0,
+    shipping: 0,
+    terms: 'Standard delivery terms apply.'
+  });
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const getOtherUser = (conv: any) => {
@@ -165,6 +179,160 @@ export const FloatingChat: React.FC = () => {
     }
   };
 
+  const handleCreateQuotation = async () => {
+    if (!activeConv) return;
+    const other = getOtherUser(activeConv);
+    const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
+
+    try {
+      await quotationApi.createQuotation({
+        conversationId: activeConv._id,
+        buyerId: buyerId,
+        items: [{
+          name: quoteForm.itemName,
+          quantity: quoteForm.quantity,
+          price: quoteForm.price
+        }],
+        totalAmount: quoteForm.quantity * quoteForm.price,
+        shippingCost: quoteForm.shipping,
+        terms: quoteForm.terms
+      });
+      setIsQuoteModalOpen(false);
+      loadMessages(); 
+      toast.success('Quotation sent!');
+    } catch (err) {
+      console.error('Failed to create quotation', err);
+      toast.error('Failed to send quotation');
+    }
+  };
+
+  const handleAcceptQuote = async (quoteId: string) => {
+    const loadingToast = toast.loading('Creating order...');
+    try {
+      const { order } = await quotationApi.acceptQuotation(quoteId);
+      loadMessages();
+      toast.success('Order created!', { id: loadingToast });
+      
+      // Initialize Razorpay Payment
+      handlePayment(order._id);
+    } catch (err: any) {
+      console.error('Failed to accept quote', err);
+      toast.error(err.response?.data?.message || 'Failed to accept quotation', { id: loadingToast });
+    }
+  };
+
+  const handlePayment = async (orderId: string) => {
+    const loadingToast = toast.loading('Initializing payment...');
+    try {
+      const data = await paymentApi.createOrder(orderId);
+      
+      const options = {
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'AMJStar Dukandar',
+        description: `Order #${data.orderNumber}`,
+        order_id: data.razorpayOrderId,
+        handler: async function (response: any) {
+          const verifyToast = toast.loading('Verifying payment...');
+          try {
+            await paymentApi.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            toast.success('Payment successful!', { id: verifyToast });
+            loadMessages();
+          } catch (err) {
+            console.error('Verification failed', err);
+            toast.error('Payment verification failed', { id: verifyToast });
+          }
+        },
+        prefill: {
+          name: data.prefill?.name || user?.name,
+          email: data.prefill?.email || user?.email,
+          contact: data.prefill?.contact || user?.phone || user?.phoneNumber || user?.contact
+        },
+        theme: {
+          color: '#ff4d4d'
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        toast.error('Payment failed: ' + response.error.description);
+      });
+      rzp.open();
+      toast.dismiss(loadingToast);
+    } catch (err: any) {
+      console.error('Payment initialization failed', err);
+      toast.error('Failed to initialize payment', { id: loadingToast });
+    }
+  };
+
+  const handleRejectQuote = async (quoteId: string) => {
+    try {
+      await quotationApi.rejectQuotation(quoteId);
+      loadMessages();
+    } catch (err) {
+      console.error('Failed to reject quote', err);
+    }
+  };
+
+  // ─── Sub-Components ───────────────────────────────────────────────────────
+  const QuotationCard = ({ msg }: { msg: any }) => {
+    const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
+    const [quote, setQuote] = useState<any>(null);
+
+    useEffect(() => {
+      if (msg.quotationId) {
+        quotationApi.getQuotation(msg.quotationId).then(setQuote);
+      }
+    }, [msg.quotationId]);
+
+    if (!quote) return <div className={styles.messageText}>Loading quotation...</div>;
+
+    return (
+      <div className={styles.quotationCard}>
+        <div className={styles.quotationHeader}>
+          <h4>Quotation</h4>
+          <span className={styles.quotationStatus}>{quote.status}</span>
+        </div>
+        <div className={styles.quotationItems}>
+          {quote.items.map((item: any, i: number) => (
+            <div key={i} className={styles.quotationItem}>
+              <span>{item.name} x {item.quantity}</span>
+              <span>₹{item.price * item.quantity}</span>
+            </div>
+          ))}
+          <div className={styles.quotationItem}>
+            <span>Shipping</span>
+            <span>₹{quote.shippingCost}</span>
+          </div>
+        </div>
+        <div className={styles.quotationTotal}>
+          <span>Total</span>
+          <span>₹{quote.totalAmount + quote.shippingCost}</span>
+        </div>
+        {!isMine && quote.status === 'pending' && (
+          <div className={styles.quotationActions}>
+            <button className={styles.acceptBtn} onClick={() => handleAcceptQuote(quote._id)}>Accept & Order</button>
+            <button className={styles.rejectBtn} onClick={() => handleRejectQuote(quote._id)}>Reject</button>
+          </div>
+        )}
+        {quote.status === 'accepted' && (
+          <div className={styles.paymentBadge}>
+            Quotation Accepted. Waiting for Payment...
+            {!isMine && <button className={styles.payNowInlineBtn} onClick={() => handlePayment(quote.orderId?._id || quote.orderId)}>Pay Now</button>}
+          </div>
+        )}
+        {quote.status === 'ordered' && (
+          <div className={styles.orderBadge}>Order Created ✅</div>
+        )}
+      </div>
+    );
+  };
+
   // ─── Guards ───────────────────────────────────────────────────────────────
   if (!isAuthenticated) return null;
 
@@ -201,6 +369,18 @@ export const FloatingChat: React.FC = () => {
               )}
             </div>
             <div className={styles.headerActions}>
+              {panel === 'chat' && user?.role === 'supplier' && (
+                <button 
+                  className={styles.quoteBtn} 
+                  onClick={() => {
+                    setQuoteForm(prev => ({...prev, itemName: activeConv?.productId?.name || ''}));
+                    setIsQuoteModalOpen(true);
+                  }}
+                  title="Send Quotation"
+                >
+                  <FileText size={14} /> Quote
+                </button>
+              )}
               {panel === 'chat' && (
                 <button
                   className={styles.iconButton}
@@ -282,7 +462,11 @@ export const FloatingChat: React.FC = () => {
                         : styles.received
                     }`}
                   >
-                    <div className={styles.messageText}>{msg.text}</div>
+                    {msg.messageType === 'quotation' ? (
+                      <QuotationCard msg={msg} />
+                    ) : (
+                      <div className={styles.messageText}>{msg.text}</div>
+                    )}
                     {(msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString() && (
                       <div className={styles.messageStatus}>
                         {msg.isRead ? (
@@ -368,6 +552,40 @@ export const FloatingChat: React.FC = () => {
           </>
         )}
       </div>
+      {/* ── Quotation Modal ── */}
+      {isQuoteModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h2>Send Quotation</h2>
+            <div className={styles.formGroup}>
+              <label>Item Name</label>
+              <input type="text" value={quoteForm.itemName} onChange={(e) => setQuoteForm({...quoteForm, itemName: e.target.value})} />
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <div className={styles.formGroup} style={{ flex: 1 }}>
+                <label>Quantity</label>
+                <input type="number" value={quoteForm.quantity} onChange={(e) => setQuoteForm({...quoteForm, quantity: Number(e.target.value)})} />
+              </div>
+              <div className={styles.formGroup} style={{ flex: 1 }}>
+                <label>Unit Price (₹)</label>
+                <input type="number" value={quoteForm.price} onChange={(e) => setQuoteForm({...quoteForm, price: Number(e.target.value)})} />
+              </div>
+            </div>
+            <div className={styles.formGroup}>
+              <label>Shipping Cost (₹)</label>
+              <input type="number" value={quoteForm.shipping} onChange={(e) => setQuoteForm({...quoteForm, shipping: Number(e.target.value)})} />
+            </div>
+            <div className={styles.formGroup}>
+              <label>Terms & Conditions</label>
+              <textarea rows={3} value={quoteForm.terms} onChange={(e) => setQuoteForm({...quoteForm, terms: e.target.value})} />
+            </div>
+            <div className={styles.modalFooter}>
+              <button className={styles.cancelBtn} onClick={() => setIsQuoteModalOpen(false)}>Cancel</button>
+              <button className={styles.submitBtn} onClick={handleCreateQuotation}>Send Quote</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

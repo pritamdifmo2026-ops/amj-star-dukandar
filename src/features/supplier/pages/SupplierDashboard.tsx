@@ -32,8 +32,10 @@ import SupplierOverview from '../components/SupplierOverview';
 import SupplierInventory from '../components/SupplierInventory';
 import SupplierSettings from '../components/SupplierSettings';
 import ChatInbox from '@/features/chat/components/ChatInbox';
+import SupplierQuotations from '../components/SupplierQuotations';
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
+import OrderList from '../../buyer/components/OrderList';
 import styles from './SupplierDashboard.module.css';
 
 // ✅ Product Grid Component – Horizontal Card Layout (like first image)
@@ -362,20 +364,12 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'orders' && (
-          <PlaceholderView
-            title="Orders Management"
-            icon={ShoppingBag}
-            description="Track and manage all your customer and reseller orders in one place."
-          />
+          <div style={{ padding: '20px' }}>
+            <OrderList />
+          </div>
         )}
 
-        {activeView === 'quotations' && (
-          <PlaceholderView
-            title="Quotations Management"
-            icon={FileText}
-            description="Track and manage price quotations from potential buyers in one place."
-          />
-        )}
+        {activeView === 'quotations' && <SupplierQuotations />}
 
         {activeView === 'chat' && (
           <div style={{ height: 'calc(100vh - 64px)', width: '100%' }}>

@@ -111,5 +111,5 @@ export const useChat = (conversationId?: string) => {
     socket.emit('typing', { conversationId: convId, isTyping: typing });
   }, [socket]);
 
-  return { messages, loading, isTyping, sendMessage, handleTyping };
+  return { messages, loading, isTyping, sendMessage, handleTyping, loadMessages };
 };
