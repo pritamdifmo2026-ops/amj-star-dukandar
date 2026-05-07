@@ -99,13 +99,10 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 .industryCard:hover {
-  transform: translateY(-10px);
-  box-shadow: var(--shadow-lg);
   border-color: var(--color-primary);
 }
 
@@ -118,12 +115,10 @@
   align-items: center;
   justify-content: center;
   color: var(--color-secondary);
-  transition: all 0.3s;
 }
 
 .industryCard:hover .iconCircle {
   background: white;
-  transform: scale(1.1);
   color: var(--color-primary);
 }
 

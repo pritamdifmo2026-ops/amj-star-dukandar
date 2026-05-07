@@ -78,7 +78,7 @@ const Landing: React.FC = () => {
               <div className={styles.productGrid}>
                 {loading ? <p>Loading products...</p> : products
                   .filter(p => p.category === cat.name)
-                  .slice(0, 4)
+                  .slice(0, 8)
                   .map(product => (
                     <ProductCard key={product.id} product={product} showAddToCart={false} />
                   ))}
@@ -124,7 +124,7 @@ const Landing: React.FC = () => {
               <div className={styles.productGrid}>
                 {loading ? <p>Loading products...</p> : products
                   .filter(p => p.category === cat.name)
-                  .slice(0, 4)
+                  .slice(0, 8)
                   .map(product => (
                     <ProductCard key={product.id} product={product} showAddToCart={false} />
                   ))}
