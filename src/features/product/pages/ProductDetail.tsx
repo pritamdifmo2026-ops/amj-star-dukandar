@@ -166,7 +166,7 @@ const ProductDetail: React.FC = () => {
             {/* Left: Image with Amazon-style magnifier */}
             <div className={styles.imageSection}>
               <div className={styles.mainImageWrap}>
-                <ImageMagnifier src={currentImage} alt={product.name} />
+                <ImageMagnifier key={currentImage} src={currentImage} alt={product.name} />
               </div>
               <div className={styles.thumbnailGrid}>
                 {galleryImages.map((img, idx) => (

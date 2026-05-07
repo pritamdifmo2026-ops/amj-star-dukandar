@@ -56,12 +56,10 @@
 }
 
 .logo img {
-  transition: transform 0.2s;
+  display: block;
 }
 
-.logo:hover img {
-  transform: scale(1.05);
-}
+/* Logo hover effect removed */
 
 .searchWrapper {
   position: relative;
