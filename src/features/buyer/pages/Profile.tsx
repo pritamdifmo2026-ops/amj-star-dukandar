@@ -422,7 +422,7 @@ const Profile: React.FC = () => {
         )}
 
         {/* Placeholder for other tabs */}
-        {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && currentMenuItem && (
+        {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && currentMenuItem && (
           <div className={styles.placeholderCard}>
             {CurrentIcon && <CurrentIcon size={48} strokeWidth={1.5} />}
             <h3>{currentMenuItem.label}</h3>
