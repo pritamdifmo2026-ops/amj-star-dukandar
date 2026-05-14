@@ -7,9 +7,11 @@ import { quotationApi } from '@/shared/services/quotation.api';
 import { useChat } from '@/shared/hooks/useChat';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { paymentApi } from '@/shared/services/payment.api';
-import styles from './ChatInbox.module.css';
 
 type Filter = 'all' | 'unread';
+
+const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
+const labelCls = "text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5";
 
 const ChatInbox: React.FC = () => {
   const { user } = useSelector((state: any) => state.auth);
@@ -20,25 +22,17 @@ const ChatInbox: React.FC = () => {
   const [search, setSearch] = useState('');
   const [inputText, setInputText] = useState('');
 
-  // Quotation State
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [quoteForm, setQuoteForm] = useState({
-    itemName: '',
-    quantity: 1,
-    price: 0,
-    shipping: 0,
-    terms: 'Standard delivery terms apply.'
+    itemName: '', quantity: 1, price: 0, shipping: 0, terms: 'Standard delivery terms apply.'
   });
 
   const { messages, sendMessage, handleTyping, isTyping, loadMessages } = useChat(activeConv?._id);
   const { socket } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // ─── Load conversations ───────────────────────────────────────────
   useEffect(() => {
-    if (user) {
-      loadConversations();
-    }
+    if (user) loadConversations();
   }, [user]);
 
   useEffect(() => {
@@ -46,17 +40,11 @@ const ChatInbox: React.FC = () => {
     const handleNotification = (notif: any) => {
       if (notif.type === 'CHAT_MESSAGE') {
         loadConversations();
-        if (activeConv?._id === notif.conversationId) {
-          loadMessages();
-        }
+        if (activeConv?._id === notif.conversationId) loadMessages();
       }
     };
     socket.on('new_notification', handleNotification);
-    socket.on('new_message', (msg) => {
-      if (activeConv?._id === msg.conversationId) {
-        // useChat already handles this usually, but double check
-      }
-    });
+    socket.on('new_message', () => {});
     return () => {
       socket.off('new_notification', handleNotification);
       socket.off('new_message');
@@ -74,19 +62,13 @@ const ChatInbox: React.FC = () => {
 
   useEffect(() => {
     const container = messagesEndRef.current?.parentElement;
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
+    if (container) container.scrollTop = container.scrollHeight;
   }, [messages]);
 
-  // ─── Helpers ──────────────────────────────────────────────────────
   const getOtherParticipant = (conv: any) => {
     const currentUserId = user?._id || user?.id;
     const buyerId = conv?.buyerId?._id || conv?.buyerId;
-
-    if (buyerId?.toString() === currentUserId?.toString()) {
-      return conv?.supplierId;
-    }
+    if (buyerId?.toString() === currentUserId?.toString()) return conv?.supplierId;
     return conv?.buyerId;
   };
 
@@ -95,18 +77,16 @@ const ChatInbox: React.FC = () => {
   const filteredConversations = conversations.filter((conv) => {
     const other = getOtherParticipant(conv);
     const otherName = other?.name || 'User';
-    const matchesSearch = otherName.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === 'all' || getUnread(conv) > 0;
-    return matchesSearch && matchesFilter;
+    return (
+      otherName.toLowerCase().includes(search.toLowerCase()) &&
+      (filter === 'all' || getUnread(conv) > 0)
+    );
   });
 
   const handleSelectConv = (conv: any) => {
     setActiveConv(conv);
     setInputText('');
-    setQuoteForm(prev => ({
-      ...prev,
-      itemName: conv.productId?.name || ''
-    }));
+    setQuoteForm(prev => ({ ...prev, itemName: conv.productId?.name || '' }));
   };
 
   const handleSend = () => {
@@ -123,22 +103,17 @@ const ChatInbox: React.FC = () => {
     if (!activeConv) return;
     const other = getOtherParticipant(activeConv);
     const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
-
     try {
       await quotationApi.createQuotation({
         conversationId: activeConv._id,
-        buyerId: buyerId,
-        items: [{
-          name: quoteForm.itemName,
-          quantity: quoteForm.quantity,
-          price: quoteForm.price
-        }],
+        buyerId,
+        items: [{ name: quoteForm.itemName, quantity: quoteForm.quantity, price: quoteForm.price }],
         totalAmount: quoteForm.quantity * quoteForm.price,
         shippingCost: quoteForm.shipping,
         terms: quoteForm.terms
       });
       setIsQuoteModalOpen(false);
-      loadMessages(); // Refresh messages to show quotation
+      loadMessages();
       toast.success('Quotation sent successfully!');
     } catch (err) {
       console.error('Failed to create quotation', err);
@@ -152,8 +127,6 @@ const ChatInbox: React.FC = () => {
       const { order } = await quotationApi.acceptQuotation(quoteId);
       loadMessages();
       toast.success('Order created!', { id: loadingToast });
-
-      // Initialize Razorpay Payment
       handlePayment(order._id);
     } catch (err: any) {
       console.error('Failed to accept quote', err);
@@ -165,13 +138,6 @@ const ChatInbox: React.FC = () => {
     const loadingToast = toast.loading('Initializing payment...');
     try {
       const data = await paymentApi.createOrder(orderId);
-
-      console.log('💳 [Razorpay] Opening checkout with options:', JSON.stringify({
-        amount: data.amount,
-        currency: data.currency,
-        order_id: data.razorpayOrderId
-      }, null, 2));
-
       const options = {
         key: data.keyId,
         amount: data.amount,
@@ -199,13 +165,10 @@ const ChatInbox: React.FC = () => {
           email: data.prefill?.email || user?.email,
           contact: data.prefill?.contact || user?.phone || user?.phoneNumber || user?.contact
         },
-        theme: {
-          color: '#ff4d4d'
-        }
+        theme: { color: '#ff4d4d' }
       };
-
       const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function (response: any) {
+      rzp.on('payment.failed', (response: any) => {
         toast.error('Payment failed: ' + response.error.description);
       });
       rzp.open();
@@ -225,7 +188,6 @@ const ChatInbox: React.FC = () => {
     }
   };
 
-  // ─── Sub-Components ──────────────────────────────────────────────
   const QuotationCard = ({ msg }: { msg: any }) => {
     const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
     const [quote, setQuote] = useState<any>(null);
@@ -236,91 +198,127 @@ const ChatInbox: React.FC = () => {
       }
     }, [msg.quotationId]);
 
-    if (!quote) return <div className={styles.messageText}>Loading quotation...</div>;
+    if (!quote) return <div className="text-xs text-[#94a3b8] italic">Loading quotation...</div>;
+
+    const statusCls: Record<string, string> = {
+      pending: 'bg-[#fffbeb] text-[#a16207]',
+      accepted: 'bg-[#ecfdf5] text-[#059669]',
+      rejected: 'bg-[#fef2f2] text-[#dc2626]',
+      ordered: 'bg-[#eff6ff] text-[#0369a1]',
+    };
 
     return (
-      <div className={styles.quotationCard}>
-        <div className={styles.quotationHeader}>
-          <h4>Quotation</h4>
-          <span className={styles.quotationStatus}>{quote.status}</span>
+      <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden min-w-[260px] max-w-[340px]">
+        <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
+          <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusCls[quote.status] || 'bg-[#f1f5f9] text-[#475569]'}`}>{quote.status}</span>
         </div>
-        <div className={styles.quotationItems}>
+        <div className="px-4 py-3 flex flex-col gap-2">
           {quote.items.map((item: any, i: number) => (
-            <div key={i} className={styles.quotationItem}>
+            <div key={i} className="flex justify-between text-xs text-[#475569]">
               <span>{item.name} x {item.quantity}</span>
-              <span>₹{item.price * item.quantity}</span>
+              <span className="font-semibold">₹{item.price * item.quantity}</span>
             </div>
           ))}
-          <div className={styles.quotationItem}>
+          <div className="flex justify-between text-xs text-[#475569]">
             <span>Shipping</span>
-            <span>₹{quote.shippingCost}</span>
+            <span className="font-semibold">₹{quote.shippingCost}</span>
           </div>
-        </div>
-        <div className={styles.quotationTotal}>
-          <span>Total</span>
-          <span>₹{quote.totalAmount + quote.shippingCost}</span>
+          <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
+            <span>Total</span>
+            <span>₹{quote.totalAmount + quote.shippingCost}</span>
+          </div>
         </div>
         {!isMine && quote.status === 'pending' && (
-          <div className={styles.quotationActions}>
-            <button className={styles.acceptBtn} onClick={() => handleAcceptQuote(quote._id)}>Accept & Order</button>
-            <button className={styles.rejectBtn} onClick={() => handleRejectQuote(quote._id)}>Reject</button>
+          <div className="flex gap-2 px-4 pb-3">
+            <button className="flex-1 py-2 text-xs font-bold text-white bg-[#059669] rounded-[6px] border-none cursor-pointer hover:bg-[#047857]" onClick={() => handleAcceptQuote(quote._id)}>
+              Accept & Order
+            </button>
+            <button className="flex-1 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]" onClick={() => handleRejectQuote(quote._id)}>
+              Reject
+            </button>
           </div>
         )}
         {quote.status === 'accepted' && (
-          <div className={styles.paymentBadge}>
-            Quotation Accepted. Waiting for Payment...
-            {!isMine && <button className={styles.payNowInlineBtn} onClick={() => handlePayment(quote.orderId?._id || quote.orderId)}>Pay Now</button>}
-          </div>
-        )}
-        {quote.status === 'accepted' && (
-          <div className={styles.paymentBadge}>
-            Quotation Accepted. Waiting for Payment...
-            {!isMine && <button className={styles.payNowInlineBtn} onClick={() => handlePayment(quote.orderId?._id || quote.orderId)}>Pay Now</button>}
+          <div className="px-4 pb-3 flex items-center justify-between gap-2 text-xs text-[#64748b]">
+            <span>Accepted — Waiting for payment</span>
+            {!isMine && (
+              <button className="text-xs font-bold text-white bg-primary px-3 py-1.5 rounded-[6px] border-none cursor-pointer hover:opacity-90" onClick={() => handlePayment(quote.orderId?._id || quote.orderId)}>
+                Pay Now
+              </button>
+            )}
           </div>
         )}
         {quote.status === 'ordered' && (
-          <div className={styles.orderBadge}>Order Created ✅</div>
+          <div className="px-4 pb-3 text-xs font-bold text-[#059669]">Order Created ✅</div>
         )}
       </div>
     );
   };
 
-  // ─── Render ───────────────────────────────────────────────────────
   return (
-    <div className={styles.page}>
-      {/* ── Left: List ── */}
-      <aside className={styles.sidebar} data-chat-active={!!activeConv}>
-        <div className={styles.sidebarHeader}>
-          <h1>Messages</h1>
-          <div className={styles.searchBar}>
-            <Search size={14} />
-            <input placeholder="Search chats…" value={search} onChange={(e) => setSearch(e.target.value)} />
+    <div className="flex h-full bg-white overflow-hidden">
+      <aside
+        className={`w-[300px] max-lg:w-full border-r border-[#f1f5f9] flex flex-col shrink-0 ${activeConv ? 'max-lg:hidden' : ''}`}
+      >
+        <div className="px-6 pt-10 pb-4 border-b border-[#f1f5f9]">
+          <h1 className="text-xl font-extrabold text-[#0f172a] m-0 mb-4">Messages</h1>
+          <div className="flex items-center gap-2 border border-[#e2e8f0] rounded-[8px] px-3 py-2 focus-within:border-primary bg-[#f8fafc]">
+            <Search size={14} className="text-[#94a3b8] shrink-0" />
+            <input
+              className="border-none outline-none text-sm bg-transparent flex-1 text-[#1e293b] placeholder:text-[#94a3b8]"
+              placeholder="Search chats…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
         </div>
-        <div className={styles.filterTabs}>
-          <button className={filter === 'all' ? styles.filterTabActive : styles.filterTab} onClick={() => setFilter('all')}>All</button>
-          <button className={filter === 'unread' ? styles.filterTabActive : styles.filterTab} onClick={() => setFilter('unread')}>Unread</button>
+
+        <div className="flex border-b border-[#f1f5f9]">
+          {(['all', 'unread'] as Filter[]).map(f => (
+            <button
+              key={f}
+              className={`flex-1 py-2.5 text-xs font-bold capitalize cursor-pointer border-none transition-colors ${filter === f ? 'text-primary border-b-2 border-primary bg-[#fff7ed]' : 'text-[#94a3b8] bg-transparent hover:text-[#475569]'}`}
+              onClick={() => setFilter(f)}
+            >
+              {f}
+            </button>
+          ))}
         </div>
-        <div className={styles.convList}>
+
+        <div className="flex-1 overflow-y-auto">
           {filteredConversations.length === 0 ? (
-            <div className={styles.emptyList}>No conversations yet.</div>
+            <div className="flex flex-col items-center justify-center py-12 text-[#94a3b8] gap-2">
+              <Inbox size={32} strokeWidth={1.5} />
+              <p className="text-xs m-0">No conversations yet.</p>
+            </div>
           ) : (
             filteredConversations.map((conv) => {
               const other = getOtherParticipant(conv);
               const unread = getUnread(conv);
               const isActive = activeConv?._id === conv._id;
               return (
-                <div key={conv._id} className={`${styles.convItem} ${isActive ? styles.convItemActive : ''}`} onClick={() => handleSelectConv(conv)}>
-                  <div className={styles.avatar}>{other?.name?.[0]?.toUpperCase() || '?'}</div>
-                  <div className={styles.convMeta}>
-                    {conv.productId?.name && <span className={styles.productTag}>{conv.productId.name}</span>}
-                    <div className={styles.convName}>
-                      <span>{other?.name || 'User'}</span>
-                      <span className={styles.convTime}>{new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <div
+                  key={conv._id}
+                  className={`flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors border-b border-[#f8fafc] ${isActive ? 'bg-[#fff7ed]' : 'hover:bg-[#f8fafc]'}`}
+                  onClick={() => handleSelectConv(conv)}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold shrink-0 ${isActive ? 'bg-primary text-white' : 'bg-[#f1f5f9] text-[#475569]'}`}>
+                    {other?.name?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {conv.productId?.name && (
+                      <span className="text-[10px] font-bold text-primary bg-[#fff7ed] px-1.5 py-0.5 rounded-full">{conv.productId.name}</span>
+                    )}
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-sm font-semibold text-[#0f172a] truncate">{other?.name || 'User'}</span>
+                      <span className="text-[10px] text-[#94a3b8] shrink-0">{new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div className={styles.convPreview}>
-                      <span className={styles.previewText}>{conv.lastMessage || 'Start of conversation'}</span>
-                      {unread > 0 && <span className={styles.unreadBadge}>{unread}</span>}
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-xs text-[#94a3b8] truncate">{conv.lastMessage || 'Start of conversation'}</span>
+                      {unread > 0 && (
+                        <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0">{unread}</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -330,90 +328,123 @@ const ChatInbox: React.FC = () => {
         </div>
       </aside>
 
-      {/* ── Right: Thread ── */}
-      <main className={styles.chatPanel} data-chat-active={!!activeConv}>
+      <main className={`flex-1 flex flex-col min-w-0 ${!activeConv ? 'max-lg:hidden' : ''}`}>
         {!activeConv ? (
-          <div className={styles.noChat}>
-            <div className={styles.emptyStateCard}>
-              <div className={styles.emptyStateIcon}><Inbox size={40} strokeWidth={1.5} /></div>
-              <h3>Your Messages</h3>
-              <p>Select a conversation from the list to view chat history and start messaging.</p>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3 text-center p-8">
+              <div className="w-16 h-16 bg-[#f1f5f9] rounded-full flex items-center justify-center text-[#94a3b8]">
+                <Inbox size={32} strokeWidth={1.5} />
+              </div>
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0">Your Messages</h3>
+              <p className="text-sm text-[#64748b] m-0 max-w-[300px]">Select a conversation from the list to view chat history and start messaging.</p>
             </div>
           </div>
         ) : (
           <>
-            <div className={styles.chatHeader}>
-              <button className={styles.mobileBackBtn} onClick={() => setActiveConv(null)} style={{ border: 'none', background: 'none', marginRight: '10px', display: 'none' }}><ArrowLeft size={20} /></button>
-              <div className={styles.avatar}>{getOtherParticipant(activeConv)?.name?.[0]?.toUpperCase() || '?'}</div>
-              <div className={styles.chatHeaderInfo}>
-                <span className={styles.chatHeaderName}>{getOtherParticipant(activeConv)?.name || 'User'}</span>
-                <span className={styles.chatHeaderSub}>{isTyping ? 'Typing…' : activeConv.productId?.name ? `Context: ${activeConv.productId.name}` : 'Active chat'}</span>
+            <div className="flex items-center gap-3 px-6 pt-10 pb-5 border-b border-[#f1f5f9] bg-white">
+              <button className="lg:hidden w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f1f5f9] text-[#475569] border-none cursor-pointer bg-transparent" onClick={() => setActiveConv(null)}>
+                <ArrowLeft size={18} />
+              </button>
+              <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-extrabold shrink-0">
+                {getOtherParticipant(activeConv)?.name?.[0]?.toUpperCase() || '?'}
               </div>
-
-              {/* Only show "Send Quote" if user is a supplier (role check) */}
+              <div className="flex-1">
+                <div className="text-sm font-bold text-[#0f172a]">{getOtherParticipant(activeConv)?.name || 'User'}</div>
+                <div className="text-xs text-[#94a3b8]">{isTyping ? 'Typing…' : activeConv.productId?.name ? `Context: ${activeConv.productId.name}` : 'Active chat'}</div>
+              </div>
               {user?.role === 'supplier' && (
-                <button className={styles.quoteBtn} onClick={() => setIsQuoteModalOpen(true)}>
-                  <FileText size={16} /> Send Quotation
+                <button
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5]"
+                  onClick={() => setIsQuoteModalOpen(true)}
+                >
+                  <FileText size={14} /> Send Quotation
                 </button>
               )}
             </div>
 
-            <div className={styles.chatMessages}>
-              {messages.map((msg, idx) => (
-                <div key={msg._id || idx} className={`${styles.message} ${(msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString() ? styles.sent : styles.received}`}>
-                  {msg.messageType === 'quotation' ? (
-                    <QuotationCard msg={msg} />
-                  ) : (
-                    <div className={styles.messageText}>{msg.text}</div>
-                  )}
-                  {(msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString() && (
-                    <div className={styles.messageStatus}>
-                      {msg.isRead ? <CheckCheck size={14} className={styles.readIcon} /> : <Check size={14} className={styles.sentIcon} />}
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 bg-[#f8fafc]">
+              {messages.map((msg, idx) => {
+                const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
+                return (
+                  <div key={msg._id || idx} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                    {msg.messageType === 'quotation' ? (
+                      <QuotationCard msg={msg} />
+                    ) : (
+                      <div className={`max-w-[70%] px-4 py-2.5 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
+                        {msg.text}
+                      </div>
+                    )}
+                    {isMine && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {msg.isRead
+                          ? <CheckCheck size={13} className="text-[#38bdf8]" />
+                          : <Check size={13} className="text-[#94a3b8]" />}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
 
-            <div className={styles.chatInputBar}>
-              <input type="text" placeholder="Type your message…" value={inputText} onChange={(e) => { setInputText(e.target.value); handleTyping(e.target.value.length > 0); }} onKeyDown={(e) => e.key === 'Enter' && handleSend()} />
-              <button className={styles.sendBtn} onClick={handleSend} disabled={!inputText.trim()}><Send size={17} /></button>
+            <div className="flex items-center gap-3 px-4 py-3 border-t border-[#f1f5f9] bg-white">
+              <input
+                type="text"
+                placeholder="Type your message…"
+                value={inputText}
+                onChange={e => { setInputText(e.target.value); handleTyping(e.target.value.length > 0); }}
+                onKeyDown={e => e.key === 'Enter' && handleSend()}
+                className="flex-1 border border-[#e2e8f0] rounded-[8px] px-4 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary bg-[#f8fafc]"
+              />
+              <button
+                className="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-full border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                onClick={handleSend}
+                disabled={!inputText.trim()}
+              >
+                <Send size={16} />
+              </button>
             </div>
           </>
         )}
       </main>
 
-      {/* ── Quotation Modal ── */}
       {isQuoteModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h2>Send Quotation</h2>
-            <div className={styles.formGroup}>
-              <label>Item Name</label>
-              <input type="text" value={quoteForm.itemName} onChange={(e) => setQuoteForm({ ...quoteForm, itemName: e.target.value })} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <div className={styles.formGroup} style={{ flex: 1 }}>
-                <label>Quantity</label>
-                <input type="number" value={quoteForm.quantity} onChange={(e) => setQuoteForm({ ...quoteForm, quantity: Number(e.target.value) })} />
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-50 flex items-center justify-center px-4" onClick={() => setIsQuoteModalOpen(false)}>
+          <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[440px]" onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">Send Quotation</h2>
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className={labelCls}>Item Name</label>
+                <input type="text" value={quoteForm.itemName} onChange={e => setQuoteForm({ ...quoteForm, itemName: e.target.value })} className={inputCls} />
               </div>
-              <div className={styles.formGroup} style={{ flex: 1 }}>
-                <label>Unit Price (₹)</label>
-                <input type="number" value={quoteForm.price} onChange={(e) => setQuoteForm({ ...quoteForm, price: Number(e.target.value) })} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Quantity</label>
+                  <input type="number" value={quoteForm.quantity} onChange={e => setQuoteForm({ ...quoteForm, quantity: Number(e.target.value) })} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Unit Price (₹)</label>
+                  <input type="number" value={quoteForm.price} onChange={e => setQuoteForm({ ...quoteForm, price: Number(e.target.value) })} className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Shipping Cost (₹)</label>
+                <input type="number" value={quoteForm.shipping} onChange={e => setQuoteForm({ ...quoteForm, shipping: Number(e.target.value) })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Terms & Conditions</label>
+                <textarea rows={3} value={quoteForm.terms} onChange={e => setQuoteForm({ ...quoteForm, terms: e.target.value })} className={inputCls + " resize-none"} />
               </div>
             </div>
-            <div className={styles.formGroup}>
-              <label>Shipping Cost (₹)</label>
-              <input type="number" value={quoteForm.shipping} onChange={(e) => setQuoteForm({ ...quoteForm, shipping: Number(e.target.value) })} />
-            </div>
-            <div className={styles.formGroup}>
-              <label>Terms & Conditions</label>
-              <textarea rows={3} value={quoteForm.terms} onChange={(e) => setQuoteForm({ ...quoteForm, terms: e.target.value })} />
-            </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.cancelBtn} onClick={() => setIsQuoteModalOpen(false)}>Cancel</button>
-              <button className={styles.submitBtn} onClick={handleCreateQuotation}>Send Quote</button>
+
+            <div className="flex gap-3 justify-end mt-5">
+              <button className="px-4 py-2 text-sm font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f1f5f9]" onClick={() => setIsQuoteModalOpen(false)}>
+                Cancel
+              </button>
+              <button className="px-4 py-2 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90" onClick={handleCreateQuotation}>
+                Send Quote
+              </button>
             </div>
           </div>
         </div>

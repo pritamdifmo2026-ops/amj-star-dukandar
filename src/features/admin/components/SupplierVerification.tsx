@@ -1,26 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink } from 'lucide-react';
-import styles from '../pages/AdminDashboard.module.css';
-import adminService from '../services/admin.service';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import Pagination from '@/shared/components/ui/Pagination';
+import { useSupplierProducts } from '../hooks/useSupplierProducts';
+
+import type { AdminSupplier } from '../types/admin.types';
 
 interface SupplierVerificationProps {
-  suppliers: any[];
-  onVerify: (id: string, status: 'VERIFIED' | 'REJECTED') => Promise<void>;
+  suppliers: AdminSupplier[];
+  onVerify: (id: string, status: 'VERIFIED' | 'REJECTED') => void;
+  onVerifyProduct: (id: string, status: 'APPROVED' | 'REJECTED') => void;
 }
 
-interface SupplierTableProps {
-  title: string;
-  suppliers: any[];
-  onVerify: (id: string, status: 'VERIFIED' | 'REJECTED') => Promise<void>;
-  onView: (supplierId: string) => void;
+const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9]";
+const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
+
+const DetailItem = ({ label, children, span2 = false }: { label: string; children: React.ReactNode; span2?: boolean }) => (
+  <div className={span2 ? 'col-span-2 max-sm:col-span-1' : ''}>
+    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">{label}</label>
+    <div className="text-sm text-[#1e293b] font-medium">{children}</div>
+  </div>
+);
+
+const SupplierTable: React.FC<{
+  title: string; suppliers: AdminSupplier[];
+  onVerify: (id: string, status: 'VERIFIED' | 'REJECTED') => void;
+  onView: (id: string) => void;
   showActions?: boolean;
-}
-
-const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerify, onView, showActions }) => {
+}> = ({ title, suppliers, onVerify, onView, showActions }) => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
@@ -30,206 +39,141 @@ const SupplierTable: React.FC<SupplierTableProps> = ({ title, suppliers, onVerif
     s.businessDetails?.ownerName?.toLowerCase().includes(search.toLowerCase()) ||
     s.phone?.includes(search)
   );
-
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   return (
-    <div className={styles.tableSection}>
-      <div className={styles.tableHeaderRow}>
-        <h3 className={styles.tableTitle}>{title} ({filtered.length})</h3>
-        <div className={styles.tableSearch}>
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder={`Search ${title.toLowerCase()}...`}
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          />
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+        <h3 className="text-base font-extrabold text-[#0f172a] m-0">{title} ({filtered.length})</h3>
+        <div className="flex items-center gap-2 border border-[#e2e8f0] rounded-[8px] px-3 py-2 bg-white focus-within:border-primary min-w-[200px]">
+          <Search size={14} className="text-[#94a3b8] shrink-0" />
+          <input className="border-none outline-none text-sm bg-transparent flex-1 text-[#1e293b] placeholder:text-[#94a3b8]" type="text" placeholder={`Search ${title.toLowerCase()}...`} value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
         </div>
       </div>
-
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Business Name</th>
-              <th>Owner</th>
-              <th>Contact</th>
-              <th>Status</th>
-              <th>Tier</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginated.map(s => (
-              <tr key={s._id}>
-                <td data-label="Business Name">{s.businessName}</td>
-                <td data-label="Owner">{s.businessDetails?.ownerName || s.userId?.name || 'N/A'}</td>
-                <td data-label="Contact">{s.phone}</td>
-                <td data-label="Status">
-                  <span className={`${styles.statusBadge} ${s.kycStatus === 'VERIFIED' ? styles.statusVerified : styles.statusPending}`}>
-                    {s.kycStatus}
-                  </span>
-                </td>
-                <td data-label="Tier"><span className={styles.badge}>{s.tier}</span></td>
-                <td data-label="Actions" className={styles.actions}>
-                  <button onClick={() => onView(s._id)} className={styles.viewTextBtn}>View</button>
-                  {showActions && s.kycStatus === 'PENDING' && (
-                    <>
-                      <button onClick={() => onVerify(s._id, 'VERIFIED')} className={styles.approveBtn} title="Verify">
-                        <CheckCircle size={18} />
-                      </button>
-                      <button
-                        onClick={() => onVerify(s._id, 'REJECTED')}
-                        className={styles.rejectBtn}
-                        title="Reject"
-                      >
-                        <XCircle size={18} />
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={6} className={styles.empty}>No {title.toLowerCase()} found</td></tr>
-            )}
-          </tbody>
-        </table>
+      <div className="bg-white rounded-[10px] border border-[#eef2f6] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>{['Business Name', 'Owner', 'Contact', 'Status', 'Tier', 'Actions'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {paginated.map(s => (
+                <tr key={s._id} className="hover:bg-[#fafbfc]">
+                  <td className={tdCls + " font-semibold text-[#0f172a]"}>{s.businessName}</td>
+                  <td className={tdCls}>{s.businessDetails?.ownerName || s.userId?.name || 'N/A'}</td>
+                  <td className={tdCls}>{s.phone}</td>
+                  <td className={tdCls}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.kycStatus === 'VERIFIED' ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#fffbeb] text-[#a16207]'}`}>{s.kycStatus}</span>
+                  </td>
+                  <td className={tdCls}><span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{s.tier}</span></td>
+                  <td className={tdCls}>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => onView(s._id)} className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">View</button>
+                      {showActions && s.kycStatus === 'PENDING' && (
+                        <>
+                          <button onClick={() => onVerify(s._id, 'VERIFIED')} className="w-7 h-7 rounded-full bg-[#ecfdf5] text-[#059669] flex items-center justify-center border-none cursor-pointer hover:bg-[#d1fae5]" title="Verify"><CheckCircle size={15} /></button>
+                          <button onClick={() => onVerify(s._id, 'REJECTED')} className="w-7 h-7 rounded-full bg-[#fef2f2] text-[#dc2626] flex items-center justify-center border-none cursor-pointer hover:bg-[#fee2e2]" title="Reject"><XCircle size={15} /></button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-[#64748b]">No {title.toLowerCase()} found</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <Pagination totalItems={filtered.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={page} onPageChange={setPage} />
       </div>
-
-      <Pagination 
-        totalItems={filtered.length}
-        itemsPerPage={ITEMS_PER_PAGE}
-        currentPage={page}
-        onPageChange={setPage}
-        styles={styles}
-      />
     </div>
   );
 };
 
-const SupplierProducts: React.FC<{ supplierId: string; businessName: string; onBack: () => void }> = ({ supplierId, businessName, onBack }) => {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; productId: string; name: string } | null>(null);
+const SupplierProducts: React.FC<{ 
+  supplierId: string; 
+  businessName: string; 
+  onBack: () => void;
+  onVerifyProduct: (id: string, status: 'APPROVED' | 'REJECTED') => void;
+}> = ({ supplierId, businessName, onBack, onVerifyProduct }) => {
+  const { products, loading, refreshProducts } = useSupplierProducts(supplierId);
+  const [confirmModal, setConfirmModal] = useState<{ productId: string; name: string; action: 'APPROVED' | 'REJECTED' } | null>(null);
 
-  const fetchProducts = async () => {
-    try {
-      const data = await adminService.getSupplierProducts(supplierId);
-      setProducts(data);
-    } catch (err) {
-      console.error('Failed to fetch supplier products');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, [supplierId]);
-
-  const handleApprove = async () => {
+  const handleAction = async () => {
     if (!confirmModal) return;
-    try {
-      await adminService.verifyProduct(confirmModal.productId, 'APPROVED');
-      setConfirmModal(null);
-      fetchProducts();
-    } catch (err) {
-      alert('Failed to approve product');
+    try { 
+      await onVerifyProduct(confirmModal.productId, confirmModal.action); 
+      setConfirmModal(null); 
+      refreshProducts(); 
+    } catch { 
+      console.error(`Failed to ${confirmModal.action.toLowerCase()} product`); 
     }
   };
 
   return (
-    <div className={styles.detailPage}>
-      <div className={styles.detailHeader}>
-        <button onClick={onBack} className={styles.backLink}>
-          <ChevronLeft size={20} /> Back to Profile
+    <div>
+      <div className="flex items-center justify-between mb-5">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-semibold text-[#475569] bg-transparent border-none cursor-pointer hover:text-[#1e293b] p-0">
+          <ChevronLeft size={18} /> Back to Profile
         </button>
-        <h2 className={styles.tableTitle} style={{ fontSize: '16px' }}>Products by {businessName}</h2>
+        <h2 className="text-base font-extrabold text-[#0f172a] m-0">Products by {businessName}</h2>
       </div>
-
       {loading ? (
-        <div className={styles.loader}>Loading products...</div>
+        <div className="py-8 text-center text-sm text-[#64748b]">Loading products...</div>
       ) : (
-        <div className={styles.tableSection}>
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
+        <div className="bg-white rounded-[10px] border border-[#eef2f6] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead><tr>{['Product', 'Category', 'Price', 'Status', 'Actions'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr></thead>
               <tbody>
                 {products.map(p => (
-                  <tr key={p._id}>
-                    <td data-label="Product">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {p.images?.[0] && <img src={p.images[0]} alt="" style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover' }} />}
-                        <span>{p.name}</span>
+                  <tr key={p._id} className="hover:bg-[#fafbfc]">
+                    <td className={tdCls}>
+                      <div className="flex items-center gap-3">
+                        {p.images?.[0] && <img src={p.images[0]} alt="" className="w-10 h-10 rounded-[4px] object-cover" />}
+                        <span className="font-semibold">{p.name}</span>
                       </div>
                     </td>
-                    <td data-label="Category">{p.category}</td>
-                    <td data-label="Price">₹{p.basePrice}/{p.unit}</td>
-                    <td data-label="Status">
-                      <span className={`${styles.statusBadge} ${p.status === 'APPROVED' ? styles.statusVerified : styles.statusPending}`}>
-                        {p.status}
-                      </span>
+                    <td className={tdCls}>{p.category}</td>
+                    <td className={tdCls}>₹{p.basePrice}/{p.unit}</td>
+                    <td className={tdCls}>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${p.status === 'APPROVED' ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#fffbeb] text-[#a16207]'}`}>{p.status}</span>
                     </td>
-                    <td data-label="Actions" className={styles.actions}>
-                      {p.status === 'PENDING' && (
-                        <button onClick={() => setConfirmModal({ isOpen: true, productId: p._id, name: p.name })} className={styles.approveBtn} title="Approve">
-                          <CheckCircle size={18} />
-                        </button>
-                      )}
-                      {p.status === 'APPROVED' && (
-                        <a href={`/products/${p._id}`} target="_blank" rel="noreferrer" className={styles.viewTextBtn} title="View on website">
-                          <ExternalLink size={16} />
-                        </a>
-                      )}
+                    <td className={tdCls}>
+                      <div className="flex items-center gap-2">
+                        {p.status === 'PENDING' && (
+                          <>
+                            <button onClick={() => setConfirmModal({ productId: p._id, name: p.name, action: 'APPROVED' })} className="w-7 h-7 rounded-full bg-[#ecfdf5] text-[#059669] flex items-center justify-center border-none cursor-pointer" title="Approve"><CheckCircle size={15} /></button>
+                            <button onClick={() => setConfirmModal({ productId: p._id, name: p.name, action: 'REJECTED' })} className="w-7 h-7 rounded-full bg-[#fef2f2] text-[#dc2626] flex items-center justify-center border-none cursor-pointer" title="Reject"><XCircle size={15} /></button>
+                          </>
+                        )}
+                        {p.status === 'APPROVED' && (
+                          <a href={`/products/${p._id}`} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center"><ExternalLink size={15} /></a>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
-                {products.length === 0 && (
-                  <tr><td colSpan={5} className={styles.empty}>No products found for this supplier</td></tr>
-                )}
+                {products.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b]">No products found for this supplier</td></tr>}
               </tbody>
             </table>
           </div>
         </div>
       )}
-
       {confirmModal && (
-        <Modal 
-          isOpen={confirmModal.isOpen} 
-          onClose={() => setConfirmModal(null)}
-          title="Verify Product"
-        >
-          <div style={{ textAlign: 'center', padding: '10px 0' }}>
-            <div style={{ 
-              width: '64px', 
-              height: '64px', 
-              backgroundColor: '#f0fdf4', 
-              color: '#16a34a', 
-              borderRadius: '50%', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              margin: '0 auto 20px' 
-            }}>
-              <CheckCircle size={32} />
+        <Modal isOpen={!!confirmModal} onClose={() => setConfirmModal(null)} title={confirmModal.action === 'APPROVED' ? 'Approve Product' : 'Reject Product'}>
+          <div className="text-center py-2">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5 ${confirmModal.action === 'APPROVED' ? 'bg-[#f0fdf4] text-[#16a34a]' : 'bg-[#fef2f2] text-[#dc2626]'}`}>
+              {confirmModal.action === 'APPROVED' ? <CheckCircle size={32} /> : <XCircle size={32} />}
             </div>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '10px' }}>Verify this product?</h3>
-            <p style={{ color: '#64748b', marginBottom: '24px', lineHeight: '1.5', fontSize: '14px' }}>
-              Do you want to verify this product? This will make the product <strong>{confirmModal.name}</strong> live on the website.
+            <h3 className="text-lg font-bold mb-2.5">{confirmModal.action === 'APPROVED' ? 'Approve' : 'Reject'} this product?</h3>
+            <p className="text-sm text-[#64748b] mb-6 leading-relaxed">
+              {confirmModal.action === 'APPROVED' ? <>This will make <strong>{confirmModal.name}</strong> live on the marketplace.</> : <>This will reject <strong>{confirmModal.name}</strong>. The supplier will need to revise and resubmit.</>}
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="grid grid-cols-2 gap-3">
               <Button variant="outline" onClick={() => setConfirmModal(null)}>Cancel</Button>
-              <Button onClick={handleApprove}>Confirm & Publish</Button>
+              <Button variant={confirmModal.action === 'APPROVED' ? 'primary' : 'danger'} onClick={handleAction}>
+                {confirmModal.action === 'APPROVED' ? 'Confirm & Publish' : 'Confirm Rejection'}
+              </Button>
             </div>
           </div>
         </Modal>
@@ -238,150 +182,88 @@ const SupplierProducts: React.FC<{ supplierId: string; businessName: string; onB
   );
 };
 
-const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, onVerify }) => {
+const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, onVerify, onVerifyProduct }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'suppliers';
   const supplierId = searchParams.get('id');
-
   const selectedSupplier = suppliers.find(s => s._id === supplierId);
-
   const pendingSuppliers = suppliers.filter(s => s.kycStatus === 'PENDING');
   const verifiedSuppliers = suppliers.filter(s => s.kycStatus === 'VERIFIED');
 
   if (activeTab === 'supplier-products' && selectedSupplier) {
-    return (
-      <SupplierProducts 
-        supplierId={selectedSupplier._id} 
-        businessName={selectedSupplier.businessName} 
-        onBack={() => setSearchParams({ tab: 'supplier-detail', id: selectedSupplier._id })} 
-      />
-    );
+    return <SupplierProducts supplierId={selectedSupplier._id} businessName={selectedSupplier.businessName} onBack={() => setSearchParams({ tab: 'supplier-detail', id: selectedSupplier._id })} onVerifyProduct={onVerifyProduct} />;
   }
 
   if (activeTab === 'supplier-detail' && selectedSupplier) {
     return (
-      <div className={styles.detailPage}>
-        <div className={styles.detailHeader}>
-          <button onClick={() => setSearchParams({ tab: 'suppliers' })} className={styles.backLink}>
-            <ChevronLeft size={20} /> Back to List
+      <div>
+        <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <button onClick={() => setSearchParams({ tab: 'suppliers' })} className="flex items-center gap-1.5 text-sm font-semibold text-[#475569] bg-transparent border-none cursor-pointer hover:text-[#1e293b] p-0">
+            <ChevronLeft size={18} /> Back to List
           </button>
-          <div className={styles.headerActions}>
+          <div className="flex items-center gap-2">
             {selectedSupplier.kycStatus === 'VERIFIED' && (
-              <button 
-                onClick={() => setSearchParams({ tab: 'supplier-products', id: selectedSupplier._id })} 
-                className={styles.viewProductsBtn}
-              >
-                <Package size={18} /> View Products
+              <button onClick={() => setSearchParams({ tab: 'supplier-products', id: selectedSupplier._id })} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#0369a1] bg-[#f0f9ff] border border-[#bae6fd] rounded-[8px] cursor-pointer hover:bg-[#e0f2fe]">
+                <Package size={16} /> View Products
               </button>
             )}
-            
             {selectedSupplier.kycStatus === 'PENDING' && (
               <>
-                <button
-                  className={styles.largeRejectBtn}
-                  onClick={() => onVerify(selectedSupplier._id, 'REJECTED')}
-                >
-                  <XCircle size={18} /> Reject
+                <button onClick={() => onVerify(selectedSupplier._id, 'REJECTED')} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[8px] cursor-pointer hover:bg-[#fee2e2]">
+                  <XCircle size={16} /> Reject
                 </button>
-                <button
-                  className={styles.verifyBtn}
-                  onClick={() => onVerify(selectedSupplier._id, 'VERIFIED')}
-                >
-                  <CheckCircle size={18} /> Verify Supplier
+                <button onClick={() => onVerify(selectedSupplier._id, 'VERIFIED')} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857]">
+                  <CheckCircle size={16} /> Verify Supplier
                 </button>
               </>
             )}
           </div>
         </div>
 
-        <div className={styles.detailCard}>
-          <div className={styles.detailSection}>
-            <div className={styles.sectionHeader}>
-              <ShieldCheck size={20} />
-              <h3>Business Verification Profile</h3>
-            </div>
-
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem}>
-                <label>Business Name</label>
-                <p>{selectedSupplier.businessName}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Owner Name</label>
-                <p>{selectedSupplier.businessDetails?.ownerName || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Contact Phone</label>
-                <p>{selectedSupplier.phone}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Email Address</label>
-                <p>{selectedSupplier.businessDetails?.email || selectedSupplier.userId?.email || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>GST Number</label>
-                <p>{selectedSupplier.businessDetails?.gstin || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Established</label>
-                <p>{selectedSupplier.businessDetails?.yearOfEstablishment || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Tier</label>
-                <span className={`${styles.badge} ${styles[selectedSupplier.tier]}`}>{selectedSupplier.tier}</span>
-              </div>
+        <div className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+          <div className="p-6 border-b border-[#f1f5f9]">
+            <div className="flex items-center gap-2 mb-4 text-primary"><ShieldCheck size={20} /><h3 className="text-base font-extrabold text-[#0f172a] m-0">Business Verification Profile</h3></div>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              <DetailItem label="Business Name">{selectedSupplier.businessName}</DetailItem>
+              <DetailItem label="Owner Name">{selectedSupplier.businessDetails?.ownerName || 'N/A'}</DetailItem>
+              <DetailItem label="Contact Phone">{selectedSupplier.phone}</DetailItem>
+              <DetailItem label="Email Address">{selectedSupplier.businessDetails?.email || selectedSupplier.userId?.email || 'N/A'}</DetailItem>
+              <DetailItem label="GST Number">{selectedSupplier.businessDetails?.gstin || 'N/A'}</DetailItem>
+              <DetailItem label="Established">{selectedSupplier.businessDetails?.yearOfEstablishment || 'N/A'}</DetailItem>
+              <DetailItem label="Tier"><span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{selectedSupplier.tier}</span></DetailItem>
             </div>
           </div>
-
-          <div className={styles.detailSection}>
-            <h3>Location & About</h3>
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem} style={{ gridColumn: 'span 2' }}>
-                <label>Full Address</label>
-                <p>
-                  {selectedSupplier.businessDetails?.address}, {selectedSupplier.businessDetails?.city},
-                  {selectedSupplier.businessDetails?.state} - {selectedSupplier.businessDetails?.pinCode}
-                </p>
-              </div>
-              <div className={styles.detailItem} style={{ gridColumn: 'span 2' }}>
-                <label>About Company</label>
-                <p className={styles.aboutText}>{selectedSupplier.businessDetails?.about || 'No description provided'}</p>
-              </div>
+          <div className="p-6 border-b border-[#f1f5f9]">
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Location & About</h3>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              <DetailItem label="Full Address" span2>
+                {selectedSupplier.businessDetails?.address}, {selectedSupplier.businessDetails?.city}, {selectedSupplier.businessDetails?.state} - {selectedSupplier.businessDetails?.pinCode}
+              </DetailItem>
+              <DetailItem label="About Company" span2>
+                <p className="text-sm text-[#475569] leading-relaxed m-0">{selectedSupplier.businessDetails?.about || 'No description provided'}</p>
+              </DetailItem>
             </div>
           </div>
-
           {selectedSupplier.businessDetails?.isFoodSupplier && (
-            <div className={styles.detailSection} style={{ border: '2px solid #ffedd5', background: '#fffaf5' }}>
-              <h3 style={{ color: '#ea580c' }}>🍴 FSSAI Compliance</h3>
-              <div className={styles.detailGrid}>
-                <div className={styles.detailItem}>
-                  <label>FSSAI License Number</label>
-                  <p className={styles.fssaiNumber}>{selectedSupplier.businessDetails.fssaiLicenseNumber}</p>
-                </div>
-                <div className={styles.detailItem}>
-                  <label>Verification Document</label>
+            <div className="p-6 border-2 border-[#ffedd5] bg-[#fffaf5] m-4 rounded-[10px]">
+              <h3 className="text-base font-extrabold text-[#ea580c] m-0 mb-4">FSSAI Compliance</h3>
+              <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+                <DetailItem label="FSSAI License Number"><span className="font-mono text-sm">{selectedSupplier.businessDetails.fssaiLicenseNumber}</span></DetailItem>
+                <DetailItem label="Verification Document">
                   {selectedSupplier.businessDetails.fssaiCertificate ? (
-                    <a
-                      href={selectedSupplier.businessDetails.fssaiCertificate}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.docLink}
-                    >
-                      <ShieldCheck size={18} /> View FSSAI Certificate
+                    <a href={selectedSupplier.businessDetails.fssaiCertificate} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary font-bold no-underline hover:underline text-sm">
+                      <ShieldCheck size={16} /> View FSSAI Certificate
                     </a>
-                  ) : (
-                    <p style={{ color: '#ef4444' }}>Document not uploaded</p>
-                  )}
-                </div>
+                  ) : <p className="text-[#ef4444] text-sm m-0">Document not uploaded</p>}
+                </DetailItem>
               </div>
             </div>
           )}
-
           {selectedSupplier.businessDetails?.isWomenEntrepreneur && (
-            <div className={styles.detailSection}>
-              <div className={styles.womenBadgeAdmin}>
+            <div className="p-4 m-4">
+              <span className="flex items-center gap-2 text-sm font-bold text-[#7c3aed] bg-[#f5f3ff] border border-[#ddd6fe] px-3 py-2 rounded-[8px] w-fit">
                 <ShieldCheck size={16} /> Registered as Woman-led Business
-              </div>
+              </span>
             </div>
           )}
         </div>
@@ -390,23 +272,10 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
   }
 
   return (
-    <div className={styles.verificationContainer}>
-      <SupplierTable
-        title="Pending Suppliers"
-        suppliers={pendingSuppliers}
-        onVerify={onVerify}
-        onView={(id) => setSearchParams({ tab: 'supplier-detail', id })}
-        showActions
-      />
-
-      <div style={{ margin: '40px 0', borderTop: '2px solid #e2e8f0' }} />
-
-      <SupplierTable
-        title="Approved Suppliers"
-        suppliers={verifiedSuppliers}
-        onVerify={onVerify}
-        onView={(id) => setSearchParams({ tab: 'supplier-detail', id })}
-      />
+    <div>
+      <SupplierTable title="Pending Suppliers" suppliers={pendingSuppliers} onVerify={onVerify} onView={id => setSearchParams({ tab: 'supplier-detail', id })} showActions />
+      <div className="my-8 border-t-2 border-[#e2e8f0]" />
+      <SupplierTable title="Approved Suppliers" suppliers={verifiedSuppliers} onVerify={onVerify} onView={id => setSearchParams({ tab: 'supplier-detail', id })} />
     </div>
   );
 };

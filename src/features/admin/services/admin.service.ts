@@ -1,108 +1,101 @@
 import api from '@/api/client';
-
-export interface AdminStats {
-  totalUsers: number;
-  totalSuppliers: number;
-  totalResellers: number;
-  pendingVerifications: number;
-  pendingResellers: number;
-  pendingProducts: number;
-  activeUsers: number;
-  totalProducts?: number;
-}
+import type { 
+  AdminStats, AdminSupplier, AdminReseller, 
+  AdminProduct, AdminUser, Banner 
+} from '../types/admin.types';
 
 const adminService = {
-  getStats: async () => {
+  getStats: async (): Promise<AdminStats> => {
     const response = await api.get('/admin/stats');
     return response.data.stats;
   },
 
-  getPendingSuppliers: async () => {
+  getPendingSuppliers: async (): Promise<AdminSupplier[]> => {
     const response = await api.get('/admin/suppliers/pending');
     return response.data.suppliers;
   },
 
-  getAllSuppliers: async () => {
+  getAllSuppliers: async (): Promise<AdminSupplier[]> => {
     const response = await api.get('/admin/suppliers/all');
     return response.data.suppliers;
   },
 
-  verifySupplier: async (id: string, status: 'VERIFIED' | 'REJECTED', reason?: string) => {
+  verifySupplier: async (id: string, status: 'VERIFIED' | 'REJECTED', reason?: string): Promise<AdminSupplier> => {
     const response = await api.patch(`/admin/suppliers/${id}/verify`, { status, reason });
     return response.data.supplier;
   },
 
-  getAllUsers: async () => {
+  getAllUsers: async (): Promise<AdminUser[]> => {
     const response = await api.get('/admin/users');
     return response.data.users;
   },
 
-  toggleUserStatus: async (id: string, isActive: boolean) => {
+  toggleUserStatus: async (id: string, isActive: boolean): Promise<AdminUser> => {
     const response = await api.patch(`/admin/users/${id}/status`, { isActive });
     return response.data.user;
   },
 
-  getPendingProducts: async () => {
+  getPendingProducts: async (): Promise<AdminProduct[]> => {
     const response = await api.get('/admin/products/pending');
     return response.data.products;
   },
   
-  getAllProducts: async () => {
+  getAllProducts: async (): Promise<AdminProduct[]> => {
     const response = await api.get('/admin/products/all');
     return response.data.products;
   },
 
-  verifyProduct: async (id: string, status: 'APPROVED' | 'REJECTED') => {
+  verifyProduct: async (id: string, status: 'APPROVED' | 'REJECTED'): Promise<AdminProduct> => {
     const response = await api.patch(`/admin/products/${id}/verify`, { status });
     return response.data.product;
   },
   
-  getPendingResellers: async () => {
+  getPendingResellers: async (): Promise<AdminReseller[]> => {
     const response = await api.get('/admin/resellers/pending');
     return response.data.resellers;
   },
 
-  getAllResellers: async () => {
+  getAllResellers: async (): Promise<AdminReseller[]> => {
     const response = await api.get('/admin/resellers/all');
     return response.data.resellers;
   },
 
-  verifyReseller: async (id: string, status: 'APPROVED' | 'REJECTED', reason?: string) => {
+  verifyReseller: async (id: string, status: 'APPROVED' | 'REJECTED', reason?: string): Promise<AdminReseller> => {
     const response = await api.patch(`/admin/resellers/${id}/verify`, { status, reason });
     return response.data.reseller;
   },
   
-  getSupplierProducts: async (id: string) => {
+  getSupplierProducts: async (id: string): Promise<AdminProduct[]> => {
     const response = await api.get(`/admin/suppliers/${id}/products`);
     return response.data.products;
   },
 
-  getAllBanners: async () => {
+  getAllBanners: async (): Promise<Banner[]> => {
     const response = await api.get('/banners');
     return response.data.data;
   },
 
-  getActiveBanners: async () => {
+  getActiveBanners: async (): Promise<Banner[]> => {
     const response = await api.get('/banners/active');
     return response.data.data;
   },
 
-  createBanner: async (data: any) => {
+  createBanner: async (data: Partial<Banner>): Promise<Banner> => {
     const response = await api.post('/banners', data);
     return response.data.data;
   },
 
-  updateBanner: async (id: string, data: any) => {
+  updateBanner: async (id: string, data: Partial<Banner>): Promise<Banner> => {
     const response = await api.put(`/banners/${id}`, data);
     return response.data.data;
   },
 
-  deleteBanner: async (id: string) => {
+  deleteBanner: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/banners/${id}`);
     return response.data;
   },
 
-  uploadImage: async (file: File) => {
+  uploadImage: async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('image', file);
     const response = await api.post('/upload/image', formData, {

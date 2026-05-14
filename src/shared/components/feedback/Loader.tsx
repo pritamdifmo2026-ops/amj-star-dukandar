@@ -1,20 +1,27 @@
 import React from 'react';
 import LoadingPage from './LoadingPage';
-import styles from './Loader.module.css';
 
 interface LoaderProps {
   size?: 'sm' | 'md' | 'lg';
   fullPage?: boolean;
 }
 
+const sizeClasses = {
+  sm: 'w-[18px] h-[18px]',
+  md: 'w-8 h-8',
+  lg: 'w-12 h-12',
+};
+
 const Loader: React.FC<LoaderProps> = ({ size = 'md', fullPage = false }) => {
-  const spinner = <span className={[styles.spinner, styles[size]].join(' ')} />;
+  if (fullPage) return <LoadingPage />;
 
-  if (fullPage) {
-    return <LoadingPage />;
-  }
-
-  return <div className={styles.inline}>{spinner}</div>;
+  return (
+    <div className="flex items-center justify-center p-8">
+      <span
+        className={`inline-block rounded-full border-[3px] border-border border-t-primary animate-spin ${sizeClasses[size]}`}
+      />
+    </div>
+  );
 };
 
 export default Loader;

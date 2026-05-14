@@ -11,6 +11,9 @@ export interface ProductInput {
   subcategoryId?: string;
   hsnCode: string;
   images?: string[];
+  stock?: number;
+  brand?: string;
+  keywords?: string[];
   specifications?: Record<string, string>;
 }
 

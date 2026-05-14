@@ -8,7 +8,6 @@ import ErrorState from '@/shared/components/feedback/ErrorState';
 import EmptyState from '@/shared/components/feedback/EmptyState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
-import styles from './ProductList.module.css';
 
 const ProductList: React.FC = () => {
   const navigate = useNavigate();
@@ -16,60 +15,54 @@ const ProductList: React.FC = () => {
   const category = searchParams.get('category') || undefined;
   const subcategory = searchParams.get('subcategory') || undefined;
   const searchQuery = searchParams.get('search') || undefined;
-  
-  const { data, isLoading, isError, refetch } = useProducts({
-    category,
-    subcategory,
-    search: searchQuery,
-  });
 
+  const { data, isLoading, isError, refetch } = useProducts({ category, subcategory, search: searchQuery });
   const products = data?.data || [];
 
+  const controlBtnCls = "flex items-center gap-2 px-4 py-2 bg-surface border border-border rounded-[var(--radius-sm)] text-sm font-medium text-body cursor-pointer transition-all hover:border-primary hover:text-primary max-md:px-2 max-md:rounded-[8px]";
+
   return (
-    <div className={styles.page}>
+    <div className="min-h-screen flex flex-col bg-cream">
       <Navbar />
-      
-      <main className={styles.main}>
-        <div className={styles.container}>
-          {/* Filter Sidebar / Header */}
-          <div className={styles.header}>
-            <div className={styles.titleArea}>
-              <div className={styles.titleRow}>
-                <h1 className={styles.title}>
+
+      <main className="flex-1 py-8 pb-12">
+        <div className="w-full max-w-[var(--width-container)] mx-auto px-8">
+          <div className="flex items-end justify-between mb-8 pb-4 border-b border-border max-md:relative max-md:flex-col max-md:items-start max-md:pb-2 max-md:mb-6">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-heading">
                   {searchQuery ? `Results for "${searchQuery}"` : subcategory || category || 'All Products'}
                 </h1>
                 {(category || subcategory || searchQuery) && (
-                  <button 
-                    className={styles.clearBtn} 
+                  <button
                     onClick={() => navigate('/products')}
                     title="View All Products"
+                    className="flex items-center gap-1.5 bg-surface border border-primary text-primary px-3 py-1 rounded-[10px] text-xs font-semibold cursor-pointer transition-all hover:bg-primary hover:text-white max-md:px-1.5"
                   >
                     <X size={16} />
-                    <span>View All</span>
+                    <span className="max-md:hidden">View All</span>
                   </button>
                 )}
               </div>
-              <p className={styles.count}>{products.length} products found</p>
+              <p className="text-sm text-muted">{products.length} products found</p>
             </div>
-            
-            <div className={styles.controls}>
-              <button className={styles.controlBtn}>
+
+            <div className="flex gap-3 max-md:absolute max-md:top-1 max-md:right-0 max-md:gap-2">
+              <button className={controlBtnCls}>
                 <Filter size={16} />
-                <span>Filter</span>
+                <span className="max-md:hidden">Filter</span>
               </button>
-              <button className={styles.controlBtn}>
+              <button className={controlBtnCls}>
                 <SlidersHorizontal size={16} />
-                <span>Sort</span>
+                <span className="max-md:hidden">Sort</span>
               </button>
             </div>
           </div>
 
-          <div className={styles.content}>
-
-
-            <div className={styles.mainGrid}>
+          <div className="flex gap-8 items-start">
+            <div className="flex-1 min-h-[400px]">
               {isLoading ? (
-                <div className={styles.center}>
+                <div className="flex justify-center items-center py-20">
                   <Loader size="lg" />
                 </div>
               ) : isError ? (
@@ -77,7 +70,7 @@ const ProductList: React.FC = () => {
               ) : products.length === 0 ? (
                 <EmptyState title="No products found in this category." />
               ) : (
-                <div className={styles.grid}>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6 max-sm:grid-cols-2 max-sm:gap-3">
                   {products.map((product: any) => (
                     <ProductCard key={product._id || product.id} product={product} showAddToCart={false} />
                   ))}

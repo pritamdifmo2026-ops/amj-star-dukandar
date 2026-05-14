@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import adminService from '@/features/admin/services/admin.service';
-import styles from './BannerSlider.module.css';
 
 interface Banner {
   _id: string;
@@ -29,31 +28,20 @@ const BannerSlider: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchBanners();
+    adminService.getActiveBanners().then(data => setBanners(data)).catch(() => {}).finally(() => setLoading(false));
     updateDeviceType();
     window.addEventListener('resize', updateDeviceType);
     return () => window.removeEventListener('resize', updateDeviceType);
   }, [updateDeviceType]);
 
-  const fetchBanners = async () => {
-    try {
-      const data = await adminService.getActiveBanners();
-      setBanners(data);
-    } catch (error) {
-      console.error('Failed to fetch banners:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const nextSlide = useCallback(() => {
     if (banners.length === 0) return;
-    setCurrentSlide((prev) => (prev + 1) % banners.length);
+    setCurrentSlide(prev => (prev + 1) % banners.length);
   }, [banners.length]);
 
   const prevSlide = useCallback(() => {
     if (banners.length === 0) return;
-    setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
+    setCurrentSlide(prev => (prev - 1 + banners.length) % banners.length);
   }, [banners.length]);
 
   useEffect(() => {
@@ -62,39 +50,37 @@ const BannerSlider: React.FC = () => {
     return () => clearInterval(interval);
   }, [nextSlide, isHovering, banners.length]);
 
-  if (loading || banners.length === 0) {
-    return null;
-  }
+  if (loading || banners.length === 0) return null;
 
   return (
-    <div 
-      className={styles.sliderContainer}
+    <div
+      className="relative w-full h-[280px] max-lg:h-[220px] max-md:h-[180px] overflow-hidden bg-[#f8f9fa] my-4 mb-8 rounded-[8px] max-md:rounded-none max-md:my-0 shadow-[0_4px_20px_rgba(0,0,0,0.08)] group"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div 
-        className={styles.slider}
+      <div
+        className="flex w-full h-full transition-transform duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {banners.map((banner, index) => {
           const imageUrl = banner[`image${deviceType}` as keyof Banner] as string;
-          
+          const isActive = index === currentSlide;
+
           return (
-            <div 
-              key={banner._id} 
-              className={`${styles.slide} ${index === currentSlide ? styles.active : ''}`}
-            >
-              <img 
-                src={imageUrl} 
-                alt="Promotion Banner" 
-                className={styles.image} 
+            <div key={banner._id} className="min-w-full h-full relative flex items-center justify-center">
+              <img
+                src={imageUrl}
+                alt="Promotion Banner"
+                className={`w-full h-full object-cover transition-transform duration-[1500ms] ease-out ${isActive ? 'scale-105' : 'scale-100'}`}
               />
-              <div className={styles.overlay}>
-                <div className={styles.contentContainer}>
-                  <div className={styles.content}>
-                    {/* Title and Subtitle removed as requested */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent max-md:bg-gradient-to-t flex items-end justify-end p-6 z-[2]">
+                <div className="w-full max-w-[1200px] mx-auto px-8">
+                  <div className={`transition-all duration-[800ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
                     {banner.link && (
-                      <Link to={banner.link} className={styles.button}>
+                      <Link
+                        to={banner.link}
+                        className="inline-block px-5 py-2.5 max-md:px-3 max-md:py-1.5 bg-black text-white no-underline rounded-[8px] max-md:rounded-[6px] font-semibold text-[0.9rem] max-md:text-[0.75rem] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.2)] hover:bg-[#1a1a1a] hover:scale-105 border border-black"
+                      >
                         View Details
                       </Link>
                     )}
@@ -108,19 +94,25 @@ const BannerSlider: React.FC = () => {
 
       {banners.length > 1 && (
         <>
-          <button className={`${styles.arrow} ${styles.prev}`} onClick={prevSlide}>
+          <button
+            className="absolute top-1/2 -translate-y-1/2 left-5 bg-white/20 backdrop-blur-[8px] border-none w-[50px] h-[50px] rounded-full flex items-center justify-center text-white cursor-pointer z-10 transition-all opacity-0 group-hover:opacity-100 hover:bg-white/40 hover:scale-110 max-md:hidden"
+            onClick={prevSlide}
+          >
             <ChevronLeft size={30} />
           </button>
-          <button className={`${styles.arrow} ${styles.next}`} onClick={nextSlide}>
+          <button
+            className="absolute top-1/2 -translate-y-1/2 right-5 bg-white/20 backdrop-blur-[8px] border-none w-[50px] h-[50px] rounded-full flex items-center justify-center text-white cursor-pointer z-10 transition-all opacity-0 group-hover:opacity-100 hover:bg-white/40 hover:scale-110 max-md:hidden"
+            onClick={nextSlide}
+          >
             <ChevronRight size={30} />
           </button>
 
-          <div className={styles.indicators}>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2.5 z-10">
             {banners.map((_, index) => (
               <div
                 key={index}
-                className={`${styles.indicator} ${index === currentSlide ? styles.activeIndicator : ''}`}
                 onClick={() => setCurrentSlide(index)}
+                className={`h-2.5 rounded-full cursor-pointer transition-all ${index === currentSlide ? 'bg-cream w-6' : 'w-2.5 bg-white/30'}`}
               />
             ))}
           </div>

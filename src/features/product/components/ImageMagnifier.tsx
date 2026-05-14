@@ -1,21 +1,12 @@
 import React, { useCallback, useRef, useState } from 'react';
-import styles from './ImageMagnifier.module.css';
 
 interface ImageMagnifierProps {
   src: string;
   alt?: string;
-  /** Zoom level multiplier (default 2.5) */
   zoomLevel?: number;
-  /** Size of the lens square in px (default 180) */
   lensSize?: number;
 }
 
-/**
- * Amazon-style product image magnifier.
- * - Shows a blue grid lens on the image following the cursor
- * - Displays a zoomed preview panel that overlays to the right
- * - "Click to see full view" hint below the image
- */
 const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
   src,
   alt = 'Product image',
@@ -35,59 +26,36 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
     setIsHovering(true);
   }, []);
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const half = lensSize / 2;
 
-      // cursor position relative to the image container
-      let x = e.clientX - rect.left;
-      let y = e.clientY - rect.top;
+    setLensPos({
+      x: Math.min(Math.max(x - half, 0), rect.width - lensSize),
+      y: Math.min(Math.max(y - half, 0), rect.height - lensSize),
+    });
 
-      // half lens
-      const half = lensSize / 2;
+    const zoomedW = rect.width * zoomLevel;
+    const zoomedH = rect.height * zoomLevel;
+    const panelW = rect.width;
+    const panelH = rect.height;
 
-      // clamp lens so it doesn't go outside the image
-      const lensX = Math.min(Math.max(x - half, 0), rect.width - lensSize);
-      const lensY = Math.min(Math.max(y - half, 0), rect.height - lensSize);
-      setLensPos({ x: lensX, y: lensY });
+    setBgPos({
+      x: Math.min(Math.max((x / rect.width) * zoomedW - panelW / 2, 0), zoomedW - panelW),
+      y: Math.min(Math.max((y / rect.height) * zoomedH - panelH / 2, 0), zoomedH - panelH),
+    });
+  }, [zoomLevel, lensSize]);
 
-      // calculate background position for the zoom panel
-      // ratio of cursor position within the image
-      const ratioX = x / rect.width;
-      const ratioY = y / rect.height;
-
-      // zoomed image dimensions
-      const zoomedW = rect.width * zoomLevel;
-      const zoomedH = rect.height * zoomLevel;
-
-      // zoom panel size (same as the left image)
-      const panelW = rect.width * 1.0;
-      const panelH = rect.height * 1.0;
-
-      // background offset: center the cursor point in the zoom panel
-      let bgX = ratioX * zoomedW - panelW / 2;
-      let bgY = ratioY * zoomedH - panelH / 2;
-
-      // clamp
-      bgX = Math.min(Math.max(bgX, 0), zoomedW - panelW);
-      bgY = Math.min(Math.max(bgY, 0), zoomedH - panelH);
-
-      setBgPos({ x: bgX, y: bgY });
-    },
-    [zoomLevel, lensSize]
-  );
-
-  const handleMouseLeave = useCallback(() => {
-    setIsHovering(false);
-  }, []);
+  const handleMouseLeave = useCallback(() => setIsHovering(false), []);
 
   return (
-    <div className={styles.magnifierRoot}>
-      {/* Main image container */}
+    <div className="relative flex flex-col items-center w-full h-full">
       <div
         ref={containerRef}
-        className={styles.imageContainer}
+        className="relative w-full h-full flex items-center justify-center cursor-crosshair bg-surface overflow-hidden max-lg:cursor-default"
         onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -95,34 +63,33 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
         <img
           src={src}
           alt={alt}
-          className={styles.productImage}
+          className="max-w-full max-h-full object-contain select-none block"
           draggable={false}
         />
 
-        {/* Blue grid lens */}
         {isHovering && (
           <div
-            className={styles.lens}
+            className="absolute pointer-events-none border-2 border-[rgba(0,100,180,0.55)] bg-[rgba(0,100,180,0.08)] z-10 max-lg:hidden"
             style={{
-              width: lensSize,
-              height: lensSize,
-              left: lensPos.x,
-              top: lensPos.y,
+              width: lensSize, height: lensSize,
+              left: lensPos.x, top: lensPos.y,
+              backgroundImage: 'linear-gradient(0deg,rgba(0,100,180,0.15) 1px,transparent 1px),linear-gradient(90deg,rgba(0,100,180,0.15) 1px,transparent 1px)',
+              backgroundSize: '8px 8px',
             }}
           />
         )}
       </div>
 
-      {/* Hint text */}
-      <p className={styles.hintText}>Click to see full view</p>
+      <p className="text-center text-[13px] text-[#007185] mt-2.5 cursor-pointer font-medium hover:underline hover:text-[#c45500] max-lg:hidden">
+        Click to see full view
+      </p>
 
-      {/* Zoom preview panel — absolutely positioned to the right of imageContainer */}
       {isHovering && imgSize.w > 0 && (
         <div
-          className={styles.zoomPanel}
+          className="absolute top-0 left-[calc(100%+32px)] bg-surface border border-[#e0e0e0] shadow-[0_4px_24px_rgba(0,0,0,0.15)] z-[100] pointer-events-none bg-no-repeat max-lg:hidden"
           style={{
-            width: imgSize.w * 1.0,
-            height: imgSize.h * 1.0,
+            width: imgSize.w,
+            height: imgSize.h,
             backgroundImage: `url('${src}')`,
             backgroundSize: `${imgSize.w * zoomLevel}px ${imgSize.h * zoomLevel}px`,
             backgroundPosition: `-${bgPos.x}px -${bgPos.y}px`,

@@ -1,138 +1,97 @@
-:root {
-  /* Colors from reference */
-  --accent: oklch(0.55 0.16 38); /* Terracotta */
-  --text-h: oklch(0.18 0.02 50); /* Deep Charcoal */
-  --bg: #ffffff;     /* Changed to white */
-  --text: oklch(0.45 0.02 50);   /* Muted Body Text */
-  --border: oklch(0.92 0.01 70); /* Subtle Border */
-  
-  --accent-hover: oklch(0.50 0.16 38);
-  --accent-soft: oklch(0.55 0.16 38 / 0.1);
-  --white: #ffffff; /* Changed to white */
+@import "tailwindcss";
 
-  --container-max: 1280px;
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slide-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
+}
+
+@theme {
+  --animate-fade-in:    fade-in 0.2s ease-out;
+  --animate-slide-up:   slide-up 0.3s ease-out;
+  --animate-float:      float 3s ease-in-out infinite;
+  --animate-pulse-scale: pulse-scale 6s ease-in-out infinite;
+  /* Brand colors */
+  --color-primary:        oklch(0.55 0.16 38);
+  --color-primary-dark:   oklch(0.50 0.16 38);
+  --color-primary-light:  oklch(0.60 0.16 38);
+  --color-primary-soft:   oklch(0.55 0.16 38 / 0.1);
+
+  /* Neutral / surface */
+  --color-surface:        #ffffff;
+  --color-cream:          oklch(0.99 0.01 80);
+
+  /* Text */
+  --color-heading:        oklch(0.18 0.02 50);
+  --color-body:           oklch(0.45 0.02 50);
+  --color-muted:          oklch(0.60 0.01 50);
+
+  /* Border */
+  --color-border:         oklch(0.92 0.01 70);
+  --color-border-light:   oklch(0.95 0.01 70);
+
+  /* Feedback */
+  --color-success:        #166534;
+  --color-error:          #991b1b;
+  --color-warning:        #854d0e;
+  --color-info:           #1e40af;
 
   /* Typography */
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text);
-  background-color: var(--bg);
-  
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --font-display:         'Fraunces', Georgia, serif;
+  --font-sans:            'Inter', system-ui, sans-serif;
+
+  /* Layout */
+  --width-container:      1280px;
+  --height-header:        72px;
+
+  /* Radius */
+  --radius-sm:            4px;
+  --radius-md:            8px;
+  --radius-lg:            12px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: oklch(0.15 0.01 50);
-    --text: oklch(0.85 0.01 50);
-    --text-h: oklch(0.95 0.01 50);
-    --border: oklch(0.25 0.01 50);
-    --accent-soft: oklch(0.55 0.16 38 / 0.2);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: var(--container-max);
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+/* Base resets */
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-body);
+  background-color: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-h1, h2, h3, h4 {
+h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  color: var(--text-h);
-  font-weight: 400; /* Serif fonts look better at 400 */
-  margin-bottom: 1rem;
-}
-
-h1 {
-  font-size: clamp(2rem, 6vw, 3rem);
-  line-height: 0.95;
-  letter-spacing: -0.02em;
-}
-
-h2 {
-  font-size: clamp(1.75rem, 4.5vw, 3rem);
-  line-height: 1.1;
+  color: var(--color-heading);
+  font-weight: 400;
+  margin: 0 0 1rem;
 }
 
 button {
   font-family: var(--font-sans);
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 99px; /* Pill shape like image */
 }
 
-/* Primary Button Style from Image */
-.btn-primary {
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 12px 28px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
-
-.btn-primary:hover {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-}
-
-/* Secondary Button Style from Image */
-.btn-secondary {
-  background: transparent;
-  color: var(--text-h);
-  border: 1px solid var(--border);
-  padding: 12px 28px;
-}
-
-.btn-secondary:hover {
-  background: var(--white);
-  border-color: var(--text-h);
-}
-
-.card {
-  background: var(--white);
-  border-radius: 6px;
-  padding: 20px;
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 24px -4px oklch(0 0 0 / 0.05);
-}
-

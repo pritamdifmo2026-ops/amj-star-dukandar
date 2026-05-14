@@ -2,7 +2,6 @@ import React from 'react';
 import Modal from './Modal';
 import Button from './Button';
 import { AlertCircle, CheckCircle, Info } from 'lucide-react';
-import styles from './MessageModal.module.css';
 
 interface MessageModalProps {
   isOpen: boolean;
@@ -12,24 +11,27 @@ interface MessageModalProps {
   type?: 'success' | 'error' | 'info';
 }
 
-const MessageModal: React.FC<MessageModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  message, 
-  type = 'info' 
+const MessageModal: React.FC<MessageModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  message,
+  type = 'info',
 }) => {
   const Icon = type === 'success' ? CheckCircle : type === 'error' ? AlertCircle : Info;
   const iconColor = type === 'success' ? '#059669' : type === 'error' ? '#dc2626' : '#2563eb';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      <div className={styles.container}>
-        <div className={styles.iconWrapper} style={{ backgroundColor: `${iconColor}15`, color: iconColor }}>
+      <div className="flex flex-col items-center py-2 text-center gap-6">
+        <div
+          className="w-20 h-20 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: `${iconColor}15`, color: iconColor }}
+        >
           <Icon size={48} />
         </div>
-        <p className={styles.message}>{message}</p>
-        <div className={styles.actions}>
+        <p className="text-[1.1rem] text-gray-700 leading-relaxed m-0">{message}</p>
+        <div className="w-full">
           <Button onClick={onClose} fullWidth>Close</Button>
         </div>
       </div>

@@ -5,7 +5,6 @@ import Input from '@/shared/components/ui/Input';
 import Button from '@/shared/components/ui/Button';
 import { ROUTES } from '@/shared/constants/routes';
 import { useLogin } from '../hooks/useLogin';
-import styles from './AuthForm.module.css';
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -19,17 +18,17 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <h2 className={styles.heading}>Sign In</h2>
-      <p className={styles.sub}>Welcome back to AMJStar Dukandar</p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <h2 className="text-2xl font-bold text-heading m-0">Sign In</h2>
+      <p className="text-sm text-muted -mt-3 m-0">Welcome back to AMJStar Dukandar</p>
 
-      <div className={styles.fields}>
+      <div className="flex flex-col gap-4">
         <Input
           label="Email Address"
           type="email"
           placeholder="you@example.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={e => setEmail(e.target.value)}
           leftIcon={<Mail size={16} />}
           fullWidth
           required
@@ -39,10 +38,10 @@ const LoginForm: React.FC = () => {
           type={showPass ? 'text' : 'password'}
           placeholder="Enter password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={e => setPassword(e.target.value)}
           leftIcon={<Lock size={16} />}
           rightIcon={
-            <button type="button" onClick={() => setShowPass((p) => !p)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+            <button type="button" onClick={() => setShowPass(p => !p)} className="bg-transparent border-none cursor-pointer flex">
               {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           }
@@ -51,15 +50,11 @@ const LoginForm: React.FC = () => {
         />
       </div>
 
-      <Button type="submit" fullWidth loading={isPending}>
-        Sign In
-      </Button>
+      <Button type="submit" fullWidth loading={isPending}>Sign In</Button>
 
-      <p className={styles.switch}>
+      <p className="text-sm text-muted text-center m-0">
         Don't have an account?{' '}
-        <Link to={ROUTES.REGISTER} className={styles.link}>
-          Register
-        </Link>
+        <Link to={ROUTES.REGISTER} className="text-primary font-medium hover:underline">Register</Link>
       </p>
     </form>
   );

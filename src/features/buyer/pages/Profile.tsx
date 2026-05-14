@@ -17,7 +17,8 @@ import adminService from '@/features/admin/services/admin.service';
 import { Camera, Loader2 } from 'lucide-react';
 import OrderList from '../components/OrderList';
 import { orderApi } from '@/shared/services/order.api';
-import styles from './Profile.module.css';
+
+const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
 
 const Profile: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -26,31 +27,25 @@ const Profile: React.FC = () => {
   const dispatch = useAppDispatch();
 
   const activeTab = searchParams.get('tab') || 'overview';
-
-  const setActiveTab = (tab: string) => {
-    setSearchParams({ tab });
-  };
+  const setActiveTab = (tab: string) => setSearchParams({ tab });
 
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
 
-  // Phone Edit State (My logic)
   const [isChangingPhone, setIsChangingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState('');
 
-  // Email Verification State
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-
   const [orderCount, setOrderCount] = useState(0);
   const memberSince = 'January 2024';
   const isEmailVerified = user?.isEmailVerified || false;
   const { socket } = useSocket();
   const [totalUnread, setTotalUnread] = useState(0);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  // Fetch unread count for the sidebar badge
   const fetchUnreadCount = async () => {
     try {
       const conversations = await chatApi.getConversations();
@@ -66,9 +61,7 @@ const Profile: React.FC = () => {
   };
 
   React.useEffect(() => {
-    if (user) {
-      fetchUnreadCount();
-    }
+    if (user) fetchUnreadCount();
   }, [user]);
 
   React.useEffect(() => {
@@ -88,24 +81,17 @@ const Profile: React.FC = () => {
   };
 
   React.useEffect(() => {
-    if (user) {
-      fetchOrderCount();
-    }
+    if (user) fetchOrderCount();
   }, [user]);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     setIsUploadingAvatar(true);
     try {
       const imageUrl = await adminService.uploadImage(file);
       const response = await authService.updateProfile({ avatar: imageUrl });
-
-      dispatch(setCredentials({
-        user: response.user
-      }));
+      dispatch(setCredentials({ user: response.user }));
       toast.success('Profile picture updated successfully!');
     } catch (err) {
       console.error('Failed to upload avatar:', err);
@@ -127,12 +113,8 @@ const Profile: React.FC = () => {
           }
           payload.email = editEmail.trim();
         }
-
         const response = await authService.updateProfile(payload);
-
-        dispatch(setCredentials({
-          user: response.user
-        }));
+        dispatch(setCredentials({ user: response.user }));
         setIsEditingInfo(false);
         if (editEmail !== user.email && editEmail) {
           toast.success(`Verification email sent to ${editEmail}. Please check your inbox.`);
@@ -156,23 +138,15 @@ const Profile: React.FC = () => {
   };
 
   const handleSendPhoneOtp = () => {
-    if (newPhone.length >= 10) {
-      setShowOtpInput(true);
-    } else {
-      toast.error('Please enter a valid 10-digit phone number');
-    }
+    if (newPhone.length >= 10) setShowOtpInput(true);
+    else toast.error('Please enter a valid 10-digit phone number');
   };
 
   const handleVerifyPhoneOtp = async () => {
     if (phoneOtp === '123456' && user) {
       try {
-        const response = await authService.updateProfile({
-          phone: newPhone
-        });
-
-        dispatch(setCredentials({
-          user: response.user
-        }));
+        const response = await authService.updateProfile({ phone: newPhone });
+        dispatch(setCredentials({ user: response.user }));
         setIsChangingPhone(false);
         setShowOtpInput(false);
         setNewPhone('');
@@ -197,96 +171,99 @@ const Profile: React.FC = () => {
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  // Find current menu item for placeholder rendering
   const currentMenuItem = menuItems.find(i => i.id === activeTab);
   const CurrentIcon = currentMenuItem?.icon;
 
+  const AvatarContent = () => (
+    <>
+      {isUploadingAvatar ? (
+        <Loader2 className="animate-spin text-[#94a3b8]" size={28} />
+      ) : user?.avatar ? (
+        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+      ) : (
+        <span className="text-2xl font-extrabold">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
+      )}
+    </>
+  );
+
   return (
-    <div className={styles.container}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarAvatar}>
+    <div className="flex min-h-screen bg-[#f8fafc] max-lg:flex-col">
+      <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b">
+        <div className="flex items-center gap-3 p-5 border-b border-[#f1f5f9]">
+          <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shrink-0 overflow-hidden">
             {user?.avatar ? (
-              <img src={user.avatar} alt={user.name} className={styles.avatarImg} />
+              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
             ) : (
-              user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+              <span className="text-base font-extrabold">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
             )}
           </div>
-          <div className={styles.sidebarUserInfo}>
-            <h4>{user?.name?.split(' ')[0] || 'Guest'}</h4>
-            <p>{user?.role || 'Buyer'}</p>
+          <div>
+            <h4 className="text-sm font-bold text-[#0f172a] m-0">{user?.name?.split(' ')[0] || 'Guest'}</h4>
+            <p className="text-xs text-[#64748b] m-0 capitalize">{user?.role || 'Buyer'}</p>
           </div>
         </div>
-        <nav className={styles.sidebarNav}>
+
+        <nav className="flex-1 py-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = activeTab === item.id;
             return (
               <div
                 key={item.id}
-                className={`${styles.sidebarItem} ${activeTab === item.id ? styles.active : ''}`}
+                className={`flex items-center gap-3 px-5 py-3 cursor-pointer transition-colors text-sm ${isActive ? 'bg-[#fff7ed] text-primary font-bold border-r-2 border-primary' : 'text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] font-medium'}`}
                 onClick={() => setActiveTab(item.id)}
               >
-                <Icon size={18} />
-                <span>{item.label}</span>
+                <Icon size={18} className="shrink-0" />
+                <span className="flex-1">{item.label}</span>
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className={styles.badge}>{item.badge}</span>
+                  <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
                 )}
-                <ChevronRight size={16} className={styles.chevron} />
+                <ChevronRight size={15} className="text-[#d1d5db]" />
               </div>
             );
           })}
         </nav>
-        <div className={styles.sidebarFooter}>
-          <div className={styles.logoutBtn}>
+
+        <div className="p-4 border-t border-[#f1f5f9]">
+          <div className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
             <LogOut size={18} />
             <span>Sign Out</span>
           </div>
         </div>
       </aside>
-      <main className={styles.mainContent}>
-        <div className={styles.profileCover}>
-          <div className={styles.coverGradient}></div>
-          <div className={styles.profileHeader}>
-            <div className={styles.avatarWrapper}>
-              <div className={styles.avatar}>
-                {isUploadingAvatar ? (
-                  <Loader2 className={styles.spinner} />
-                ) : user?.avatar ? (
-                  <img src={user.avatar} alt={user.name} className={styles.avatarImg} />
-                ) : (
-                  user?.name ? user.name.charAt(0).toUpperCase() : 'U'
-                )}
-                <label className={styles.avatarEditOverlay}>
-                  <Camera size={20} />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    hidden
-                  />
-                </label>
+
+      <main className="flex-1 overflow-auto">
+        <div className="relative bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-8 pt-8 pb-16 max-sm:px-4">
+          <div className="flex items-end gap-5 max-sm:flex-col max-sm:items-start">
+            <div className="relative shrink-0">
+              <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center overflow-hidden border-4 border-white shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+                <AvatarContent />
               </div>
+              <label className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-md border border-[#e2e8f0] hover:bg-[#f8fafc]">
+                <Camera size={16} className="text-[#475569]" />
+                <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
+              </label>
             </div>
-            <div className={styles.userInfo}>
-              <div className={styles.nameSection}>
-                <h1>{user?.name || 'Valued Partner'}</h1>
+            <div className="pb-1">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h1 className="text-xl font-extrabold text-white m-0">{user?.name || 'Valued Partner'}</h1>
                 {isEmailVerified && (
-                  <span className={styles.verifiedBadge}>
-                    <Check size={14} style={{ marginRight: '4px' }} /> Verified
+                  <span className="flex items-center gap-1 text-xs font-bold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
+                    <Check size={12} /> Verified
                   </span>
                 )}
               </div>
-              <div className={styles.userMeta}>
-                <span className={styles.roleTag}>{user?.role || 'Buyer'} Account</span>
-                <span className={styles.memberSince}>Member since {memberSince}</span>
+              <div className="flex items-center gap-3 flex-wrap text-xs text-[#94a3b8] mb-2">
+                <span className="capitalize font-semibold text-[#e2e8f0]">{user?.role || 'Buyer'} Account</span>
+                <span>Member since {memberSince}</span>
               </div>
-              <div className={styles.contactInfo}>
-                <div className={styles.contactItem}>
-                  <Mail size={16} />
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
+                  <Mail size={14} className="text-[#94a3b8]" />
                   <span>{user?.email || 'Not provided'}</span>
                   {!isEmailVerified && user?.email && (
                     <button
-                      className={styles.verifyEmailBtn}
+                      className="text-xs font-bold text-[#fbbf24] bg-transparent border border-[#fbbf24] rounded-full px-2 py-0.5 cursor-pointer hover:bg-[#fffbeb] hover:text-[#92400e]"
                       onClick={handleSendVerifyEmail}
                       disabled={isSendingEmail}
                     >
@@ -294,178 +271,173 @@ const Profile: React.FC = () => {
                     </button>
                   )}
                 </div>
-                <div className={styles.contactItem}>
-                  <Phone size={16} />
+                <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
+                  <Phone size={14} className="text-[#94a3b8]" />
                   <span>{user?.phone || 'Not provided'}</span>
-                  <button className={styles.editContactBtn} onClick={() => setIsChangingPhone(true)}>Update</button>
+                  <button
+                    className="text-xs font-bold text-[#94a3b8] bg-transparent border-none cursor-pointer hover:text-white p-0"
+                    onClick={() => setIsChangingPhone(true)}
+                  >
+                    Update
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {activeTab === 'overview' && (
-          <div className={styles.statsRow}>
-            <div className={styles.statCard}>
-              <ShoppingBag size={24} className={styles.statIcon} />
-              <div>
-                <span className={styles.statValue}>{orderCount}</span>
-                <span className={styles.statLabel}>Orders</span>
-              </div>
-            </div>
-            <div className={styles.statCard}>
-              <Heart size={24} className={styles.statIcon} />
-              <div>
-                <span className={styles.statValue}>{wishlistItems.length}</span>
-                <span className={styles.statLabel}>Wishlist</span>
-              </div>
-            </div>
-            <div className={styles.statCard}>
-              <Star size={24} className={styles.statIcon} />
-              <div>
-                <span className={styles.statValue}>0</span>
-                <span className={styles.statLabel}>Reviews</span>
-              </div>
-            </div>
-            <div className={styles.statCard}>
-              <Clock size={24} className={styles.statIcon} />
-              <div>
-                <span className={styles.statValue}>0</span>
-                <span className={styles.statLabel}>Pending</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'overview' && (
-          <div className={styles.overviewContent}>
-            <div className={styles.infoCard}>
-              <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}>Personal Information</h3>
-                {!isEditingInfo ? (
-                  <button className={styles.editButton} onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
-                ) : (
-                  <div className={styles.editActions}>
-                    <button className={styles.cancelBtn} onClick={() => setIsEditingInfo(false)}>Cancel</button>
-                    <button className={styles.saveBtn} onClick={handleSaveInfo}>Save</button>
+        <div className="px-8 -mt-8 max-sm:px-4">
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-4 gap-4 mb-6 max-sm:grid-cols-2">
+              {[
+                { icon: <ShoppingBag size={22} />, value: orderCount, label: 'Orders' },
+                { icon: <Heart size={22} />, value: wishlistItems.length, label: 'Wishlist' },
+                { icon: <Star size={22} />, value: 0, label: 'Reviews' },
+                { icon: <Clock size={22} />, value: 0, label: 'Pending' },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-white border border-[#eef2f6] rounded-[12px] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#fff7ed] rounded-[8px] flex items-center justify-center text-primary shrink-0">{stat.icon}</div>
+                  <div>
+                    <div className="text-xl font-extrabold text-[#0f172a]">{stat.value}</div>
+                    <div className="text-xs text-[#94a3b8]">{stat.label}</div>
                   </div>
-                )}
-              </div>
-              <div className={styles.infoFields}>
-                <div className={styles.infoField}>
-                  <label>Full Name</label>
-                  {isEditingInfo ? (
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className={styles.editInput} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-2 gap-5 mb-8 max-lg:grid-cols-1">
+              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Personal Information</h3>
+                  {!isEditingInfo ? (
+                    <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0" onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
                   ) : (
-                    <p>{user?.name || 'Not provided'}</p>
+                    <div className="flex gap-2">
+                      <button className="text-xs font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-1.5 cursor-pointer hover:bg-[#f1f5f9]" onClick={() => setIsEditingInfo(false)}>Cancel</button>
+                      <button className="text-xs font-bold text-white bg-primary rounded-[6px] px-3 py-1.5 border-none cursor-pointer hover:opacity-90" onClick={handleSaveInfo}>Save</button>
+                    </div>
                   )}
                 </div>
-                <div className={styles.infoField}>
-                  <label>Email</label>
-                  {isEditingInfo ? (
-                    <input 
-                      type="email" 
-                      value={editEmail} 
-                      onChange={(e) => {
-                        let val = e.target.value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
-                        val = val.replace(/[@.]{2,}/g, (match) => match[0]);
-                        if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
-                        setEditEmail(val);
-                      }} 
-                      className={styles.editInput} 
-                    />
-                  ) : (
-                    <p>{user?.email || 'Not provided'}</p>
-                  )}
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Full Name</label>
+                    {isEditingInfo ? (
+                      <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className={inputCls} />
+                    ) : (
+                      <p className="text-sm text-[#0f172a] font-medium m-0">{user?.name || 'Not provided'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Email</label>
+                    {isEditingInfo ? (
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={e => {
+                          let val = e.target.value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+                          val = val.replace(/[@.]{2,}/g, m => m[0]);
+                          if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
+                          setEditEmail(val);
+                        }}
+                        className={inputCls}
+                      />
+                    ) : (
+                      <p className="text-sm text-[#0f172a] font-medium m-0">{user?.email || 'Not provided'}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Default Address</h3>
+                  <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">Manage</button>
+                </div>
+                <div className="text-sm text-[#475569]">
+                  <p className="font-bold text-[#0f172a] m-0 mb-1">Primary Address</p>
+                  <p className="m-0">123 Trade Center, Mumbai, India</p>
                 </div>
               </div>
             </div>
+          )}
 
-            <div className={styles.infoCard}>
-              <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}>Default Address</h3>
-                <button className={styles.manageBtn}>Manage</button>
-              </div>
-              <div className={styles.addressBox}>
-                <p className={styles.addressName}>Primary Address</p>
-                <p>123 Trade Center, Mumbai, India</p>
-              </div>
+          {activeTab === 'wishlist' && (
+            <div className="py-6">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">My Wishlist ({wishlistItems.length})</h3>
+              {wishlistItems.length > 0 ? (
+                <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
+                  {wishlistItems.map((item) => (
+                    <ProductCard key={item.id} product={item} variant="wishlist" />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#64748b]">Your wishlist is empty.</p>
+              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === 'wishlist' && (
-          <div className={styles.wishlistTab}>
-            <div className={styles.wishlistHeader}>
-              <h3>My Wishlist ({wishlistItems.length})</h3>
+          {activeTab === 'messages' && (
+            <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px', margin: '-20px' }}>
+              <ChatInbox />
             </div>
-            {wishlistItems.length > 0 ? (
-              <div className={styles.wishlistGrid}>
-                {wishlistItems.map((item) => (
-                  <ProductCard key={item.id} product={item} variant="wishlist" />
-                ))}
-              </div>
-            ) : (
-              <p>Your wishlist is empty.</p>
-            )}
-          </div>
-        )}
+          )}
 
-        {activeTab === 'messages' && (
-          <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px', margin: '-20px' }}>
-            <ChatInbox />
-          </div>
-        )}
+          {activeTab === 'orders' && (
+            <div className="py-6">
+              <OrderList />
+            </div>
+          )}
 
-        {activeTab === 'orders' && (
-          <OrderList />
-        )}
-
-        {/* Placeholder for other tabs */}
-        {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && currentMenuItem && (
-          <div className={styles.placeholderCard}>
-            {CurrentIcon && <CurrentIcon size={48} strokeWidth={1.5} />}
-            <h3>{currentMenuItem.label}</h3>
-            <p>This section is coming soon. We're working hard to bring you a great experience.</p>
-          </div>
-        )}
+          {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && currentMenuItem && (
+            <div className="flex flex-col items-center gap-4 py-20 text-center text-[#94a3b8]">
+              {CurrentIcon && <CurrentIcon size={52} strokeWidth={1.5} />}
+              <h3 className="text-xl font-extrabold text-[#0f172a] m-0">{currentMenuItem.label}</h3>
+              <p className="text-sm text-[#64748b] m-0 max-w-[400px]">This section is coming soon. We're working hard to bring you a great experience.</p>
+            </div>
+          )}
+        </div>
       </main>
 
-      {/* Change Phone Modal with OTP logic */}
       {isChangingPhone && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <h3>{showOtpInput ? 'Verify OTP' : 'Change Phone Number'}</h3>
-              <button onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }} className={styles.closeBtn}><X size={20} /></button>
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-50 flex items-center justify-center px-4" onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }}>
+          <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0">{showOtpInput ? 'Verify OTP' : 'Change Phone Number'}</h3>
+              <button onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f1f5f9] text-[#475569] border-none cursor-pointer bg-transparent">
+                <X size={18} />
+              </button>
             </div>
             {!showOtpInput ? (
-              <div className={styles.modalBody}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>New Phone Number</label>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">New Phone Number</label>
                 <input
                   type="text"
                   value={newPhone}
-                  onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ''))}
-                  className={styles.editInput}
+                  onChange={e => setNewPhone(e.target.value.replace(/\D/g, ''))}
+                  className={inputCls + " mb-4"}
                   placeholder="Enter 10-digit mobile number"
                   maxLength={10}
-                  style={{ width: '100%', marginBottom: '16px' }}
                 />
-                <button onClick={handleSendPhoneOtp} className={styles.modalPrimaryBtn} style={{ width: '100%' }}>Send OTP</button>
+                <button onClick={handleSendPhoneOtp} className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90">
+                  Send OTP
+                </button>
               </div>
             ) : (
-              <div className={styles.modalBody}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Enter OTP sent to {newPhone}</label>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Enter OTP sent to {newPhone}</label>
                 <input
                   type="text"
                   value={phoneOtp}
-                  onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ''))}
-                  className={styles.editInput}
+                  onChange={e => setPhoneOtp(e.target.value.replace(/\D/g, ''))}
+                  className={inputCls + " mb-4"}
                   placeholder="Enter 123456"
                   maxLength={6}
-                  style={{ width: '100%', marginBottom: '16px' }}
                 />
-                <button onClick={handleVerifyPhoneOtp} className={styles.modalPrimaryBtn} style={{ width: '100%' }}>Verify & Update</button>
+                <button onClick={handleVerifyPhoneOtp} className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90">
+                  Verify & Update
+                </button>
               </div>
             )}
           </div>

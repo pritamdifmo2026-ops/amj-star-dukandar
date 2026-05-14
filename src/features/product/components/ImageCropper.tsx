@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import Button from '@/shared/components/ui/Button';
-import styles from './ImageCropper.module.css';
 
 interface ImageCropperProps {
   image: string;
@@ -14,95 +13,60 @@ const ImageCropper: React.FC<ImageCropperProps> = ({ image, onCropComplete, onCa
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-  const onCropChange = (crop: { x: number; y: number }) => {
-    setCrop(crop);
-  };
-
-  const onZoomChange = (zoom: number) => {
-    setZoom(zoom);
-  };
-
   const onCropAreaComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const createStatus = async () => {
+  const handleCrop = async () => {
     try {
       const croppedImage = await getCroppedImg(image, croppedAreaPixels);
       onCropComplete(croppedImage);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch {}
   };
 
   return (
-    <div className={styles.cropperContainer}>
-      <div className={styles.cropWindow}>
+    <div className="relative w-full h-[400px] bg-black rounded-[8px] overflow-hidden flex flex-col">
+      <div className="relative flex-1">
         <Cropper
           image={image}
           crop={crop}
           zoom={zoom}
-          aspect={1 / 1}
-          onCropChange={onCropChange}
+          aspect={1}
+          onCropChange={setCrop}
           onCropComplete={onCropAreaComplete}
-          onZoomChange={onZoomChange}
+          onZoomChange={setZoom}
         />
       </div>
-      <div className={styles.controls}>
-        <div className={styles.zoomControl}>
-          <label>Zoom</label>
+      <div className="p-4 bg-surface flex flex-col gap-4 border-t border-[#e5e7eb]">
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-[#374151] min-w-[50px]">Zoom</label>
           <input
-            type="range"
-            value={zoom}
-            min={1}
-            max={3}
-            step={0.1}
-            onChange={(e) => setZoom(Number(e.target.value))}
+            type="range" value={zoom} min={1} max={3} step={0.1}
+            onChange={e => setZoom(Number(e.target.value))}
+            className="flex-1"
           />
         </div>
-        <div className={styles.actions}>
+        <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-          <Button onClick={createStatus}>Crop & Upload</Button>
+          <Button onClick={handleCrop}>Crop & Upload</Button>
         </div>
       </div>
     </div>
   );
 };
 
-// Helper function to get cropped image
 async function getCroppedImg(imageSrc: string, pixelCrop: any): Promise<Blob> {
   const image = new Image();
   image.src = imageSrc;
-  await new Promise((resolve) => (image.onload = resolve));
-
+  await new Promise(resolve => (image.onload = resolve));
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-
   if (!ctx) throw new Error('No 2d context');
-
   canvas.width = pixelCrop.width;
   canvas.height = pixelCrop.height;
-
-  ctx.drawImage(
-    image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    pixelCrop.width,
-    pixelCrop.height
-  );
-
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error('Canvas is empty'));
-        return;
-      }
-      resolve(blob);
-    }, 'image/jpeg');
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas is empty')), 'image/jpeg');
   });
 }
 
