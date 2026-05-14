@@ -6,7 +6,7 @@ import {
   ChevronRight, ArrowLeft, Loader2,
   BookUser, Edit2
 } from 'lucide-react';
-import { addressApi } from '@/shared/services/address.api';
+import { addressApi } from '@/features/buyer/services/address.api';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 

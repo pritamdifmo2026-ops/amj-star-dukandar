@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
-import { SupplierTier, OnboardingStatus, setSupplierProfile } from '@/store/slices/supplier.slice';
+import { logout } from '@/features/auth/store/auth.slice';
+import { SupplierTier, OnboardingStatus, setSupplierProfile } from '@/features/supplier/store/supplier.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import supplierService from '../services/supplier.service';
 import SupplierOnboardingLayout from '../layout/SupplierOnboardingLayout';

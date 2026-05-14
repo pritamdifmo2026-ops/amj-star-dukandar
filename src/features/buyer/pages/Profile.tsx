@@ -1,33 +1,44 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toast } from 'react-hot-toast';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   User, Package, MapPin, CreditCard, Settings, Bell, Heart,
   X, Mail, Phone, ShoppingBag,
   LogOut, ChevronRight, Star, Clock, Check, MessageCircle
 } from 'lucide-react';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials, logout } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import ProductCard from '@/features/product/components/ProductCard';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import { useSocket } from '@/shared/contexts/SocketContext';
-import { chatApi } from '@/shared/services/chat.api';
+import { chatApi } from '@/features/chat/services/chat.api';
 import adminService from '@/features/admin/services/admin.service';
 import { Camera, Loader2 } from 'lucide-react';
 import OrderList from '../components/OrderList';
-import { orderApi } from '@/shared/services/order.api';
+import { orderApi } from '@/features/order/services/order.api';
+import Navbar from '@/features/landing/components/Navbar';
+import Modal from '@/shared/components/ui/Modal';
+import Button from '@/shared/components/ui/Button';
 
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
 
 const Profile: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
   const wishlistItems = useAppSelector((state) => state.wishlist.items);
   const dispatch = useAppDispatch();
 
   const activeTab = searchParams.get('tab') || 'overview';
   const setActiveTab = (tab: string) => setSearchParams({ tab });
+
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
+  };
 
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
@@ -39,6 +50,8 @@ const Profile: React.FC = () => {
   const [phoneOtp, setPhoneOtp] = useState('');
 
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [enquiryForm, setEnquiryForm] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', message: '' });
+  const [enquirySubmitting, setEnquirySubmitting] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
   const memberSince = 'January 2024';
   const isEmailVerified = user?.isEmailVerified || false;
@@ -73,8 +86,8 @@ const Profile: React.FC = () => {
 
   const fetchOrderCount = async () => {
     try {
-      const orders = await orderApi.getOrders();
-      setOrderCount(orders.length);
+      const res = await orderApi.list();
+      setOrderCount(res.data?.length ?? 0);
     } catch (err) {
       console.error('Failed to fetch order count');
     }
@@ -142,6 +155,23 @@ const Profile: React.FC = () => {
     else toast.error('Please enter a valid 10-digit phone number');
   };
 
+  const handleEnquirySubmit = async () => {
+    if (!enquiryForm.name.trim() || !enquiryForm.phone.trim() || !enquiryForm.message.trim()) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
+    setEnquirySubmitting(true);
+    try {
+      await adminService.submitEnquiry(enquiryForm);
+      toast.success('Our team will contact you soon!');
+      setEnquiryForm(prev => ({ ...prev, message: '' }));
+    } catch {
+      toast.error('Failed to submit. Please try again.');
+    } finally {
+      setEnquirySubmitting(false);
+    }
+  };
+
   const handleVerifyPhoneOtp = async () => {
     if (phoneOtp === '123456' && user) {
       try {
@@ -169,6 +199,7 @@ const Profile: React.FC = () => {
     { id: 'payments', label: 'Payment Methods', icon: CreditCard },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'contactus', label: 'Contact Us', icon: MessageCircle },
   ];
 
   const currentMenuItem = menuItems.find(i => i.id === activeTab);
@@ -187,6 +218,8 @@ const Profile: React.FC = () => {
   );
 
   return (
+    <>
+    <Navbar />
     <div className="flex min-h-screen bg-[#f8fafc] max-lg:flex-col">
       <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b">
         <div className="flex items-center gap-3 p-5 border-b border-[#f1f5f9]">
@@ -225,7 +258,7 @@ const Profile: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-[#f1f5f9]">
-          <div className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
+          <div onClick={() => setShowLogoutModal(true)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
             <LogOut size={18} />
             <span>Sign Out</span>
           </div>
@@ -233,60 +266,62 @@ const Profile: React.FC = () => {
       </aside>
 
       <main className="flex-1 overflow-auto">
-        <div className="relative bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-8 pt-8 pb-16 max-sm:px-4">
-          <div className="flex items-end gap-5 max-sm:flex-col max-sm:items-start">
-            <div className="relative shrink-0">
-              <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center overflow-hidden border-4 border-white shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
-                <AvatarContent />
+        {activeTab === 'overview' && (
+          <div className="relative bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-8 pt-8 pb-8 max-sm:px-4">
+            <div className="flex items-end gap-5 max-sm:flex-col max-sm:items-start">
+              <div className="relative shrink-0">
+                <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center overflow-hidden border-4 border-white shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+                  <AvatarContent />
+                </div>
+                <label className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-md border border-[#e2e8f0] hover:bg-[#f8fafc]">
+                  <Camera size={16} className="text-[#475569]" />
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
+                </label>
               </div>
-              <label className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-md border border-[#e2e8f0] hover:bg-[#f8fafc]">
-                <Camera size={16} className="text-[#475569]" />
-                <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
-              </label>
-            </div>
-            <div className="pb-1">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h1 className="text-xl font-extrabold text-white m-0">{user?.name || 'Valued Partner'}</h1>
-                {isEmailVerified && (
-                  <span className="flex items-center gap-1 text-xs font-bold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
-                    <Check size={12} /> Verified
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-3 flex-wrap text-xs text-[#94a3b8] mb-2">
-                <span className="capitalize font-semibold text-[#e2e8f0]">{user?.role || 'Buyer'} Account</span>
-                <span>Member since {memberSince}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
-                  <Mail size={14} className="text-[#94a3b8]" />
-                  <span>{user?.email || 'Not provided'}</span>
-                  {!isEmailVerified && user?.email && (
-                    <button
-                      className="text-xs font-bold text-[#fbbf24] bg-transparent border border-[#fbbf24] rounded-full px-2 py-0.5 cursor-pointer hover:bg-[#fffbeb] hover:text-[#92400e]"
-                      onClick={handleSendVerifyEmail}
-                      disabled={isSendingEmail}
-                    >
-                      {isSendingEmail ? 'Sending...' : 'Verify'}
-                    </button>
+              <div className="pb-1">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h1 className="text-xl font-extrabold text-white m-0">{user?.name || 'Valued Partner'}</h1>
+                  {isEmailVerified && (
+                    <span className="flex items-center gap-1 text-xs font-bold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
+                      <Check size={12} /> Verified
+                    </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
-                  <Phone size={14} className="text-[#94a3b8]" />
-                  <span>{user?.phone || 'Not provided'}</span>
-                  <button
-                    className="text-xs font-bold text-[#94a3b8] bg-transparent border-none cursor-pointer hover:text-white p-0"
-                    onClick={() => setIsChangingPhone(true)}
-                  >
-                    Update
-                  </button>
+                <div className="flex items-center gap-3 flex-wrap text-xs text-[#94a3b8] mb-2">
+                  <span className="capitalize font-semibold text-[#e2e8f0]">{user?.role || 'Buyer'} Account</span>
+                  <span>Member since {memberSince}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
+                    <Mail size={14} className="text-[#94a3b8]" />
+                    <span>{user?.email || 'Not provided'}</span>
+                    {!isEmailVerified && user?.email && (
+                      <button
+                        className="text-xs font-bold text-[#fbbf24] bg-transparent border border-[#fbbf24] rounded-full px-2 py-0.5 cursor-pointer hover:bg-[#fffbeb] hover:text-[#92400e]"
+                        onClick={handleSendVerifyEmail}
+                        disabled={isSendingEmail}
+                      >
+                        {isSendingEmail ? 'Sending...' : 'Verify'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
+                    <Phone size={14} className="text-[#94a3b8]" />
+                    <span>{user?.phone || 'Not provided'}</span>
+                    <button
+                      className="text-xs font-bold text-[#94a3b8] bg-transparent border-none cursor-pointer hover:text-white p-0"
+                      onClick={() => setIsChangingPhone(true)}
+                    >
+                      Update
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="px-8 -mt-8 max-sm:px-4">
+        <div className="px-8 pt-6 max-sm:px-4">
           {activeTab === 'overview' && (
             <div className="grid grid-cols-4 gap-4 mb-6 max-sm:grid-cols-2">
               {[
@@ -390,7 +425,64 @@ const Profile: React.FC = () => {
             </div>
           )}
 
-          {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && currentMenuItem && (
+          {activeTab === 'contactus' && (
+            <div className="py-6 max-w-[560px]">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Contact Us</h3>
+              <p className="text-sm text-[#64748b] mb-6">Have a question or need help? Fill in the form and our team will reach out to you.</p>
+              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col gap-4">
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Full Name *</label>
+                  <input
+                    type="text"
+                    value={enquiryForm.name}
+                    onChange={e => setEnquiryForm(prev => ({ ...prev, name: e.target.value }))}
+                    className={inputCls}
+                    placeholder="Your name"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Phone *</label>
+                  <input
+                    type="text"
+                    value={enquiryForm.phone}
+                    onChange={e => setEnquiryForm(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '') }))}
+                    className={inputCls}
+                    placeholder="10-digit mobile number"
+                    maxLength={10}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={enquiryForm.email}
+                    onChange={e => setEnquiryForm(prev => ({ ...prev, email: e.target.value }))}
+                    className={inputCls}
+                    placeholder="your@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Your Query *</label>
+                  <textarea
+                    value={enquiryForm.message}
+                    onChange={e => setEnquiryForm(prev => ({ ...prev, message: e.target.value }))}
+                    rows={5}
+                    className={inputCls + ' resize-y'}
+                    placeholder="Describe your problem, question, or enquiry..."
+                  />
+                </div>
+                <button
+                  onClick={handleEnquirySubmit}
+                  disabled={enquirySubmitting}
+                  className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
+                >
+                  {enquirySubmitting ? 'Submitting...' : 'Submit Enquiry'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && activeTab !== 'contactus' && currentMenuItem && (
             <div className="flex flex-col items-center gap-4 py-20 text-center text-[#94a3b8]">
               {CurrentIcon && <CurrentIcon size={52} strokeWidth={1.5} />}
               <h3 className="text-xl font-extrabold text-[#0f172a] m-0">{currentMenuItem.label}</h3>
@@ -444,6 +536,21 @@ const Profile: React.FC = () => {
         </div>
       )}
     </div>
+
+    <Modal
+      isOpen={showLogoutModal}
+      onClose={() => setShowLogoutModal(false)}
+      title="Sign Out"
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
+          <Button variant="danger" onClick={handleLogout}>Sign Out</Button>
+        </>
+      }
+    >
+      Are you sure you want to sign out of your account?
+    </Modal>
+    </>
   );
 };
 

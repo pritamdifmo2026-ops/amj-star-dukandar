@@ -107,6 +107,16 @@ export interface Category {
   subcategories: Subcategory[];
 }
 
+export interface Enquiry {
+  _id: string;
+  name: string;
+  phone: string;
+  email: string;
+  message: string;
+  status: 'new' | 'read' | 'replied';
+  createdAt: string;
+}
+
 export type VerifyEntityType = 'supplier' | 'reseller';
 export type MessageModalState = {
   isOpen: boolean;

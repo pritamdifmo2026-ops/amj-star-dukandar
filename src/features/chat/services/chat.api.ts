@@ -16,4 +16,8 @@ export const chatApi = {
     const res = await apiClient.get(ENDPOINTS.CHAT.MESSAGES(conversationId));
     return res.data.data;
   },
+
+  deleteConversation: async (conversationId: string) => {
+    await apiClient.delete(`/chat/conversations/${conversationId}`);
+  },
 };

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAppDispatch } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
+import { logout } from '@/features/auth/store/auth.slice';
 
 interface Step { n: number; label: string; desc: string; }
 interface ResellerOnboardingLayoutProps { children: React.ReactNode; currentStep: number; steps: Step[]; }

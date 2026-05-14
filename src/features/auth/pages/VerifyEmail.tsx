@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ShieldCheck, XCircle } from 'lucide-react';
 import authService from '../services/auth.service';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials } from '@/features/auth/store/auth.slice';
 import Loader from '@/shared/components/feedback/Loader';
 import Button from '@/shared/components/ui/Button';
 import { ROUTES } from '@/shared/constants/routes';

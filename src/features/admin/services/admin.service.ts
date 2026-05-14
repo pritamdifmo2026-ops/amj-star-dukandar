@@ -1,7 +1,7 @@
 import api from '@/api/client';
-import type { 
-  AdminStats, AdminSupplier, AdminReseller, 
-  AdminProduct, AdminUser, Banner 
+import type {
+  AdminStats, AdminSupplier, AdminReseller,
+  AdminProduct, AdminUser, Banner, Enquiry
 } from '../types/admin.types';
 
 const adminService = {
@@ -92,6 +92,31 @@ const adminService = {
 
   deleteBanner: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await api.delete(`/banners/${id}`);
+    return response.data;
+  },
+
+  getEnquiries: async (): Promise<Enquiry[]> => {
+    const response = await api.get('/enquiry');
+    return response.data.enquiries;
+  },
+
+  getEnquiryNewCount: async (): Promise<number> => {
+    const response = await api.get('/enquiry/count/new');
+    return response.data.count;
+  },
+
+  markEnquiryRead: async (id: string): Promise<Enquiry> => {
+    const response = await api.patch(`/enquiry/${id}/read`);
+    return response.data.enquiry;
+  },
+
+  replyToEnquiry: async (id: string, subject: string, body: string): Promise<Enquiry> => {
+    const response = await api.post(`/enquiry/${id}/reply`, { subject, body });
+    return response.data.enquiry;
+  },
+
+  submitEnquiry: async (data: { name: string; phone: string; email: string; message: string }) => {
+    const response = await api.post('/enquiry', data);
     return response.data;
   },
 

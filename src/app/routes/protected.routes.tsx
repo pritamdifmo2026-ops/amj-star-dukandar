@@ -14,17 +14,12 @@ import ResellerGuard from '@/features/reseller/components/ResellerGuard';
 
 export const protectedRoutes: RouteObject[] = [
   {
-    element: <MainLayout />,
-    children: [
-      {
-        path: '/profile',
-        element: (
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        ),
-      },
-    ],
+    path: '/profile',
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    ),
   },
   {
     path: ROUTES.RESELLER_DASHBOARD,

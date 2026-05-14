@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Send, Inbox } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { chatApi } from '@/shared/services/chat.api';
+import { chatApi } from '@/features/chat/services/chat.api';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { useChat } from '@/shared/hooks/useChat';
 

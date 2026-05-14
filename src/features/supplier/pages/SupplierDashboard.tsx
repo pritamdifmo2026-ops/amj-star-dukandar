@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
+import { logout } from '@/features/auth/store/auth.slice';
 import productService from '@/features/product/services/product.service';
 import Button from '@/shared/components/ui/Button';
 import {
@@ -150,8 +150,6 @@ const SupplierDashboard: React.FC = () => {
     { id: 'inventory', label: 'My Products', icon: Package },
     { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'partnerships', label: 'Reseller Partnerships', icon: Handshake },
-  ];
-  const supplierFooterMenu: MenuItem[] = [
     { id: 'quotations', label: 'Quotations', icon: FileText },
     { id: 'chat', label: 'Chat', icon: MessageCircle },
     { id: 'logistics', label: 'Logistics', icon: Truck },
@@ -203,7 +201,7 @@ const SupplierDashboard: React.FC = () => {
     <div className="flex min-h-screen bg-white overflow-x-hidden w-full relative max-lg:flex-col">
       <Sidebar
         title="Supplier Hub" logoSrc="/favicon.jpeg"
-        menu={supplierMenu} footerMenu={supplierFooterMenu}
+        menu={supplierMenu}
         activeTab={activeView} onTabChange={id => setActiveView(id as any)}
         onLogout={handleLogout} isSidebarOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}

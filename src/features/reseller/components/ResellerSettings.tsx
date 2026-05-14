@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Phone, Mail, Store, Zap, ShieldCheck, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials } from '@/features/auth/store/auth.slice';
 import Button from '@/shared/components/ui/Button';
 import toast from 'react-hot-toast';
 import authService from '@/features/auth/services/auth.service';

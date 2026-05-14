@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
+import { logout } from '@/features/auth/store/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import resellerService from '../services/reseller.service';
 import ResellerOnboardingLayout from '../layout/ResellerOnboardingLayout';

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '@/store/hooks';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import Button from '@/shared/components/ui/Button';
 import { ShieldCheck, Lock, Mail } from 'lucide-react';

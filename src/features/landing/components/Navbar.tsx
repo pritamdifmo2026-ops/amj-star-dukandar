@@ -5,8 +5,8 @@ import {
   Store, ShoppingBag, Truck, List
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
-import { fetchCart } from '@/store/slices/cart.slice';
+import { logout } from '@/features/auth/store/auth.slice';
+import { fetchCart } from '@/features/buyer/store/cart.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
         try {
           const { default: svc } = await import('@/features/supplier/services/supplier.service');
           const res = await svc.getProfile();
-          const { setSupplierProfile } = await import('@/store/slices/supplier.slice');
+          const { setSupplierProfile } = await import('@/features/supplier/store/supplier.slice');
           if (res.success && res.supplier) dispatch(setSupplierProfile(res.supplier));
         } catch {}
       })();
@@ -67,7 +67,7 @@ const Navbar: React.FC = () => {
         try {
           const { default: svc } = await import('@/features/reseller/services/reseller.service');
           const data = await svc.getProfile();
-          const { setResellerProfile } = await import('@/store/slices/reseller.slice');
+          const { setResellerProfile } = await import('@/features/reseller/store/reseller.slice');
           if (data) dispatch(setResellerProfile(data));
         } catch {}
       })();

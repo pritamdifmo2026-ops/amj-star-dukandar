@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSocket } from '../contexts/SocketContext';
-import { chatApi } from '../services/chat.api';
+import { chatApi } from '@/features/chat/services/chat.api';
 import { useSelector } from 'react-redux';
 
 export const useChat = (conversationId?: string) => {

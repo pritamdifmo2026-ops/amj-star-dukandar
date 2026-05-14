@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { quotationApi } from '@/shared/services/quotation.api';
+import { quotationApi } from '@/features/supplier/services/quotation.api';
 import { FileText, Clock, CheckCircle, XCircle, ShoppingBag, RefreshCw, User } from 'lucide-react';
 
 interface QuotationItem { name: string; quantity: number; price: number; unit: string; }

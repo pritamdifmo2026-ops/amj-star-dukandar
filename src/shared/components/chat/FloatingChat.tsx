@@ -7,9 +7,9 @@ import {
 import { useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketContext';
 import { useChat } from '../../hooks/useChat';
-import { chatApi } from '../../services/chat.api';
-import { quotationApi } from '../../services/quotation.api';
-import { paymentApi } from '../../services/payment.api';
+import { chatApi } from '@/features/chat/services/chat.api';
+import { quotationApi } from '@/features/supplier/services/quotation.api';
+import { paymentApi } from '@/features/order/services/payment.api';
 
 type UIState = 'CLOSED' | 'MINIMIZED' | 'ACTIVE';
 type ActivePanel = 'list' | 'chat';

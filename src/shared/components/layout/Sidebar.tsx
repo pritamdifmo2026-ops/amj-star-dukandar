@@ -7,6 +7,7 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: LucideIcon;
+  badge?: number;
   action?: () => void;
   route?: string;
   disabled?: boolean;
@@ -150,7 +151,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className={['flex items-center justify-center w-6 h-6 transition-transform', isActive && 'scale-110'].filter(Boolean).join(' ')}>
                   <Icon size={18} />
                 </div>
-                {isSidebarOpen && <span>{item.label}</span>}
+                {isSidebarOpen && <span className="flex-1">{item.label}</span>}
+                {isSidebarOpen && item.badge && item.badge > 0 && (
+                  <span className="text-[10px] font-extrabold bg-red-500 text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
+                    {item.badge}
+                  </span>
+                )}
               </button>
             );
           })}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import supplierService from '../services/supplier.service';
-import { setSupplierProfile } from '@/store/slices/supplier.slice';
+import { setSupplierProfile } from '@/features/supplier/store/supplier.slice';
 
 interface SupplierGuardProps {
   children: React.ReactNode;

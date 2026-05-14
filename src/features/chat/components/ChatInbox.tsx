@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, Inbox, ArrowLeft, Check, CheckCheck, FileText } from 'lucide-react';
+import { Search, Send, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
-import { chatApi } from '@/shared/services/chat.api';
-import { quotationApi } from '@/shared/services/quotation.api';
+import { chatApi } from '@/features/chat/services/chat.api';
+import { quotationApi } from '@/features/supplier/services/quotation.api';
 import { useChat } from '@/shared/hooks/useChat';
 import { useSocket } from '@/shared/contexts/SocketContext';
-import { paymentApi } from '@/shared/services/payment.api';
+import { paymentApi } from '@/features/order/services/payment.api';
 
 type Filter = 'all' | 'unread';
 
@@ -27,9 +27,39 @@ const ChatInbox: React.FC = () => {
     itemName: '', quantity: 1, price: 0, shipping: 0, terms: 'Standard delivery terms apply.'
   });
 
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const { messages, sendMessage, handleTyping, isTyping, loadMessages } = useChat(activeConv?._id);
   const { socket } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleDeleteConv = async (e: React.MouseEvent, convId: string) => {
+    e.stopPropagation();
+    setDeletingId(convId);
+    setOpenMenuId(null);
+    try {
+      await chatApi.deleteConversation(convId);
+      setConversations(prev => prev.filter(c => c._id !== convId));
+      if (activeConv?._id === convId) setActiveConv(null);
+      toast.success('Chat deleted');
+    } catch {
+      toast.error('Failed to delete chat');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     if (user) loadConversations();
@@ -297,10 +327,12 @@ const ChatInbox: React.FC = () => {
               const other = getOtherParticipant(conv);
               const unread = getUnread(conv);
               const isActive = activeConv?._id === conv._id;
+              const isMenuOpen = openMenuId === conv._id;
+              const isDeleting = deletingId === conv._id;
               return (
                 <div
                   key={conv._id}
-                  className={`flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors border-b border-[#f8fafc] ${isActive ? 'bg-[#fff7ed]' : 'hover:bg-[#f8fafc]'}`}
+                  className={`group relative flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors border-b border-[#f8fafc] ${isActive ? 'bg-[#fff7ed]' : 'hover:bg-[#f8fafc]'} ${isDeleting ? 'opacity-40 pointer-events-none' : ''}`}
                   onClick={() => handleSelectConv(conv)}
                 >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold shrink-0 ${isActive ? 'bg-primary text-white' : 'bg-[#f1f5f9] text-[#475569]'}`}>
@@ -312,15 +344,38 @@ const ChatInbox: React.FC = () => {
                     )}
                     <div className="flex items-center justify-between mt-0.5">
                       <span className="text-sm font-semibold text-[#0f172a] truncate">{other?.name || 'User'}</span>
-                      <span className="text-[10px] text-[#94a3b8] shrink-0">{new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[10px] text-[#94a3b8] shrink-0 mr-5">{new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
                       <span className="text-xs text-[#94a3b8] truncate">{conv.lastMessage || 'Start of conversation'}</span>
                       {unread > 0 && (
-                        <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0">{unread}</span>
+                        <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0 mr-5">{unread}</span>
                       )}
                     </div>
                   </div>
+
+                  {/* Three-dot menu */}
+                  <button
+                    className="absolute right-2 top-3 w-7 h-7 flex items-center justify-center rounded-full text-[#94a3b8] bg-transparent border-none cursor-pointer opacity-0 group-hover:opacity-100 hover:bg-[#f1f5f9] hover:text-[#475569] transition-opacity"
+                    onClick={e => { e.stopPropagation(); setOpenMenuId(isMenuOpen ? null : conv._id); }}
+                  >
+                    <MoreVertical size={15} />
+                  </button>
+
+                  {isMenuOpen && (
+                    <div
+                      ref={menuRef}
+                      className="absolute right-2 top-9 z-50 bg-white border border-[#e2e8f0] rounded-[8px] shadow-[0_4px_16px_rgba(0,0,0,0.1)] py-1 min-w-[140px]"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <button
+                        className="flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-[#dc2626] bg-transparent border-none cursor-pointer hover:bg-[#fef2f2] transition-colors"
+                        onClick={e => handleDeleteConv(e, conv._id)}
+                      >
+                        <Trash2 size={13} /> Delete Chat
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })

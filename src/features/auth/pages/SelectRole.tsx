@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User, Store, ShoppingBag } from 'lucide-react';
 import authService from '../services/auth.service';
 import { useAppDispatch } from '@/store/hooks';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials } from '@/features/auth/store/auth.slice';
 import type { UserRole } from '../types';
 
 const SelectRole: React.FC = () => {

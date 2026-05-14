@@ -5,11 +5,12 @@ import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { addToCartAsync } from '@/store/slices/cart.slice';
-import { toggleWishlistItem } from '@/store/slices/wishlist.slice';
+import { addToCartAsync } from '@/features/buyer/store/cart.slice';
+import { toggleWishlistItem } from '@/features/buyer/store/wishlist.slice';
 import { useSocket } from '@/shared/contexts/SocketContext';
-import { chatApi } from '@/shared/services/chat.api';
+import { chatApi } from '@/features/chat/services/chat.api';
 import Button from '@/shared/components/ui/Button';
+import Modal from '@/shared/components/ui/Modal';
 import Loader from '@/shared/components/feedback/Loader';
 import ErrorState from '@/shared/components/feedback/ErrorState';
 import Navbar from '@/features/landing/components/Navbar';
@@ -24,10 +25,12 @@ const ProductDetail: React.FC = () => {
   const wishlistItems = useAppSelector(state => state.wishlist.items);
   const { setActiveChatId } = useSocket();
   const [contactingSupplier, setContactingSupplier] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const user = useAppSelector(state => state.auth.user);
+  const isAdmin = user?.role === 'admin';
 
   React.useEffect(() => {
     if (id === 'undefined') { navigate('/'); return; }
@@ -51,6 +54,7 @@ const ProductDetail: React.FC = () => {
 
   const handleContactSupplier = async () => {
     if (!product) return;
+    if (isAdmin) { setShowAdminModal(true); return; }
     setContactingSupplier(true);
     try {
       const conversation = await chatApi.getOrCreateConversation(product.supplierId, product.id);
@@ -72,6 +76,7 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (isAdmin) { setShowAdminModal(true); return; }
     if (isInCart) { navigate(ROUTES.CART); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
     dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage }));
@@ -79,6 +84,7 @@ const ProductDetail: React.FC = () => {
 
   const handleBuyNow = () => {
     if (!product) return;
+    if (isAdmin) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
     dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage }));
     navigate(ROUTES.CHECKOUT);
@@ -206,6 +212,26 @@ const ProductDetail: React.FC = () => {
       </main>
 
       <Footer />
+
+      <Modal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        title="Hey, Admin!"
+        footer={<Button onClick={() => setShowAdminModal(false)}>Got it</Button>}
+      >
+        <div className="py-2 text-center">
+          <div className="text-4xl mb-4">👋</div>
+          <p className="text-base font-semibold text-[#0f172a] mb-3">
+            Looks like you're trying to shop as an Admin — that's a no-go!
+          </p>
+          <p className="text-sm text-[#64748b] leading-relaxed">
+            For platform security and clean data integrity, admin accounts are kept separate from buyer activity. Admins can't place orders, add to cart, or chat with suppliers.
+          </p>
+          <p className="text-sm text-[#64748b] mt-3 leading-relaxed">
+            Want to explore AMJ Star as a customer? Simply register a new buyer account with a different mobile number and enjoy the full experience.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };

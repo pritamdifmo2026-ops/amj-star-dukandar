@@ -25,7 +25,7 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
   const handleConfirmAction = async () => {
     if (!productConfirm) return;
     setLoading(true);
-    try { await onVerify(productConfirm.product._id, productConfirm.status); setProductConfirm(null); }
+    try { await onVerify(productConfirm.product._id ?? productConfirm.product.id, productConfirm.status); setProductConfirm(null); }
     finally { setLoading(false); }
   };
 
@@ -46,7 +46,7 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
             </thead>
             <tbody>
               {paged.map(p => (
-                <tr key={p._id} className="hover:bg-[#fafbfc]">
+                <tr key={p._id ?? p.id} className="hover:bg-[#fafbfc]">
                   <td className={tdCls}>
                     <div className="flex items-center gap-3">
                       {p.images?.[0] ? (
@@ -81,7 +81,7 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
                 </tr>
               ))}
               {products.length === 0 && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b]">No {isPending ? 'pending' : 'approved'} products</td></tr>
+                <tr key="empty"><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b]">No {isPending ? 'pending' : 'approved'} products</td></tr>
               )}
             </tbody>
           </table>

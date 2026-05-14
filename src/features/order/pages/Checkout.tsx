@@ -6,7 +6,7 @@ import {
   Truck, ArrowLeft
 } from 'lucide-react';
 import { ROUTES } from '@/shared/constants/routes';
-import { addressApi } from '@/shared/services/address.api';
+import { addressApi } from '@/features/buyer/services/address.api';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();

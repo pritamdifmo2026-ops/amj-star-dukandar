@@ -9,7 +9,7 @@ import {
   removeFromCartAsync,
   updateQuantityAsync,
   fetchCart
-} from '@/store/slices/cart.slice';
+} from '@/features/buyer/store/cart.slice';
 import { ROUTES } from '@/shared/constants/routes';
 
 const Cart: React.FC = () => {

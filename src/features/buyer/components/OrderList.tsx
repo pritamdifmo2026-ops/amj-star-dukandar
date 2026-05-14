@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { orderApi } from '@/shared/services/order.api';
+import { orderApi } from '@/features/order/services/order.api';
 import { ShoppingBag, ChevronRight, Clock, Package } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
@@ -11,7 +11,7 @@ const OrderList: React.FC = () => {
   useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {
-    try { setOrders(await orderApi.getOrders()); }
+    try { const res = await orderApi.list(); setOrders(res.data ?? []); }
     catch (err) { console.error('Failed to fetch orders', err); }
     finally { setLoading(false); }
   };

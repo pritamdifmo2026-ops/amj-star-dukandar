@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import authService from '../services/auth.service';
 import { useAppDispatch } from '@/store/hooks';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials } from '@/features/auth/store/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
 
 const VerifyOtp: React.FC = () => {

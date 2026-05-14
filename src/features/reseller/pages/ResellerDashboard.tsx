@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
+import { logout } from '@/features/auth/store/auth.slice';
 import { LayoutDashboard, ShoppingBag, CreditCard, History, LogOut, TrendingUp, Package, Users, Search, ArrowUpRight, Menu, Bell, Mail, LifeBuoy, Store, UserPlus, BarChart3, Settings as SettingsIcon, Handshake, Zap } from 'lucide-react';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import Modal from '@/shared/components/ui/Modal';

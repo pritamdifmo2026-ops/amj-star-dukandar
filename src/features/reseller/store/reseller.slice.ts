@@ -32,11 +32,11 @@ const resellerSlice = createSlice({
   },
 });
 
-export const { 
-  setResellerProfile, 
-  setResellerLoading, 
-  setResellerError, 
-  clearResellerProfile 
+export const {
+  setResellerProfile,
+  setResellerLoading,
+  setResellerError,
+  clearResellerProfile
 } = resellerSlice.actions;
 
 export default resellerSlice.reducer;

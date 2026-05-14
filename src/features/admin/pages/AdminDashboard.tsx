@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
+import { logout } from '@/features/auth/store/auth.slice';
 import { useSearchParams } from 'react-router-dom';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 import DashboardOverview from '../components/DashboardOverview';
 import SupplierVerification from '../components/SupplierVerification';
@@ -15,7 +16,9 @@ import ProductQueue from '../components/ProductQueue';
 import CategoryManagement from '../components/CategoryManagement';
 import ResellerVerification from '../components/ResellerVerification';
 import BannerManagement from '../components/BannerManagement';
+import EnquiryManagement from '../components/EnquiryManagement';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
+import adminService from '../services/admin.service';
 
 const tabLabel: Record<string, string> = {
   stats: 'Platform Overview',
@@ -28,17 +31,8 @@ const tabLabel: Record<string, string> = {
   products: 'Product Queue',
   categories: 'Category Management',
   banners: 'Banner Management',
+  enquiry: 'Customer Enquiries',
 };
-
-const adminMenu: MenuItem[] = [
-  { id: 'stats', label: 'Overview', icon: BarChart3 },
-  { id: 'suppliers', label: 'Manage Suppliers', icon: Users },
-  { id: 'resellers', label: 'Manage Resellers', icon: Users },
-  { id: 'users', label: 'User Management', icon: Users },
-  { id: 'products', label: 'Product Queue', icon: Package },
-  { id: 'categories', label: 'Categories', icon: Tags },
-  { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
-];
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAppSelector(state => state.auth);
@@ -49,6 +43,23 @@ const AdminDashboard: React.FC = () => {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 1024);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const { data: newEnquiryCount = 0 } = useQuery<number>({
+    queryKey: ['admin', 'enquiry', 'count'],
+    queryFn: () => adminService.getEnquiryNewCount(),
+    refetchInterval: 60_000,
+  });
+
+  const adminMenu: MenuItem[] = [
+    { id: 'stats', label: 'Overview', icon: BarChart3 },
+    { id: 'suppliers', label: 'Manage Suppliers', icon: Users },
+    { id: 'resellers', label: 'Manage Resellers', icon: Users },
+    { id: 'users', label: 'User Management', icon: Users },
+    { id: 'products', label: 'Product Queue', icon: Package },
+    { id: 'categories', label: 'Categories', icon: Tags },
+    { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
+    { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
+  ];
 
   useEffect(() => {
     const handleResize = () => setIsSidebarOpen(window.innerWidth > 1024);
@@ -139,6 +150,7 @@ const AdminDashboard: React.FC = () => {
             )}
             {activeTab === 'categories' && <CategoryManagement />}
             {activeTab === 'banners' && <BannerManagement />}
+            {activeTab === 'enquiry' && <EnquiryManagement />}
           </div>
         )}
       </main>
