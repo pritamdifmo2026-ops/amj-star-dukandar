@@ -138,7 +138,7 @@ const ChatInbox: React.FC = () => {
         conversationId: activeConv._id,
         buyerId,
         items: [{ name: quoteForm.itemName, quantity: quoteForm.quantity, price: quoteForm.price }],
-        totalAmount: quoteForm.quantity * quoteForm.price,
+        totalAmount: quoteForm.price,
         shippingCost: quoteForm.shipping,
         terms: quoteForm.terms
       });
@@ -165,13 +165,21 @@ const ChatInbox: React.FC = () => {
   };
 
   const handlePayment = async (orderId: string) => {
+    if (!(window as any).Razorpay) {
+      toast.error('Payment gateway not loaded. Please refresh and try again.');
+      return;
+    }
     const loadingToast = toast.loading('Initializing payment...');
     try {
       const data = await paymentApi.createOrder(orderId);
+      if (!data.razorpayOrderId || !data.keyId) {
+        throw new Error('Invalid payment config received from server.');
+      }
+      toast.dismiss(loadingToast);
       const options = {
         key: data.keyId,
         amount: data.amount,
-        currency: data.currency,
+        currency: data.currency || 'INR',
         name: 'AMJStar Dukandar',
         description: `Order #${data.orderNumber}`,
         order_id: data.razorpayOrderId,
@@ -183,29 +191,29 @@ const ChatInbox: React.FC = () => {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
             });
-            toast.success('Payment successful!', { id: verifyToast });
+            toast.success('Payment successful! Order confirmed.', { id: verifyToast });
             loadMessages();
           } catch (err) {
-            console.error('Verification failed', err);
-            toast.error('Payment verification failed', { id: verifyToast });
+            toast.error('Payment verification failed. Contact support.', { id: verifyToast });
           }
         },
-        prefill: {
-          name: data.prefill?.name || user?.name,
-          email: data.prefill?.email || user?.email,
-          contact: data.prefill?.contact || user?.phone || user?.phoneNumber || user?.contact
+        modal: {
+          ondismiss: () => toast('Payment cancelled.'),
         },
-        theme: { color: '#ff4d4d' }
+        prefill: {
+          name: data.prefill?.name || user?.name || '',
+          email: data.prefill?.email || user?.email || '',
+          contact: data.prefill?.contact || user?.phone || '',
+        },
+        theme: { color: '#e65c00' },
       };
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', (response: any) => {
-        toast.error('Payment failed: ' + response.error.description);
+        toast.error('Payment failed: ' + (response.error?.description || 'Unknown error'));
       });
       rzp.open();
-      toast.dismiss(loadingToast);
     } catch (err: any) {
-      console.error('Payment initialization failed', err);
-      toast.error('Failed to initialize payment', { id: loadingToast });
+      toast.error(err.message || 'Failed to initialize payment.', { id: loadingToast });
     }
   };
 
@@ -246,8 +254,8 @@ const ChatInbox: React.FC = () => {
         <div className="px-4 py-3 flex flex-col gap-2">
           {quote.items.map((item: any, i: number) => (
             <div key={i} className="flex justify-between text-xs text-[#475569]">
-              <span>{item.name} x {item.quantity}</span>
-              <span className="font-semibold">₹{item.price * item.quantity}</span>
+              <span>{item.name} × {item.quantity}</span>
+              <span className="font-semibold">₹{item.price.toLocaleString('en-IN')}</span>
             </div>
           ))}
           <div className="flex justify-between text-xs text-[#475569]">
@@ -479,7 +487,7 @@ const ChatInbox: React.FC = () => {
                   <input type="number" value={quoteForm.quantity} onChange={e => setQuoteForm({ ...quoteForm, quantity: Number(e.target.value) })} className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>Unit Price (₹)</label>
+                  <label className={labelCls}>Total Price (₹)</label>
                   <input type="number" value={quoteForm.price} onChange={e => setQuoteForm({ ...quoteForm, price: Number(e.target.value) })} className={inputCls} />
                 </div>
               </div>

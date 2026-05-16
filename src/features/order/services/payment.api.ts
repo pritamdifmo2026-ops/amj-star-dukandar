@@ -2,7 +2,7 @@ import apiClient from '@/api/client';
 
 export const paymentApi = {
   createOrder: async (orderId: string) => {
-    const response = await apiClient.post('/payments/create-order', { orderId });
+    const response = await apiClient.post('/payments/create-order', { orderId }, { timeout: 60000 });
     return response.data;
   },
 
@@ -11,7 +11,7 @@ export const paymentApi = {
     razorpay_payment_id: string;
     razorpay_signature: string;
   }) => {
-    const response = await apiClient.post('/payments/verify', paymentData);
+    const response = await apiClient.post('/payments/verify', paymentData, { timeout: 60000 });
     return response.data;
   }
 };

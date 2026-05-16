@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
@@ -115,7 +116,7 @@ const Navbar: React.FC = () => {
       <nav className="bg-surface py-1 border-b border-border">
         <div className="max-w-[var(--width-container)] mx-auto px-8 flex justify-between items-center">
           <Link to={ROUTES.HOME} className="no-underline">
-            <img src="/favicon.jpeg" alt="AMJStar Logo" style={{ height: '38px', objectFit: 'contain' }} />
+            <img src={logo} alt="AMJStar Logo" style={{ height: '38px', objectFit: 'contain' }} />
           </Link>
 
           <SearchBar categories={categories} />
@@ -220,7 +221,7 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <img src="/favicon.jpeg" alt="Logo" className="h-8" />
+              <img src={logo} alt="Logo" className="h-8" />
             )}
             <button className="bg-transparent border-none cursor-pointer text-heading" onClick={() => setMobileOpen(false)}>
               <X size={20} />

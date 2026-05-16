@@ -1,7 +1,7 @@
 import React from 'react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
-import { Plus, Pencil, Trash2, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, Camera } from 'lucide-react';
 import { useBannerManagement } from '../hooks/useBannerManagement';
 
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
@@ -90,20 +90,42 @@ const BannerManagement: React.FC = () => {
           <div className="flex flex-col gap-2">
             <label className="text-xs font-bold text-[#94a3b8] uppercase tracking-wider">Responsive Images</label>
             <div className="grid grid-cols-3 gap-3">
-              {(['imageDesktop', 'imageTablet', 'imageMobile'] as const).map(field => (
-                <label key={field} className="relative border-2 border-dashed border-[#e2e8f0] rounded-[8px] aspect-[16/9] flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:border-primary transition-colors">
-                  {formData[field] ? (
-                    <img src={formData[field]} className="w-full h-full object-cover absolute inset-0" alt={field} />
-                  ) : uploading[field] ? (
-                    <span className="text-xs text-[#64748b]">Uploading...</span>
-                  ) : (
-                    <>
-                      <Upload size={20} color="#94a3b8" />
-                      <span className="text-[10px] text-[#64748b] mt-1 capitalize">{field.replace('image', '')}</span>
-                    </>
-                  )}
-                  <input type="file" onChange={e => handleImageUpload(e, field)} accept="image/*" className="hidden" />
-                </label>
+              {([
+                { field: 'imageDesktop', label: 'Desktop', size: '1920 × 560px', viewport: '≥ 1024px' },
+                { field: 'imageTablet',  label: 'Tablet',  size: '1024 × 440px', viewport: '640–1023px' },
+                { field: 'imageMobile',  label: 'Mobile',  size: '640 × 320px',  viewport: '< 640px' },
+              ] as const).map(({ field, label, size, viewport }) => (
+                <div key={field} className="flex flex-col gap-1">
+                  <label className="relative border-2 border-dashed border-[#e2e8f0] rounded-[8px] aspect-[16/9] flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:border-primary transition-colors group/img">
+                    {formData[field] ? (
+                      <>
+                        <img src={formData[field]} className="w-full h-full object-cover absolute inset-0" alt={field} />
+                        {uploading[field] ? (
+                          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-10">
+                            <span className="text-xs text-white font-semibold">Uploading...</span>
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity z-10">
+                            <Camera size={18} color="white" />
+                            <span className="text-[10px] text-white mt-1 font-semibold">Change</span>
+                          </div>
+                        )}
+                      </>
+                    ) : uploading[field] ? (
+                      <span className="text-xs text-[#64748b]">Uploading...</span>
+                    ) : (
+                      <>
+                        <Upload size={20} color="#94a3b8" />
+                        <span className="text-[10px] text-[#64748b] mt-1 font-semibold">{label}</span>
+                      </>
+                    )}
+                    <input type="file" onChange={e => handleImageUpload(e, field)} accept="image/*" className="hidden" />
+                  </label>
+                  <div className="text-center">
+                    <p className="text-[11px] font-bold text-[#475569] m-0">{size}</p>
+                    <p className="text-[10px] text-[#94a3b8] m-0">{viewport}</p>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

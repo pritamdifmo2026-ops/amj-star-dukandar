@@ -14,6 +14,7 @@ import ChatInbox from '@/features/chat/components/ChatInbox';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { chatApi } from '@/features/chat/services/chat.api';
 import adminService from '@/features/admin/services/admin.service';
+import { compressImage } from '@/shared/utils/compressImage';
 import { Camera, Loader2 } from 'lucide-react';
 import OrderList from '../components/OrderList';
 import { orderApi } from '@/features/order/services/order.api';
@@ -102,7 +103,8 @@ const Profile: React.FC = () => {
     if (!file || !user) return;
     setIsUploadingAvatar(true);
     try {
-      const imageUrl = await adminService.uploadImage(file);
+      const compressed = await compressImage(file, 400, 0.85);
+      const imageUrl = await adminService.uploadImage(compressed);
       const response = await authService.updateProfile({ avatar: imageUrl });
       dispatch(setCredentials({ user: response.user }));
       toast.success('Profile picture updated successfully!');

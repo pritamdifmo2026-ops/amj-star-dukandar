@@ -32,8 +32,9 @@ interface ProductGridProps {
 }
 
 const statusCls: Record<string, string> = {
+  draft:    'bg-[#fef9c3] text-[#92400e]',
   approved: 'bg-[#ecfdf5] text-[#059669]',
-  pending: 'bg-[#f1f5f9] text-[#d97706]',
+  pending:  'bg-[#fff7ed] text-[#d97706]',
   rejected: 'bg-[#fef2f2] text-[#dc2626]',
 };
 
@@ -86,7 +87,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
             </div>
             <div className="flex flex-col items-end justify-between gap-2 shrink-0">
               <div className={`text-[0.65rem] font-extrabold px-2 py-1 rounded-[6px] uppercase whitespace-nowrap flex items-center gap-1 ${statusCls[status] || statusCls.pending}`}>
-                {status === 'approved' ? <CheckCircle size={14} /> : status === 'pending' ? <Clock size={14} /> : <AlertCircle size={14} />}
+                {status === 'approved' ? <CheckCircle size={14} /> : status === 'pending' ? <Clock size={14} /> : status === 'draft' ? <FileText size={14} /> : <AlertCircle size={14} />}
                 {product.status || 'PENDING'}
               </div>
               <div className="flex gap-2">
@@ -120,6 +121,7 @@ const SupplierDashboard: React.FC = () => {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 1024);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any>(null);
+  const [previousTab, setPreviousTab] = useState('overview');
 
   const setActiveView = (tab: string) => {
     setSearchParams({ tab });
@@ -173,7 +175,8 @@ const SupplierDashboard: React.FC = () => {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  const handleEdit = (product: any) => { setEditingProduct(product); setActiveView('edit-product'); };
+  const handleAddProduct = () => { setPreviousTab(activeView); setActiveView('add-product'); };
+  const handleEdit = (product: any) => { setPreviousTab(activeView); setEditingProduct(product); setActiveView('edit-product'); };
   const handleDelete = (product: any) => { setProductToDelete(product); setShowDeleteModal(true); };
 
   const confirmDelete = async () => {
@@ -191,8 +194,8 @@ const SupplierDashboard: React.FC = () => {
   const handleFormSuccess = async () => { await fetchProducts(); setActiveView('inventory'); setEditingProduct(null); };
 
   const renderProductListing = (productList: any[]) => {
-    if (isMobile) return <ProductGrid products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={() => setActiveView('add-product')} />;
-    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={() => setActiveView('add-product')} />;
+    if (isMobile) return <ProductGrid products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} />;
+    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} />;
   };
 
   const modalContentCls = "text-center p-4";
@@ -230,7 +233,7 @@ const SupplierDashboard: React.FC = () => {
         )}
 
         {activeView === 'overview' && <SupplierOverview profile={profile} products={products} isTrusted={isTrusted} handleRefresh={() => fetchProducts(true)} setActiveView={setActiveView} renderProductListing={renderProductListing} />}
-        {activeView === 'inventory' && <SupplierInventory products={products} handleRefresh={() => fetchProducts(true)} renderProductListing={renderProductListing} />}
+        {activeView === 'inventory' && <SupplierInventory products={products} handleRefresh={() => fetchProducts(true)} onAddProduct={handleAddProduct} renderProductListing={renderProductListing} />}
         {activeView === 'orders' && <div className="p-5"><OrderList /></div>}
         {activeView === 'quotations' && <SupplierQuotations />}
         {activeView === 'chat' && <div className="h-screen max-lg:h-[calc(100vh-64px)] w-full"><ChatInbox /></div>}
@@ -239,7 +242,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'settings' && <SupplierSettings profile={profile} />}
         {(activeView === 'add-product' || activeView === 'edit-product') && (
           <div className="animate-fade-in -mt-4">
-            <AddProductForm onBack={() => { setActiveView('inventory'); setEditingProduct(null); }} onSuccess={handleFormSuccess} editingProduct={editingProduct} />
+            <AddProductForm onBack={() => { setActiveView('inventory'); setEditingProduct(null); }} onSuccess={handleFormSuccess} editingProduct={editingProduct} returnTab={previousTab} />
           </div>
         )}
       </main>

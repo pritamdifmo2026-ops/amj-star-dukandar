@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart, CreditCard, MessageCircle } from 'lucide-react';
+import {
+  ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart,
+  CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck
+} from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
@@ -26,6 +29,7 @@ const ProductDetail: React.FC = () => {
   const { setActiveChatId } = useSocket();
   const [contactingSupplier, setContactingSupplier] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'company'>('details');
 
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -90,124 +94,319 @@ const ProductDetail: React.FC = () => {
     navigate(ROUTES.CHECKOUT);
   };
 
-  const gstAmount = calculateGST(product.price, product.gstRate);
-  const totalPrice = product.price + gstAmount;
+  const gstAmount = product.gstIncluded ? 0 : calculateGST(product.price, product.gstRate);
+  const totalPrice = product.gstIncluded ? product.price : product.price + gstAmount;
+
+  const packagingLabel: Record<string, string> = { bulk: 'Bulk', retail: 'Retail Pack', custom: 'Custom Packaging' };
+
+  // Collect all specification rows for the details tab
+  const hasSpecs = product.countryOfOrigin || product.leadTime || product.packagingType ||
+    product.hsnCode || (product.specifications && Object.keys(product.specifications).length > 0);
+  const hasCerts = product.certifications && product.certifications.length > 0;
 
   return (
     <div className={pageCls}>
       <Navbar />
 
       <main className="flex-1 py-6 pb-20 max-md:py-4">
-        <div className="w-full max-w-[var(--width-container)] mx-auto px-8">
+        <div className="w-full max-w-[var(--width-container)] mx-auto px-8 max-md:px-4">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 bg-transparent border-none text-body text-sm font-medium cursor-pointer mt-4 mb-6 p-0 transition-colors hover:text-primary"
           >
-            <ArrowLeft size={20} /> <span>Back</span>
+            <ArrowLeft size={20} /> Back
           </button>
 
-          <div className="grid grid-cols-[1fr_1.2fr] gap-8 mb-12 relative max-lg:grid-cols-[1fr_1.1fr] max-lg:gap-6 max-[992px]:grid-cols-1 max-[992px]:gap-8">
-            {/* Images */}
-            <div className="flex flex-col gap-4 relative z-[2] max-[992px]:max-w-[600px] max-[992px]:mx-auto max-[992px]:w-full">
-              <div className="w-full aspect-square bg-cream border border-border rounded-[var(--radius-md)] overflow-visible flex items-center justify-center relative">
+          {/* Main grid: image + info */}
+          <div className="grid grid-cols-[1fr_1.2fr] gap-8 mb-10 max-lg:grid-cols-[1fr_1.1fr] max-lg:gap-6 max-[992px]:grid-cols-1 max-[992px]:gap-8">
+            {/* Image gallery */}
+            <div className="flex flex-col gap-4 max-[992px]:max-w-[600px] max-[992px]:mx-auto max-[992px]:w-full">
+              <div className="w-full aspect-square bg-cream border border-border rounded-[var(--radius-md)] overflow-visible flex items-center justify-center">
                 <ImageMagnifier key={currentImage} src={currentImage} alt={product.name} />
               </div>
-              <div className="flex gap-3 overflow-x-auto scrollbar-none p-1">
-                {galleryImages.map((img, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => setSelectedImage(img)}
-                    className={`w-20 h-20 border rounded-[var(--radius-sm)] overflow-hidden cursor-pointer shrink-0 transition-colors ${currentImage === img ? 'border-primary' : 'border-border hover:border-primary'}`}
-                  >
-                    <img src={img} alt={`${product.name} ${idx}`} className="w-full h-full object-contain" />
-                  </div>
-                ))}
-              </div>
+              {galleryImages.length > 1 && (
+                <div className="flex gap-3 overflow-x-auto scrollbar-none p-1">
+                  {galleryImages.map((img, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedImage(img)}
+                      className={`w-20 h-20 border rounded-[var(--radius-sm)] overflow-hidden cursor-pointer shrink-0 transition-colors ${currentImage === img ? 'border-primary' : 'border-border hover:border-primary'}`}
+                    >
+                      <img src={img} alt={`${product.name} ${idx}`} className="w-full h-full object-contain" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Info */}
+            {/* Product info */}
             <div className="flex flex-col max-[992px]:mt-4">
-              <div className="flex gap-3 mb-4 flex-wrap max-sm:gap-2">
+              {/* Badges */}
+              <div className="flex gap-2 mb-4 flex-wrap">
                 {product.isVerified && (
-                  <span className="bg-[#e8f5e9] text-[#2e7d32] text-[11px] font-bold px-2.5 py-1 rounded-[4px] flex items-center gap-1 uppercase max-sm:text-[10px] max-sm:px-2">
-                    <ShieldCheck size={14} /> Verified Supplier
+                  <span className="bg-[#e8f5e9] text-[#2e7d32] text-[11px] font-bold px-2.5 py-1 rounded-[4px] flex items-center gap-1 uppercase">
+                    <ShieldCheck size={13} /> Verified Supplier
                   </span>
                 )}
-                <span className="bg-cream text-body text-[11px] font-semibold px-2.5 py-1 rounded-[4px] uppercase max-sm:text-[10px] max-sm:px-2">
+                {product.isGSTVerified && (
+                  <span className="bg-[#eff6ff] text-[#1d4ed8] text-[11px] font-bold px-2.5 py-1 rounded-[4px] flex items-center gap-1 uppercase">
+                    <BadgeCheck size={13} /> GST Verified
+                  </span>
+                )}
+                <span className="bg-cream text-body text-[11px] font-semibold px-2.5 py-1 rounded-[4px] uppercase">
                   {product.category}
                 </span>
               </div>
 
-              <div className="flex justify-between items-start gap-4 max-sm:gap-2">
-                <h1 className="text-2xl font-extrabold text-heading leading-[1.2] mb-2 max-[992px]:text-xl max-sm:text-lg">{product.name}</h1>
+              {/* Title + wishlist */}
+              <div className="flex justify-between items-start gap-4 mb-3">
+                <h1 className="text-2xl font-extrabold text-heading leading-[1.2] max-[992px]:text-xl max-sm:text-lg">{product.name}</h1>
                 <button
                   onClick={handleToggleWishlist}
                   aria-label="Add to wishlist"
-                  className="bg-surface border border-border rounded-full w-12 h-12 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-sm hover:scale-105 hover:border-primary max-sm:w-10 max-sm:h-10"
+                  className="bg-surface border border-border rounded-full w-11 h-11 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-sm hover:scale-105 hover:border-primary"
                 >
-                  <Heart size={24} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} className="max-sm:w-5 max-sm:h-5" />
+                  <Heart size={22} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
                 </button>
               </div>
 
-              <div className="flex items-center gap-3 mb-8">
+              {/* Rating */}
+              <div className="flex items-center gap-2 mb-6">
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} fill={i < Math.floor(product.rating) ? 'var(--color-primary)' : 'none'} color={i < Math.floor(product.rating) ? 'var(--color-primary)' : 'var(--color-muted)'} />
+                    <Star key={i} size={15} fill={i < Math.floor(product.rating) ? 'var(--color-primary)' : 'none'} color={i < Math.floor(product.rating) ? 'var(--color-primary)' : 'var(--color-muted)'} />
                   ))}
                 </div>
                 <span className="text-sm text-body font-semibold">{product.rating} / 5.0</span>
               </div>
 
-              <div className="bg-cream p-4 rounded-[var(--radius-md)] mb-6 border-l-4 border-primary max-sm:p-3">
+              {/* Price box */}
+              <div className="bg-cream p-4 rounded-[var(--radius-md)] mb-5 border-l-4 border-primary">
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm text-body font-semibold">Wholesale Price:</span>
-                  <span className="text-xl font-extrabold text-primary max-md:text-lg max-sm:text-base">{formatCurrency(product.price)}</span>
+                  <span className="text-xl font-extrabold text-primary">{formatCurrency(product.price)}</span>
                   <span className="text-base text-muted">/ {product.unit}</span>
                 </div>
-                <p className="text-xs text-muted mt-0.5">+ {formatCurrency(gstAmount)} GST ({product.gstRate}%)</p>
-                <p className="text-lg font-bold text-heading mt-2 max-sm:text-base">Total: {formatCurrency(totalPrice)}</p>
+                {product.gstIncluded ? (
+                  <p className="text-xs text-muted mt-0.5">GST inclusive ({product.gstRate}% included in price)</p>
+                ) : (
+                  <p className="text-xs text-muted mt-0.5">+ {formatCurrency(gstAmount)} GST ({product.gstRate}%) extra</p>
+                )}
+                <p className="text-base font-bold text-heading mt-2">
+                  {product.gstIncluded ? 'All-inclusive price' : `Total: ${formatCurrency(totalPrice)}`}
+                </p>
               </div>
 
-              <div className="flex gap-8 mb-8 max-md:flex-wrap max-md:gap-6">
-                {[
-                  { Icon: Package, strong: `${product.minOrderQty} ${product.unit}s`, label: 'Min. Order' },
-                  { Icon: Truck, strong: 'PAN India', label: 'Shipping' },
-                ].map(({ Icon, strong, label }) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <Icon size={18} className="text-muted" />
+              {/* Key details row */}
+              <div className="flex gap-6 mb-6 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <Package size={17} className="text-muted" />
+                  <div>
+                    <strong className="block text-sm text-heading">{product.minOrderQty} {product.unit}s</strong>
+                    <span className="block text-xs text-muted">Min. Order</span>
+                  </div>
+                </div>
+                {product.leadTime && (
+                  <div className="flex items-center gap-2.5">
+                    <Truck size={17} className="text-muted" />
                     <div>
-                      <strong className="block text-base text-heading">{strong}</strong>
-                      <span className="block text-xs text-muted">{label}</span>
+                      <strong className="block text-sm text-heading">{product.leadTime}</strong>
+                      <span className="block text-xs text-muted">Lead Time</span>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
 
-              <div className="flex gap-4 mb-10 max-md:flex-col max-md:gap-3">
-                <Button size="lg" onClick={handleAddToCart} className="flex-1 h-[54px] text-lg whitespace-nowrap max-md:w-full max-md:flex-none max-md:h-[50px]">
-                  <ShoppingCart size={20} /> {isInCart ? 'Go to Cart' : 'Add to Cart'}
+              {/* Action buttons */}
+              <div className="flex gap-3 mb-8 max-md:flex-col">
+                <Button size="lg" onClick={handleAddToCart} className="flex-1 h-[52px] whitespace-nowrap">
+                  <ShoppingCart size={18} /> {isInCart ? 'Go to Cart' : 'Add to Cart'}
                 </Button>
-                <Button size="lg" variant="primary" onClick={handleBuyNow} className="flex-1 h-[54px] text-lg whitespace-nowrap max-md:w-full max-md:flex-none max-md:h-[50px]">
-                  <CreditCard size={20} /> Buy Now
+                <Button size="lg" variant="primary" onClick={handleBuyNow} className="flex-1 h-[52px] whitespace-nowrap">
+                  <CreditCard size={18} /> Buy Now
                 </Button>
-                <Button variant="outline" size="lg" onClick={handleContactSupplier} disabled={contactingSupplier} className="flex-1 h-[54px] max-md:w-full max-md:flex-none max-md:h-[50px]">
-                  <MessageCircle size={18} /> {contactingSupplier ? 'Opening Chat…' : 'Chat with Supplier'}
+                <Button variant="outline" size="lg" onClick={handleContactSupplier} disabled={contactingSupplier} className="flex-1 h-[52px]">
+                  <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'Chat with Supplier'}
                 </Button>
               </div>
 
-              <div className="bg-surface border border-border p-6 rounded-[var(--radius-md)] max-sm:p-4">
-                <h3 className="text-sm text-muted uppercase tracking-[0.05em] mb-4">Supplier Information</h3>
-                <p className="text-lg font-bold text-heading">{product.supplierName}</p>
-                <p className="text-sm text-body mb-4">Mumbai, Maharashtra</p>
-                <button className="bg-transparent border-none text-primary font-semibold text-sm cursor-pointer p-0 underline">View Store</button>
+              {/* Minimal supplier card */}
+              <div className="bg-surface border border-border p-4 rounded-[var(--radius-md)] flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-lg shrink-0">
+                  {(product.supplierName || 'S')[0].toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-heading truncate">{product.supplierName}</p>
+                  {(product.supplierCity || product.supplierState) && (
+                    <p className="text-xs text-muted flex items-center gap-1 mt-0.5">
+                      <MapPin size={11} /> {[product.supplierCity, product.supplierState].filter(Boolean).join(', ')}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setActiveTab('company')}
+                  className="text-xs text-primary font-semibold bg-transparent border-none cursor-pointer shrink-0 hover:underline"
+                >
+                  Company Info
+                </button>
               </div>
             </div>
           </div>
 
-          <section className="border-t border-border pt-12 mb-20 max-md:pt-8 max-md:mb-10">
-            <h2 className="text-xl font-bold text-heading mb-6">Product Description</h2>
-            <div className="text-base text-body leading-[1.7] max-w-[800px]">{product.description}</div>
-          </section>
+          {/* Tabs */}
+          <div className="border-b border-border mb-8">
+            <div className="flex gap-0">
+              {(['details', 'company'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors cursor-pointer bg-transparent ${
+                    activeTab === tab
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted hover:text-heading'
+                  }`}
+                >
+                  {tab === 'details' ? 'Product Details' : 'Company Details'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tab: Product Details */}
+          {activeTab === 'details' && (
+            <div className="mb-20 max-w-[860px]">
+              {/* Description */}
+              <h2 className="text-lg font-bold text-heading mb-4">Description</h2>
+              <div className="text-base text-body leading-[1.8] mb-10">{product.description}</div>
+
+              {/* Specifications table */}
+              {(hasSpecs || hasCerts) && (
+                <>
+                  <h2 className="text-lg font-bold text-heading mb-4">Specifications</h2>
+                  {hasSpecs && (
+                    <div className="border border-border rounded-[var(--radius-md)] overflow-hidden mb-6">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {product.countryOfOrigin && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream w-[220px] max-sm:w-[140px]">Country of Origin</td>
+                              <td className="py-3 px-5 text-heading">{product.countryOfOrigin}</td>
+                            </tr>
+                          )}
+                          {product.leadTime && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream">Lead Time</td>
+                              <td className="py-3 px-5 text-heading">{product.leadTime}</td>
+                            </tr>
+                          )}
+                          {product.packagingType && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream">Packaging</td>
+                              <td className="py-3 px-5 text-heading">{packagingLabel[product.packagingType] || product.packagingType}</td>
+                            </tr>
+                          )}
+                          {product.hsnCode && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream">HSN Code</td>
+                              <td className="py-3 px-5 text-heading">{product.hsnCode}</td>
+                            </tr>
+                          )}
+                          {product.specifications && Object.entries(product.specifications).map(([key, value], idx, arr) =>
+                            value ? (
+                              <tr key={key} className={idx < arr.length - 1 || hasCerts ? 'border-b border-border' : ''}>
+                                <td className="py-3 px-5 font-semibold text-muted bg-cream capitalize">{key}</td>
+                                <td className="py-3 px-5 text-heading">{value as string}</td>
+                              </tr>
+                            ) : null
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {hasCerts && (
+                    <div className="mb-6">
+                      <p className="text-sm font-bold text-heading mb-3">Certifications</p>
+                      <div className="flex flex-wrap gap-2">
+                        {product.certifications!.map((cert: string) => (
+                          <span key={cert} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] rounded-full text-xs font-semibold">
+                            <ShieldCheck size={12} /> {cert}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Tab: Company Details */}
+          {activeTab === 'company' && (
+            <div className="mb-20 max-w-[680px]">
+              <div className="bg-surface border border-border rounded-[var(--radius-md)] p-7">
+                {/* Header */}
+                <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-2xl shrink-0">
+                    {(product.supplierName || 'S')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-extrabold text-heading mb-1">{product.supplierName}</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {product.isVerified && (
+                        <span className="inline-flex items-center gap-1 bg-[#e8f5e9] text-[#2e7d32] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                          <ShieldCheck size={11} /> Verified Supplier
+                        </span>
+                      )}
+                      {product.isGSTVerified && (
+                        <span className="inline-flex items-center gap-1 bg-[#eff6ff] text-[#1d4ed8] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                          <BadgeCheck size={11} /> GST Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details grid */}
+                <div className="grid grid-cols-2 gap-x-8 gap-y-5 max-sm:grid-cols-1">
+                  {(product.supplierCity || product.supplierState) && (
+                    <div className="flex items-start gap-2.5">
+                      <MapPin size={16} className="text-muted mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted font-semibold mb-0.5">Location</p>
+                        <p className="text-sm text-heading font-medium">
+                          {[product.supplierCity, product.supplierState].filter(Boolean).join(', ')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {product.supplierYearEst && (
+                    <div className="flex items-start gap-2.5">
+                      <Calendar size={16} className="text-muted mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted font-semibold mb-0.5">Year of Establishment</p>
+                        <p className="text-sm text-heading font-medium">{product.supplierYearEst}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* About */}
+                {product.supplierAbout && (
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <p className="text-xs text-muted font-semibold mb-2">About the Company</p>
+                    <p className="text-sm text-body leading-[1.7]">{product.supplierAbout}</p>
+                  </div>
+                )}
+
+                {/* CTA */}
+                <div className="mt-6 pt-6 border-t border-border">
+                  <Button onClick={handleContactSupplier} disabled={contactingSupplier} className="w-full">
+                    <MessageCircle size={16} /> {contactingSupplier ? 'Opening Chat…' : 'Chat with Supplier'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
@@ -225,10 +424,7 @@ const ProductDetail: React.FC = () => {
             Looks like you're trying to shop as an Admin — that's a no-go!
           </p>
           <p className="text-sm text-[#64748b] leading-relaxed">
-            For platform security and clean data integrity, admin accounts are kept separate from buyer activity. Admins can't place orders, add to cart, or chat with suppliers.
-          </p>
-          <p className="text-sm text-[#64748b] mt-3 leading-relaxed">
-            Want to explore AMJ Star as a customer? Simply register a new buyer account with a different mobile number and enjoy the full experience.
+            Admin accounts are kept separate from buyer activity. Admins can't place orders, add to cart, or chat with suppliers.
           </p>
         </div>
       </Modal>

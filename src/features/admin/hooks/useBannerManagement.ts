@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import adminService from '../services/admin.service';
 import type { Banner } from '../types/admin.types';
+import { compressImage } from '@/shared/utils/compressImage';
 
 type BannerFormData = {
   link: string;
@@ -67,12 +68,21 @@ export const useBannerManagement = () => {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset so the same file can be picked again later
+    e.target.value = '';
+    // Show instant local preview while upload is in progress
+    const localUrl = URL.createObjectURL(file);
+    setFormData(prev => ({ ...prev, [field]: localUrl }));
     setUploading(prev => ({ ...prev, [field]: true }));
     try {
-      const url = await adminService.uploadImage(file);
+      const compressed = await compressImage(file, 1920, 0.82);
+      const url = await adminService.uploadImage(compressed);
+      URL.revokeObjectURL(localUrl);
       setFormData(prev => ({ ...prev, [field]: url }));
     } catch (error) {
       console.error(`Failed to upload ${field}:`, error);
+      // Revert to empty on failure
+      setFormData(prev => ({ ...prev, [field]: '' }));
     } finally {
       setUploading(prev => ({ ...prev, [field]: false }));
     }

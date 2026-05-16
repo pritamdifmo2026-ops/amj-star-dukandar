@@ -73,20 +73,9 @@ const BannerSlider: React.FC = () => {
                 alt="Promotion Banner"
                 className={`w-full h-full object-cover transition-transform duration-[1500ms] ease-out ${isActive ? 'scale-105' : 'scale-100'}`}
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-transparent max-md:bg-gradient-to-t flex items-end justify-end p-6 z-[2]">
-                <div className="w-full max-w-[1200px] mx-auto px-8">
-                  <div className={`transition-all duration-[800ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isActive ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
-                    {banner.link && (
-                      <Link
-                        to={banner.link}
-                        className="inline-block px-5 py-2.5 max-md:px-3 max-md:py-1.5 bg-black text-white no-underline rounded-[8px] max-md:rounded-[6px] font-semibold text-[0.9rem] max-md:text-[0.75rem] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.2)] hover:bg-[#1a1a1a] hover:scale-105 border border-black"
-                      >
-                        View Details
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {banner.link && (
+                <Link to={banner.link} className="absolute inset-0 z-[2]" aria-label="Banner link" />
+              )}
             </div>
           );
         })}
