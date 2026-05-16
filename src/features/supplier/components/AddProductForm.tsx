@@ -40,6 +40,42 @@ const getCategorySuggestions = (categoryName: string): string[] => {
   return [];
 };
 
+const VALUE_PLACEHOLDERS: [RegExp, string][] = [
+  [/gsm/i,                        'e.g. 120, 200, 350'],
+  [/width|length|height|depth|size|dimension/i, 'e.g. 58 cm, 72 inch'],
+  [/weight/i,                     'e.g. 250 g, 1 kg'],
+  [/color|colour/i,               'e.g. Navy Blue, Off-White'],
+  [/pattern/i,                    'e.g. Solid, Stripes, Checks'],
+  [/fabric\s*type|material/i,     'e.g. Cotton, Polyester, Silk'],
+  [/dye/i,                        'e.g. Reactive, Pigment, Vat'],
+  [/thread\s*count/i,             'e.g. 200, 300, 400 TC'],
+  [/composition|content/i,        'e.g. 60% Cotton 40% Polyester'],
+  [/origin|made\s*in/i,           'e.g. India, China, Bangladesh'],
+  [/brand|make/i,                 'e.g. Reliance, Own Brand'],
+  [/voltage|power/i,              'e.g. 220V, 440V 3-Phase'],
+  [/capacity/i,                   'e.g. 500 kg/hr, 10 tons/day'],
+  [/warranty/i,                   'e.g. 12 months, 2 years'],
+  [/automation/i,                 'e.g. Semi-Auto, Fully Automatic'],
+  [/purity/i,                     'e.g. 99.5%'],
+  [/shelf\s*life/i,               'e.g. 12 months, 18 months'],
+  [/ingredient/i,                 'e.g. Sugar, Salt, Maida'],
+  [/fssai/i,                      'e.g. 12345678901234'],
+  [/organic/i,                    'e.g. Yes, No, Certified'],
+  [/harvest|season/i,             'e.g. Kharif, Rabi, Oct–Dec'],
+  [/type/i,                       'e.g. Woven, Knitted, Non-woven'],
+  [/finish/i,                     'e.g. Matte, Glossy, Satin'],
+  [/count/i,                      'e.g. 40s, 60s, 80s'],
+  [/cas/i,                        'e.g. 7647-14-5'],
+  [/storage/i,                    'e.g. Cool & Dry, Below 25°C'],
+];
+
+const getValuePlaceholder = (key: string): string => {
+  for (const [regex, hint] of VALUE_PLACEHOLDERS) {
+    if (regex.test(key)) return hint;
+  }
+  return 'Enter value';
+};
+
 const specsToRows = (specs: Record<string, string> = {}): SpecRow[] =>
   Object.entries(specs).map(([key, value], i) => ({ id: String(i), key, value: String(value) }));
 
@@ -575,7 +611,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                       type="text"
                       value={row.value}
                       onChange={e => updateSpecRow(row.id, 'value', e.target.value)}
-                      placeholder="e.g. Oxford Cotton"
+                      placeholder={getValuePlaceholder(row.key)}
                     />
                     <button
                       type="button"
