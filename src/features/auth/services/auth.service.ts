@@ -36,7 +36,13 @@ const authService = {
     await apiClient.post('/auth/logout');
   },
 
-  updateProfile: async (payload: { name?: string; email?: string; phone?: string; avatar?: string }) => {
+  updateProfile: async (payload: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    avatar?: string;
+    address?: { fullAddress?: string; city?: string; state?: string; pincode?: string };
+  }) => {
     const response = await apiClient.put<{ message: string; user: AuthUser }>('/user/profile', payload);
     return response.data;
   },

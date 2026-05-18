@@ -148,13 +148,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                 ].filter(Boolean).join(' ')}
                 style={isActive ? { backgroundColor: brandColor } : {}}
               >
-                <div className={['flex items-center justify-center w-6 h-6 transition-transform', isActive && 'scale-110'].filter(Boolean).join(' ')}>
-                  <Icon size={18} />
+                <div className="relative flex items-center justify-center w-6 h-6 transition-transform">
+                  <Icon size={18} className={isActive ? 'scale-110' : ''} />
+                  {!isSidebarOpen && item.badge && item.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                  )}
                 </div>
                 {isSidebarOpen && <span className="flex-1">{item.label}</span>}
                 {isSidebarOpen && item.badge && item.badge > 0 && (
                   <span className="text-[10px] font-extrabold bg-red-500 text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
-                    {item.badge}
+                    {item.badge > 99 ? '99+' : item.badge}
                   </span>
                 )}
               </button>

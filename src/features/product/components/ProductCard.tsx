@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Heart, ShieldCheck } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { addToCartAsync } from '@/features/buyer/store/cart.slice';
 import { toggleWishlistItem } from '@/features/buyer/store/wishlist.slice';
@@ -72,7 +72,14 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
           <p className="font-display text-[15px] font-normal text-heading">₹{(product.price || 0).toLocaleString('en-IN')}</p>
           <p className="text-[10px] text-muted">MOQ: {product.minOrderQty} {product.unit}</p>
         </div>
-        <p className="text-[11px] text-body font-medium">{product.supplierName}</p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className="text-[11px] text-body font-medium">{product.supplierName}</p>
+          {product.isVerified && (
+            <span className="flex items-center gap-0.5 text-[9px] font-bold text-[#059669] bg-[#ecfdf5] px-1.5 py-0.5 rounded-full leading-none border border-[#a7f3d0]" title="Verified Supplier">
+              <ShieldCheck size={10} /> Verified
+            </span>
+          )}
+        </div>
       </div>
       {showAddToCart && variant !== 'wishlist' && (
         <div className="px-2 pb-2">

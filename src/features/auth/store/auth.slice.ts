@@ -10,6 +10,12 @@ interface AuthUser {
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
   avatar?: string;
+  address?: {
+    fullAddress?: string;
+    city?: string;
+    state?: string;
+    pincode?: string;
+  };
 }
 
 interface AuthState {

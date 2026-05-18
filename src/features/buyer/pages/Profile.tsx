@@ -45,6 +45,12 @@ const Profile: React.FC = () => {
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
 
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [editAddrCity, setEditAddrCity] = useState(user?.address?.city || '');
+  const [editAddrState, setEditAddrState] = useState(user?.address?.state || '');
+  const [editAddrPincode, setEditAddrPincode] = useState(user?.address?.pincode || '');
+  const [editAddrFull, setEditAddrFull] = useState(user?.address?.fullAddress || '');
+
   const [isChangingPhone, setIsChangingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -140,6 +146,28 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handleSaveAddress = async () => {
+    if (!editAddrCity.trim() || !editAddrState.trim() || !/^\d{6}$/.test(editAddrPincode.trim())) {
+      toast.error('City, State and a valid 6-digit Pincode are required');
+      return;
+    }
+    try {
+      const response = await authService.updateProfile({
+        address: {
+          city: editAddrCity.trim(),
+          state: editAddrState.trim(),
+          pincode: editAddrPincode.trim(),
+          fullAddress: editAddrFull.trim() || undefined,
+        },
+      });
+      dispatch(setCredentials({ user: response.user }));
+      setIsEditingAddress(false);
+      toast.success('Address saved!');
+    } catch {
+      toast.error('Failed to save address');
+    }
+  };
+
   const handleSendVerifyEmail = async () => {
     setIsSendingEmail(true);
     try {
@@ -220,10 +248,10 @@ const Profile: React.FC = () => {
   );
 
   return (
-    <>
+    <div className="h-screen flex flex-col overflow-hidden">
     <Navbar />
-    <div className="flex min-h-screen bg-[#f8fafc] max-lg:flex-col">
-      <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b">
+    <div className="flex flex-1 min-h-0 bg-[#f8fafc] max-lg:flex-col">
+      <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b max-lg:overflow-y-auto">
         <div className="flex items-center gap-3 p-5 border-b border-[#f1f5f9]">
           <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shrink-0 overflow-hidden">
             {user?.avatar ? (
@@ -267,7 +295,7 @@ const Profile: React.FC = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
+      <main className={`flex-1 min-w-0 flex flex-col ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-auto'}`}>
         {activeTab === 'overview' && (
           <div className="relative bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-8 pt-8 pb-8 max-sm:px-4">
             <div className="flex items-end gap-5 max-sm:flex-col max-sm:items-start">
@@ -323,7 +351,14 @@ const Profile: React.FC = () => {
           </div>
         )}
 
-        <div className="px-8 pt-6 max-sm:px-4">
+        {/* Messages tab fills remaining height directly — no padding wrapper */}
+        {activeTab === 'messages' && (
+          <div className="flex-1 min-h-0">
+            <ChatInbox />
+          </div>
+        )}
+
+        <div className={`px-8 pt-6 max-sm:px-4 ${activeTab === 'messages' ? 'hidden' : ''}`}>
           {activeTab === 'overview' && (
             <div className="grid grid-cols-4 gap-4 mb-6 max-sm:grid-cols-2">
               {[
@@ -389,13 +424,62 @@ const Profile: React.FC = () => {
 
               <div className="bg-white border border-[#eef2f6] rounded-[12px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Default Address</h3>
-                  <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">Manage</button>
+                  <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Default Delivery Address</h3>
+                  {!isEditingAddress ? (
+                    <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
+                      onClick={() => {
+                        setEditAddrCity(user?.address?.city || '');
+                        setEditAddrState(user?.address?.state || '');
+                        setEditAddrPincode(user?.address?.pincode || '');
+                        setEditAddrFull(user?.address?.fullAddress || '');
+                        setIsEditingAddress(true);
+                      }}>
+                      {user?.address?.city ? 'Edit' : 'Add Address'}
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button className="text-xs font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-1.5 cursor-pointer hover:bg-[#f1f5f9]" onClick={() => setIsEditingAddress(false)}>Cancel</button>
+                      <button className="text-xs font-bold text-white bg-primary rounded-[6px] px-3 py-1.5 border-none cursor-pointer hover:opacity-90" onClick={handleSaveAddress}>Save</button>
+                    </div>
+                  )}
                 </div>
-                <div className="text-sm text-[#475569]">
-                  <p className="font-bold text-[#0f172a] m-0 mb-1">Primary Address</p>
-                  <p className="m-0">123 Trade Center, Mumbai, India</p>
-                </div>
+                {!isEditingAddress ? (
+                  user?.address?.city ? (
+                    <div className="flex items-start gap-3">
+                      <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
+                      <div className="text-sm text-[#475569]">
+                        {user.address.fullAddress && <p className="m-0 text-[#0f172a] font-medium">{user.address.fullAddress}</p>}
+                        <p className="m-0">{[user.address.city, user.address.state].filter(Boolean).join(', ')} – {user.address.pincode}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
+                      <MapPin size={15} className="shrink-0" />
+                      <span>No address saved yet. Add one so suppliers can quote shipping accurately.</span>
+                    </div>
+                  )
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">City *</label>
+                        <input type="text" value={editAddrCity} onChange={e => setEditAddrCity(e.target.value)} className={inputCls} placeholder="e.g. Mumbai" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">State *</label>
+                        <input type="text" value={editAddrState} onChange={e => setEditAddrState(e.target.value)} className={inputCls} placeholder="e.g. Maharashtra" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Pincode *</label>
+                      <input type="text" value={editAddrPincode} onChange={e => setEditAddrPincode(e.target.value.replace(/\D/g, '').slice(0, 6))} className={inputCls} placeholder="6-digit pincode" maxLength={6} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Full Address <span className="font-normal">(optional)</span></label>
+                      <textarea rows={2} value={editAddrFull} onChange={e => setEditAddrFull(e.target.value)} className={inputCls + ' resize-none'} placeholder="Street / Building / Area…" />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -412,12 +496,6 @@ const Profile: React.FC = () => {
               ) : (
                 <p className="text-sm text-[#64748b]">Your wishlist is empty.</p>
               )}
-            </div>
-          )}
-
-          {activeTab === 'messages' && (
-            <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px', margin: '-20px' }}>
-              <ChatInbox />
             </div>
           )}
 
@@ -552,7 +630,7 @@ const Profile: React.FC = () => {
     >
       Are you sure you want to sign out of your account?
     </Modal>
-    </>
+    </div>
   );
 };
 

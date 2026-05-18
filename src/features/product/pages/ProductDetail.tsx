@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart,
@@ -19,6 +19,7 @@ import ErrorState from '@/shared/components/feedback/ErrorState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 import ImageMagnifier from '../components/ImageMagnifier';
+import EnquiryModal, { type EnquiryPayload } from '@/features/chat/components/EnquiryModal';
 import { ROUTES } from '@/shared/constants/routes';
 
 const ProductDetail: React.FC = () => {
@@ -26,8 +27,9 @@ const ProductDetail: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const wishlistItems = useAppSelector(state => state.wishlist.items);
-  const { setActiveChatId } = useSocket();
+  const { socket, setActiveChatId } = useSocket();
   const [contactingSupplier, setContactingSupplier] = useState(false);
+  const [showEnquiryModal, setShowEnquiryModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'company'>('details');
 
@@ -56,16 +58,45 @@ const ProductDetail: React.FC = () => {
     dispatch(toggleWishlistItem(product));
   };
 
-  const handleContactSupplier = async () => {
+  const handleContactSupplier = () => {
     if (!product) return;
     if (isAdmin) { setShowAdminModal(true); return; }
+    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`); return; }
+    setShowEnquiryModal(true);
+  };
+
+  const handleEnquirySubmit = useCallback(async (enquiry: EnquiryPayload) => {
+    if (!product) return;
     setContactingSupplier(true);
     try {
-      const conversation = await chatApi.getOrCreateConversation(product.supplierId, product.id);
+      const conversation = await chatApi.getOrCreateConversation(
+        product.supplierId,
+        product.id,
+        enquiry.deliveryAddress,
+      );
+      const shipTo = [
+        enquiry.deliveryAddress.fullAddress,
+        enquiry.deliveryAddress.city,
+        enquiry.deliveryAddress.state,
+        enquiry.deliveryAddress.pincode,
+      ].filter(Boolean).join(', ');
+      const text = [
+        `📦 Enquiry: ${product.name}`,
+        `Quantity: ${enquiry.quantity} ${product.unit}s`,
+        `Price: ${enquiry.targetPrice ? `₹${enquiry.targetPrice.toLocaleString()} total` : 'As listed'}`,
+        `Delivery Timeline: ${enquiry.deliveryTimeline}`,
+        shipTo ? `Ship to: ${shipTo}` : '',
+        `Requirements: ${enquiry.requirements}`,
+        enquiry.note ? `Note: ${enquiry.note}` : '',
+      ].filter(Boolean).join('\n');
+      socket?.emit('join_conversation', conversation._id);
+      socket?.emit('send_message', { conversationId: conversation._id, text, receiverId: (conversation as any).supplierId });
+      setShowEnquiryModal(false);
       setActiveChatId(conversation._id);
-    } catch {}
-    finally { setContactingSupplier(false); }
-  };
+    } finally {
+      setContactingSupplier(false);
+    }
+  }, [product, socket, setActiveChatId]);
 
   const pageCls = "min-h-screen flex flex-col bg-surface";
   const centerCls = "flex justify-center items-center min-h-[60vh]";
@@ -226,7 +257,7 @@ const ProductDetail: React.FC = () => {
                   <CreditCard size={18} /> Buy Now
                 </Button>
                 <Button variant="outline" size="lg" onClick={handleContactSupplier} disabled={contactingSupplier} className="flex-1 h-[52px]">
-                  <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'Chat with Supplier'}
+                  <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'Enquire Now'}
                 </Button>
               </div>
 
@@ -401,7 +432,7 @@ const ProductDetail: React.FC = () => {
                 {/* CTA */}
                 <div className="mt-6 pt-6 border-t border-border">
                   <Button onClick={handleContactSupplier} disabled={contactingSupplier} className="w-full">
-                    <MessageCircle size={16} /> {contactingSupplier ? 'Opening Chat…' : 'Chat with Supplier'}
+                    <MessageCircle size={16} /> {contactingSupplier ? 'Opening…' : 'Enquire Now'}
                   </Button>
                 </div>
               </div>
@@ -411,6 +442,17 @@ const ProductDetail: React.FC = () => {
       </main>
 
       <Footer />
+
+      {showEnquiryModal && product && (
+        <EnquiryModal
+          productName={product.name}
+          basePrice={product.price}
+          moq={product.minOrderQty}
+          unit={product.unit}
+          onSubmit={handleEnquirySubmit}
+          onClose={() => setShowEnquiryModal(false)}
+        />
+      )}
 
       <Modal
         isOpen={showAdminModal}

@@ -93,8 +93,8 @@ const Footer: React.FC = () => {
               <h4 className={`${colTitleCls} max-md:after:left-1/2 max-md:after:-translate-x-1/2`}>Get in Touch</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-[0.85rem]">
                 {[
-                  { Icon: MapPin, text: '123 Business Hub, MG Road, New Delhi, India' },
-                  { Icon: Phone, text: '+91 1800 123 4567' },
+                  { Icon: MapPin, text: '2216, New Ramesh Nagar, Panipat, Haryana, India' },
+                  { Icon: Phone, text: '+91 1800 xxx xxxx' },
                   { Icon: Mail, text: 'support@amjstar.com' },
                   { Icon: Globe, text: 'www.amjstar.com' },
                 ].map(({ Icon, text }) => (

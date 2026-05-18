@@ -2,7 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import productService from '@/features/product/services/product.service';
+import { chatApi } from '@/features/chat/services/chat.api';
 import Button from '@/shared/components/ui/Button';
 import {
   LayoutDashboard, Package, Truck, LogOut, Trash2, FileText, MessageCircle,
@@ -108,6 +110,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
 
 const SupplierDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
   const { profile } = useAppSelector(state => state.supplier);
   const { user } = useAppSelector(state => state.auth);
   const [products, setProducts] = useState<any[]>([]);
@@ -123,9 +126,18 @@ const SupplierDashboard: React.FC = () => {
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [previousTab, setPreviousTab] = useState('overview');
 
+  const { data: unreadEnquiries = 0 } = useQuery<number>({
+    queryKey: ['chat', 'unreadCount'],
+    queryFn: () => chatApi.getUnreadCount(),
+    refetchInterval: 30_000,
+  });
+
   const setActiveView = (tab: string) => {
     setSearchParams({ tab });
     if (window.innerWidth <= 1024) setIsSidebarOpen(false);
+    if (tab === 'enquiry') {
+      queryClient.invalidateQueries({ queryKey: ['chat', 'unreadCount'] });
+    }
   };
 
   useEffect(() => {
@@ -153,7 +165,7 @@ const SupplierDashboard: React.FC = () => {
     { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'partnerships', label: 'Reseller Partnerships', icon: Handshake },
     { id: 'quotations', label: 'Quotations', icon: FileText },
-    { id: 'chat', label: 'Chat', icon: MessageCircle },
+    { id: 'enquiry', label: 'Enquiry', icon: MessageCircle, badge: unreadEnquiries || undefined },
     { id: 'logistics', label: 'Logistics', icon: Truck },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
@@ -223,7 +235,7 @@ const SupplierDashboard: React.FC = () => {
         <div className="fixed inset-0 bg-[rgba(15,23,42,0.4)] backdrop-blur-[4px] z-[999] animate-fade-in" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      <main className={`flex-1 transition-all duration-300 max-w-full overflow-x-hidden max-lg:ml-0 max-lg:p-4 max-lg:w-full ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'} ${activeView === 'chat' ? '!p-0' : 'p-10'}`}>
+      <main className={`flex-1 transition-all duration-300 max-w-full overflow-x-hidden max-lg:ml-0 max-lg:p-4 max-lg:w-full ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'} ${activeView === 'enquiry' ? '!p-0' : 'p-10'}`}>
         {error && (
           <div className="bg-[#fef2f2] border border-[#fecaca] p-4 rounded-[6px] flex items-center gap-3 text-[#b91c1c] text-[0.9rem] mb-6">
             <AlertCircle size={18} />
@@ -236,7 +248,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'inventory' && <SupplierInventory products={products} handleRefresh={() => fetchProducts(true)} onAddProduct={handleAddProduct} renderProductListing={renderProductListing} />}
         {activeView === 'orders' && <div className="p-5"><OrderList /></div>}
         {activeView === 'quotations' && <SupplierQuotations />}
-        {activeView === 'chat' && <div className="h-screen max-lg:h-[calc(100vh-64px)] w-full"><ChatInbox /></div>}
+        {activeView === 'enquiry' && <div className="h-screen max-lg:h-[calc(100vh-64px)] w-full"><ChatInbox /></div>}
         {activeView === 'logistics' && <PlaceholderView title="Logistics Tracking" icon={Truck} description="Manage your shipments and track delivery status for all your bulk orders." />}
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}

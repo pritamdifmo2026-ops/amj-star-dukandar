@@ -37,9 +37,15 @@ export interface Product {
 export interface ProductFilters {
   category?: string;
   subcategory?: string;
-  search?: string;
+  q?: string;
   minPrice?: number;
   maxPrice?: number;
+  minMoq?: number;
+  maxMoq?: number;
+  certifications?: string[];
+  leadTime?: string;
+  verifiedOnly?: boolean;
+  sort?: 'newest' | 'price_asc' | 'price_desc';
   page?: number;
   pageSize?: number;
 }

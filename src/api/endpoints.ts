@@ -38,5 +38,6 @@ export const ENDPOINTS = {
     CONVERSATION: '/chat/conversation',
     CONVERSATIONS: '/chat/conversations',
     MESSAGES: (id: string) => `/chat/messages/${id}`,
+    UNREAD_COUNT: '/chat/unread-count',
   },
 } as const;

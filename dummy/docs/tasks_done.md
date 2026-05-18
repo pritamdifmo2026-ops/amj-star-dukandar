@@ -38,6 +38,31 @@
 - Seeded subcategories for: Textiles (31), Machinery (24), Agriculture, Electronics, Food & Beverages, Furniture, Home Furnishing
 - Seed script: `src/seed/seedSubcategories.ts` (idempotent — safe to re-run)
 
+---
+
+## Chat & Quotation Module — COMPLETED ✅
+*Completed: 18 May 2026*
+
+### Backend
+- `message.model.ts`: added `'system'` messageType; made senderId/receiverId optional for system messages
+- `quotation.service.ts`: `sendSystemMessage()` helper creates system message + emits via socket; called after PO generation in both `acceptQuotation` and `acceptCounter`
+- `po.service.ts`: AMJStar logo included in PO PDF header; title "AMJStar / B2B Wholesale Marketplace"; uses `fileURLToPath(import.meta.url)` for ESM-safe `__dirname`
+
+### Frontend — FloatingChat & ChatInbox
+- System messages render as centered pill with `────` separator lines (first line bold, second muted)
+- Quick Replies strip (gated behind `messages.some(m => m.messageType === 'system')` — only available after PO generated)
+- Buyer QRs: 📦 Order status?, ⏳ No update yet, ✅ Order received, ❓ Have a question (→ textarea)
+- Supplier QRs: ⏳ Processing, 🚚 Shipped, 📬 Confirm delivery, 🕐 Update in 24 hrs, ✏️ Custom reply (→ textarea)
+- PhoneReveal animation: 3-phase CSS transition (🔒 → 🔓 rotate+scale → phone number slides in)
+- QuotePreviewCard + preview modal flow: "Preview & Send →" shows read-only preview before submitting quotation
+- Accept/Decline quotation wrapped in confirmation popup explaining order creation and cash-on-call payment
+- `onWheel={e => e.currentTarget.blur()}` on all number inputs to prevent scroll-to-change
+
+### Supplier Dashboard
+- Fixed padding bug: enquiry tab was receiving 40px padding due to tab id mismatch (`chat` vs `enquiry`)
+
+---
+
 ### GST on Products
 - Added `gstRate` (0/5/12/18/28 slabs) + `gstIncluded` (bool) to product model — both required for publish
 - Approach: supplier declares rate + whether their stated price already includes GST or not

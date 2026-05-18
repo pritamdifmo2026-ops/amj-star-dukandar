@@ -168,7 +168,7 @@ Suppliers can download monthly sales summaries and invoice records from dashboar
 - Invoice number
 - Buyer name
 - Product/order details
-- Taxable amount
+- Amount
 - GST amount
 - Invoice date
 - Order value
@@ -266,7 +266,7 @@ Useful for:
 - Primary: **Off-platform** (supplier and buyer settle via GPay / NEFT / bank transfer directly)
 - AMJStar does NOT handle the transaction money
 - AMJStar only handles **commission** separately (deducted from supplier wallet)
-- Optional: If Buyer requests they can also pay via **Razorpay** (on-platform payment)
+- Optional: If Buyer requests they can also pay via **Razorpay** (on-platform payment **NOT UNTIL I TELL YOU OR CHANGE IN THIS FILE**)
   - In this case AMJStar collects full payment, disburses to supplier minus commission
 - Default shown in PO: "Payment directly to supplier per agreed terms"
 
