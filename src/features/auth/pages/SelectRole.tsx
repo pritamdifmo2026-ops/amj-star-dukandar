@@ -47,7 +47,7 @@ const SelectRole: React.FC = () => {
       <header className={styles.header}>
         <h1 className={styles.title}>Choose Your Path</h1>
         <p className={styles.subtitle}>
-          Join thousands of businesses on AMJStar Dukandar. Select the role that best describes how you'll use our platform.
+          Join thousands of businesses on AMJStar. Select the role that best describes how you'll use our platform.
         </p>
         {error && <div className={styles.errorMsg}>{error}</div>}
       </header>

@@ -230,7 +230,7 @@ export const FloatingChat: React.FC = () => {
         key: data.keyId,
         amount: data.amount,
         currency: data.currency,
-        name: 'AMJStar Dukandar',
+        name: 'AMJStar',
         description: `Order #${data.orderNumber}`,
         order_id: data.razorpayOrderId,
         handler: async function (response: any) {

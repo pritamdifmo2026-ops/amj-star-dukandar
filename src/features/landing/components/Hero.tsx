@@ -13,18 +13,17 @@ const Hero: React.FC = () => {
         <div className={styles.content}>
           <div className={styles.topBadge}>
             <span className={styles.dot} />
-            Now onboarding founding vendors & resellers
+            Join AMJstar and grow your wholesale business today.
           </div>
-          
           <h1 className={styles.title}>
-            The B2B marketplace that puts <span className={styles.highlight}>local wholesalers</span> at the center.
+            <span className={styles.highlight}>AMJstar</span> connects wholesalers, suppliers, and resellers with a smarter B2B wholesale platform.
           </h1>
-          
+
           <p className={styles.subtitle}>
-            AMJStar connects wholesalers, local retail resellers, and business 
+            AMJStar connects wholesalers, local retail resellers, and business
             buyers in one trade network. Quote-based ordering and bulk fulfillment.
           </p>
-          
+
           <div className={styles.actions}>
             <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.primaryBtn}>
               Join as Buyer <ArrowRight size={20} />
@@ -33,7 +32,7 @@ const Hero: React.FC = () => {
               Become a Supplier
             </Link>
           </div>
-          
+
           <div className={styles.stats}>
             <div className={styles.statBox}>
               <span className={styles.statValue}>50k+</span>
@@ -51,7 +50,7 @@ const Hero: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className={styles.imageWrap}>
           <div className={styles.imageCard}>
             <img src={heroImage} alt="B2B Marketplace" className={styles.heroImage} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
 import { 
   ShoppingBag, MapPin, Plus, 
@@ -11,13 +11,17 @@ import styles from './Checkout.module.css';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const buyNowItem = location.state?.buyNowItem;
   const cartItems = useAppSelector((state) => state.cart.items);
-  const [addresses, setAddresses] = useState<any[]>([]);
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const itemsToCheckout = buyNowItem ? [buyNowItem] : cartItems;
+
+  const subtotal = itemsToCheckout.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = subtotal > 1000 ? 0 : 50;
   const total = subtotal + shipping;
 
+  const [addresses, setAddresses] = useState<any[]>([]);
   const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
 
   useEffect(() => {
@@ -37,16 +41,16 @@ const Checkout: React.FC = () => {
       alert('Please add a delivery address.');
       return;
     }
-    navigate(ROUTES.PAYMENT);
+    navigate(ROUTES.PAYMENT, { state: { buyNowItem } });
   };
 
-  if (cartItems.length === 0) {
+  if (itemsToCheckout.length === 0) {
     return (
       <div className={styles.container}>
         <div className={styles.card} style={{ textAlign: 'center', padding: '60px' }}>
           <ShoppingBag size={64} color="#cbd5e1" style={{ margin: '0 auto 20px' }} />
-          <h2>Your cart is empty</h2>
-          <p>Please add items to your cart before checking out.</p>
+          <h2>Your checkout is empty</h2>
+          <p>Please select items or buy a product before checking out.</p>
           <button 
             className={styles.placeOrderBtn} 
             style={{ width: 'auto', margin: '20px auto 0' }}
@@ -74,10 +78,10 @@ const Checkout: React.FC = () => {
           {/* Order Items Section */}
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>
-              <ShoppingBag size={20} /> Order Items ({cartItems.length})
+              <ShoppingBag size={20} /> Order Items ({itemsToCheckout.length})
             </h2>
             <div className={styles.itemList}>
-              {cartItems.map((item) => {
+              {itemsToCheckout.map((item) => {
                 const mrp = Math.round(item.price * 1.15);
                 const discount = Math.round(((mrp - item.price) / mrp) * 100);
                 

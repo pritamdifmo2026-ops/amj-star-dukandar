@@ -10,6 +10,7 @@ import {
   updateQuantityAsync,
   fetchCart
 } from '@/store/slices/cart.slice';
+import type { CartItem } from '@/store/slices/cart.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import styles from './Cart.module.css';
 
@@ -45,6 +46,14 @@ const Cart: React.FC = () => {
     }
     // Navigate to checkout or process order
     navigate(ROUTES.CHECKOUT);
+  };
+
+  const handleBuyNowSingle = (item: CartItem) => {
+    if (!user) {
+      navigate(`${ROUTES.LOGIN}?redirect=/cart`);
+      return;
+    }
+    navigate(ROUTES.CHECKOUT, { state: { buyNowItem: item } });
   };
 
   if (cartItems.length === 0) {
@@ -91,27 +100,25 @@ const Cart: React.FC = () => {
                     <p className={styles.variantAvailable}>Variant available</p>
                     
                     <div className={styles.specifications}>
-                      <div className={styles.specsTitle}>
-                        <Box size={14} /> Specifications:
-                      </div>
+                      <span className={styles.specsTitle}><Box size={14} /> Specifications:</span>
                       <div className={styles.tags}>
-                        <span className={styles.tag}>color: black</span>
-                        <span className={styles.tag}>size: s</span>
+                        <span className={styles.tag}>Color: Black</span>
+                        <span className={styles.tag}>Size: S</span>
                       </div>
                     </div>
 
                     <div className={styles.priceRow}>
-                      <div>
+                      <div className={styles.priceCol}>
                         <span className={styles.priceLabel}>MRP</span>
                         <span className={styles.mrp}>₹{mrp}</span>
                       </div>
-                      <div>
+                      <div className={styles.priceCol}>
                         <span className={styles.priceLabel}>Selling Price</span>
                         <span className={styles.sellingPrice}>₹{item.price}</span>
                       </div>
-                      <div>
+                      <div className={styles.priceCol}>
                         <span className={styles.priceLabel}>Discount</span>
-                        <span className={styles.discountPercent}>{discountPercent}%</span>
+                        <span className={styles.discountPercent}>{discountPercent}% OFF</span>
                       </div>
                     </div>
 
@@ -134,7 +141,7 @@ const Cart: React.FC = () => {
                         <Plus size={14} />
                       </button>
                     </div>
-                    <button className={styles.buyNowBtn} onClick={handleCheckout}>
+                    <button className={styles.buyNowBtn} onClick={() => handleBuyNowSingle(item)}>
                       <CreditCard size={16} /> Buy Now
                     </button>
                     <button 

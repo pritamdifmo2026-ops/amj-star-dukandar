@@ -21,7 +21,7 @@ const LoginForm: React.FC = () => {
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       <h2 className={styles.heading}>Sign In</h2>
-      <p className={styles.sub}>Welcome back to AMJStar Dukandar</p>
+      <p className={styles.sub}>Welcome back to AMJStar</p>
 
       <div className={styles.fields}>
         <Input

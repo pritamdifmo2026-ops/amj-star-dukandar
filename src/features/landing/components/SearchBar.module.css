@@ -265,20 +265,46 @@
   margin-top: 4px;
 }
 
+@media (max-width: 992px) {
+  .searchWrapper {
+    max-width: 240px;
+    margin: 0 10px;
+  }
+  .searchForm {
+    height: 28px;
+  }
+  .searchInput {
+    font-size: 10px;
+  }
+  .searchBtn {
+    padding: 0 10px;
+    font-size: 9px;
+  }
+  .categoryDrop {
+    font-size: 9px;
+    padding: 0 6px;
+    min-width: 60px;
+  }
+}
+
 @media (max-width: 768px) {
   .searchWrapper {
-    max-width: 100%;
-    margin: 10px 0;
+    max-width: 160px;
+    margin: 0 8px;
   }
-  
+  .searchForm {
+    height: 26px;
+  }
   .categoryDrop {
     display: none;
   }
-  
   .searchBtn {
-    padding: 0 12px;
+    padding: 0 8px;
+    font-size: 9px;
   }
-  
+  .searchInput {
+    padding: 0 6px;
+  }
   .suggestionsContainer {
     right: 0;
   }

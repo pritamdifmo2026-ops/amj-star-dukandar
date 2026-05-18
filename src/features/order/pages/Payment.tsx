@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   CreditCard, 
   Wallet, 
@@ -16,6 +16,9 @@ import toast from 'react-hot-toast';
 
 const Payment: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const buyNowItem = location.state?.buyNowItem;
+
   const [selectedMethod, setSelectedMethod] = useState<string>('upi');
   const [selectedUpi, setSelectedUpi] = useState<string>('gpay');
 
@@ -40,7 +43,7 @@ const Payment: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.pageHeader}>
-        <button className={styles.backBtn} onClick={() => navigate(ROUTES.CHECKOUT)}>
+        <button className={styles.backBtn} onClick={() => navigate(ROUTES.CHECKOUT, { state: { buyNowItem } })}>
           <ArrowLeft size={18} /> Back to Checkout
         </button>
         <h1>Select Payment Method</h1>

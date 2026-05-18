@@ -18,6 +18,34 @@ import ImageMagnifier from '../components/ImageMagnifier';
 import { ROUTES } from '@/shared/constants/routes';
 import styles from './ProductDetail.module.css';
 
+const getSupplierExtraDetails = (supplierName: string = '') => {
+  const name = supplierName || 'Test Supplier';
+  const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const natures = [
+    'Manufacturer & Wholesale Exporter',
+    'Authorized Distributor & Wholesaler',
+    'OEM Manufacturer / Industrial Supplier',
+    'Contract Manufacturer & Supplier'
+  ];
+  const nature = natures[charCodeSum % natures.length];
+
+  const panLetters = (name.replace(/[^A-Za-z]/g, '').slice(0, 5).padEnd(5, 'X') + 'P').toUpperCase().slice(0, 5);
+  const panDigits = String(charCodeSum * 7).padEnd(4, '0').slice(0, 4);
+  const mockGST = `27${panLetters}${panDigits}A1Z${charCodeSum % 10}`;
+
+  const suffixes = ['Pvt. Ltd.', 'Enterprises', 'Industries', 'Trading Co.'];
+  const companyName = name.toLowerCase().includes('supplier') || name.toLowerCase().includes('ltd') || name.toLowerCase().includes('enterprise')
+    ? name
+    : `${name} ${suffixes[charCodeSum % suffixes.length]}`;
+
+  return { companyName, nature, mockGST };
+};
+
+const maskGST = (gst: string) => {
+  if (!gst || gst.length < 5) return 'N/A';
+  return `${gst.slice(0, 2)}******${gst.slice(-2)}`;
+};
+
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -37,7 +65,7 @@ const ProductDetail: React.FC = () => {
     }
     setSelectedImage(null);
   }, [id, navigate]);
-  
+
   const currentProductId = product?.id || (product as any)?._id;
   const isWishlisted = product ? wishlistItems.some(item => {
     const itemId = item.id || (item as any)._id;
@@ -46,6 +74,33 @@ const ProductDetail: React.FC = () => {
 
   const cartItems = useAppSelector(state => state.cart.items);
   const isInCart = currentProductId ? cartItems.some(item => item.productId === currentProductId) : false;
+
+  const companyDetails = React.useMemo(() => {
+    if (!product) {
+      return {
+        companyName: '',
+        nature: '',
+        mockGST: '',
+        location: 'Mumbai, Maharashtra'
+      };
+    }
+    const fallback = getSupplierExtraDetails(product.supplierName);
+    const apiDetails = product.supplierDetails;
+
+    const rawGST = apiDetails?.gstin || fallback.mockGST;
+    const maskedGST = maskGST(rawGST);
+
+    const location = apiDetails?.city && apiDetails?.state
+      ? `${apiDetails.city}, ${apiDetails.state}`
+      : apiDetails?.city || 'Mumbai, Maharashtra';
+
+    return {
+      companyName: apiDetails?.businessName || fallback.companyName,
+      nature: apiDetails?.nature || fallback.nature,
+      mockGST: maskedGST,
+      location
+    };
+  }, [product]);
 
   const handleToggleWishlist = () => {
     if (product && currentProductId) {
@@ -99,10 +154,11 @@ const ProductDetail: React.FC = () => {
   );
   const currentImage = selectedImage || galleryImages[0] || '';
 
+
   // Handlers that use currentImage - defined AFTER currentImage
   const handleAddToCart = () => {
     if (!product) return;
-    
+
     if (isInCart) {
       navigate(ROUTES.CART);
       return;
@@ -134,18 +190,17 @@ const ProductDetail: React.FC = () => {
       return;
     }
 
-    dispatch(
-      addToCartAsync({
-        productId: currentProductId,
-        name: product.name,
-        price: product.price,
-        quantity: product.minOrderQty,
-        unit: product.unit,
-        supplierId: product.supplierId,
-        imageUrl: currentImage,
-      })
-    );
-    navigate(ROUTES.CHECKOUT);
+    const buyNowItem = {
+      productId: currentProductId,
+      name: product.name,
+      price: product.price,
+      quantity: product.minOrderQty,
+      unit: product.unit,
+      supplierId: product.supplierId,
+      imageUrl: currentImage,
+    };
+
+    navigate(ROUTES.CHECKOUT, { state: { buyNowItem } });
   };
 
   const gstAmount = calculateGST(product.price, product.gstRate);
@@ -167,11 +222,18 @@ const ProductDetail: React.FC = () => {
             <div className={styles.imageSection}>
               <div className={styles.mainImageWrap}>
                 <ImageMagnifier key={currentImage} src={currentImage} alt={product.name} />
+                <button
+                  className={`${styles.wishlistBtn} ${isWishlisted ? styles.active : ''}`}
+                  onClick={handleToggleWishlist}
+                  aria-label="Add to wishlist"
+                >
+                  <Heart size={24} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
+                </button>
               </div>
               <div className={styles.thumbnailGrid}>
                 {galleryImages.map((img, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className={`${styles.thumbWrap} ${currentImage === img ? styles.activeThumb : ''}`}
                     onClick={() => setSelectedImage(img)}
                   >
@@ -194,13 +256,6 @@ const ProductDetail: React.FC = () => {
 
               <div className={styles.headerRow}>
                 <h1 className={styles.title}>{product.name}</h1>
-                <button 
-                  className={`${styles.wishlistBtn} ${isWishlisted ? styles.active : ''}`}
-                  onClick={handleToggleWishlist}
-                  aria-label="Add to wishlist"
-                >
-                  <Heart size={24} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
-                </button>
               </div>
 
               <div className={styles.ratingRow}>
@@ -262,10 +317,38 @@ const ProductDetail: React.FC = () => {
 
               <div className={styles.supplierCard}>
                 <h3 className={styles.supplierTitle}>Supplier Information</h3>
-                <p className={styles.supplierName}>{product.supplierName}</p>
-                <p className={styles.supplierLoc}>Mumbai, Maharashtra</p>
-                <button className={styles.viewStoreBtn}>View Store</button>
+                <div className={styles.supplierDetailsList}>
+                  <div className={styles.supplierDetailItem}>
+                    <span className={styles.detailLabel}>Company Name:</span>
+                    <span className={styles.detailValue}>{companyDetails.companyName}</span>
+                  </div>
+                  <div className={styles.supplierDetailItem}>
+                    <span className={styles.detailLabel}>Nature of Business:</span>
+                    <span className={styles.detailValue}>{companyDetails.nature}</span>
+                  </div>
+                  <div className={styles.supplierDetailItem}>
+                    <span className={styles.detailLabel}>GST Number:</span>
+                    <span className={styles.detailValue}>{companyDetails.mockGST}</span>
+                  </div>
+                  <div className={styles.supplierDetailItem}>
+                    <span className={styles.detailLabel}>Location:</span>
+                    <span className={styles.detailValue}>{companyDetails.location}</span>
+                  </div>
+                </div>
+                <div className={styles.supplierActions}>
+                  <button className={styles.viewStoreBtn}>View Store</button>
+                  <button
+                    className={styles.supplierContactBtn}
+                    onClick={handleContactSupplier}
+                    disabled={contactingSupplier}
+                  >
+                    <MessageCircle size={14} />
+                    {contactingSupplier ? 'Connecting...' : 'Contact Supplier'}
+                  </button>
+                </div>
               </div>
+
+
             </div>
           </div>
 

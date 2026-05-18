@@ -244,65 +244,67 @@ const Profile: React.FC = () => {
         </div>
       </aside>
       <main className={styles.mainContent}>
-        <div className={styles.profileCover}>
-          <div className={styles.coverGradient}></div>
-          <div className={styles.profileHeader}>
-            <div className={styles.avatarWrapper}>
-              <div className={styles.avatar}>
-                {isUploadingAvatar ? (
-                  <Loader2 className={styles.spinner} />
-                ) : user?.avatar ? (
-                  <img src={user.avatar} alt={user.name} className={styles.avatarImg} />
-                ) : (
-                  user?.name ? user.name.charAt(0).toUpperCase() : 'U'
-                )}
-                <label className={styles.avatarEditOverlay}>
-                  <Camera size={20} />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    hidden
-                  />
-                </label>
+        {activeTab === 'overview' && (
+          <div className={styles.profileCover}>
+            <div className={styles.coverGradient}></div>
+            <div className={styles.profileHeader}>
+              <div className={styles.avatarWrapper}>
+                <div className={styles.avatar}>
+                  {isUploadingAvatar ? (
+                    <Loader2 className={styles.spinner} />
+                  ) : user?.avatar ? (
+                    <img src={user.avatar} alt={user.name} className={styles.avatarImg} />
+                  ) : (
+                    user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+                  )}
+                  <label className={styles.avatarEditOverlay}>
+                    <Camera size={20} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      hidden
+                    />
+                  </label>
+                </div>
               </div>
-            </div>
-            <div className={styles.userInfo}>
-              <div className={styles.nameSection}>
-                <h1>{user?.name || 'Valued Partner'}</h1>
-                {isEmailVerified && (
-                  <span className={styles.verifiedBadge}>
-                    <Check size={14} style={{ marginRight: '4px' }} /> Verified
-                  </span>
-                )}
-              </div>
-              <div className={styles.userMeta}>
-                <span className={styles.roleTag}>{user?.role || 'Buyer'} Account</span>
-                <span className={styles.memberSince}>Member since {memberSince}</span>
-              </div>
-              <div className={styles.contactInfo}>
-                <div className={styles.contactItem}>
-                  <Mail size={16} />
-                  <span>{user?.email || 'Not provided'}</span>
-                  {!isEmailVerified && user?.email && (
-                    <button
-                      className={styles.verifyEmailBtn}
-                      onClick={handleSendVerifyEmail}
-                      disabled={isSendingEmail}
-                    >
-                      {isSendingEmail ? 'Sending...' : 'Verify'}
-                    </button>
+              <div className={styles.userInfo}>
+                <div className={styles.nameSection}>
+                  <h1>{user?.name || 'Valued Partner'}</h1>
+                  {isEmailVerified && (
+                    <span className={styles.verifiedBadge}>
+                      <Check size={14} style={{ marginRight: '4px' }} /> Verified
+                    </span>
                   )}
                 </div>
-                <div className={styles.contactItem}>
-                  <Phone size={16} />
-                  <span>{user?.phone || 'Not provided'}</span>
-                  <button className={styles.editContactBtn} onClick={() => setIsChangingPhone(true)}>Update</button>
+                <div className={styles.userMeta}>
+                  <span className={styles.roleTag}>{user?.role || 'Buyer'} Account</span>
+                  <span className={styles.memberSince}>Member since {memberSince}</span>
+                </div>
+                <div className={styles.contactInfo}>
+                  <div className={styles.contactItem}>
+                    <Mail size={16} />
+                    <span>{user?.email || 'Not provided'}</span>
+                    {!isEmailVerified && user?.email && (
+                      <button
+                        className={styles.verifyEmailBtn}
+                        onClick={handleSendVerifyEmail}
+                        disabled={isSendingEmail}
+                      >
+                        {isSendingEmail ? 'Sending...' : 'Verify'}
+                      </button>
+                    )}
+                  </div>
+                  <div className={styles.contactItem}>
+                    <Phone size={16} />
+                    <span>{user?.phone || 'Not provided'}</span>
+                    <button className={styles.editContactBtn} onClick={() => setIsChangingPhone(true)}>Update</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {activeTab === 'overview' && (
           <div className={styles.statsRow}>
@@ -422,7 +424,7 @@ const Profile: React.FC = () => {
         )}
 
         {/* Placeholder for other tabs */}
-        {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && currentMenuItem && (
+        {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && currentMenuItem && (
           <div className={styles.placeholderCard}>
             {CurrentIcon && <CurrentIcon size={48} strokeWidth={1.5} />}
             <h3>{currentMenuItem.label}</h3>

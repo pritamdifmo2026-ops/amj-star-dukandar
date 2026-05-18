@@ -37,10 +37,12 @@ const OrderList: React.FC = () => {
 
   if (orders.length === 0) {
     return (
-      <div className={styles.emptyState}>
-        <ShoppingBag size={64} strokeWidth={1} />
-        <h3>No Orders Yet</h3>
-        <p>{isSupplier ? "You haven't received any orders yet." : "You haven't placed any orders yet."}</p>
+      <div className={styles.orderListContainer}>
+        <div className={styles.emptyState}>
+          <ShoppingBag size={64} strokeWidth={1.5} />
+          <h3>No Orders Yet</h3>
+          <p>{isSupplier ? "You haven't received any orders yet." : "You haven't placed any orders yet."}</p>
+        </div>
       </div>
     );
   }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
-  Store, ShoppingBag, Truck, List
+  Store, ShoppingBag, Truck, List, LayoutDashboard
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
@@ -21,6 +21,7 @@ const Navbar: React.FC = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSoonModal, setShowSoonModal] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const userMenuRef = React.useRef<HTMLDivElement>(null);
@@ -156,24 +157,48 @@ const Navbar: React.FC = () => {
                 {userMenuOpen && (
                   <div className={styles.dropdown}>
                     {isSupplier ? (
-                      <Link to="/supplier/onboarding" className={styles.dropdownItem}>Dashboard</Link>
+                      <Link to="/supplier/onboarding" className={styles.dropdownItem}>
+                        <LayoutDashboard size={14} className={styles.dropdownIcon} />
+                        <span>Dashboard</span>
+                      </Link>
                     ) : isReseller ? (
-                      <Link to="/reseller/dashboard" className={styles.dropdownItem}>Dashboard</Link>
+                      <Link to="/reseller/dashboard" className={styles.dropdownItem}>
+                        <LayoutDashboard size={14} className={styles.dropdownIcon} />
+                        <span>Dashboard</span>
+                      </Link>
                     ) : isAdmin ? (
-                      <Link to="/admin/dashboard" className={styles.dropdownItem}>Control Panel</Link>
+                      <Link to="/admin/dashboard" className={styles.dropdownItem}>
+                        <LayoutDashboard size={14} className={styles.dropdownIcon} />
+                        <span>Control Panel</span>
+                      </Link>
                     ) : (
-                      <Link to="/profile" className={styles.dropdownItem}>Profile</Link>
+                      <Link to="/profile" className={styles.dropdownItem}>
+                        <User size={14} className={styles.dropdownIcon} />
+                        <span>Profile</span>
+                      </Link>
                     )}
-                    <button className={styles.dropdownItem} onClick={() => setShowLogoutModal(true)}>Sign Out</button>
+                    <button className={styles.dropdownItem} onClick={() => setShowLogoutModal(true)}>
+                      <LogOut size={14} className={styles.dropdownIcon} />
+                      <span>Sign Out</span>
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
               <div className={styles.guestNav}>
                 <Link to="/about" className={styles.navLink}>About</Link>
-                <Link to={ROUTES.BUYERS} className={styles.navLink}>For Buyers</Link>
-                <Link to={ROUTES.RESELLERS} className={styles.navLink}>For Resellers</Link>
-                <Link to={ROUTES.SUPPLIERS} className={styles.navLink}>For Suppliers</Link>
+                <Link to={ROUTES.BUYERS} className={styles.navLink}>
+                  <User size={16} className={styles.navIcon} />
+                  For Buyers
+                </Link>
+                <Link to={ROUTES.RESELLERS} className={styles.navLink}>
+                  <Truck size={16} className={styles.navIcon} />
+                  For Resellers
+                </Link>
+                <Link to={ROUTES.SUPPLIERS} className={styles.navLink}>
+                  <Store size={16} className={styles.navIcon} />
+                  For Suppliers
+                </Link>
                 <Link to={`${ROUTES.LOGIN}?mode=buyer`} className={styles.joinBtn}>Join Free</Link>
               </div>
             )}
@@ -315,28 +340,58 @@ const Navbar: React.FC = () => {
 
             <div className={styles.menuSection}>
               <div className={styles.sectionLabel}>Browse Categories</div>
-              {categories.map((cat) => (
-                <div key={cat._id}>
-                  <Link
-                    to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                    className={styles.mobileLink}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <List size={18} />
-                    <span>{cat.name}</span>
-                  </Link>
-                  {(cat.subcategories || []).map((sub: any) => (
-                    <Link
-                      key={sub._id}
-                      to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                      className={`${styles.mobileLink} ${styles.mobileSubLink}`}
-                      onClick={() => setMobileOpen(false)}
+              {categories.map((cat) => {
+                const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+                const isExpanded = expandedCategory === cat._id;
+                return (
+                  <div key={cat._id}>
+                    <div
+                      className={styles.mobileLink}
+                      onClick={() => {
+                        if (hasSubs) {
+                          setExpandedCategory(isExpanded ? null : cat._id);
+                        } else {
+                          navigate(`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`);
+                          setMobileOpen(false);
+                        }
+                      }}
+                      style={{ cursor: 'pointer', justifyContent: 'space-between' }}
                     >
-                      <span>- {sub.name}</span>
-                    </Link>
-                  ))}
-                </div>
-              ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <List size={18} />
+                        <span>{cat.name}</span>
+                      </div>
+                      {hasSubs && (
+                        <ChevronDown 
+                          size={16} 
+                          style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} 
+                        />
+                      )}
+                    </div>
+                    {isExpanded && hasSubs && (
+                      <div className={styles.mobileSubList}>
+                        <Link
+                          to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                          className={`${styles.mobileLink} ${styles.mobileSubLink}`}
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <span>- All {cat.name}</span>
+                        </Link>
+                        {cat.subcategories.map((sub: any) => (
+                          <Link
+                            key={sub._id}
+                            to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                            className={`${styles.mobileLink} ${styles.mobileSubLink}`}
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <span>- {sub.name}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
