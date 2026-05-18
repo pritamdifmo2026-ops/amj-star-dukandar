@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { 
   Trash2, Plus, Minus, CreditCard, 
-  ArrowRight, ShoppingBag, Box, ShoppingCart
+  ArrowRight, ShoppingBag, Box, ShoppingCart, ArrowLeft
 } from 'lucide-react';
 import { 
   removeFromCartAsync, 
@@ -73,8 +73,15 @@ const Cart: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>My Cart</h1>
-      <p className={styles.subtitle}>{user?.name?.toLowerCase().replace(' ', '') || 'buddykartstore'}</p>
+      <div className={styles.headerRow}>
+        <button className={styles.backBtn} onClick={() => navigate(-1)}>
+          <ArrowLeft size={20} /> Back
+        </button>
+        <div className={styles.titleGroup}>
+          <h1 className={styles.title}>My Cart</h1>
+          <p className={styles.subtitle}>{user?.name?.toLowerCase().replace(' ', '') || 'buddykartstore'}</p>
+        </div>
+      </div>
 
       <div className={styles.cartContent}>
         <div className={styles.itemsSection}>

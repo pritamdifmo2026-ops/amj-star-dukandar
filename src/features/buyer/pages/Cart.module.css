@@ -6,6 +6,40 @@
   color: #0f172a;
 }
 
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  margin-top: 2px;
+}
+
+.backBtn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+}
+
 .title {
   font-size: 1.75rem;
   font-weight: 800;
@@ -16,7 +50,6 @@
 .subtitle {
   color: #64748b;
   font-size: 0.85rem;
-  margin-bottom: 24px;
 }
 
 .cartContent {
