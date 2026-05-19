@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  ChevronLeft,
-  Menu,
-  LogOut,
-  X,
-  type LucideIcon
-} from 'lucide-react';
+import { ChevronLeft, Menu, LogOut, X, type LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MessageModal from '@/shared/components/ui/MessageModal';
 
@@ -13,6 +7,7 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: LucideIcon;
+  badge?: number;
   action?: () => void;
   route?: string;
   disabled?: boolean;
@@ -31,16 +26,8 @@ interface SidebarProps {
   onToggle: () => void;
   footerMenu?: MenuItem[];
   brandColor?: string;
-  user?: {
-    name?: string;
-    email?: string;
-    avatar?: string;
-  };
-  profile?: {
-    fullName?: string;
-    businessName?: string;
-    storeName?: string;
-  };
+  user?: { name?: string; email?: string; avatar?: string };
+  profile?: { fullName?: string; businessName?: string; storeName?: string };
   theme?: 'default' | 'admin' | 'dark';
 }
 
@@ -58,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   brandColor = '#0284c7',
   user,
   profile,
-  theme = 'default'
+  theme = 'default',
 }) => {
   const navigate = useNavigate();
   const [showSoonModal, setShowSoonModal] = React.useState(false);
@@ -75,68 +62,104 @@ const Sidebar: React.FC<SidebarProps> = ({
       }
       return;
     }
-
-    if (item.action) {
-      item.action();
-    } else {
-      onTabChange(item.id);
-    }
+    if (item.action) item.action();
+    else onTabChange(item.id);
   };
 
-  const adminBg = theme === 'admin' ? 'bg-[#020617] border-r border-[rgba(230,92,0,0.1)]' : '';
+  const isAdmin = theme === 'admin';
 
   return (
     <aside
-      className={`${isSidebarOpen ? 'w-[280px]' : 'w-24'} bg-slate-900 text-white py-10 px-5 flex flex-col fixed h-screen left-0 top-0 z-[1000] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] overflow-y-auto scrollbar-none border-r border-white/[0.03] shadow-[4px_0_24px_rgba(0,0,0,0.05)] max-lg:!w-[280px] max-lg:data-[open=false]:-translate-x-full max-lg:data-[open=true]:translate-x-0 max-lg:shadow-[30px_0_60px_rgba(0,0,0,0.5)] ${adminBg}`}
+      className={[
+        'flex flex-col fixed h-screen top-0 left-0 z-[1000]',
+        'overflow-y-auto scrollbar-none py-10 px-5',
+        'transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]',
+        'border-r border-white/[0.03] shadow-[4px_0_24px_rgba(0,0,0,0.05)]',
+        isAdmin ? 'bg-[#020617] border-r-[rgba(230,92,0,0.1)]' : 'bg-slate-900',
+        isSidebarOpen ? 'w-[280px]' : 'w-24',
+        // mobile: hidden off-screen, shown when open
+        'max-lg:!w-[280px] max-lg:left-[-280px] max-lg:data-[open=true]:left-0 max-lg:data-[open=true]:shadow-[30px_0_60px_rgba(0,0,0,0.5)]',
+      ].filter(Boolean).join(' ')}
       data-open={isSidebarOpen}
       style={{ '--brand-color': brandColor } as React.CSSProperties}
     >
+      {/* Header */}
       <div className="flex items-center justify-between mb-14 px-2">
-        <div className="flex items-center gap-4 no-underline cursor-pointer" onClick={() => navigate('/')}>
-          <div className="w-[52px] h-[52px] bg-[oklch(0.99_0.01_80)] rounded-md flex items-center justify-center shadow-[0_8px_16px_rgba(0,0,0,0.2)] p-2 transition-transform duration-300">
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/')}>
+          <div className={[
+            'w-[52px] h-[52px] rounded-[6px] flex items-center justify-center p-2',
+            'shadow-[0_8px_16px_rgba(0,0,0,0.2)] transition-transform duration-300',
+            isAdmin
+              ? 'bg-gradient-to-br from-white to-slate-100 shadow-[0_0_20px_rgba(230,92,0,0.2)]'
+              : 'bg-cream',
+          ].join(' ')}>
             {logoSrc ? (
               <img src={logoSrc} alt="Logo" className="w-full h-full object-contain" />
             ) : (
               LogoIcon && <LogoIcon size={24} />
             )}
           </div>
-          <span className={`text-base font-extrabold text-slate-50 tracking-[-0.02em] whitespace-nowrap transition-all duration-300 ${!isSidebarOpen ? 'opacity-0 w-0 pointer-events-none' : ''}`}>{title}</span>
+          <span className={[
+            'text-base font-extrabold tracking-tight whitespace-nowrap transition-all',
+            isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 pointer-events-none',
+            isAdmin
+              ? 'bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent'
+              : 'text-slate-100',
+          ].join(' ')}>
+            {title}
+          </span>
         </div>
+
+        {/* Desktop toggle */}
         <button
-          className="bg-white/5 border border-white/10 text-slate-400 w-8 h-8 rounded-[10px] cursor-pointer flex items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-[var(--brand-color)] hover:border-white/30 max-lg:hidden"
+          className="max-lg:hidden bg-white/5 border border-white/10 text-slate-400 w-8 h-8 rounded-[10px] cursor-pointer flex items-center justify-center transition-all hover:bg-white/10 hover:text-primary hover:border-white/30"
           onClick={onToggle}
         >
           {isSidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
         </button>
+
+        {/* Mobile close */}
         <button
-          className="hidden bg-none border-none text-slate-400 p-2 cursor-pointer max-lg:flex"
+          className="hidden max-lg:flex bg-none border-none text-slate-400 p-2 cursor-pointer"
           onClick={onToggle}
         >
           <X size={20} />
         </button>
       </div>
 
-      <nav className="flex flex-col gap-10">
+      {/* Nav */}
+      <nav className="flex flex-col gap-10 flex-1">
         <div className="flex flex-col gap-2">
-          {menu.map((item) => {
+          {menu.map(item => {
             const Icon = item.icon;
+            const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
-                className={`flex items-center gap-4 py-3.5 px-4 rounded-lg border-none text-[0.85rem] font-semibold text-left whitespace-nowrap relative transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
-                  activeTab === item.id
-                    ? 'text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)]'
-                    : item.comingSoon
-                    ? 'bg-transparent text-slate-400 opacity-40 cursor-not-allowed'
-                    : 'bg-transparent text-slate-400 cursor-pointer hover:bg-white/5 hover:text-slate-100 hover:translate-x-1'
-                } ${!isSidebarOpen ? 'justify-center px-3.5' : ''}`}
-                style={activeTab === item.id ? { background: brandColor } : {}}
                 onClick={() => handleTabClick(item)}
+                className={[
+                  'flex items-center gap-4 px-4 py-[14px] rounded-[8px] border-none cursor-pointer',
+                  'text-[0.85rem] font-semibold text-left whitespace-nowrap transition-all duration-300',
+                  !isSidebarOpen && 'justify-center !p-[14px]',
+                  isActive
+                    ? 'text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)]'
+                    : 'bg-transparent text-slate-400 hover:bg-white/5 hover:text-slate-100 hover:translate-x-1',
+                  item.comingSoon && 'opacity-40 cursor-not-allowed',
+                ].filter(Boolean).join(' ')}
+                style={isActive ? { backgroundColor: brandColor } : {}}
               >
-                <div className={`flex items-center justify-center w-6 h-6 transition-transform duration-300 ${activeTab === item.id ? 'scale-110' : ''}`}>
-                  <Icon size={18} />
+                <div className="relative flex items-center justify-center w-6 h-6 transition-transform">
+                  <Icon size={18} className={isActive ? 'scale-110' : ''} />
+                  {!isSidebarOpen && item.badge && item.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                  )}
                 </div>
-                {isSidebarOpen && <span>{item.label}</span>}
+                {isSidebarOpen && <span className="flex-1">{item.label}</span>}
+                {isSidebarOpen && item.badge && item.badge > 0 && (
+                  <span className="text-[10px] font-extrabold bg-red-500 text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-none">
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -144,23 +167,30 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {footerMenu.length > 0 && (
           <div className="flex flex-col gap-2">
-            {isSidebarOpen && <div className="text-[0.7rem] font-extrabold uppercase text-slate-600 my-2 ml-4 tracking-[0.1em] opacity-60">Advanced</div>}
-            {footerMenu.map((item) => {
+            {isSidebarOpen && (
+              <div className="text-[0.7rem] font-extrabold uppercase text-slate-500 ml-4 mb-2 tracking-widest opacity-60">
+                Advanced
+              </div>
+            )}
+            {footerMenu.map(item => {
               const Icon = item.icon;
+              const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
-                  className={`flex items-center gap-4 py-3.5 px-4 rounded-lg border-none text-[0.85rem] font-semibold text-left whitespace-nowrap relative transition-all duration-300 ${
-                    activeTab === item.id
-                      ? 'text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)]'
-                      : item.comingSoon
-                      ? 'bg-transparent text-slate-400 opacity-40 cursor-not-allowed'
-                      : 'bg-transparent text-slate-400 cursor-pointer hover:bg-white/5 hover:text-slate-100 hover:translate-x-1'
-                  } ${!isSidebarOpen ? 'justify-center px-3.5' : ''}`}
-                  style={activeTab === item.id ? { background: brandColor } : {}}
                   onClick={() => handleTabClick(item)}
+                  className={[
+                    'flex items-center gap-4 px-4 py-[14px] rounded-[8px] border-none cursor-pointer',
+                    'text-[0.85rem] font-semibold text-left whitespace-nowrap transition-all duration-300',
+                    !isSidebarOpen && 'justify-center !p-[14px]',
+                    isActive
+                      ? 'text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)]'
+                      : 'bg-transparent text-slate-400 hover:bg-white/5 hover:text-slate-100 hover:translate-x-1',
+                    item.comingSoon && 'opacity-40 cursor-not-allowed',
+                  ].filter(Boolean).join(' ')}
+                  style={isActive ? { backgroundColor: brandColor } : {}}
                 >
-                  <div className="flex items-center justify-center w-6 h-6">
+                  <div className={['flex items-center justify-center w-6 h-6 transition-transform', isActive && 'scale-110'].filter(Boolean).join(' ')}>
                     <Icon size={18} />
                   </div>
                   {isSidebarOpen && <span>{item.label}</span>}
@@ -171,28 +201,36 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </nav>
 
+      {/* Footer */}
       <div className="mt-auto pt-8 flex flex-col gap-6">
-        <div className={`flex items-center gap-4 px-2 mb-2 ${!isSidebarOpen ? 'justify-center p-0' : ''}`}>
-          <div className="w-11 h-11 bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-lg flex items-center justify-center font-extrabold text-slate-100 shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
+        <div className={['flex items-center gap-4 px-2', !isSidebarOpen && 'justify-center px-0'].join(' ')}>
+          <div className="w-11 h-11 bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-[8px] flex items-center justify-center font-extrabold text-slate-100 flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
             {displayName.charAt(0).toUpperCase()}
           </div>
           {isSidebarOpen && (
             <div className="min-w-0">
-              <p className="text-[0.8rem] font-bold text-slate-50 m-0 mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis">{displayName}</p>
-              <p className="text-[0.75rem] text-slate-500 m-0 whitespace-nowrap overflow-hidden text-ellipsis">{displayEmail}</p>
+              <p className="text-[0.8rem] font-bold text-slate-100 m-0 truncate">{displayName}</p>
+              <p className="text-[0.75rem] text-slate-500 m-0 truncate">{displayEmail}</p>
             </div>
           )}
         </div>
+
         <button
-          className={`flex items-center gap-4 w-full py-3.5 px-4 rounded-lg border border-red-500/10 bg-red-500/5 text-red-400 cursor-pointer transition-all duration-300 text-[0.8rem] font-bold hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-[0_8px_16px_rgba(239,68,68,0.25)] hover:-translate-y-0.5 ${!isSidebarOpen ? 'justify-center px-3.5' : ''}`}
           onClick={onLogout}
+          className={[
+            'flex items-center gap-4 w-full px-4 py-[14px] rounded-[8px]',
+            'border border-red-500/10 bg-red-500/5 text-red-400 cursor-pointer',
+            'text-[0.8rem] font-bold transition-all duration-300',
+            'hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-[0_8px_16px_rgba(239,68,68,0.25)] hover:-translate-y-0.5',
+            !isSidebarOpen && 'justify-center !p-[14px]',
+          ].filter(Boolean).join(' ')}
         >
           <LogOut size={18} />
           {isSidebarOpen && <span>Sign Out</span>}
         </button>
       </div>
 
-      <MessageModal 
+      <MessageModal
         isOpen={showSoonModal}
         onClose={() => setShowSoonModal(false)}
         title="Coming Soon"

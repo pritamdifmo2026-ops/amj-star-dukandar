@@ -16,7 +16,6 @@ const VerifyEmail: React.FC = () => {
     const verify = async () => {
       if (!token || hasStarted.current) return;
       hasStarted.current = true;
-
       try {
         await supplierService.verifyEmailChange(token);
         setStatus('success');
@@ -25,40 +24,32 @@ const VerifyEmail: React.FC = () => {
         setMessage(error.response?.data?.message || 'Verification failed. The link may have expired.');
       }
     };
-
     verify();
   }, [token]);
 
+  const titles = { loading: 'Verifying Your Email...', success: 'Email Verified Successfully!', error: 'Verification Failed' };
+  const descs = {
+    loading: 'Please wait while we secure your account details.',
+    success: 'Your email address has been updated. You can now use your new email for all AMJStar communications.',
+    error: message || 'We could not verify your email at this time.',
+  };
+
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <div className={styles.iconWrapper}>
-          {status === 'loading' && <Loader2 className={styles.spinner} size={48} />}
-          {status === 'success' && <CheckCircle className={styles.successIcon} size={48} />}
-          {status === 'error' && <XCircle className={styles.errorIcon} size={48} />}
+    <div className="flex items-center justify-center min-h-screen bg-surface">
+      <div className="bg-white rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-12 max-w-[480px] w-[90%] text-center">
+        <div className="flex justify-center mb-6">
+          {status === 'loading' && <Loader2 size={48} className="animate-spin text-primary" />}
+          {status === 'success' && <CheckCircle size={48} className="text-[#10b981]" />}
+          {status === 'error' && <XCircle size={48} className="text-error" />}
         </div>
-
-        <h1>
-          {status === 'loading' && 'Verifying Your Email...'}
-          {status === 'success' && 'Email Verified Successfully!'}
-          {status === 'error' && 'Verification Failed'}
-        </h1>
-
-        <p>
-          {status === 'loading' && 'Please wait while we secure your account details.'}
-          {status === 'success' && 'Your email address has been updated. You can now use your new email for all AMJStar communications.'}
-          {status === 'error' && (message || 'We could not verify your email at this time.')}
-        </p>
-
+        <h1 className="text-2xl font-bold text-heading mb-3">{titles[status]}</h1>
+        <p className="text-body mb-8">{descs[status]}</p>
         {status !== 'loading' && (
-          <div className={styles.actions}>
-            <Button onClick={() => navigate('/supplier/dashboard?tab=settings')} className={styles.btn}>
-              {status === 'success' ? 'Go to Dashboard' : 'Back to Settings'} <ArrowRight size={18} />
-            </Button>
-          </div>
+          <Button onClick={() => navigate('/supplier/dashboard?tab=settings')} className="inline-flex items-center gap-2">
+            {status === 'success' ? 'Go to Dashboard' : 'Back to Settings'} <ArrowRight size={18} />
+          </Button>
         )}
-
-        <div className={styles.footer}>
+        <div className="flex items-center justify-center gap-2 mt-8 text-xs text-muted">
           <ShieldCheck size={14} />
           <span>Secure verification by AMJStar</span>
         </div>

@@ -14,7 +14,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
   return (
     <div className="flex flex-col items-center gap-4 py-12 px-4 text-center">
       <AlertCircle size={36} color="var(--color-error)" />
-      <p className="text-base text-slate-500 max-w-[360px]">{message}</p>
+      <p className="text-base text-body max-w-[360px]">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
           Retry

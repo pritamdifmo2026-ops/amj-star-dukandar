@@ -8,14 +8,10 @@ import { useRegister } from '../hooks/useRegister';
 
 const Register: React.FC = () => {
   const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
+    name: '', email: '', phone: '', password: '',
     role: 'reseller' as 'reseller' | 'supplier',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   const { mutate: register, isPending } = useRegister();
 
   const validate = () => {
@@ -24,7 +20,6 @@ const Register: React.FC = () => {
     if (!/^[a-z0-9]+@[a-z0-9]+\.[a-z]{2,}$/.test(form.email)) newErrors.email = 'Please enter a valid email address';
     if (!/^\d{10}$/.test(form.phone)) newErrors.phone = 'Valid 10-digit phone number is required';
     if (form.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -33,30 +28,22 @@ const Register: React.FC = () => {
     let val = e.target.value;
     if (field === 'email') {
       val = val.toLowerCase().replace(/[^a-z0-9@.]/g, '');
-      val = val.replace(/[@.]{2,}/g, (match) => match[0]);
+      val = val.replace(/[@.]{2,}/g, match => match[0]);
       if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
     }
-    setForm((prev) => ({ ...prev, [field]: val }));
-    if (errors[field]) {
-      setErrors(prev => {
-        const updated = { ...prev };
-        delete updated[field];
-        return updated;
-      });
-    }
+    setForm(prev => ({ ...prev, [field]: val }));
+    if (errors[field]) setErrors(prev => { const u = { ...prev }; delete u[field]; return u; });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validate()) {
-      register(form);
-    }
+    if (validate()) register(form);
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-      <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Create Account</h2>
-      <p className="text-sm text-[var(--color-text-muted)] -mt-3">Join AMJStar as a buyer or supplier</p>
+      <h2 className="text-2xl font-bold text-heading m-0">Create Account</h2>
+      <p className="text-sm text-muted -mt-3 m-0">Join AMJStar Dukandar as a buyer or supplier</p>
 
       <div className="flex flex-col gap-4">
         <Input label="Full Name" type="text" placeholder="Your full name" value={form.name} onChange={set('name')} leftIcon={<User size={16} />} fullWidth required error={errors.name} />
@@ -65,10 +52,18 @@ const Register: React.FC = () => {
         <Input label="Password" type="password" placeholder="Min. 8 characters" value={form.password} onChange={set('password')} leftIcon={<Lock size={16} />} fullWidth required error={errors.password} />
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-[var(--color-text-secondary)]">I am a</label>
+          <label className="text-sm font-medium text-body">I am a</label>
           <div className="flex gap-3">
-            {(['reseller', 'supplier'] as const).map((r) => (
-              <label key={r} className={`flex-1 py-[9px] px-3 border border-[var(--color-border)] text-center text-sm cursor-pointer text-[var(--color-text-secondary)] rounded-sm transition-colors duration-150 ${form.role === r ? 'border-[var(--color-primary)] text-[var(--color-primary)] font-medium' : ''}`}>
+            {(['reseller', 'supplier'] as const).map(r => (
+              <label
+                key={r}
+                className={[
+                  'flex-1 py-2 px-3 border text-center text-sm cursor-pointer rounded-[4px] transition-[border-color,color] duration-150',
+                  form.role === r
+                    ? 'border-primary text-primary font-medium'
+                    : 'border-border text-body hover:border-primary',
+                ].join(' ')}
+              >
                 <input type="radio" name="role" value={r} checked={form.role === r} onChange={set('role')} hidden />
                 {r === 'reseller' ? 'Reseller / Buyer' : 'Supplier / Manufacturer'}
               </label>
@@ -77,15 +72,11 @@ const Register: React.FC = () => {
         </div>
       </div>
 
-      <Button type="submit" fullWidth loading={isPending}>
-        Create Account
-      </Button>
+      <Button type="submit" fullWidth loading={isPending}>Create Account</Button>
 
-      <p className="text-sm text-[var(--color-text-muted)] text-center">
+      <p className="text-sm text-muted text-center m-0">
         Already have an account?{' '}
-        <Link to={ROUTES.LOGIN} className="text-[var(--color-primary)] font-medium hover:underline">
-          Sign In
-        </Link>
+        <Link to={ROUTES.LOGIN} className="text-primary font-medium hover:underline">Sign In</Link>
       </p>
     </form>
   );

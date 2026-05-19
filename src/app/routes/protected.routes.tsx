@@ -1,5 +1,4 @@
 import { Navigate, type RouteObject } from 'react-router-dom';
-import MainLayout from '@/shared/layout/MainLayout';
 import { ROUTES } from '@/shared/constants/routes';
 import ProtectedRoute from '@/shared/components/ProtectedRoute';
 import Profile from '@/features/buyer/pages/Profile';
@@ -14,17 +13,12 @@ import ResellerGuard from '@/features/reseller/components/ResellerGuard';
 
 export const protectedRoutes: RouteObject[] = [
   {
-    element: <MainLayout />,
-    children: [
-      {
-        path: '/profile',
-        element: (
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        ),
-      },
-    ],
+    path: '/profile',
+    element: (
+      <ProtectedRoute>
+        <Profile />
+      </ProtectedRoute>
+    ),
   },
   {
     path: ROUTES.RESELLER_DASHBOARD,

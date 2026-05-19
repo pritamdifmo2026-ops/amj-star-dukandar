@@ -1,329 +1,138 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Trash2, Plus, X, Tags, CheckCircle2, Edit2 } from 'lucide-react';
-// removed unused import
 import Pagination from '@/shared/components/ui/Pagination';
-import categoryService from '@/features/product/services/category.service';
+import { useCategoryManagement } from '../hooks/useCategoryManagement';
 
-interface CategoryManagementProps {
-  categories: any[];
-  onRefresh: () => Promise<void>;
-}
+const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9]";
+const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
+const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
 
-const CategoryManagement: React.FC<CategoryManagementProps> = ({ 
-  categories, 
-  onRefresh
-}) => {
-  const [newCategory, setNewCategory] = useState('');
-  const [subcategories, setSubcategories] = useState<string[]>(['']);
-  const [loading, setLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  
-  // Custom Modal State
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
-  const [modalValue, setModalValue] = useState('');
-  const [modalType, setModalType] = useState<'add-sub' | 'edit-cat' | 'edit-sub' | null>(null);
-  const [activeId, setActiveId] = useState('');
-  
-  const [currentPage, setCurrentPage] = useState(1);
+const CategoryManagement: React.FC = () => {
+  const {
+    categories, loading, newCategory, setNewCategory,
+    subcategories, setSubcategories, isSaving, loadingAction,
+    modalOpen, setModalOpen, modalTitle, modalValue, setModalValue,
+    handleCreateCategory, handleDeleteCategory, openModal,
+    handleModalSubmit, handleDeleteSubcategory,
+  } = useCategoryManagement();
+
+  const [currentPage, setCurrentPage] = React.useState(1);
   const ITEMS_PER_PAGE = 5;
   const pagedCategories = categories.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const handleAddSubField = () => {
-    setSubcategories([...subcategories, '']);
-  };
-
-  const handleRemoveSubField = (index: number) => {
-    const newSubs = [...subcategories];
-    newSubs.splice(index, 1);
-    setSubcategories(newSubs);
-  };
-
-  const handleSubChange = (index: number, value: string) => {
-    const newSubs = [...subcategories];
-    newSubs[index] = value;
-    setSubcategories(newSubs);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCategory.trim()) return;
-    setLoading(true);
-    try {
-      const validSubs = subcategories.filter(s => s.trim() !== '');
-      await categoryService.create(newCategory, undefined, validSubs);
-      setNewCategory('');
-      setSubcategories(['']);
-      await onRefresh();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteCategory = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this category and all its subcategories?')) {
-      setActionLoading(`del-cat-${id}`);
-      try {
-        await categoryService.delete(id);
-        await onRefresh();
-      } finally {
-        setActionLoading(null);
-      }
-    }
-  };
-
-  const handleAddSubcategoryToExisting = (categoryId: string) => {
-    setModalType('add-sub');
-    setActiveId(categoryId);
-    setModalValue('');
-    setModalTitle('Add New Subcategory');
-    setModalOpen(true);
-  };
-
-  const handleEditCategory = (id: string, currentName: string) => {
-    setModalType('edit-cat');
-    setActiveId(id);
-    setModalValue(currentName);
-    setModalTitle('Edit Category');
-    setModalOpen(true);
-  };
-
-  const handleEditSubcategory = (subId: string, currentName: string) => {
-    setModalType('edit-sub');
-    setActiveId(subId);
-    setModalValue(currentName);
-    setModalTitle('Edit Subcategory');
-    setModalOpen(true);
-  };
-
-  const handleModalSubmit = async () => {
-    if (!modalValue.trim()) return;
-    
-    setActionLoading('modal-action');
-    try {
-      if (modalType === 'add-sub') {
-        await categoryService.createSubcategory(activeId, modalValue.trim());
-      } else if (modalType === 'edit-cat') {
-        await categoryService.update(activeId, { name: modalValue.trim() });
-      } else if (modalType === 'edit-sub') {
-        await categoryService.updateSubcategory(activeId, { name: modalValue.trim() });
-      }
-      await onRefresh();
-      setModalOpen(false);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleDeleteSubcategory = async (subId: string) => {
-    if (window.confirm('Delete this subcategory?')) {
-      setActionLoading(`del-sub-${subId}`);
-      try {
-        await categoryService.deleteSubcategory(subId);
-        await onRefresh();
-      } finally {
-        setActionLoading(null);
-      }
-    }
-  };
+  if (loading && categories.length === 0) return <div className="py-8 text-center text-sm text-[#64748b]">Loading Categories...</div>;
 
   return (
-    <div className={styles.categoryView}>
-      <form onSubmit={handleSubmit} className={localStyles.formCard}>
-        <h3 className={localStyles.formHeader}>
-          <div className={localStyles.iconWrapper}>
-            <Tags size={20} />
-          </div>
-          Create New Category
-        </h3>
-        
-        <div className={localStyles.formGrid}>
-          <div className={localStyles.inputGroup}>
-            <label className={localStyles.inputLabel}>
-              Category Name <span className={localStyles.requiredAsterisk}>*</span>
+    <div className="flex flex-col gap-6">
+      <form onSubmit={handleCreateCategory} className="bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 bg-[#fff7ed] rounded-[8px] flex items-center justify-center text-primary shrink-0"><Tags size={18} /></div>
+          <h3 className="text-base font-extrabold text-[#0f172a] m-0">Create New Category</h3>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider">
+              Category Name <span className="text-[#dc2626]">*</span>
             </label>
-            <input
-              type="text"
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              placeholder="e.g. Electronics"
-              required
-              className={localStyles.inputField}
-            />
+            <input type="text" value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder="e.g. Electronics" required className={inputCls} />
           </div>
 
-          <div className={localStyles.inputGroup}>
-            <label className={localStyles.inputLabel}>Subcategories (Optional)</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider">Subcategories (Optional)</label>
             {subcategories.map((sub, idx) => (
-              <div key={idx} className={localStyles.subcategoryRow}>
-                <input
-                  type="text"
-                  value={sub}
-                  onChange={(e) => handleSubChange(idx, e.target.value)}
-                  placeholder="e.g. Mobile Phones"
-                  className={localStyles.inputField}
-                />
+              <div key={idx} className="flex items-center gap-2">
+                <input type="text" value={sub} onChange={e => { const s = [...subcategories]; s[idx] = e.target.value; setSubcategories(s); }} placeholder="e.g. Mobile Phones" className={inputCls} />
                 {subcategories.length > 1 && (
-                  <button type="button" onClick={() => handleRemoveSubField(idx)} className={localStyles.removeBtn} title="Remove subcategory">
-                    <X size={18} />
+                  <button type="button" onClick={() => { const s = [...subcategories]; s.splice(idx, 1); setSubcategories(s); }} className="w-8 h-8 rounded-full bg-[#fef2f2] text-[#dc2626] flex items-center justify-center border-none cursor-pointer hover:bg-[#fee2e2] shrink-0">
+                    <X size={14} />
                   </button>
                 )}
               </div>
             ))}
-            <button type="button" onClick={handleAddSubField} className={localStyles.addMoreBtn}>
-              <Plus size={16} /> Add Subcategory
+            <button type="button" onClick={() => setSubcategories([...subcategories, ''])} className="flex items-center gap-1.5 text-xs text-primary font-bold bg-transparent border-none cursor-pointer p-0 mt-1">
+              <Plus size={14} /> Add Subcategory
             </button>
           </div>
         </div>
 
-        <div className={localStyles.formFooter}>
-          <button type="submit" disabled={loading} className={localStyles.saveBtn}>
-            {loading ? 'Saving...' : (
-              <>
-                <CheckCircle2 size={18} /> Save Category
-              </>
-            )}
+        <div className="flex justify-end mt-5">
+          <button type="submit" disabled={isSaving} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity">
+            {isSaving ? 'Saving...' : <><CheckCircle2 size={16} /> Save Category</>}
           </button>
         </div>
       </form>
 
-      <div className={styles.tableWrapper} style={{ marginTop: '32px' }}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Subcategories</th>
-              <th style={{ width: '100px', textAlign: 'right' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagedCategories.map(c => (
-              <tr key={c._id}>
-                <td data-label="Category" style={{ fontWeight: 600 }}>{c.name}</td>
-                <td data-label="Subcategories">
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                    {(c.subcategories || []).map((sub: any) => (
-                      <span key={sub._id} style={{ 
-                        background: '#f3f4f6', 
-                        padding: '4px 10px', 
-                        borderRadius: '16px', 
-                        fontSize: '13px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        border: '1px solid #e5e7eb'
-                      }}>
-                        {sub.name}
-                        <div style={{ display: 'flex', gap: '4px', marginLeft: '4px' }}>
-                          <button 
-                            type="button" 
-                            onClick={() => handleEditSubcategory(sub._id, sub.name)}
-                            disabled={actionLoading === `edit-sub-${sub._id}`}
-                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#64748b', display: 'flex' }}
-                            title="Edit subcategory"
-                          >
-                            <Edit2 size={12} />
-                          </button>
-                          <button 
-                            type="button" 
-                            onClick={() => handleDeleteSubcategory(sub._id)}
-                            disabled={actionLoading === `del-sub-${sub._id}`}
-                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#ef4444', display: 'flex' }}
-                            title="Delete subcategory"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      </span>
-                    ))}
-                    <button 
-                      type="button"
-                      onClick={() => handleAddSubcategoryToExisting(c._id)}
-                      disabled={actionLoading === `add-sub-${c._id}`}
-                      style={{ 
-                        background: '#fff', 
-                        border: '1px dashed #d1d5db', 
-                        borderRadius: '16px', 
-                        padding: '3px 10px',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        color: '#6b7280',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      <Plus size={12} /> Add
-                    </button>
-                  </div>
-                </td>
-                <td data-label="Actions" style={{ textAlign: 'right' }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                    <button 
-                      className={styles.viewBtn}
-                      onClick={() => handleEditCategory(c._id, c.name)}
-                      disabled={actionLoading === `edit-cat-${c._id}`}
-                      aria-label="Edit category"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button 
-                      className={styles.rejectBtn}
-                      onClick={() => handleDeleteCategory(c._id)}
-                      disabled={actionLoading === `del-cat-${c._id}`}
-                      aria-label="Delete category"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
+      <div className="bg-white rounded-[10px] border border-[#eef2f6] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className={thCls}>Category</th>
+                <th className={thCls}>Subcategories</th>
+                <th className={thCls + " text-right"}>Actions</th>
               </tr>
-            ))}
-            {categories.length === 0 && (
-              <tr><td colSpan={3} className={styles.empty}>No categories found</td></tr>
-            )}
-          </tbody>
-        </table>
-        
-        <Pagination 
-          totalItems={categories.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          styles={styles}
-        />
+            </thead>
+            <tbody>
+              {pagedCategories.map(c => (
+                <tr key={c._id} className="hover:bg-[#fafbfc]">
+                  <td className={tdCls + " font-semibold"}>{c.name}</td>
+                  <td className={tdCls}>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {(c.subcategories || []).map((sub: any) => (
+                        <span key={sub._id} className="inline-flex items-center gap-1.5 bg-[#f3f4f6] border border-[#e5e7eb] text-xs px-2.5 py-1 rounded-full">
+                          {sub.name}
+                          <span className="flex gap-1 ml-1">
+                            <button type="button" onClick={() => openModal('edit-sub', sub._id, sub.name, 'Edit Subcategory')} className="bg-transparent border-none p-0 cursor-pointer text-[#64748b] flex items-center hover:text-primary"><Edit2 size={11} /></button>
+                            <button type="button" onClick={() => handleDeleteSubcategory(sub._id)} disabled={loadingAction === `del-sub-${sub._id}`} className="bg-transparent border-none p-0 cursor-pointer text-[#ef4444] flex items-center hover:text-[#dc2626]"><X size={11} /></button>
+                          </span>
+                        </span>
+                      ))}
+                      <button type="button" onClick={() => openModal('add-sub', c._id, '', 'Add New Subcategory')} className="inline-flex items-center gap-1 bg-white border border-dashed border-[#d1d5db] text-xs text-[#6b7280] px-2.5 py-1 rounded-full cursor-pointer hover:border-primary hover:text-primary transition-colors">
+                        <Plus size={11} /> Add
+                      </button>
+                    </div>
+                  </td>
+                  <td className={tdCls}>
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => openModal('edit-cat', c._id, c.name, 'Edit Category')} disabled={loadingAction === `edit-cat-${c._id}`} className="w-8 h-8 rounded-[6px] border border-[#e2e8f0] flex items-center justify-center text-[#475569] cursor-pointer hover:bg-[#f8fafc] bg-white">
+                        <Edit2 size={15} />
+                      </button>
+                      <button onClick={() => handleDeleteCategory(c._id)} disabled={loadingAction === `del-cat-${c._id}`} className="w-8 h-8 rounded-[6px] border border-[#fecaca] flex items-center justify-center text-[#dc2626] cursor-pointer hover:bg-[#fef2f2] bg-white">
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {categories.length === 0 && (
+                <tr><td colSpan={3} className="px-4 py-8 text-center text-sm text-[#64748b]">No categories found</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <Pagination totalItems={categories.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={currentPage} onPageChange={setCurrentPage} />
       </div>
 
-      {/* Custom Modal Popup */}
       {modalOpen && (
-        <div className={localStyles.modalOverlay} onClick={() => setModalOpen(false)}>
-          <div className={localStyles.modalContent} onClick={e => e.stopPropagation()}>
-            <h3 className={localStyles.modalHeader}>{modalTitle}</h3>
-            <div className={localStyles.inputGroup}>
-              <input
-                type="text"
-                autoFocus
-                value={modalValue}
-                onChange={(e) => setModalValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleModalSubmit()}
-                placeholder="Enter name..."
-                className={localStyles.inputField}
-              />
-            </div>
-            <div className={localStyles.modalActions}>
-              <button 
-                onClick={() => setModalOpen(false)} 
-                className={localStyles.cancelBtn}
-                disabled={actionLoading !== null}
-              >
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.4)] z-50 flex items-center justify-center px-4" onClick={() => setModalOpen(false)}>
+          <div className="bg-white rounded-[12px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">{modalTitle}</h3>
+            <input
+              type="text"
+              autoFocus
+              value={modalValue}
+              onChange={e => setModalValue(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleModalSubmit()}
+              placeholder="Enter name..."
+              className={inputCls + " mb-4"}
+            />
+            <div className="flex gap-3 justify-end">
+              <button onClick={() => setModalOpen(false)} disabled={loadingAction !== null} className="px-4 py-2 text-sm font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f1f5f9] disabled:opacity-50">
                 Cancel
               </button>
-              <button 
-                onClick={handleModalSubmit} 
-                className={localStyles.confirmBtn}
-                disabled={actionLoading !== null || !modalValue.trim()}
-              >
-                {actionLoading ? 'Saving...' : 'Confirm'}
+              <button onClick={handleModalSubmit} disabled={loadingAction !== null || !modalValue.trim()} className="px-4 py-2 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
+                {loadingAction === 'modal-action' ? 'Saving...' : 'Confirm'}
               </button>
             </div>
           </div>

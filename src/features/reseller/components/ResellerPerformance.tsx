@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Eye, ShoppingCart, Percent, TrendingUp, MousePointer, Users, BarChart2, ArrowUpRight, Package, Info } from 'lucide-react';
 import resellerService from '../services/reseller.service';
 
+const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9]";
+const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
+
 const ResellerPerformance: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,190 +14,122 @@ const ResellerPerformance: React.FC = () => {
       try {
         setLoading(true);
         const data = await resellerService.getRequests();
-        const approved = (data.requests || []).filter((r: any) => r.status === 'APPROVED');
-        setProducts(approved);
-      } catch (err) {
-        console.error('Failed to fetch products', err);
-      } finally {
-        setLoading(false);
-      }
+        setProducts((data.requests || []).filter((r: any) => r.status === 'APPROVED'));
+      } catch (err) { console.error('Failed to fetch products', err); }
+      finally { setLoading(false); }
     };
     fetchProducts();
   }, []);
 
-  // For now, since real analytics endpoints aren't built yet, we use 0
-  const stats = {
-    totalVisits: 0,
-    uniqueVisitors: 0,
-    totalClicks: 0,
-    totalOrders: 0,
-    conversionRate: '0%',
-    avgOrderValue: '₹0',
-  };
+  const stats = { totalVisits: 0, uniqueVisitors: 0, totalClicks: 0, totalOrders: 0, conversionRate: '0%', avgOrderValue: '₹0' };
 
   const topProducts = products.slice(0, 5).map(req => {
     const base = req.product?.basePrice || 0;
     const selling = req.sellingPrice || Math.round(base * 1.3);
-    const margin = selling - base;
-
-    return {
-      name: req.customTitle || req.product?.name || 'Unnamed Product',
-      views: req.views || 0,
-      orders: req.orders || 0,
-      margin: `₹${margin}`
-    };
+    return { name: req.customTitle || req.product?.name || 'Unnamed Product', views: req.views || 0, orders: req.orders || 0, margin: `₹${selling - base}` };
   });
 
   const timePeriods = ['Last 7 days', 'Last 30 days', 'All time'];
 
+  const kpis = [
+    { icon: <Eye size={22} />, label: 'Total Store Visits', val: stats.totalVisits, sub: '-- vs last month', iconCls: 'bg-[#f0f9ff] text-[#0369a1]' },
+    { icon: <MousePointer size={22} />, label: 'Product Clicks', val: stats.totalClicks, sub: '-- vs last month', iconCls: 'bg-[#fff7ed] text-[#c2410c]' },
+    { icon: <ShoppingCart size={22} />, label: 'Total Orders', val: stats.totalOrders, sub: '-- this week', iconCls: 'bg-[#f0fdf4] text-[#15803d]' },
+    { icon: <Percent size={22} />, label: 'Conversion Rate', val: stats.conversionRate, sub: 'Orders / Visits', iconCls: 'bg-[#fdf4ff] text-[#9333ea]' },
+    { icon: <Users size={22} />, label: 'Unique Visitors', val: stats.uniqueVisitors, sub: 'Distinct customers', iconCls: 'bg-[#fefce8] text-[#a16207]' },
+    { icon: <TrendingUp size={22} />, label: 'Avg. Order Value', val: stats.avgOrderValue, sub: 'Per transaction', iconCls: 'bg-[#fdf2f8] text-[#be185d]' },
+  ];
+
   return (
-    <div className={styles.container}>
-      <header className={styles.header}>
+    <div>
+      <div className="flex justify-between items-start gap-4 mb-6 max-md:flex-col">
         <div>
-          <h2>Store Performance</h2>
-          <p>Track how your storefront is doing — visits, clicks, orders, and conversions.</p>
+          <h2 className="text-2xl font-extrabold text-[#0f172a] m-0 mb-1">Store Performance</h2>
+          <p className="text-sm text-[#64748b] m-0">Track how your storefront is doing — visits, clicks, orders, and conversions.</p>
         </div>
-        <div className={styles.periodSelector}>
+        <div className="flex gap-1 bg-[#f1f5f9] p-1 rounded-[8px]">
           {timePeriods.map((p, i) => (
-            <button key={p} className={`${styles.periodBtn} ${i === 1 ? styles.periodBtnActive : ''}`}>{p}</button>
+            <button key={p} className={`px-3 py-1.5 text-xs font-bold rounded-[6px] border-none cursor-pointer transition-all ${i === 1 ? 'bg-white text-primary shadow-sm' : 'bg-transparent text-[#64748b] hover:text-[#1e293b]'}`}>{p}</button>
           ))}
         </div>
-      </header>
+      </div>
 
-      <div style={{ background: '#fffbeb', border: '1px solid #fde68a', padding: '1rem', borderRadius: '8px', display: 'flex', gap: '0.75rem', alignItems: 'flex-start', color: '#b45309', marginBottom: '1rem' }}>
-        <Info size={20} style={{ flexShrink: 0 }} />
+      <div className="flex items-start gap-3 bg-[#fffbeb] border border-[#fde68a] rounded-[10px] px-4 py-3 text-[#b45309] mb-5">
+        <Info size={18} className="shrink-0 mt-0.5" />
         <div>
-          <strong>Analytics Backend Under Construction</strong>
-          <p style={{ margin: '0.25rem 0 0', fontSize: '0.9rem' }}>Real-time analytics integration (visits, clicks, conversion) will be developed soon. Currently displaying your real products with base metrics.</p>
+          <strong className="text-sm">Analytics Backend Under Construction</strong>
+          <p className="text-xs mt-1 m-0">Real-time analytics integration (visits, clicks, conversion) will be developed soon. Currently displaying your real products with base metrics.</p>
         </div>
       </div>
 
-      {/* ── What Buyer Sees Banner ── */}
-      <div className={styles.buyerBanner}>
-        <Users size={18} />
-        <div>
-          <strong>What your buyers see:</strong> Your store name, curated product list, your final prices — no supplier info is ever shown to buyers.
-        </div>
+      <div className="flex items-center gap-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-[10px] px-4 py-3 text-[#1d4ed8] text-sm mb-5">
+        <Users size={16} className="shrink-0" />
+        <div><strong>What your buyers see:</strong> Your store name, curated product list, your final prices — no supplier info is ever shown to buyers.</div>
       </div>
 
-      {/* ── Main KPI Grid ── */}
-      <div className={styles.kpiGrid}>
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiIcon} style={{ background: '#f0f9ff', color: '#0369a1' }}>
-            <Eye size={22} />
+      <div className="grid grid-cols-3 gap-4 mb-6 max-lg:grid-cols-2 max-sm:grid-cols-1">
+        {kpis.map(({ icon, label, val, sub, iconCls }) => (
+          <div key={label} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 flex items-center gap-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+            <div className={`w-12 h-12 rounded-[10px] flex items-center justify-center shrink-0 ${iconCls}`}>{icon}</div>
+            <div>
+              <label className="text-xs text-[#94a3b8] font-bold block mb-1">{label}</label>
+              <h3 className="text-2xl font-extrabold text-[#0f172a] m-0 mb-0.5">{val}</h3>
+              <span className="text-xs text-[#64748b] flex items-center gap-1"><ArrowUpRight size={11} /> {sub}</span>
+            </div>
           </div>
-          <div className={styles.kpiInfo}>
-            <label>Total Store Visits</label>
-            <h3>{stats.totalVisits}</h3>
-            <span className={styles.kpiTrend}><ArrowUpRight size={12} /> -- vs last month</span>
-          </div>
-        </div>
-
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiIcon} style={{ background: '#fff7ed', color: '#c2410c' }}>
-            <MousePointer size={22} />
-          </div>
-          <div className={styles.kpiInfo}>
-            <label>Product Clicks</label>
-            <h3>{stats.totalClicks}</h3>
-            <span className={styles.kpiTrend}><ArrowUpRight size={12} /> -- vs last month</span>
-          </div>
-        </div>
-
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiIcon} style={{ background: '#f0fdf4', color: '#15803d' }}>
-            <ShoppingCart size={22} />
-          </div>
-          <div className={styles.kpiInfo}>
-            <label>Total Orders</label>
-            <h3>{stats.totalOrders}</h3>
-            <span className={styles.kpiTrend}><ArrowUpRight size={12} /> -- this week</span>
-          </div>
-        </div>
-
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiIcon} style={{ background: '#fdf4ff', color: '#9333ea' }}>
-            <Percent size={22} />
-          </div>
-          <div className={styles.kpiInfo}>
-            <label>Conversion Rate</label>
-            <h3>{stats.conversionRate}</h3>
-            <span className={styles.kpiSub}>Orders / Visits</span>
-          </div>
-        </div>
-
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiIcon} style={{ background: '#fefce8', color: '#a16207' }}>
-            <Users size={22} />
-          </div>
-          <div className={styles.kpiInfo}>
-            <label>Unique Visitors</label>
-            <h3>{stats.uniqueVisitors}</h3>
-            <span className={styles.kpiSub}>Distinct customers</span>
-          </div>
-        </div>
-
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiIcon} style={{ background: '#fdf2f8', color: '#be185d' }}>
-            <TrendingUp size={22} />
-          </div>
-          <div className={styles.kpiInfo}>
-            <label>Avg. Order Value</label>
-            <h3>{stats.avgOrderValue}</h3>
-            <span className={styles.kpiSub}>Per transaction</span>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* ── Top Performing Products ── */}
-      <div className={styles.topProducts}>
-        <div className={styles.tableHeader}>
-          <BarChart2 size={16} />
-          <h3>Top Performing Products</h3>
+      <div className="bg-white rounded-[10px] border border-[#eef2f6] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-[#f1f5f9]">
+          <BarChart2 size={16} className="text-primary" />
+          <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Top Performing Products</h3>
         </div>
-        
+
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading your products...</div>
+          <div className="py-8 text-center text-sm text-[#64748b]">Loading your products...</div>
         ) : topProducts.length === 0 ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>No approved products yet.</div>
+          <div className="py-8 text-center text-sm text-[#64748b]">No approved products yet.</div>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th className={styles.centerCol}>Views</th>
-                <th className={styles.centerCol}>Orders</th>
-                <th className={styles.centerCol}>Conversion</th>
-                <th className={styles.rightCol}>Your Margin</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topProducts.map((p, i) => (
-                <tr key={i}>
-                  <td data-label="Product">
-                    <div className={styles.productCell}>
-                      <div className={styles.productRank}>#{i + 1}</div>
-                      <span>{p.name}</span>
-                    </div>
-                  </td>
-                  <td className={styles.centerCol} data-label="Views">{p.views}</td>
-                  <td className={styles.centerCol} data-label="Orders">{p.orders}</td>
-                  <td className={styles.centerCol} data-label="Conversion">
-                    <span className={styles.convBadge}>
-                      {p.views > 0 ? ((p.orders / p.views) * 100).toFixed(1) : '0.0'}%
-                    </span>
-                  </td>
-                  <td className={styles.rightCol} data-label="Your Margin">
-                    <span className={styles.marginBadge}>{p.margin}</span>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className={thCls}>Product</th>
+                  <th className={`${thCls} text-center`}>Views</th>
+                  <th className={`${thCls} text-center`}>Orders</th>
+                  <th className={`${thCls} text-center`}>Conversion</th>
+                  <th className={`${thCls} text-right`}>Your Margin</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {topProducts.map((p, i) => (
+                  <tr key={i} className="hover:bg-[#fafbfc]">
+                    <td className={tdCls}>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 bg-[#f1f5f9] rounded-full flex items-center justify-center text-[10px] font-extrabold text-[#475569] shrink-0">#{i + 1}</div>
+                        <span className="font-semibold text-[#0f172a]">{p.name}</span>
+                      </div>
+                    </td>
+                    <td className={`${tdCls} text-center`}>{p.views}</td>
+                    <td className={`${tdCls} text-center`}>{p.orders}</td>
+                    <td className={`${tdCls} text-center`}>
+                      <span className="bg-[#f1f5f9] text-[#475569] text-xs font-bold px-2 py-0.5 rounded-full">
+                        {p.views > 0 ? ((p.orders / p.views) * 100).toFixed(1) : '0.0'}%
+                      </span>
+                    </td>
+                    <td className={`${tdCls} text-right`}>
+                      <span className="bg-[#ecfdf5] text-[#059669] text-xs font-bold px-2 py-0.5 rounded-full">{p.margin}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
-        <div className={styles.analyticsNote}>
-          <Package size={14} />
+        <div className="flex items-center gap-2 px-5 py-3 border-t border-[#f1f5f9] text-xs text-[#94a3b8]">
+          <Package size={12} />
           <span>Real-time data will be available once orders start flowing through your storefront (Backend in development).</span>
         </div>
       </div>

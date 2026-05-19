@@ -1,5 +1,5 @@
 import apiClient from '@/api/client';
-import { SupplierTier } from '@/store/slices/supplier.slice';
+import { SupplierTier } from '@/features/supplier/store/supplier.slice';
 
 const supplierService = {
   getProfile: async () => {

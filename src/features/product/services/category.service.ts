@@ -2,7 +2,7 @@ import apiClient from '@/api/client';
 
 export const categoryService = {
   getAll: async () => {
-    const response = await apiClient.get('/categories');
+    const response = await apiClient.get('/categories', { timeout: 30000 });
     return response.data;
   },
 

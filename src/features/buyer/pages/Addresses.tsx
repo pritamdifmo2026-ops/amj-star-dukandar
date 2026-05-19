@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Plus, Phone, 
-  Trash2, CheckCircle2, 
+import {
+  Plus, Phone,
+  Trash2, CheckCircle2,
   ChevronRight, ArrowLeft, Loader2,
   BookUser, Edit2
 } from 'lucide-react';
-import { addressApi } from '@/shared/services/address.api';
+import { addressApi } from '@/features/buyer/services/address.api';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
+
+const inputCls = (hasError = false) =>
+  `w-full border ${hasError ? 'border-[#dc2626] bg-[#fef2f2]' : 'border-[#e2e8f0]'} rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors`;
+const labelCls = "text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5";
+const errorCls = "text-xs text-[#dc2626] mt-1";
 
 const Addresses: React.FC = () => {
   const navigate = useNavigate();
@@ -33,7 +38,6 @@ const Addresses: React.FC = () => {
     if (!form.city.trim()) newErrors.city = 'City is required';
     if (!form.houseNo.trim()) newErrors.houseNo = 'House/Building number is required';
     if (!form.area.trim()) newErrors.area = 'Area/Street details are required';
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -41,19 +45,13 @@ const Addresses: React.FC = () => {
   const handleInputChange = (field: string, value: string) => {
     setForm({ ...form, [field]: value });
     if (errors[field]) {
-      setErrors(prev => {
-        const updated = { ...prev };
-        delete updated[field];
-        return updated;
-      });
+      setErrors(prev => { const u = { ...prev }; delete u[field]; return u; });
     }
   };
 
   const redirectPath = new URLSearchParams(location.search).get('redirect');
 
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
+  useEffect(() => { fetchAddresses(); }, []);
 
   const fetchAddresses = async () => {
     try {
@@ -80,10 +78,7 @@ const Addresses: React.FC = () => {
       setShowForm(false);
       setEditingId(null);
       setForm({ fullName: '', phone: '', pincode: '', state: '', city: '', houseNo: '', area: '', isDefault: false });
-      
-      if (redirectPath && !editingId) { // Only auto-redirect on new address addition
-        navigate(redirectPath);
-      }
+      if (redirectPath && !editingId) navigate(redirectPath);
     } catch (error) {
       console.error('Failed to save address', error);
     } finally {
@@ -92,16 +87,7 @@ const Addresses: React.FC = () => {
   };
 
   const handleEdit = (addr: any) => {
-    setForm({
-      fullName: addr.fullName,
-      phone: addr.phone,
-      pincode: addr.pincode,
-      state: addr.state,
-      city: addr.city,
-      houseNo: addr.houseNo,
-      area: addr.area,
-      isDefault: addr.isDefault
-    });
+    setForm({ fullName: addr.fullName, phone: addr.phone, pincode: addr.pincode, state: addr.state, city: addr.city, houseNo: addr.houseNo, area: addr.area, isDefault: addr.isDefault });
     setEditingId(addr._id);
     setShowForm(true);
     setErrors({});
@@ -135,11 +121,11 @@ const Addresses: React.FC = () => {
 
   if (loading) {
     return (
-      <div className={styles.page}>
+      <div className="min-h-screen bg-[#f8fafc]">
         <Navbar />
-        <div className={styles.loaderWrap}>
-          <Loader2 className={styles.spinner} size={48} />
-          <p>Loading addresses...</p>
+        <div className="flex flex-col items-center justify-center py-24 gap-3 text-[#64748b]">
+          <Loader2 size={48} className="animate-spin text-primary" />
+          <p className="text-sm m-0">Loading addresses...</p>
         </div>
         <Footer />
       </div>
@@ -147,131 +133,157 @@ const Addresses: React.FC = () => {
   }
 
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <div className={styles.container}>
-          <div className={styles.header}>
-            <div className={styles.titleArea}>
-              <h1 className={styles.title}>My Addresses</h1>
-              <p className={styles.subtitle}>Manage your delivery addresses</p>
+    <div className="min-h-screen bg-[#f8fafc]">
+      <main className="py-10 px-4">
+        <div className="max-w-[800px] mx-auto">
+          <div className="flex items-center justify-between mb-7 flex-wrap gap-4">
+            <div>
+              <h1 className="text-2xl font-extrabold text-[#0f172a] m-0 mb-1">My Addresses</h1>
+              <p className="text-sm text-[#64748b] m-0">Manage your delivery addresses</p>
             </div>
             {!showForm && (
-              <button className={styles.addBtnTop} onClick={() => { setShowForm(true); setEditingId(null); }}>
+              <button
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => { setShowForm(true); setEditingId(null); }}
+              >
                 <Plus size={18} /> Add New Address
               </button>
             )}
           </div>
 
           {showForm ? (
-            <div className={styles.formCard}>
-              <button className={styles.backLink} onClick={handleCloseForm}>
+            <div className="bg-white border border-[#eef2f6] rounded-[14px] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+              <button
+                className="flex items-center gap-1.5 text-sm font-semibold text-[#475569] bg-transparent border-none cursor-pointer hover:text-[#0f172a] p-0 mb-5"
+                onClick={handleCloseForm}
+              >
                 <ArrowLeft size={18} /> Back to My Addresses
               </button>
-              <h2 className={styles.formTitle}>{editingId ? 'Edit Address' : 'Add New Address'}</h2>
-              
-              <form className={styles.form} onSubmit={handleSave}>
-                <div className={styles.formGrid}>
-                  <div className={styles.formGroup}>
-                    <label>Full Name</label>
-                    <input className={errors.fullName ? styles.inputError : ''} type="text" placeholder="Enter full name" value={form.fullName} onChange={e => handleInputChange('fullName', e.target.value)} />
-                    {errors.fullName && <span className={styles.errorText}>{errors.fullName}</span>}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Phone Number</label>
-                    <input className={errors.phone ? styles.inputError : ''} type="tel" placeholder="10-digit mobile number" value={form.phone} onChange={e => handleInputChange('phone', e.target.value.replace(/\D/g, ''))} maxLength={10} />
-                    {errors.phone && <span className={styles.errorText}>{errors.phone}</span>}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Pincode</label>
-                    <input className={errors.pincode ? styles.inputError : ''} type="text" placeholder="6 digits PIN code" value={form.pincode} onChange={e => handleInputChange('pincode', e.target.value.replace(/\D/g, ''))} maxLength={6} />
-                    {errors.pincode && <span className={styles.errorText}>{errors.pincode}</span>}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>State</label>
-                    <input className={errors.state ? styles.inputError : ''} type="text" placeholder="State" value={form.state} onChange={e => handleInputChange('state', e.target.value)} />
-                    {errors.state && <span className={styles.errorText}>{errors.state}</span>}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>City</label>
-                    <input className={errors.city ? styles.inputError : ''} type="text" placeholder="City" value={form.city} onChange={e => handleInputChange('city', e.target.value)} />
-                    {errors.city && <span className={styles.errorText}>{errors.city}</span>}
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>House No. / Building</label>
-                    <input className={errors.houseNo ? styles.inputError : ''} type="text" placeholder="House No." value={form.houseNo} onChange={e => handleInputChange('houseNo', e.target.value)} />
-                    {errors.houseNo && <span className={styles.errorText}>{errors.houseNo}</span>}
-                  </div>
-                </div>
-                
-                <div className={styles.formGroupFull}>
-                  <label>Area / Street / Sector</label>
-                  <textarea className={errors.area ? styles.inputError : ''} rows={3} placeholder="Area details" value={form.area} onChange={e => handleInputChange('area', e.target.value)}></textarea>
-                  {errors.area && <span className={styles.errorText}>{errors.area}</span>}
+              <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-6">{editingId ? 'Edit Address' : 'Add New Address'}</h2>
+
+              <form onSubmit={handleSave}>
+                <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1 mb-4">
+                  {[
+                    { field: 'fullName', label: 'Full Name', placeholder: 'Enter full name', type: 'text' },
+                    { field: 'phone', label: 'Phone Number', placeholder: '10-digit mobile number', type: 'tel', maxLen: 10 },
+                    { field: 'pincode', label: 'Pincode', placeholder: '6 digits PIN code', type: 'text', maxLen: 6 },
+                    { field: 'state', label: 'State', placeholder: 'State', type: 'text' },
+                    { field: 'city', label: 'City', placeholder: 'City', type: 'text' },
+                    { field: 'houseNo', label: 'House No. / Building', placeholder: 'House No.', type: 'text' },
+                  ].map(({ field, label, placeholder, type, maxLen }) => (
+                    <div key={field}>
+                      <label className={labelCls}>{label}</label>
+                      <input
+                        type={type}
+                        placeholder={placeholder}
+                        value={(form as any)[field]}
+                        onChange={e => handleInputChange(field, field === 'phone' || field === 'pincode' ? e.target.value.replace(/\D/g, '') : e.target.value)}
+                        maxLength={maxLen}
+                        className={inputCls(!!errors[field])}
+                      />
+                      {errors[field] && <p className={errorCls}>{errors[field]}</p>}
+                    </div>
+                  ))}
                 </div>
 
-                <div className={styles.checkboxRow}>
-                  <input type="checkbox" id="default" checked={form.isDefault} onChange={e => setForm({...form, isDefault: e.target.checked})} />
-                  <label htmlFor="default">Make this my default address</label>
+                <div className="mb-4">
+                  <label className={labelCls}>Area / Street / Sector</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Area details"
+                    value={form.area}
+                    onChange={e => handleInputChange('area', e.target.value)}
+                    className={inputCls(!!errors.area) + " resize-y"}
+                  />
+                  {errors.area && <p className={errorCls}>{errors.area}</p>}
                 </div>
 
-                <button type="submit" className={styles.saveBtn} disabled={isSubmitting}>
+                <label className="flex items-center gap-2 text-sm text-[#475569] cursor-pointer mb-5">
+                  <input
+                    type="checkbox"
+                    checked={form.isDefault}
+                    onChange={e => setForm({ ...form, isDefault: e.target.checked })}
+                    className="accent-primary"
+                  />
+                  Make this my default address
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-6 py-3 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                >
                   {isSubmitting ? 'Saving...' : 'Save Address'}
                 </button>
               </form>
             </div>
           ) : addresses.length === 0 ? (
-            <div className={styles.emptyCard}>
-              <div className={styles.emptyIconWrap}>
-                <BookUser size={48} color="#94a3b8" />
+            <div className="bg-white border border-[#eef2f6] rounded-[14px] p-12 flex flex-col items-center gap-4 text-center">
+              <div className="w-20 h-20 bg-[#f1f5f9] rounded-full flex items-center justify-center">
+                <BookUser size={40} className="text-[#94a3b8]" />
               </div>
-              <h2 className={styles.emptyTitle}>No Addresses Found</h2>
-              <p className={styles.emptyText}>You haven't added any addresses yet</p>
-              <button className={styles.addBtnBig} onClick={() => setShowForm(true)}>
+              <h2 className="text-xl font-extrabold text-[#0f172a] m-0">No Addresses Found</h2>
+              <p className="text-sm text-[#64748b] m-0">You haven't added any addresses yet</p>
+              <button
+                className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => setShowForm(true)}
+              >
                 <Plus size={18} /> Add Your First Address
               </button>
             </div>
           ) : (
-            <div className={styles.addressList}>
+            <div className="flex flex-col gap-4">
               {addresses.map((addr) => (
-                <div key={addr._id} className={`${styles.addressCard} ${addr.isDefault ? styles.defaultCard : ''}`}>
-                  <div className={styles.cardHeader}>
-                    <div className={styles.userInfo}>
-                      <h3 className={styles.userName}>{addr.fullName}</h3>
-                      <span className={styles.tag}>Home</span>
-                      {addr.isDefault && (
-                        <div className={styles.inlineDefaultBadge}>
-                          <CheckCircle2 size={12} /> Default
-                        </div>
-                      )}
-                    </div>
+                <div
+                  key={addr._id}
+                  className={`bg-white rounded-[12px] p-5 ${addr.isDefault ? 'border-2 border-primary shadow-[0_0_0_4px_rgba(217,79,0,0.08)]' : 'border border-[#eef2f6]'}`}
+                >
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <h3 className="text-sm font-bold text-[#0f172a] m-0">{addr.fullName}</h3>
+                    <span className="text-xs bg-[#f1f5f9] text-[#475569] px-2 py-0.5 rounded-full">Home</span>
+                    {addr.isDefault && (
+                      <span className="flex items-center gap-1 text-xs font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
+                        <CheckCircle2 size={12} /> Default
+                      </span>
+                    )}
                   </div>
 
-                  <div className={styles.addressBody}>
-                    <p className={styles.addrText}>
-                      {addr.houseNo}, {addr.area}<br/>
-                      {addr.city}, {addr.state} - {addr.pincode}
-                    </p>
-                    <div className={styles.phoneInfo}>
-                      <Phone size={14} /> {addr.phone}
-                    </div>
+                  <p className="text-sm text-[#475569] m-0 mb-2 leading-relaxed">
+                    {addr.houseNo}, {addr.area}<br />
+                    {addr.city}, {addr.state} - {addr.pincode}
+                  </p>
+                  <div className="flex items-center gap-1.5 text-sm text-[#64748b] mb-4">
+                    <Phone size={14} /> {addr.phone}
                   </div>
-                  
-                  <div className={styles.cardActions}>
-                    <button className={styles.editBtnLink} onClick={() => handleEdit(addr)}>
-                      <Edit2 size={14} /> Edit Address
+
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <button
+                      className="flex items-center gap-1.5 text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
+                      onClick={() => handleEdit(addr)}
+                    >
+                      <Edit2 size={13} /> Edit Address
                     </button>
                     {!addr.isDefault && (
-                      <button className={styles.actionBtnLink} onClick={() => handleSetDefault(addr._id)}>
+                      <button
+                        className="text-xs font-bold text-[#475569] bg-transparent border-none cursor-pointer hover:text-primary p-0"
+                        onClick={() => handleSetDefault(addr._id)}
+                      >
                         Set as Default
                       </button>
                     )}
-                    <button className={styles.deleteBtnLink} onClick={() => handleDelete(addr._id)}>
-                      <Trash2 size={14} /> Delete
+                    <button
+                      className="flex items-center gap-1.5 text-xs font-bold text-[#dc2626] bg-transparent border-none cursor-pointer hover:underline p-0"
+                      onClick={() => handleDelete(addr._id)}
+                    >
+                      <Trash2 size={13} /> Delete
                     </button>
                   </div>
-                  
+
                   {redirectPath && (
-                    <button className={styles.deliverHereBtn} onClick={() => navigate(redirectPath)}>
+                    <button
+                      className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 bg-[#0f172a] text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:bg-[#1e293b] transition-colors"
+                      onClick={() => navigate(redirectPath)}
+                    >
                       Deliver to this address <ChevronRight size={16} />
                     </button>
                   )}

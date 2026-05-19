@@ -1,55 +1,71 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toast } from 'react-hot-toast';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   User, Package, MapPin, CreditCard, Settings, Bell, Heart,
   X, Mail, Phone, ShoppingBag,
   LogOut, ChevronRight, Star, Clock, Check, MessageCircle
 } from 'lucide-react';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials, logout } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import ProductCard from '@/features/product/components/ProductCard';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import { useSocket } from '@/shared/contexts/SocketContext';
-import { chatApi } from '@/shared/services/chat.api';
+import { chatApi } from '@/features/chat/services/chat.api';
 import adminService from '@/features/admin/services/admin.service';
+import { compressImage } from '@/shared/utils/compressImage';
 import { Camera, Loader2 } from 'lucide-react';
 import OrderList from '../components/OrderList';
-import { orderApi } from '@/shared/services/order.api';
+import { orderApi } from '@/features/order/services/order.api';
+import Navbar from '@/features/landing/components/Navbar';
+import Modal from '@/shared/components/ui/Modal';
+import Button from '@/shared/components/ui/Button';
+
+const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
 
 const Profile: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
   const wishlistItems = useAppSelector((state) => state.wishlist.items);
   const dispatch = useAppDispatch();
 
   const activeTab = searchParams.get('tab') || 'overview';
+  const setActiveTab = (tab: string) => setSearchParams({ tab });
 
-  const setActiveTab = (tab: string) => {
-    setSearchParams({ tab });
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
   };
 
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
 
-  // Phone Edit State (My logic)
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
+  const [editAddrCity, setEditAddrCity] = useState(user?.address?.city || '');
+  const [editAddrState, setEditAddrState] = useState(user?.address?.state || '');
+  const [editAddrPincode, setEditAddrPincode] = useState(user?.address?.pincode || '');
+  const [editAddrFull, setEditAddrFull] = useState(user?.address?.fullAddress || '');
+
   const [isChangingPhone, setIsChangingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState('');
 
-  // Email Verification State
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-
+  const [enquiryForm, setEnquiryForm] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', message: '' });
+  const [enquirySubmitting, setEnquirySubmitting] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
   const memberSince = 'January 2024';
   const isEmailVerified = user?.isEmailVerified || false;
   const { socket } = useSocket();
   const [totalUnread, setTotalUnread] = useState(0);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  // Fetch unread count for the sidebar badge
   const fetchUnreadCount = async () => {
     try {
       const conversations = await chatApi.getConversations();
@@ -65,9 +81,7 @@ const Profile: React.FC = () => {
   };
 
   React.useEffect(() => {
-    if (user) {
-      fetchUnreadCount();
-    }
+    if (user) fetchUnreadCount();
   }, [user]);
 
   React.useEffect(() => {
@@ -79,32 +93,26 @@ const Profile: React.FC = () => {
 
   const fetchOrderCount = async () => {
     try {
-      const orders = await orderApi.getOrders();
-      setOrderCount(orders.length);
+      const res = await orderApi.list();
+      setOrderCount(res.data?.length ?? 0);
     } catch (err) {
       console.error('Failed to fetch order count');
     }
   };
 
   React.useEffect(() => {
-    if (user) {
-      fetchOrderCount();
-    }
+    if (user) fetchOrderCount();
   }, [user]);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     setIsUploadingAvatar(true);
     try {
-      const imageUrl = await adminService.uploadImage(file);
+      const compressed = await compressImage(file, 400, 0.85);
+      const imageUrl = await adminService.uploadImage(compressed);
       const response = await authService.updateProfile({ avatar: imageUrl });
-
-      dispatch(setCredentials({
-        user: response.user
-      }));
+      dispatch(setCredentials({ user: response.user }));
       toast.success('Profile picture updated successfully!');
     } catch (err) {
       console.error('Failed to upload avatar:', err);
@@ -126,12 +134,8 @@ const Profile: React.FC = () => {
           }
           payload.email = editEmail.trim();
         }
-
         const response = await authService.updateProfile(payload);
-
-        dispatch(setCredentials({
-          user: response.user
-        }));
+        dispatch(setCredentials({ user: response.user }));
         setIsEditingInfo(false);
         if (editEmail !== user.email && editEmail) {
           toast.success(`Verification email sent to ${editEmail}. Please check your inbox.`);
@@ -139,6 +143,28 @@ const Profile: React.FC = () => {
       } catch (err) {
         toast.error('Failed to update profile.');
       }
+    }
+  };
+
+  const handleSaveAddress = async () => {
+    if (!editAddrCity.trim() || !editAddrState.trim() || !/^\d{6}$/.test(editAddrPincode.trim())) {
+      toast.error('City, State and a valid 6-digit Pincode are required');
+      return;
+    }
+    try {
+      const response = await authService.updateProfile({
+        address: {
+          city: editAddrCity.trim(),
+          state: editAddrState.trim(),
+          pincode: editAddrPincode.trim(),
+          fullAddress: editAddrFull.trim() || undefined,
+        },
+      });
+      dispatch(setCredentials({ user: response.user }));
+      setIsEditingAddress(false);
+      toast.success('Address saved!');
+    } catch {
+      toast.error('Failed to save address');
     }
   };
 
@@ -155,23 +181,32 @@ const Profile: React.FC = () => {
   };
 
   const handleSendPhoneOtp = () => {
-    if (newPhone.length >= 10) {
-      setShowOtpInput(true);
-    } else {
-      toast.error('Please enter a valid 10-digit phone number');
+    if (newPhone.length >= 10) setShowOtpInput(true);
+    else toast.error('Please enter a valid 10-digit phone number');
+  };
+
+  const handleEnquirySubmit = async () => {
+    if (!enquiryForm.name.trim() || !enquiryForm.phone.trim() || !enquiryForm.message.trim()) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
+    setEnquirySubmitting(true);
+    try {
+      await adminService.submitEnquiry(enquiryForm);
+      toast.success('Our team will contact you soon!');
+      setEnquiryForm(prev => ({ ...prev, message: '' }));
+    } catch {
+      toast.error('Failed to submit. Please try again.');
+    } finally {
+      setEnquirySubmitting(false);
     }
   };
 
   const handleVerifyPhoneOtp = async () => {
     if (phoneOtp === '123456' && user) {
       try {
-        const response = await authService.updateProfile({
-          phone: newPhone
-        });
-
-        dispatch(setCredentials({
-          user: response.user
-        }));
+        const response = await authService.updateProfile({ phone: newPhone });
+        dispatch(setCredentials({ user: response.user }));
         setIsChangingPhone(false);
         setShowOtpInput(false);
         setNewPhone('');
@@ -194,99 +229,105 @@ const Profile: React.FC = () => {
     { id: 'payments', label: 'Payment Methods', icon: CreditCard },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'contactus', label: 'Contact Us', icon: MessageCircle },
   ];
 
-  // Find current menu item for placeholder rendering
   const currentMenuItem = menuItems.find(i => i.id === activeTab);
   const CurrentIcon = currentMenuItem?.icon;
 
+  const AvatarContent = () => (
+    <>
+      {isUploadingAvatar ? (
+        <Loader2 className="animate-spin text-[#94a3b8]" size={28} />
+      ) : user?.avatar ? (
+        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+      ) : (
+        <span className="text-2xl font-extrabold">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
+      )}
+    </>
+  );
+
   return (
-    <div className="max-w-[1200px] mx-auto mt-10 px-5 flex gap-6 max-lg:flex-col max-sm:px-3 max-sm:my-5">
-      <aside className="w-[280px] shrink-0 bg-white border border-slate-200 rounded-md py-6 h-fit max-lg:w-full">
-        <div className="flex items-center gap-3 px-5 pb-5 border-b border-slate-200 mb-4">
-          <div className="w-12 h-12 bg-[#D94F00] text-white rounded-full flex items-center justify-center text-xl font-bold overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden">
+    <Navbar />
+    <div className="flex flex-1 min-h-0 bg-[#f8fafc] max-lg:flex-col">
+      <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b max-lg:overflow-y-auto">
+        <div className="flex items-center gap-3 p-5 border-b border-[#f1f5f9]">
+          <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shrink-0 overflow-hidden">
             {user?.avatar ? (
               <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
             ) : (
-              user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+              <span className="text-base font-extrabold">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
             )}
           </div>
-          <div className="flex flex-col">
-            <h4 className="text-base font-semibold text-[#0f172a] m-0">{user?.name?.split(' ')[0] || 'Guest'}</h4>
-            <p className="text-[0.8rem] text-slate-500 m-0 mt-0.5">{user?.role || 'Buyer'}</p>
+          <div>
+            <h4 className="text-sm font-bold text-[#0f172a] m-0">{user?.name?.split(' ')[0] || 'Guest'}</h4>
+            <p className="text-xs text-[#64748b] m-0 capitalize">{user?.role || 'Buyer'}</p>
           </div>
         </div>
-        <nav className="flex flex-col max-lg:flex-row max-lg:overflow-x-auto [&::-webkit-scrollbar]:hidden">
+
+        <nav className="flex-1 py-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const isActive = activeTab === item.id;
             return (
               <div
                 key={item.id}
-                className={`flex items-center gap-3 py-3 px-5 text-slate-800 font-medium cursor-pointer transition-colors duration-200 hover:bg-[#D94F00]/10 max-lg:whitespace-nowrap ${activeTab === item.id ? 'bg-blue-50 text-[#D94F00]' : ''}`}
+                className={`flex items-center gap-3 px-5 py-3 cursor-pointer transition-colors text-sm ${isActive ? 'bg-[#fff7ed] text-primary font-bold border-r-2 border-primary' : 'text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] font-medium'}`}
                 onClick={() => setActiveTab(item.id)}
               >
-                <Icon size={18} />
-                <span>{item.label}</span>
+                <Icon size={18} className="shrink-0" />
+                <span className="flex-1">{item.label}</span>
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="bg-[#D94F00] text-white text-[0.7rem] py-0.5 px-1.5 rounded-[10px] ml-auto">{item.badge}</span>
+                  <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
                 )}
-                <ChevronRight size={16} className="ml-auto text-slate-400 max-lg:hidden" />
+                <ChevronRight size={15} className="text-[#d1d5db]" />
               </div>
             );
           })}
         </nav>
-        <div className="px-5 pt-5 border-t border-slate-200 mt-5">
-          <div className="flex items-center gap-3 py-3 px-4 text-[#f85f06] rounded-lg cursor-pointer font-medium hover:bg-red-50">
+
+        <div className="p-4 border-t border-[#f1f5f9]">
+          <div onClick={() => setShowLogoutModal(true)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
             <LogOut size={18} />
             <span>Sign Out</span>
           </div>
         </div>
       </aside>
-      <main className="flex-1 flex flex-col gap-6 min-w-0">
+
+      <main className={`flex-1 min-w-0 flex flex-col ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-auto'}`}>
         {activeTab === 'overview' && (
-          <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
-            <div className="h-[120px] bg-[#D94F00]"></div>
-            <div className="px-6 pb-6 flex gap-6 -mt-[30px] max-md:flex-col max-md:items-center max-md:text-center">
-              <div className="relative">
-                <div className="w-[100px] h-[100px] bg-[#f3742a] text-white rounded-md flex items-center justify-center text-[2.5rem] font-bold border-4 border-white relative overflow-hidden group">
-                  {isUploadingAvatar ? (
-                    <Loader2 className="animate-spin" />
-                  ) : user?.avatar ? (
-                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-                  ) : (
-                    user?.name ? user.name.charAt(0).toUpperCase() : 'U'
-                  )}
-                  <label className="absolute inset-0 bg-black/40 flex items-center justify-center text-white cursor-pointer opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                    <Camera size={20} />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      hidden
-                    />
-                  </label>
+          <div className="relative bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-8 pt-8 pb-8 max-sm:px-4">
+            <div className="flex items-end gap-5 max-sm:flex-col max-sm:items-start">
+              <div className="relative shrink-0">
+                <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center overflow-hidden border-4 border-white shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+                  <AvatarContent />
                 </div>
+                <label className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-md border border-[#e2e8f0] hover:bg-[#f8fafc]">
+                  <Camera size={16} className="text-[#475569]" />
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
+                </label>
               </div>
-              <div className="pt-10 flex-1 max-md:pt-4 max-md:flex max-md:flex-col max-md:items-center">
-                <div className="flex items-center gap-3 mb-2 max-md:justify-center max-md:flex-wrap">
-                  <h1 className="text-2xl m-0 text-slate-900">{user?.name || 'Valued Partner'}</h1>
+              <div className="pb-1">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h1 className="text-xl font-extrabold text-white m-0">{user?.name || 'Valued Partner'}</h1>
                   {isEmailVerified && (
-                    <span className="text-[0.75rem] text-green-600 bg-green-50 py-0.5 px-2 rounded-[10px] font-semibold flex items-center gap-1">
-                      <Check size={14} /> Verified
+                    <span className="flex items-center gap-1 text-xs font-bold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
+                      <Check size={12} /> Verified
                     </span>
                   )}
                 </div>
-                <div className="flex gap-4 mb-4 text-[0.85rem] max-md:justify-center max-md:flex-wrap">
-                  <span className="text-[#D94F00] font-semibold">{user?.role || 'Buyer'} Account</span>
-                  <span className="text-slate-500">Member since {memberSince}</span>
+                <div className="flex items-center gap-3 flex-wrap text-xs text-[#94a3b8] mb-2">
+                  <span className="capitalize font-semibold text-[#e2e8f0]">{user?.role || 'Buyer'} Account</span>
+                  <span>Member since {memberSince}</span>
                 </div>
-                <div className="flex gap-6 text-[0.9rem] max-md:flex-col max-md:items-center max-md:gap-3">
-                  <div className="flex items-center gap-2 max-md:justify-center">
-                    <Mail size={16} />
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
+                    <Mail size={14} className="text-[#94a3b8]" />
                     <span>{user?.email || 'Not provided'}</span>
                     {!isEmailVerified && user?.email && (
                       <button
-                        className="bg-[#D94F00]/10 border border-slate-200 py-1 px-2.5 rounded-md text-[0.75rem] cursor-pointer"
+                        className="text-xs font-bold text-[#fbbf24] bg-transparent border border-[#fbbf24] rounded-full px-2 py-0.5 cursor-pointer hover:bg-[#fffbeb] hover:text-[#92400e]"
                         onClick={handleSendVerifyEmail}
                         disabled={isSendingEmail}
                       >
@@ -294,10 +335,15 @@ const Profile: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 max-md:justify-center">
-                    <Phone size={16} />
+                  <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
+                    <Phone size={14} className="text-[#94a3b8]" />
                     <span>{user?.phone || 'Not provided'}</span>
-                    <button className="bg-[#D94F00]/10 border border-slate-200 py-1 px-2.5 rounded-md text-[0.75rem] cursor-pointer" onClick={() => setIsChangingPhone(true)}>Update</button>
+                    <button
+                      className="text-xs font-bold text-[#94a3b8] bg-transparent border-none cursor-pointer hover:text-white p-0"
+                      onClick={() => setIsChangingPhone(true)}
+                    >
+                      Update
+                    </button>
                   </div>
                 </div>
               </div>
@@ -305,171 +351,285 @@ const Profile: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-3">
-            <div className="bg-white p-5 border border-slate-200 rounded-md flex items-center gap-4 max-sm:p-4 max-sm:px-3 max-sm:gap-2 max-sm:flex-col max-sm:text-center max-sm:justify-center">
-              <ShoppingBag size={24} className="text-[#D94F00]" />
-              <div>
-                <span className="text-2xl font-bold block max-sm:text-[1.25rem]">{orderCount}</span>
-                <span className="text-[0.8rem] text-slate-500">Orders</span>
-              </div>
-            </div>
-            <div className="bg-white p-5 border border-slate-200 rounded-md flex items-center gap-4 max-sm:p-4 max-sm:px-3 max-sm:gap-2 max-sm:flex-col max-sm:text-center max-sm:justify-center">
-              <Heart size={24} className="text-[#D94F00]" />
-              <div>
-                <span className="text-2xl font-bold block max-sm:text-[1.25rem]">{wishlistItems.length}</span>
-                <span className="text-[0.8rem] text-slate-500">Wishlist</span>
-              </div>
-            </div>
-            <div className="bg-white p-5 border border-slate-200 rounded-md flex items-center gap-4 max-sm:p-4 max-sm:px-3 max-sm:gap-2 max-sm:flex-col max-sm:text-center max-sm:justify-center">
-              <Star size={24} className="text-[#D94F00]" />
-              <div>
-                <span className="text-2xl font-bold block max-sm:text-[1.25rem]">0</span>
-                <span className="text-[0.8rem] text-slate-500">Reviews</span>
-              </div>
-            </div>
-            <div className="bg-white p-5 border border-slate-200 rounded-md flex items-center gap-4 max-sm:p-4 max-sm:px-3 max-sm:gap-2 max-sm:flex-col max-sm:text-center max-sm:justify-center">
-              <Clock size={24} className="text-[#D94F00]" />
-              <div>
-                <span className="text-2xl font-bold block max-sm:text-[1.25rem]">0</span>
-                <span className="text-[0.8rem] text-slate-500">Pending</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'overview' && (
-          <div className="flex flex-col gap-6">
-            <div className="bg-white border border-slate-200 rounded-md p-6">
-              <div className="flex justify-between items-center mb-5 max-sm:flex-col max-sm:items-start max-sm:gap-3">
-                <h3 className="text-[1.1rem] font-semibold m-0 flex items-center gap-2">Personal Information</h3>
-                {!isEditingInfo ? (
-                  <button className="bg-transparent border border-slate-200 py-1.5 px-3 rounded-md text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-blue-50" onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
-                ) : (
-                  <div className="flex gap-2">
-                    <button className="bg-white border border-slate-200 text-slate-500 py-1 px-3 rounded-md text-[0.85rem] cursor-pointer font-medium" onClick={() => setIsEditingInfo(false)}>Cancel</button>
-                    <button className="bg-[#D94F00] text-white border-none py-1 px-3 rounded-md text-[0.85rem] cursor-pointer font-medium" onClick={handleSaveInfo}>Save</button>
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
-                <div className="flex flex-col">
-                  <label className="block text-[0.75rem] text-slate-500 mb-1">Full Name</label>
-                  {isEditingInfo ? (
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full py-2 px-3 border border-slate-200 rounded-md" />
-                  ) : (
-                    <p className="m-0 font-medium">{user?.name || 'Not provided'}</p>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <label className="block text-[0.75rem] text-slate-500 mb-1">Email</label>
-                  {isEditingInfo ? (
-                    <input 
-                      type="email" 
-                      value={editEmail} 
-                      onChange={(e) => {
-                        let val = e.target.value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
-                        val = val.replace(/[@.]{2,}/g, (match) => match[0]);
-                        if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
-                        setEditEmail(val);
-                      }} 
-                      className="w-full py-2 px-3 border border-slate-200 rounded-md" 
-                    />
-                  ) : (
-                    <p className="m-0 font-medium">{user?.email || 'Not provided'}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-md p-6">
-              <div className="flex justify-between items-center mb-5 max-sm:flex-col max-sm:items-start max-sm:gap-3">
-                <h3 className="text-[1.1rem] font-semibold m-0 flex items-center gap-2">Default Address</h3>
-                <button className="bg-transparent border border-slate-200 py-1.5 px-3 rounded-md text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-blue-50">Manage</button>
-              </div>
-              <div className="bg-white p-4 border border-slate-200 rounded-lg">
-                <p className="font-semibold mb-1">Primary Address</p>
-                <p className="text-[0.9rem] my-0.5">123 Trade Center, Mumbai, India</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'wishlist' && (
-          <div className="bg-white border border-slate-200 rounded-md p-6">
-            <div className="flex justify-between mb-5">
-              <h3 className="m-0 font-semibold text-lg">My Wishlist ({wishlistItems.length})</h3>
-            </div>
-            {wishlistItems.length > 0 ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))]">
-                {wishlistItems.map((item) => (
-                  <ProductCard key={item.id} product={item} variant="wishlist" />
-                ))}
-              </div>
-            ) : (
-              <p className="text-slate-500">Your wishlist is empty.</p>
-            )}
-          </div>
-        )}
-
+        {/* Messages tab fills remaining height directly — no padding wrapper */}
         {activeTab === 'messages' && (
-          <div style={{ height: 'calc(100vh - 120px)', minHeight: '600px', margin: '-20px' }}>
+          <div className="flex-1 min-h-0">
             <ChatInbox />
           </div>
         )}
 
-        {activeTab === 'orders' && (
-          <OrderList />
-        )}
+        <div className={`px-8 pt-6 max-sm:px-4 ${activeTab === 'messages' ? 'hidden' : ''}`}>
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-4 gap-4 mb-6 max-sm:grid-cols-2">
+              {[
+                { icon: <ShoppingBag size={22} />, value: orderCount, label: 'Orders' },
+                { icon: <Heart size={22} />, value: wishlistItems.length, label: 'Wishlist' },
+                { icon: <Star size={22} />, value: 0, label: 'Reviews' },
+                { icon: <Clock size={22} />, value: 0, label: 'Pending' },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-white border border-[#eef2f6] rounded-[12px] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#fff7ed] rounded-[8px] flex items-center justify-center text-primary shrink-0">{stat.icon}</div>
+                  <div>
+                    <div className="text-xl font-extrabold text-[#0f172a]">{stat.value}</div>
+                    <div className="text-xs text-[#94a3b8]">{stat.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {/* Placeholder for other tabs */}
-        {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && currentMenuItem && (
-          <div className="bg-white border border-slate-200 rounded-md py-[60px] px-5 text-center">
-            {CurrentIcon && <CurrentIcon size={48} strokeWidth={1.5} className="text-slate-300 mb-4 mx-auto" />}
-            <h3 className="m-0 mb-2 text-[1.25rem]">{currentMenuItem.label}</h3>
-            <p className="text-slate-500 m-0">This section is coming soon. We're working hard to bring you a great experience.</p>
-          </div>
-        )}
+          {activeTab === 'overview' && (
+            <div className="grid grid-cols-2 gap-5 mb-8 max-lg:grid-cols-1">
+              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Personal Information</h3>
+                  {!isEditingInfo ? (
+                    <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0" onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button className="text-xs font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-1.5 cursor-pointer hover:bg-[#f1f5f9]" onClick={() => setIsEditingInfo(false)}>Cancel</button>
+                      <button className="text-xs font-bold text-white bg-primary rounded-[6px] px-3 py-1.5 border-none cursor-pointer hover:opacity-90" onClick={handleSaveInfo}>Save</button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Full Name</label>
+                    {isEditingInfo ? (
+                      <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className={inputCls} />
+                    ) : (
+                      <p className="text-sm text-[#0f172a] font-medium m-0">{user?.name || 'Not provided'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Email</label>
+                    {isEditingInfo ? (
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={e => {
+                          let val = e.target.value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
+                          val = val.replace(/[@.]{2,}/g, m => m[0]);
+                          if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
+                          setEditEmail(val);
+                        }}
+                        className={inputCls}
+                      />
+                    ) : (
+                      <p className="text-sm text-[#0f172a] font-medium m-0">{user?.email || 'Not provided'}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Default Delivery Address</h3>
+                  {!isEditingAddress ? (
+                    <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
+                      onClick={() => {
+                        setEditAddrCity(user?.address?.city || '');
+                        setEditAddrState(user?.address?.state || '');
+                        setEditAddrPincode(user?.address?.pincode || '');
+                        setEditAddrFull(user?.address?.fullAddress || '');
+                        setIsEditingAddress(true);
+                      }}>
+                      {user?.address?.city ? 'Edit' : 'Add Address'}
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button className="text-xs font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-1.5 cursor-pointer hover:bg-[#f1f5f9]" onClick={() => setIsEditingAddress(false)}>Cancel</button>
+                      <button className="text-xs font-bold text-white bg-primary rounded-[6px] px-3 py-1.5 border-none cursor-pointer hover:opacity-90" onClick={handleSaveAddress}>Save</button>
+                    </div>
+                  )}
+                </div>
+                {!isEditingAddress ? (
+                  user?.address?.city ? (
+                    <div className="flex items-start gap-3">
+                      <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
+                      <div className="text-sm text-[#475569]">
+                        {user.address.fullAddress && <p className="m-0 text-[#0f172a] font-medium">{user.address.fullAddress}</p>}
+                        <p className="m-0">{[user.address.city, user.address.state].filter(Boolean).join(', ')} – {user.address.pincode}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
+                      <MapPin size={15} className="shrink-0" />
+                      <span>No address saved yet. Add one so suppliers can quote shipping accurately.</span>
+                    </div>
+                  )
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">City *</label>
+                        <input type="text" value={editAddrCity} onChange={e => setEditAddrCity(e.target.value)} className={inputCls} placeholder="e.g. Mumbai" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">State *</label>
+                        <input type="text" value={editAddrState} onChange={e => setEditAddrState(e.target.value)} className={inputCls} placeholder="e.g. Maharashtra" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Pincode *</label>
+                      <input type="text" value={editAddrPincode} onChange={e => setEditAddrPincode(e.target.value.replace(/\D/g, '').slice(0, 6))} className={inputCls} placeholder="6-digit pincode" maxLength={6} />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Full Address <span className="font-normal">(optional)</span></label>
+                      <textarea rows={2} value={editAddrFull} onChange={e => setEditAddrFull(e.target.value)} className={inputCls + ' resize-none'} placeholder="Street / Building / Area…" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'wishlist' && (
+            <div className="py-6">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">My Wishlist ({wishlistItems.length})</h3>
+              {wishlistItems.length > 0 ? (
+                <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
+                  {wishlistItems.map((item) => (
+                    <ProductCard key={item.id} product={item} variant="wishlist" />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-[#64748b]">Your wishlist is empty.</p>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'orders' && (
+            <div className="py-6">
+              <OrderList />
+            </div>
+          )}
+
+          {activeTab === 'contactus' && (
+            <div className="py-6 max-w-[560px]">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Contact Us</h3>
+              <p className="text-sm text-[#64748b] mb-6">Have a question or need help? Fill in the form and our team will reach out to you.</p>
+              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col gap-4">
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Full Name *</label>
+                  <input
+                    type="text"
+                    value={enquiryForm.name}
+                    onChange={e => setEnquiryForm(prev => ({ ...prev, name: e.target.value }))}
+                    className={inputCls}
+                    placeholder="Your name"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Phone *</label>
+                  <input
+                    type="text"
+                    value={enquiryForm.phone}
+                    onChange={e => setEnquiryForm(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '') }))}
+                    className={inputCls}
+                    placeholder="10-digit mobile number"
+                    maxLength={10}
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Email</label>
+                  <input
+                    type="email"
+                    value={enquiryForm.email}
+                    onChange={e => setEnquiryForm(prev => ({ ...prev, email: e.target.value }))}
+                    className={inputCls}
+                    placeholder="your@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Your Query *</label>
+                  <textarea
+                    value={enquiryForm.message}
+                    onChange={e => setEnquiryForm(prev => ({ ...prev, message: e.target.value }))}
+                    rows={5}
+                    className={inputCls + ' resize-y'}
+                    placeholder="Describe your problem, question, or enquiry..."
+                  />
+                </div>
+                <button
+                  onClick={handleEnquirySubmit}
+                  disabled={enquirySubmitting}
+                  className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
+                >
+                  {enquirySubmitting ? 'Submitting...' : 'Submit Enquiry'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && activeTab !== 'contactus' && currentMenuItem && (
+            <div className="flex flex-col items-center gap-4 py-20 text-center text-[#94a3b8]">
+              {CurrentIcon && <CurrentIcon size={52} strokeWidth={1.5} />}
+              <h3 className="text-xl font-extrabold text-[#0f172a] m-0">{currentMenuItem.label}</h3>
+              <p className="text-sm text-[#64748b] m-0 max-w-[400px]">This section is coming soon. We're working hard to bring you a great experience.</p>
+            </div>
+          )}
+        </div>
       </main>
 
-      {/* Change Phone Modal with OTP logic */}
       {isChangingPhone && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000]">
-          <div className="bg-white w-[400px] rounded-md p-6 max-w-[90vw]">
-            <div className="flex justify-between items-center mb-5">
-              <h3 className="m-0 font-semibold">{showOtpInput ? 'Verify OTP' : 'Change Phone Number'}</h3>
-              <button onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }} className="bg-transparent border-none cursor-pointer text-slate-500 flex items-center justify-center"><X size={20} /></button>
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-50 flex items-center justify-center px-4" onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }}>
+          <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0">{showOtpInput ? 'Verify OTP' : 'Change Phone Number'}</h3>
+              <button onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f1f5f9] text-[#475569] border-none cursor-pointer bg-transparent">
+                <X size={18} />
+              </button>
             </div>
             {!showOtpInput ? (
               <div>
-                <label className="block mb-2 text-[0.9rem] text-slate-500">New Phone Number</label>
+                <label className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">New Phone Number</label>
                 <input
                   type="text"
                   value={newPhone}
-                  onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ''))}
-                  className="w-full py-2 px-3 border border-slate-200 rounded-md mb-4"
+                  onChange={e => setNewPhone(e.target.value.replace(/\D/g, ''))}
+                  className={inputCls + " mb-4"}
                   placeholder="Enter 10-digit mobile number"
                   maxLength={10}
                 />
-                <button onClick={handleSendPhoneOtp} className="bg-[#D94F00] text-white border-none p-2.5 w-full rounded-md mt-4 cursor-pointer font-medium hover:bg-[#bf4500]">Send OTP</button>
+                <button onClick={handleSendPhoneOtp} className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90">
+                  Send OTP
+                </button>
               </div>
             ) : (
               <div>
-                <label className="block mb-2 text-[0.9rem] text-slate-500">Enter OTP sent to {newPhone}</label>
+                <label className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Enter OTP sent to {newPhone}</label>
                 <input
                   type="text"
                   value={phoneOtp}
-                  onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ''))}
-                  className="w-full py-2 px-3 border border-slate-200 rounded-md mb-4"
+                  onChange={e => setPhoneOtp(e.target.value.replace(/\D/g, ''))}
+                  className={inputCls + " mb-4"}
                   placeholder="Enter 123456"
                   maxLength={6}
                 />
-                <button onClick={handleVerifyPhoneOtp} className="bg-[#D94F00] text-white border-none p-2.5 w-full rounded-md mt-4 cursor-pointer font-medium hover:bg-[#bf4500]">Verify & Update</button>
+                <button onClick={handleVerifyPhoneOtp} className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90">
+                  Verify & Update
+                </button>
               </div>
             )}
           </div>
         </div>
       )}
+    </div>
+
+    <Modal
+      isOpen={showLogoutModal}
+      onClose={() => setShowLogoutModal(false)}
+      title="Sign Out"
+      footer={
+        <>
+          <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
+          <Button variant="danger" onClick={handleLogout}>Sign Out</Button>
+        </>
+      }
+    >
+      Are you sure you want to sign out of your account?
+    </Modal>
     </div>
   );
 };

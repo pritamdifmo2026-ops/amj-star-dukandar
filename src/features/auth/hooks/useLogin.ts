@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { authApi } from '../services/auth.api';
-import { setCredentials } from '@/store/slices/auth.slice';
+import { setCredentials } from '@/features/auth/store/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import { parseApiError } from '@/shared/utils/errorHandler';
 import type { LoginPayload } from '../types';

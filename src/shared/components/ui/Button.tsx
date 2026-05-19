@@ -11,18 +11,18 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   block?: boolean;
 }
 
-const variantMap: Record<Variant, string> = {
-  primary: 'bg-[var(--color-primary)] text-white border-[var(--color-primary)] hover:enabled:bg-[var(--color-primary-dark)] hover:enabled:border-[var(--color-primary-dark)]',
-  secondary: 'bg-[#1A3C5E] text-white border-[#1A3C5E] rounded-full hover:enabled:bg-[#142f4a] hover:enabled:-translate-y-px',
-  outline: 'bg-transparent text-[var(--color-primary)] border-[var(--color-primary)] hover:enabled:bg-[var(--color-primary)] hover:enabled:text-white',
-  ghost: 'bg-transparent text-slate-500 border-transparent hover:enabled:bg-slate-100',
-  danger: 'bg-[var(--color-error)] text-white border-[var(--color-error)] hover:enabled:bg-[#a02020]',
+const variantClasses: Record<Variant, string> = {
+  primary:   'bg-primary text-white border-primary hover:bg-primary-dark hover:border-primary-dark',
+  secondary: 'bg-[#1A3C5E] text-white border-[#1A3C5E] rounded-full hover:bg-[#142f4a] hover:-translate-y-px',
+  outline:   'bg-transparent text-primary border-primary hover:bg-primary hover:text-white',
+  ghost:     'bg-transparent text-body border-transparent hover:bg-border-light',
+  danger:    'bg-error text-white border-error hover:bg-[#a02020]',
 };
 
-const sizeMap: Record<Size, string> = {
-  sm: 'py-1.5 px-4 text-[13px] font-bold',
-  md: 'py-2 px-[18px] text-base rounded-sm',
-  lg: 'py-[11px] px-6 text-lg rounded-sm',
+const sizeClasses: Record<Size, string> = {
+  sm: 'px-4 py-1.5 text-[13px] font-bold',
+  md: 'px-[18px] py-2 text-base rounded-[4px]',
+  lg: 'px-6 py-[11px] text-lg rounded-[4px]',
 };
 
 const Button: React.FC<ButtonProps> = ({
@@ -36,22 +36,21 @@ const Button: React.FC<ButtonProps> = ({
   className = '',
   ...rest
 }) => {
-  const isBlock = block || fullWidth;
   const classes = [
-    'inline-flex items-center justify-center gap-1.5 font-sans font-medium border border-transparent cursor-pointer transition-[background,color,border-color] duration-150 whitespace-nowrap disabled:opacity-55 disabled:cursor-not-allowed',
-    variantMap[variant],
-    sizeMap[size],
-    isBlock ? 'w-full' : '',
+    'inline-flex items-center justify-center gap-1.5 font-medium border cursor-pointer',
+    'transition-[background-color,color,border-color,transform] duration-150 whitespace-nowrap',
+    'disabled:opacity-55 disabled:cursor-not-allowed',
+    variantClasses[variant],
+    sizeClasses[size],
+    (block || fullWidth) ? 'w-full' : '',
     className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  ].filter(Boolean).join(' ');
 
   return (
     <button className={classes} disabled={disabled || loading} {...rest}>
-      {loading ? (
-        <span className="inline-block w-[14px] h-[14px] border-2 border-current border-t-transparent rounded-full animate-spin" />
-      ) : null}
+      {loading && (
+        <span className="inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      )}
       {children}
     </button>
   );

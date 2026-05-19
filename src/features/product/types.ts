@@ -9,13 +9,27 @@ export interface Product {
   minOrderQty: number;
   stock: number;
   category: string;
-  imageUrl?: string; // Main image
-  images: string[]; // Gallery images
+  imageUrl?: string;
+  images: string[];
   supplierId: string;
   supplierName: string;
   isVerified: boolean;
   rating: number;
   gstRate: number;
+  gstIncluded: boolean;
+  hsnCode?: string;
+  brand?: string;
+  keywords?: string[];
+  leadTime?: string;
+  packagingType?: string;
+  countryOfOrigin?: string;
+  certifications?: string[];
+  specifications?: Record<string, string>;
+  supplierCity?: string;
+  supplierState?: string;
+  supplierAbout?: string;
+  supplierYearEst?: string;
+  isGSTVerified?: boolean;
   createdAt: string;
   updatedAt: string;
   supplierDetails?: {
@@ -33,9 +47,15 @@ export interface Product {
 export interface ProductFilters {
   category?: string;
   subcategory?: string;
-  search?: string;
+  q?: string;
   minPrice?: number;
   maxPrice?: number;
+  minMoq?: number;
+  maxMoq?: number;
+  certifications?: string[];
+  leadTime?: string;
+  verifiedOnly?: boolean;
+  sort?: 'newest' | 'price_asc' | 'price_desc';
   page?: number;
   pageSize?: number;
 }

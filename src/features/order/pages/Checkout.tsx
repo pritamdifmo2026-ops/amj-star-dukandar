@@ -1,26 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
-import { 
-  ShoppingBag, MapPin, Plus, 
+import {
+  ShoppingBag, MapPin, Plus,
   Truck, ArrowLeft
 } from 'lucide-react';
 import { ROUTES } from '@/shared/constants/routes';
-import { addressApi } from '@/shared/services/address.api';
+import { addressApi } from '@/features/buyer/services/address.api';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const buyNowItem = location.state?.buyNowItem;
   const cartItems = useAppSelector((state) => state.cart.items);
+  const [addresses, setAddresses] = useState<any[]>([]);
 
-  const itemsToCheckout = buyNowItem ? [buyNowItem] : cartItems;
-
-  const subtotal = itemsToCheckout.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = subtotal > 1000 ? 0 : 50;
   const total = subtotal + shipping;
 
-  const [addresses, setAddresses] = useState<any[]>([]);
   const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
 
   useEffect(() => {
@@ -40,19 +36,21 @@ const Checkout: React.FC = () => {
       alert('Please add a delivery address.');
       return;
     }
-    navigate(ROUTES.PAYMENT, { state: { buyNowItem } });
+    navigate(ROUTES.PAYMENT);
   };
 
-  if (itemsToCheckout.length === 0) {
+  const cardCls = "bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)]";
+  const cardTitleCls = "flex items-center gap-2 text-base font-extrabold text-[#0f172a] m-0 mb-5";
+
+  if (cartItems.length === 0) {
     return (
-      <div className={styles.container}>
-        <div className={styles.card} style={{ textAlign: 'center', padding: '60px' }}>
-          <ShoppingBag size={64} color="#cbd5e1" style={{ margin: '0 auto 20px' }} />
-          <h2>Your checkout is empty</h2>
-          <p>Please select items or buy a product before checking out.</p>
-          <button 
-            className={styles.placeOrderBtn} 
-            style={{ width: 'auto', margin: '20px auto 0' }}
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
+        <div className={cardCls + " text-center p-16"}>
+          <ShoppingBag size={64} className="text-[#cbd5e1] mx-auto mb-5" />
+          <h2 className="text-xl font-extrabold text-[#0f172a] m-0 mb-2">Your cart is empty</h2>
+          <p className="text-sm text-[#64748b] m-0 mb-5">Please add items to your cart before checking out.</p>
+          <button
+            className="px-6 py-3 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => navigate(ROUTES.PRODUCT_LIST)}
           >
             Browse Products
@@ -63,39 +61,38 @@ const Checkout: React.FC = () => {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.pageHeader}>
-        <button className={styles.backBtn} onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#64748b', marginBottom: '16px' }}>
-          <ArrowLeft size={18} /> Back to Cart
-        </button>
-        <h1>Complete your order</h1>
-        <p>Review your items and select delivery details</p>
-      </div>
+    <div className="min-h-screen bg-[#f8fafc] px-4 py-8 max-w-[1200px] mx-auto">
+      <button
+        className="flex items-center gap-2 text-sm text-[#64748b] bg-transparent border-none cursor-pointer hover:text-[#0f172a] p-0 mb-4"
+        onClick={() => navigate(-1)}
+      >
+        <ArrowLeft size={18} /> Back to Cart
+      </button>
+      <h1 className="text-2xl font-extrabold text-[#0f172a] m-0 mb-1">Complete your order</h1>
+      <p className="text-sm text-[#64748b] m-0 mb-7">Review your items and select delivery details</p>
 
-      <div className={styles.checkoutLayout}>
-        <div className={styles.mainSection}>
-          {/* Order Items Section */}
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>
-              <ShoppingBag size={20} /> Order Items ({itemsToCheckout.length})
+      <div className="flex gap-6 items-start max-lg:flex-col">
+        <div className="flex-1 flex flex-col gap-5">
+          <div className={cardCls}>
+            <h2 className={cardTitleCls}>
+              <ShoppingBag size={20} /> Order Items ({cartItems.length})
             </h2>
-            <div className={styles.itemList}>
-              {itemsToCheckout.map((item) => {
+            <div className="flex flex-col gap-4">
+              {cartItems.map((item) => {
                 const mrp = Math.round(item.price * 1.15);
                 const discount = Math.round(((mrp - item.price) / mrp) * 100);
-                
                 return (
-                  <div key={item.productId} className={styles.orderItem}>
-                    <img src={item.imageUrl} alt={item.name} className={styles.itemImage} />
-                    <div className={styles.itemInfo}>
-                      <h3>{item.name}</h3>
-                      <span className={styles.itemVariant}>size: M</span>
-                      <div className={styles.itemPriceRow}>
-                        <span className={styles.oldPrice}>₹{mrp}</span>
-                        <span className={styles.currentPrice}>₹{item.price}</span>
-                        <span className={styles.discountLabel}>{discount}% off</span>
+                  <div key={item.productId} className="flex items-start gap-4 pb-4 border-b border-[#f1f5f9] last:border-0 last:pb-0">
+                    <img src={item.imageUrl} alt={item.name} className="w-20 h-20 object-cover rounded-[8px] border border-[#eef2f6] shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-[#0f172a] m-0 mb-1">{item.name}</h3>
+                      <span className="text-xs bg-[#f1f5f9] text-[#475569] px-2 py-0.5 rounded-full">size: M</span>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-xs line-through text-[#94a3b8]">₹{mrp}</span>
+                        <span className="text-base font-extrabold text-[#0f172a]">₹{item.price}</span>
+                        <span className="text-xs font-bold text-[#059669]">{discount}% off</span>
                       </div>
-                      <p className={styles.itemQty}>Quantity : {item.quantity}</p>
+                      <p className="text-xs text-[#64748b] m-0 mt-1">Quantity: {item.quantity}</p>
                     </div>
                   </div>
                 );
@@ -103,66 +100,69 @@ const Checkout: React.FC = () => {
             </div>
           </div>
 
-          {/* Delivery Address Section */}
-          <div className={styles.card}>
+          <div className={cardCls}>
             {defaultAddress ? (
-              <div className={styles.addressCompact}>
-                <div className={styles.addressLine1}>
-                  <strong>Deliver to: </strong> {defaultAddress.fullName}, {defaultAddress.pincode}
-                  <button className={styles.changeBtn} onClick={() => navigate(`${ROUTES.ADDRESSES}?redirect=${ROUTES.CHECKOUT}`)}>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-bold text-[#0f172a]">Deliver to: {defaultAddress.fullName}, {defaultAddress.pincode}</span>
+                  <button
+                    className="text-xs font-bold text-primary bg-transparent border border-primary rounded-full px-2.5 py-0.5 cursor-pointer hover:bg-[#fff7ed]"
+                    onClick={() => navigate(`${ROUTES.ADDRESSES}?redirect=${ROUTES.CHECKOUT}`)}
+                  >
                     Change
                   </button>
                 </div>
-                <p className={styles.addressLine2}>
-                  {defaultAddress.houseNo}, {defaultAddress.area}, {defaultAddress.city}, {defaultAddress.state}
-                </p>
+                <p className="text-sm text-[#64748b] m-0 mt-1">{defaultAddress.houseNo}, {defaultAddress.area}, {defaultAddress.city}, {defaultAddress.state}</p>
               </div>
             ) : (
               <>
-                <h2 className={styles.cardTitle}>
+                <h2 className={cardTitleCls}>
                   <MapPin size={20} /> Delivery Address
                 </h2>
-                <div 
-                  className={styles.addressPlaceholder} 
+                <div
+                  className="border-2 border-dashed border-[#e2e8f0] rounded-[8px] p-6 flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
                   onClick={() => navigate(`${ROUTES.ADDRESSES}?redirect=${ROUTES.CHECKOUT}`)}
                 >
-                  <div className={styles.addAddressText}>
-                    <Plus size={20} color="#D94F00" /> Add New Address
-                  </div>
+                  <span className="flex items-center gap-2 text-sm font-bold text-primary">
+                    <Plus size={18} /> Add New Address
+                  </span>
                 </div>
               </>
             )}
           </div>
         </div>
 
-        <div className={styles.summarySection}>
-          <h2 className={styles.paymentTitle}>Order Summary</h2>
-          <div className={styles.summaryRow}>
+        <div className="w-[320px] max-lg:w-full bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] sticky top-6">
+          <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">Order Summary</h2>
+
+          <div className="flex justify-between text-sm text-[#475569] mb-3">
             <span>Subtotal</span>
             <span>₹{subtotal.toFixed(2)}</span>
           </div>
-          <div className={styles.summaryRow}>
+          <div className="flex justify-between text-sm text-[#475569] mb-3">
             <span>Shipping</span>
             <span>₹{shipping.toFixed(2)}</span>
           </div>
-          <div className={`${styles.summaryRow} ${styles.total}`}>
+          <div className="flex justify-between items-start font-extrabold text-base text-[#0f172a] pt-3 border-t border-[#f1f5f9] mb-5">
             <div>
-              Total
-              <span className={styles.totalSubtext}>Inclusive of all taxes</span>
+              <div>Total</div>
+              <div className="text-[10px] font-normal text-[#94a3b8] uppercase tracking-wide">Inclusive of all taxes</div>
             </div>
             <span>₹{total.toFixed(2)}</span>
           </div>
 
-
-          <div className={styles.deliveryEstimate}>
-            <Truck size={18} />
+          <div className="flex items-start gap-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 mb-5 text-sm text-[#475569]">
+            <Truck size={18} className="text-primary shrink-0 mt-0.5" />
             <div>
-              <strong>Delivery Estimate</strong>
-              <p>Standard Shipping • 5-7 business days</p>
+              <div className="font-bold text-[#0f172a]">Delivery Estimate</div>
+              <div className="text-xs text-[#64748b] mt-0.5">Standard Shipping • 5-7 business days</div>
             </div>
           </div>
 
-          <button className={styles.placeOrderBtn} onClick={handleContinue}>
+          <button
+            className="w-full py-3 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 transition-opacity"
+            onClick={handleContinue}
+          >
             Continue
           </button>
         </div>

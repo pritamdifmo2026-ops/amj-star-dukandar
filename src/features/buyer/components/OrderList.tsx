@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { orderApi } from '@/shared/services/order.api';
+import { orderApi } from '@/features/order/services/order.api';
 import { ShoppingBag, ChevronRight, Clock, Package } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
@@ -8,26 +8,19 @@ const OrderList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useSelector((state: any) => state.auth);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  useEffect(() => { fetchOrders(); }, []);
 
   const fetchOrders = async () => {
-    try {
-      const data = await orderApi.getOrders();
-      setOrders(data);
-    } catch (err) {
-      console.error('Failed to fetch orders', err);
-    } finally {
-      setLoading(false);
-    }
+    try { const res = await orderApi.list(); setOrders(res.data ?? []); }
+    catch (err) { console.error('Failed to fetch orders', err); }
+    finally { setLoading(false); }
   };
 
   if (loading) {
     return (
-      <div className="py-[60px] text-center flex flex-col items-center gap-4 text-gray-500">
-        <div className="w-10 h-10 border-3 border-gray-100 border-t-[#e65c00] rounded-full animate-spin"></div>
-        <p>Loading orders...</p>
+      <div className="flex flex-col items-center gap-3 py-12 text-[#64748b]">
+        <div className="w-8 h-8 border-2 border-[#e2e8f0] border-t-primary rounded-full animate-spin" />
+        <p className="text-sm m-0">Loading orders...</p>
       </div>
     );
   }
@@ -36,66 +29,56 @@ const OrderList: React.FC = () => {
 
   if (orders.length === 0) {
     return (
-      <div className="py-5">
-        <div className="px-5 py-[80px] text-center flex flex-col items-center justify-center text-gray-400 bg-white border border-gray-200 rounded-[16px] min-h-[400px] shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-          <ShoppingBag size={64} strokeWidth={1.5} />
-          <h3 className="text-gray-900 my-5 text-[20px] font-bold">No Orders Yet</h3>
-          <p className="max-w-[300px] text-[14px]">{isSupplier ? "You haven't received any orders yet." : "You haven't placed any orders yet."}</p>
-        </div>
+      <div className="flex flex-col items-center gap-3 py-16 text-[#64748b]">
+        <ShoppingBag size={64} strokeWidth={1} />
+        <h3 className="text-lg font-bold text-[#1e293b] m-0">No Orders Yet</h3>
+        <p className="text-sm text-center m-0">{isSupplier ? "You haven't received any orders yet." : "You haven't placed any orders yet."}</p>
       </div>
     );
   }
 
   return (
-    <div className="py-5">
-      <div className="mb-6">
-        <h3 className="text-[20px] font-bold text-gray-900">{isSupplier ? 'Received Orders' : 'My Orders'} ({orders.length})</h3>
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-extrabold text-[#0f172a] m-0">{isSupplier ? 'Received Orders' : 'My Orders'} ({orders.length})</h3>
       </div>
-      <div className="flex flex-col gap-4">
-        {orders.map((order) => (
-          <div key={order._id} className="bg-white border border-gray-200 rounded-[16px] overflow-hidden transition-all duration-200 ease shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-[#e65c00] hover:shadow-[0_4px_12px_rgba(230,92,0,0.08)] hover:-translate-y-[2px]">
-            <div className="p-5 flex justify-between gap-5 border-b border-gray-100">
+      <div className="grid grid-cols-1 gap-4">
+        {orders.map(order => (
+          <div key={order._id} className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+            <div className="p-5 flex items-start justify-between gap-4 max-sm:flex-col">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="font-['JetBrains_Mono',monospace] font-bold text-gray-900 text-[14px] bg-gray-100 px-2.5 py-1 rounded-md">{order.orderNumber}</span>
-                  <span className="text-[13px] text-gray-500">
-                    {new Date(order.createdAt).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric'
-                    })}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-extrabold text-primary bg-[#fff7ed] px-2.5 py-1 rounded-full">{order.orderNumber}</span>
+                  <span className="text-xs text-[#94a3b8]">
+                    {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1.5">
                   {order.items.map((item: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2 text-gray-700 text-[14px]">
-                      <Package size={16} className="text-gray-400" />
-                      <span className="font-medium flex-1">{item.name}</span>
-                      <span className="text-gray-500 font-semibold">x{item.quantity}</span>
+                    <div key={idx} className="flex items-center gap-2 text-sm text-[#475569]">
+                      <Package size={14} className="text-[#94a3b8] shrink-0" />
+                      <span>{item.name}</span>
+                      <span className="text-[#94a3b8]">x{item.quantity}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="flex flex-col items-end justify-center min-w-[120px]">
-                <span className="text-[12px] text-gray-500 uppercase tracking-widest mb-1">Order Value</span>
-                <span className="text-[20px] font-extrabold text-[#e65c00]">₹{order.totalAmount.toLocaleString()}</span>
+              <div className="text-right shrink-0">
+                <p className="text-xs text-[#94a3b8] m-0 mb-1">Order Value</p>
+                <p className="text-lg font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString()}</p>
               </div>
             </div>
-            <div className="py-3 px-5 bg-[#fafafa] flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5 bg-[#fff7f0] text-[#e65c00] px-2.5 py-1 rounded-[20px] text-[12px] font-bold border border-[#ffecd9]">
-                  <Clock size={14} />
-                  <span>{isSupplier ? 'To be Processed' : 'Pending (Processing)'}</span>
+            <div className="px-5 py-3 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#a16207]">
+                  <Clock size={12} /> {isSupplier ? 'To be Processed' : 'Pending (Processing)'}
                 </div>
-                <span className="text-[13px] text-gray-500 font-medium">
-                  {isSupplier 
-                    ? `Buyer: ${order.buyerId?.name || 'Customer'}` 
-                    : `Seller: ${order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}`
-                  }
+                <span className="text-xs text-[#94a3b8]">
+                  {isSupplier ? `Buyer: ${order.buyerId?.name || 'Customer'}` : `Seller: ${order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}`}
                 </span>
               </div>
-              <button className="bg-transparent border border-gray-200 py-1.5 px-3.5 rounded-lg text-[13px] font-semibold text-gray-700 flex items-center gap-1.5 cursor-pointer transition-all duration-200 ease hover:bg-white hover:border-gray-900 hover:text-gray-900">
-                Manage Order <ChevronRight size={16} />
+              <button className="flex items-center gap-1.5 text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">
+                Manage Order <ChevronRight size={14} />
               </button>
             </div>
           </div>

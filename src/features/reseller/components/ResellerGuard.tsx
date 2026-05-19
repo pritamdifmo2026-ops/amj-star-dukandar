@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import resellerService from '../services/reseller.service';
-import { setResellerProfile } from '@/store/slices/reseller.slice';
+import { setResellerProfile } from '@/features/reseller/store/reseller.slice';
 
 interface ResellerGuardProps {
   children: React.ReactNode;

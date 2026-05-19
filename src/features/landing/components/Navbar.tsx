@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
+import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
+import {
   ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
-  Store, ShoppingBag, Truck, List, LayoutDashboard
+  Store, ShoppingBag, Truck, List, LayoutDashboard, Search
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { logout } from '@/store/slices/auth.slice';
-import { fetchCart } from '@/store/slices/cart.slice';
+import { logout } from '@/features/auth/store/auth.slice';
+import { fetchCart } from '@/features/buyer/store/cart.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
@@ -21,232 +22,183 @@ const Navbar: React.FC = () => {
   const [showSoonModal, setShowSoonModal] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  
+
   const navigate = useNavigate();
   const userMenuRef = React.useRef<HTMLDivElement>(null);
-
 
   React.useEffect(() => {
     categoryService.getAll().then(res => {
       if (res.categories) setCategories(res.categories);
-    }).catch(err => console.error('Failed to fetch categories navbar', err));
+    }).catch(() => {});
   }, []);
 
   React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false);
-      }
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const dispatch = useAppDispatch();
-  const cartCount = useAppSelector((s) => s.cart.items.length);
-  const isAuth = useAppSelector((s) => s.auth.isAuthenticated);
-  const user = useAppSelector((s) => s.auth.user);
+  const cartCount = useAppSelector(s => s.cart.items.length);
+  const isAuth = useAppSelector(s => s.auth.isAuthenticated);
+  const user = useAppSelector(s => s.auth.user);
   const isSupplier = user?.role === 'supplier';
   const isReseller = user?.role === 'reseller';
   const isAdmin = user?.role === 'admin';
-  const { profile: supplierProfile } = useAppSelector((s) => s.supplier);
-  const { profile: resellerProfile } = useAppSelector((s) => s.reseller);
+  const { profile: supplierProfile } = useAppSelector(s => s.supplier);
+  const { profile: resellerProfile } = useAppSelector(s => s.reseller);
 
   React.useEffect(() => {
     if (isSupplier && !supplierProfile) {
-      const fetchProfile = async () => {
+      (async () => {
         try {
-          const { default: supplierService } = await import('@/features/supplier/services/supplier.service');
-          const responseData = await supplierService.getProfile();
-          const { setSupplierProfile } = await import('@/store/slices/supplier.slice');
-          if (responseData.success && responseData.supplier) {
-            dispatch(setSupplierProfile(responseData.supplier));
-          }
-        } catch (err) {
-          console.error('Failed to fetch supplier profile in Navbar');
-        }
-      };
-      fetchProfile();
+          const { default: svc } = await import('@/features/supplier/services/supplier.service');
+          const res = await svc.getProfile();
+          const { setSupplierProfile } = await import('@/features/supplier/store/supplier.slice');
+          if (res.success && res.supplier) dispatch(setSupplierProfile(res.supplier));
+        } catch {}
+      })();
     }
   }, [isSupplier, supplierProfile, dispatch]);
 
   React.useEffect(() => {
     if (isReseller && !resellerProfile) {
-      const fetchProfile = async () => {
+      (async () => {
         try {
-          const { default: resellerService } = await import('@/features/reseller/services/reseller.service');
-          const data = await resellerService.getProfile();
-          const { setResellerProfile } = await import('@/store/slices/reseller.slice');
-          if (data) {
-            dispatch(setResellerProfile(data));
-          }
-        } catch (err) {
-          console.error('Failed to fetch reseller profile in Navbar');
-        }
-      };
-      fetchProfile();
+          const { default: svc } = await import('@/features/reseller/services/reseller.service');
+          const data = await svc.getProfile();
+          const { setResellerProfile } = await import('@/features/reseller/store/reseller.slice');
+          if (data) dispatch(setResellerProfile(data));
+        } catch {}
+      })();
     }
   }, [isReseller, resellerProfile, dispatch]);
 
-  React.useEffect(() => {
-    if (isAuth) {
-      dispatch(fetchCart());
-    }
-  }, [isAuth, dispatch]);
-
+  React.useEffect(() => { if (isAuth) dispatch(fetchCart()); }, [isAuth, dispatch]);
 
   const handleSignOut = () => {
     dispatch(logout());
-    if (isAdmin) {
-      window.location.href = '/';
-    } else {
-      navigate(ROUTES.HOME);
-      setShowLogoutModal(false);
-      setUserMenuOpen(false);
-    }
+    if (isAdmin) window.location.href = '/';
+    else { navigate(ROUTES.HOME); setShowLogoutModal(false); setUserMenuOpen(false); }
   };
 
+  const displayName = isSupplier
+    ? (supplierProfile?.businessName || 'Supplier')
+    : isReseller
+      ? (resellerProfile?.fullName || resellerProfile?.storeName || user?.name || 'Reseller')
+      : (user?.name || 'User');
+
+  const navLinkCls = "text-[11px] font-medium text-heading no-underline transition-colors hover:text-primary whitespace-nowrap";
+  const dropdownItemCls = "block w-full px-4 py-3 text-left border-none bg-transparent text-heading text-xs no-underline rounded-[8px] cursor-pointer hover:bg-gray-50 hover:text-primary";
+
   return (
-    <header className="sticky top-0 z-[1000] bg-[oklch(0.98_0.01_80)]">
+    <header className="sticky top-0 z-[1000] bg-cream">
       {/* Top strip */}
-      <div className="bg-[oklch(0.98_0.01_80)] border-b border-slate-200 py-[2px]">
-        <div className="max-w-[1280px] mx-auto px-8 flex justify-between items-center">
-          <span className="text-[9px] text-slate-500 flex items-center gap-[6px]">
+      <div className="hidden sm:block bg-cream border-b border-border py-0.5">
+        <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
+          <span className="text-[9px] text-body flex items-center gap-1.5">
             <Phone size={10} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
           </span>
           <div className="flex items-center gap-3">
             {!isAuth && (
               <>
-                <Link to="/login?mode=seller" className="text-[9px] text-slate-500 no-underline hover:text-[var(--color-primary)]">Sell on AMJStar</Link>
-                <span className="text-slate-200">|</span>
+                <Link to="/login?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJStar</Link>
+                <span className="text-border">|</span>
               </>
             )}
-            <a href="#" className="text-[9px] text-slate-500 no-underline hover:text-[var(--color-primary)]">Help Center</a>
+            <a href="#" className="text-[9px] text-body no-underline hover:text-primary">Help Center</a>
           </div>
         </div>
       </div>
 
       {/* Main navbar */}
-      <nav className="bg-white py-1 border-b border-slate-200">
-        <div className="max-w-[1280px] mx-auto px-8 flex justify-between items-center">
-          {/* Logo */}
-          <Link to={ROUTES.HOME} className="">
-            <img src="/favicon.jpeg" alt="AMJStar Logo" style={{ height: '38px', objectFit: 'contain' }} />
+      <nav className="bg-surface py-1 border-b border-border">
+        <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
+          <Link to={ROUTES.HOME} className="no-underline">
+            <img src={logo} alt="AMJStar Logo" style={{ height: '38px', objectFit: 'contain' }} />
           </Link>
 
-          {/* Search */}
           <SearchBar categories={categories} />
 
-          {/* Right actions */}
           <div className="flex items-center gap-4">
             {isAuth ? (
-              <div
-                className="relative cursor-pointer flex items-center gap-2 max-lg:hidden"
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                ref={userMenuRef}
-              >
-                <span className="font-semibold text-slate-900 text-[11px]">
-                  {isSupplier
-                    ? (supplierProfile?.businessName || 'Supplier')
-                    : isReseller
-                      ? (resellerProfile?.fullName || resellerProfile?.storeName || user?.name || 'Reseller')
-                      : (user?.name || 'User')
-                  }
-                </span>
+              <div className="relative cursor-pointer flex items-center gap-2" onClick={() => setUserMenuOpen(p => !p)} ref={userMenuRef}>
+                <span className="font-semibold text-heading text-[11px]">{displayName}</span>
                 {userMenuOpen && (
-                  <div className="absolute top-full right-0 mt-2 bg-white border border-[rgba(226,232,240,0.8)] rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.08),0_4px_12px_rgba(0,0,0,0.03)] min-w-[155px] p-1.5 z-[1000] origin-top-right animate-in fade-in zoom-in duration-200">
+                  <div className="absolute top-full right-0 mt-3 bg-cream border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] min-w-[200px] p-2 z-10">
                     {isSupplier ? (
-                      <Link to="/supplier/onboarding" className="flex items-center gap-2.5 w-full py-2.5 px-3 text-left border-none bg-transparent text-slate-900 no-underline text-xs font-[550] rounded-md cursor-pointer transition-all duration-200 hover:bg-[rgba(217,79,0,0.05)] hover:text-[var(--color-primary)] group">
-                        <LayoutDashboard size={14} className="text-slate-500 transition-colors duration-200 shrink-0 group-hover:text-[var(--color-primary)]" />
-                        <span>Dashboard</span>
+                      <Link to="/supplier/onboarding" className={dropdownItemCls}>
+                        <LayoutDashboard size={14} className="inline mr-2" />Dashboard
                       </Link>
                     ) : isReseller ? (
-                      <Link to="/reseller/dashboard" className="flex items-center gap-2.5 w-full py-2.5 px-3 text-left border-none bg-transparent text-slate-900 no-underline text-xs font-[550] rounded-md cursor-pointer transition-all duration-200 hover:bg-[rgba(217,79,0,0.05)] hover:text-[var(--color-primary)] group">
-                        <LayoutDashboard size={14} className="text-slate-500 transition-colors duration-200 shrink-0 group-hover:text-[var(--color-primary)]" />
-                        <span>Dashboard</span>
+                      <Link to="/reseller/dashboard" className={dropdownItemCls}>
+                        <LayoutDashboard size={14} className="inline mr-2" />Dashboard
                       </Link>
                     ) : isAdmin ? (
-                      <Link to="/admin/dashboard" className="flex items-center gap-2.5 w-full py-2.5 px-3 text-left border-none bg-transparent text-slate-900 no-underline text-xs font-[550] rounded-md cursor-pointer transition-all duration-200 hover:bg-[rgba(217,79,0,0.05)] hover:text-[var(--color-primary)] group">
-                        <LayoutDashboard size={14} className="text-slate-500 transition-colors duration-200 shrink-0 group-hover:text-[var(--color-primary)]" />
-                        <span>Control Panel</span>
+                      <Link to="/admin/dashboard" className={dropdownItemCls}>
+                        <LayoutDashboard size={14} className="inline mr-2" />Control Panel
                       </Link>
                     ) : (
-                      <Link to="/profile" className="flex items-center gap-2.5 w-full py-2.5 px-3 text-left border-none bg-transparent text-slate-900 no-underline text-xs font-[550] rounded-md cursor-pointer transition-all duration-200 hover:bg-[rgba(217,79,0,0.05)] hover:text-[var(--color-primary)] group">
-                        <User size={14} className="text-slate-500 transition-colors duration-200 shrink-0 group-hover:text-[var(--color-primary)]" />
-                        <span>Profile</span>
+                      <Link to="/profile" className={dropdownItemCls}>
+                        <User size={14} className="inline mr-2" />Profile
                       </Link>
                     )}
-                    <button className="flex items-center gap-2.5 w-full py-2.5 px-3 text-left border-none bg-transparent text-slate-900 no-underline text-xs font-[550] rounded-md cursor-pointer transition-all duration-200 hover:bg-[rgba(217,79,0,0.05)] hover:text-[var(--color-primary)] group" onClick={() => setShowLogoutModal(true)}>
-                      <LogOut size={14} className="text-slate-500 transition-colors duration-200 shrink-0 group-hover:text-[var(--color-primary)]" />
-                      <span>Sign Out</span>
+                    <button className={dropdownItemCls} onClick={() => setShowLogoutModal(true)}>
+                      <LogOut size={14} className="inline mr-2" />Sign Out
                     </button>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-5 max-lg:hidden">
-                <Link to="/about" className="text-[10px] font-medium text-slate-900 no-underline transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5 hover:text-[var(--color-primary)]">About</Link>
-                <Link to={ROUTES.BUYERS} className="text-[10px] font-medium text-slate-900 no-underline transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5 hover:text-[var(--color-primary)]">
-                  <User size={16} className="text-[var(--color-primary)]" />
-                  For Buyers
+              <div className="hidden lg:flex items-center gap-5">
+                <Link to="/about" className={navLinkCls}>About</Link>
+                <Link to={ROUTES.BUYERS} className={navLinkCls}>For Buyers</Link>
+                <Link to={ROUTES.RESELLERS} className={navLinkCls}>For Resellers</Link>
+                <Link to={ROUTES.SUPPLIERS} className={navLinkCls}>For Suppliers</Link>
+                <Link to={`${ROUTES.LOGIN}?mode=buyer`}
+                  className="bg-heading text-white px-[18px] py-1.5 rounded-full no-underline font-semibold text-[11px] transition-all ml-2 hover:opacity-90 hover:-translate-y-px">
+                  Join Free
                 </Link>
-                <Link to={ROUTES.RESELLERS} className="text-[10px] font-medium text-slate-900 no-underline transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5 hover:text-[var(--color-primary)]">
-                  <Truck size={16} className="text-[var(--color-primary)]" />
-                  For Resellers
-                </Link>
-                <Link to={ROUTES.SUPPLIERS} className="text-[10px] font-medium text-slate-900 no-underline transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5 hover:text-[var(--color-primary)]">
-                  <Store size={16} className="text-[var(--color-primary)]" />
-                  For Suppliers
-                </Link>
-                <Link to={`${ROUTES.LOGIN}?mode=buyer`} className="bg-[#BB461E] text-white py-1.5 px-[18px] rounded-full no-underline font-semibold text-[11px] transition-all duration-200 ml-2 hover:opacity-90 hover:-translate-y-[1px]">Join Free</Link>
               </div>
             )}
-            <div
-              className="relative text-slate-900 flex items-center cursor-pointer"
-              aria-label="Cart"
-              onClick={() => navigate(ROUTES.CART)}
-              style={{ cursor: 'pointer' }}
-            >
+            <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate(ROUTES.CART)}>
               <ShoppingCart size={20} />
-              {cartCount > 0 && <span className="absolute -top-2 -right-2.5 bg-[var(--color-primary)] text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-white">{cartCount}</span>}
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2.5 bg-primary text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-surface">
+                  {cartCount}
+                </span>
+              )}
             </div>
-            <button className="hidden bg-transparent border-none text-slate-900 max-lg:block" onClick={() => setMobileOpen((p) => !p)} aria-label="Menu">
+            <button className="flex lg:hidden bg-transparent border-none text-heading cursor-pointer p-1" onClick={() => setMobileOpen(p => !p)}>
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </nav>
 
-      <MessageModal
-        isOpen={showSoonModal}
-        onClose={() => setShowSoonModal(false)}
-        title="Coming Soon"
-        message="We are currently updating our cart and checkout system. Please check back soon!"
-        type="info"
-      />
-
-      <div className="bg-white border-b border-slate-200 relative max-lg:hidden">
-        <div className="max-w-[1280px] mx-auto px-8 flex items-center gap-6 overflow-visible">
+      {/* Category bar — desktop only */}
+      <div className="hidden lg:block bg-surface border-b border-border">
+        <div className="max-w-[var(--width-container)] mx-auto px-8 flex items-center gap-6">
           <div className="flex items-center gap-5 flex-1">
-            {categories.map((cat) => {
-              const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+            {categories.map(cat => {
+              const hasSubs = cat.subcategories?.length > 0;
               return (
                 <div key={cat._id} className="relative py-1 group">
                   <Link
                     to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                    className="flex items-center gap-1.5 text-slate-500 no-underline text-[11px] font-semibold transition-colors duration-200 whitespace-nowrap group-hover:text-[var(--color-primary)]"
+                    className="flex items-center gap-1.5 text-body no-underline text-[11px] font-semibold transition-colors group-hover:text-primary whitespace-nowrap"
                   >
                     <span>{cat.name}</span>
                     {hasSubs && <ChevronDown size={12} />}
                   </Link>
                   {hasSubs && (
-                    <div className="absolute top-full left-0 min-w-[200px] bg-white border border-slate-200 rounded-lg shadow-[0_10px_25px_rgba(0,0,0,0.1)] p-2 z-[100] opacity-0 invisible translate-y-2.5 transition-all duration-200 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
+                    <div className="absolute top-full left-0 min-w-[200px] bg-white border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] p-2 z-[100] opacity-0 invisible translate-y-2.5 transition-all group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
                       {cat.subcategories.map((sub: any) => (
-                        <Link
-                          key={sub._id}
+                        <Link key={sub._id}
                           to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                          className="block py-2 px-3 text-slate-900 no-underline text-xs rounded-md transition-all duration-200 hover:bg-slate-50 hover:text-[var(--color-primary)] hover:pl-4"
-                        >
+                          className="block px-3 py-2 text-heading no-underline text-xs rounded-[6px] transition-all hover:bg-slate-50 hover:text-primary hover:pl-4">
                           {sub.name}
                         </Link>
                       ))}
@@ -256,96 +208,87 @@ const Navbar: React.FC = () => {
               );
             })}
           </div>
-
-          <div className="flex items-center gap-6 border-l border-slate-200 pl-6">
-            <Link to={ROUTES.PRODUCT_LIST} className="text-[11px] font-medium text-slate-900 no-underline whitespace-nowrap hover:text-[var(--color-primary)]">Verified manufacturers</Link>
+          <div className="flex items-center gap-6 border-l border-border pl-6">
+            <Link to={ROUTES.PRODUCT_LIST} className="text-[11px] font-medium text-heading no-underline whitespace-nowrap hover:text-primary">
+              Verified manufacturers
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu overlay */}
       <div
         className={`fixed inset-0 bg-black/50 z-[2000] transition-all duration-300 ${mobileOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
         onClick={() => setMobileOpen(false)}
       >
-        <div className={`absolute top-0 right-0 bottom-0 w-[300px] bg-white transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}`} onClick={(e) => e.stopPropagation()}>
-          <header className="p-6 border-b border-slate-200 flex justify-between items-center">
+        <div
+          className={`absolute top-0 right-0 bottom-0 w-[300px] bg-surface flex flex-col transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          onClick={e => e.stopPropagation()}
+        >
+          <header className="px-6 py-6 border-b border-border flex justify-between items-center">
             {isAuth ? (
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center font-bold text-lg">
-                  {(isSupplier ? (supplierProfile?.businessName?.[0]) : isReseller ? (resellerProfile?.fullName?.[0] || resellerProfile?.storeName?.[0]) : (user?.name?.[0]))?.toUpperCase() || 'U'}
+                <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                  {displayName[0]?.toUpperCase() || 'U'}
                 </div>
-                <div className="flex flex-col">
-                  <span className="font-semibold text-sm text-slate-900">
-                    {isSupplier
-                      ? (supplierProfile?.businessName || 'Supplier')
-                      : isReseller
-                        ? (resellerProfile?.fullName || resellerProfile?.storeName || user?.name || 'Reseller')
-                        : (user?.name || 'User')
-                    }
-                  </span>
-                  <span className="text-xs text-slate-500 capitalize">{user?.role}</span>
+                <div>
+                  <span className="block font-semibold text-heading text-sm">{displayName}</span>
+                  <span className="text-xs text-muted capitalize">{user?.role}</span>
                 </div>
               </div>
             ) : (
-              <img src="/favicon.jpeg" alt="Logo" className="h-8" />
+              <img src={logo} alt="Logo" className="h-8" />
             )}
-            <button className="bg-transparent border-none text-slate-900" onClick={() => setMobileOpen(false)}>
+            <button className="bg-transparent border-none cursor-pointer text-heading" onClick={() => setMobileOpen(false)}>
               <X size={20} />
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto px-6 py-6">
             <div className="mb-8">
-              <div className="text-xs font-bold uppercase text-slate-400 tracking-widest mb-4">Quick Links</div>
-              <Link to="/about" className="flex items-center gap-3 py-3 text-slate-900 no-underline font-medium active:text-[var(--color-primary)]" onClick={() => setMobileOpen(false)}>
-                <List size={18} />
-                <span>About AMJStar</span>
+              <div className="text-xs font-bold uppercase text-muted tracking-widest mb-4">Quick Links</div>
+              <Link to={ROUTES.PRODUCT_LIST} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
+                <Search size={18} /><span>Search Products</span>
+              </Link>
+              <Link to="/about" className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
+                <List size={18} /><span>About AMJStar</span>
               </Link>
             </div>
 
             <div className="mb-8">
-              <div className="text-xs font-bold uppercase text-slate-400 tracking-widest mb-4">Join as Partner</div>
+              <div className="text-xs font-bold uppercase text-muted tracking-widest mb-4">Join as Partner</div>
               {isAuth ? (
-                <>
-                  <Link
-                    to={isSupplier ? "/supplier/onboarding" : isReseller ? "/reseller/dashboard" : isAdmin ? "/admin/dashboard" : "/profile"}
-                    className="flex items-center gap-3 py-3 text-slate-900 no-underline font-medium active:text-[var(--color-primary)]"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    <User size={18} />
-                    <span>{isAdmin ? 'Control Panel' : 'My Profile'}</span>
-                  </Link>
-                </>
+                <Link to={isSupplier ? "/supplier/onboarding" : isReseller ? "/reseller/dashboard" : isAdmin ? "/admin/dashboard" : "/profile"}
+                  className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
+                  <User size={18} /><span>{isAdmin ? 'Control Panel' : 'My Profile'}</span>
+                </Link>
               ) : (
                 <>
-                  <Link to={ROUTES.BUYERS} className="flex items-center gap-3 py-3 text-slate-900 no-underline font-medium active:text-[var(--color-primary)]" onClick={() => setMobileOpen(false)}>
-                    <ShoppingBag size={18} />
-                    <span>For Buyers</span>
-                  </Link>
-                  <Link to={ROUTES.SUPPLIERS} className="flex items-center gap-3 py-3 text-slate-900 no-underline font-medium active:text-[var(--color-primary)]" onClick={() => setMobileOpen(false)}>
-                    <Store size={18} />
-                    <span>For Suppliers</span>
-                  </Link>
-                  <Link to={ROUTES.RESELLERS} className="flex items-center gap-3 py-3 text-slate-900 no-underline font-medium active:text-[var(--color-primary)]" onClick={() => setMobileOpen(false)}>
-                    <Truck size={18} />
-                    <span>For Resellers</span>
+                  <Link to={ROUTES.BUYERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><ShoppingBag size={18} /><span>For Buyers</span></Link>
+                  <Link to={ROUTES.SUPPLIERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><Store size={18} /><span>For Suppliers</span></Link>
+                  <Link to={ROUTES.RESELLERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><Truck size={18} /><span>For Resellers</span></Link>
+                  <Link
+                    to={`${ROUTES.LOGIN}?mode=buyer`}
+                    className="mt-3 flex items-center justify-center gap-2 w-full py-3 bg-heading text-white rounded-[8px] no-underline font-semibold text-sm"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Join Free
                   </Link>
                 </>
               )}
             </div>
 
-            <hr className="border-t border-slate-200 my-6" />
+            <hr className="border-border my-4" />
 
-            <div className="mb-8">
-              <div className="text-xs font-bold uppercase text-slate-400 tracking-widest mb-4">Browse Categories</div>
+            <div>
+              <div className="text-xs font-bold uppercase text-muted tracking-widest mb-4">Browse Categories</div>
               {categories.map((cat) => {
                 const hasSubs = cat.subcategories && cat.subcategories.length > 0;
                 const isExpanded = expandedCategory === cat._id;
                 return (
                   <div key={cat._id}>
                     <div
-                      className="flex items-center gap-3 py-3 text-slate-900 no-underline font-medium active:text-[var(--color-primary)]"
+                      className="flex items-center justify-between py-3 text-heading font-medium cursor-pointer"
                       onClick={() => {
                         if (hasSubs) {
                           setExpandedCategory(isExpanded ? null : cat._id);
@@ -354,36 +297,35 @@ const Navbar: React.FC = () => {
                           setMobileOpen(false);
                         }
                       }}
-                      style={{ cursor: 'pointer', justifyContent: 'space-between' }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div className="flex items-center gap-3">
                         <List size={18} />
                         <span>{cat.name}</span>
                       </div>
                       {hasSubs && (
-                        <ChevronDown 
-                          size={16} 
-                          style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} 
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
                         />
                       )}
                     </div>
                     {isExpanded && hasSubs && (
-                      <div className="flex flex-col">
+                      <div className="pl-9 flex flex-col">
                         <Link
                           to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                          className="flex items-center gap-3 py-3 text-slate-900 no-underline font-medium pl-9 !text-xs !text-slate-500 active:!text-[var(--color-primary)]"
+                          className="py-2 text-slate-500 no-underline text-xs"
                           onClick={() => setMobileOpen(false)}
                         >
-                          <span>- All {cat.name}</span>
+                          - All {cat.name}
                         </Link>
                         {cat.subcategories.map((sub: any) => (
                           <Link
                             key={sub._id}
                             to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                            className="flex items-center gap-3 py-3 text-slate-900 no-underline font-medium pl-9 !text-xs !text-slate-500 active:!text-[var(--color-primary)]"
+                            className="py-2 text-slate-500 no-underline text-xs"
                             onClick={() => setMobileOpen(false)}
                           >
-                            <span>- {sub.name}</span>
+                            - {sub.name}
                           </Link>
                         ))}
                       </div>
@@ -395,20 +337,20 @@ const Navbar: React.FC = () => {
           </div>
 
           {isAuth && (
-            <footer className="p-6 border-t border-slate-200">
-              <button className="w-full flex items-center justify-center gap-2 p-3.5 bg-red-100 text-red-500 border-none rounded-md font-semibold" onClick={handleSignOut}>
-                <LogOut size={18} />
-                <span>Sign Out</span>
+            <footer className="px-6 py-6 border-t border-border">
+              <button onClick={handleSignOut}
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-50 text-red-500 border-none rounded-[6px] font-semibold cursor-pointer">
+                <LogOut size={18} /><span>Sign Out</span>
               </button>
             </footer>
           )}
         </div>
       </div>
 
-      <Modal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        title="Sign Out"
+      <MessageModal isOpen={showSoonModal} onClose={() => setShowSoonModal(false)} title="Coming Soon"
+        message="We are currently updating our cart and checkout system. Please check back soon!" type="info" />
+
+      <Modal isOpen={showLogoutModal} onClose={() => setShowLogoutModal(false)} title="Sign Out"
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>Cancel</Button>

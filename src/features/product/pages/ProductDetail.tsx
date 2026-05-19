@@ -1,67 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart, CreditCard, MessageCircle } from 'lucide-react';
+import {
+  ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart,
+  CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck
+} from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { addToCartAsync } from '@/store/slices/cart.slice';
-import { toggleWishlistItem } from '@/store/slices/wishlist.slice';
+import { addToCartAsync } from '@/features/buyer/store/cart.slice';
+import { toggleWishlistItem } from '@/features/buyer/store/wishlist.slice';
 import { useSocket } from '@/shared/contexts/SocketContext';
-import { chatApi } from '@/shared/services/chat.api';
+import { chatApi } from '@/features/chat/services/chat.api';
 import Button from '@/shared/components/ui/Button';
+import Modal from '@/shared/components/ui/Modal';
 import Loader from '@/shared/components/feedback/Loader';
 import ErrorState from '@/shared/components/feedback/ErrorState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 import ImageMagnifier from '../components/ImageMagnifier';
+import EnquiryModal, { type EnquiryPayload } from '@/features/chat/components/EnquiryModal';
 import { ROUTES } from '@/shared/constants/routes';
-
-const getSupplierExtraDetails = (supplierName: string = '') => {
-  const name = supplierName || 'Test Supplier';
-  const charCodeSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const natures = [
-    'Manufacturer & Wholesale Exporter',
-    'Authorized Distributor & Wholesaler',
-    'OEM Manufacturer / Industrial Supplier',
-    'Contract Manufacturer & Supplier'
-  ];
-  const nature = natures[charCodeSum % natures.length];
-
-  const panLetters = (name.replace(/[^A-Za-z]/g, '').slice(0, 5).padEnd(5, 'X') + 'P').toUpperCase().slice(0, 5);
-  const panDigits = String(charCodeSum * 7).padEnd(4, '0').slice(0, 4);
-  const mockGST = `27${panLetters}${panDigits}A1Z${charCodeSum % 10}`;
-
-  const suffixes = ['Pvt. Ltd.', 'Enterprises', 'Industries', 'Trading Co.'];
-  const companyName = name.toLowerCase().includes('supplier') || name.toLowerCase().includes('ltd') || name.toLowerCase().includes('enterprise')
-    ? name
-    : `${name} ${suffixes[charCodeSum % suffixes.length]}`;
-
-  return { companyName, nature, mockGST };
-};
-
-const maskGST = (gst: string) => {
-  if (!gst || gst.length < 5) return 'N/A';
-  return `${gst.slice(0, 2)}******${gst.slice(-2)}`;
-};
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const wishlistItems = useAppSelector(state => state.wishlist.items);
-  const { setActiveChatId } = useSocket();
+  const { socket, setActiveChatId } = useSocket();
   const [contactingSupplier, setContactingSupplier] = useState(false);
+  const [showEnquiryModal, setShowEnquiryModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'company'>('details');
 
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const user = useAppSelector(state => state.auth.user);
+  const isAdmin = user?.role === 'admin';
 
   React.useEffect(() => {
-    if (id === 'undefined') {
-      navigate('/');
-      return;
-    }
+    if (id === 'undefined') { navigate('/'); return; }
     setSelectedImage(null);
   }, [id, navigate]);
 
@@ -74,293 +52,424 @@ const ProductDetail: React.FC = () => {
   const cartItems = useAppSelector(state => state.cart.items);
   const isInCart = currentProductId ? cartItems.some(item => item.productId === currentProductId) : false;
 
-  const companyDetails = React.useMemo(() => {
-    if (!product) {
-      return {
-        companyName: '',
-        nature: '',
-        mockGST: '',
-        location: 'Mumbai, Maharashtra'
-      };
-    }
-    const fallback = getSupplierExtraDetails(product.supplierName);
-    const apiDetails = product.supplierDetails;
-
-    const rawGST = apiDetails?.gstin || fallback.mockGST;
-    const maskedGST = maskGST(rawGST);
-
-    const location = apiDetails?.city && apiDetails?.state
-      ? `${apiDetails.city}, ${apiDetails.state}`
-      : apiDetails?.city || 'Mumbai, Maharashtra';
-
-    return {
-      companyName: apiDetails?.businessName || fallback.companyName,
-      nature: apiDetails?.nature || fallback.nature,
-      mockGST: maskedGST,
-      location
-    };
-  }, [product]);
-
   const handleToggleWishlist = () => {
-    if (product && currentProductId) {
-      if (!user) {
-        navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`);
-        return;
-      }
-      dispatch(toggleWishlistItem(product));
-    }
+    if (!product || !currentProductId) return;
+    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`); return; }
+    dispatch(toggleWishlistItem(product));
   };
 
-  const handleContactSupplier = async () => {
+  const handleContactSupplier = () => {
+    if (!product) return;
+    if (isAdmin) { setShowAdminModal(true); return; }
+    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`); return; }
+    setShowEnquiryModal(true);
+  };
+
+  const handleEnquirySubmit = useCallback(async (enquiry: EnquiryPayload) => {
     if (!product) return;
     setContactingSupplier(true);
     try {
       const conversation = await chatApi.getOrCreateConversation(
         product.supplierId,
-        product.id
+        product.id,
+        enquiry.deliveryAddress,
       );
+      const shipTo = [
+        enquiry.deliveryAddress.fullAddress,
+        enquiry.deliveryAddress.city,
+        enquiry.deliveryAddress.state,
+        enquiry.deliveryAddress.pincode,
+      ].filter(Boolean).join(', ');
+      const text = [
+        `📦 Enquiry: ${product.name}`,
+        `Quantity: ${enquiry.quantity} ${product.unit}s`,
+        `Price: ${enquiry.targetPrice ? `₹${enquiry.targetPrice.toLocaleString()} total` : 'As listed'}`,
+        `Delivery Timeline: ${enquiry.deliveryTimeline}`,
+        shipTo ? `Ship to: ${shipTo}` : '',
+        `Requirements: ${enquiry.requirements}`,
+        enquiry.note ? `Note: ${enquiry.note}` : '',
+      ].filter(Boolean).join('\n');
+      socket?.emit('join_conversation', conversation._id);
+      socket?.emit('send_message', { conversationId: conversation._id, text, receiverId: (conversation as any).supplierId });
+      setShowEnquiryModal(false);
       setActiveChatId(conversation._id);
-    } catch (err) {
-      console.error('Failed to open chat', err);
     } finally {
       setContactingSupplier(false);
     }
-  };
+  }, [product, socket, setActiveChatId]);
 
-  if (isLoading) {
-    return (
-      <div className={styles.page}>
-        <Navbar />
-        <div className={styles.center}><Loader size="lg" /></div>
-        <Footer />
-      </div>
-    );
-  }
+  const pageCls = "min-h-screen flex flex-col bg-surface";
+  const centerCls = "flex justify-center items-center min-h-[60vh]";
 
-  if (isError || !product) {
-    return (
-      <div className={styles.page}>
-        <Navbar />
-        <div className={styles.center}><ErrorState onRetry={() => refetch()} /></div>
-        <Footer />
-      </div>
-    );
-  }
+  if (isLoading) return <div className={pageCls}><Navbar /><div className={centerCls}><Loader size="lg" /></div><Footer /></div>;
+  if (isError || !product) return <div className={pageCls}><Navbar /><div className={centerCls}><ErrorState onRetry={() => refetch()} /></div><Footer /></div>;
 
-  // Gallery and current image - defined BEFORE handlers that use them
   const galleryImages = Array.from(
     new Set([product.imageUrl, ...(product.images || [])].filter((img): img is string => Boolean(img)))
   );
   const currentImage = selectedImage || galleryImages[0] || '';
 
-
-  // Handlers that use currentImage - defined AFTER currentImage
   const handleAddToCart = () => {
     if (!product) return;
-
-    if (isInCart) {
-      navigate(ROUTES.CART);
-      return;
-    }
-
-    if (!user) {
-      navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`);
-      return;
-    }
-
-    dispatch(
-      addToCartAsync({
-        productId: currentProductId,
-        name: product.name,
-        price: product.price,
-        quantity: product.minOrderQty,
-        unit: product.unit,
-        supplierId: product.supplierId,
-        imageUrl: currentImage,
-      })
-    );
+    if (isAdmin) { setShowAdminModal(true); return; }
+    if (isInCart) { navigate(ROUTES.CART); return; }
+    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
+    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage }));
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-
-    if (!user) {
-      navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`);
-      return;
-    }
-
-    const buyNowItem = {
-      productId: currentProductId,
-      name: product.name,
-      price: product.price,
-      quantity: product.minOrderQty,
-      unit: product.unit,
-      supplierId: product.supplierId,
-      imageUrl: currentImage,
-    };
-
-    navigate(ROUTES.CHECKOUT, { state: { buyNowItem } });
+    if (isAdmin) { setShowAdminModal(true); return; }
+    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
+    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage }));
+    navigate(ROUTES.CHECKOUT);
   };
 
-  const gstAmount = calculateGST(product.price, product.gstRate);
-  const totalPrice = product.price + gstAmount;
+  const gstAmount = product.gstIncluded ? 0 : calculateGST(product.price, product.gstRate);
+  const totalPrice = product.gstIncluded ? product.price : product.price + gstAmount;
+
+  const packagingLabel: Record<string, string> = { bulk: 'Bulk', retail: 'Retail Pack', custom: 'Custom Packaging' };
+
+  // Collect all specification rows for the details tab
+  const hasSpecs = product.countryOfOrigin || product.leadTime || product.packagingType ||
+    product.hsnCode || (product.specifications && Object.keys(product.specifications).length > 0);
+  const hasCerts = product.certifications && product.certifications.length > 0;
 
   return (
-    <div className={styles.page}>
+    <div className={pageCls}>
       <Navbar />
 
-      <main className={styles.main}>
-        <div className={styles.container}>
-          <button className={styles.backBtn} onClick={() => navigate(-1)}>
-            <ArrowLeft size={20} />
-            <span>Back</span>
+      <main className="flex-1 py-6 pb-20 max-md:py-4">
+        <div className="w-full max-w-[var(--width-container)] mx-auto px-8 max-md:px-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 bg-transparent border-none text-body text-sm font-medium cursor-pointer mt-4 mb-6 p-0 transition-colors hover:text-primary"
+          >
+            <ArrowLeft size={20} /> Back
           </button>
 
-          <div className={styles.layout}>
-            {/* Left: Image with Amazon-style magnifier */}
-            <div className={styles.imageSection}>
-              <div className={styles.mainImageWrap}>
+          {/* Main grid: image + info */}
+          <div className="grid grid-cols-[1fr_1.2fr] gap-8 mb-10 max-lg:grid-cols-[1fr_1.1fr] max-lg:gap-6 max-[992px]:grid-cols-1 max-[992px]:gap-8">
+            {/* Image gallery */}
+            <div className="flex flex-col gap-4 max-[992px]:max-w-[600px] max-[992px]:mx-auto max-[992px]:w-full">
+              <div className="w-full aspect-square bg-cream border border-border rounded-[var(--radius-md)] overflow-visible flex items-center justify-center">
                 <ImageMagnifier key={currentImage} src={currentImage} alt={product.name} />
-                <button
-                  className={`${styles.wishlistBtn} ${isWishlisted ? styles.active : ''}`}
-                  onClick={handleToggleWishlist}
-                  aria-label="Add to wishlist"
-                >
-                  <Heart size={24} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
-                </button>
               </div>
-              <div className={styles.thumbnailGrid}>
-                {galleryImages.map((img, idx) => (
-                  <div
-                    key={idx}
-                    className={`${styles.thumbWrap} ${currentImage === img ? styles.activeThumb : ''}`}
-                    onClick={() => setSelectedImage(img)}
-                  >
-                    <img src={img} alt={`${product.name} ${idx}`} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right: Info */}
-            <div className={styles.infoSection}>
-              <div className={styles.badgeRow}>
-                {product.isVerified && (
-                  <span className={styles.verifiedBadge}>
-                    <ShieldCheck size={14} /> Verified Supplier
-                  </span>
-                )}
-                <span className={styles.categoryBadge}>{product.category}</span>
-              </div>
-
-              <div className={styles.headerRow}>
-                <h1 className={styles.title}>{product.name}</h1>
-              </div>
-
-              <div className={styles.ratingRow}>
-                <div className={styles.stars}>
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={16} fill={i < Math.floor(product.rating) ? "var(--color-primary)" : "none"} color={i < Math.floor(product.rating) ? "var(--color-primary)" : "var(--color-text-muted)"} />
+              {galleryImages.length > 1 && (
+                <div className="flex gap-3 overflow-x-auto scrollbar-none p-1">
+                  {galleryImages.map((img, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedImage(img)}
+                      className={`w-20 h-20 border rounded-[var(--radius-sm)] overflow-hidden cursor-pointer shrink-0 transition-colors ${currentImage === img ? 'border-primary' : 'border-border hover:border-primary'}`}
+                    >
+                      <img src={img} alt={`${product.name} ${idx}`} className="w-full h-full object-contain" />
+                    </div>
                   ))}
                 </div>
-                <span className={styles.ratingText}>{product.rating} / 5.0</span>
+              )}
+            </div>
+
+            {/* Product info */}
+            <div className="flex flex-col max-[992px]:mt-4">
+              {/* Badges */}
+              <div className="flex gap-2 mb-4 flex-wrap">
+                {product.isVerified && (
+                  <span className="bg-[#e8f5e9] text-[#2e7d32] text-[11px] font-bold px-2.5 py-1 rounded-[4px] flex items-center gap-1 uppercase">
+                    <ShieldCheck size={13} /> Verified Supplier
+                  </span>
+                )}
+                {product.isGSTVerified && (
+                  <span className="bg-[#eff6ff] text-[#1d4ed8] text-[11px] font-bold px-2.5 py-1 rounded-[4px] flex items-center gap-1 uppercase">
+                    <BadgeCheck size={13} /> GST Verified
+                  </span>
+                )}
+                <span className="bg-cream text-body text-[11px] font-semibold px-2.5 py-1 rounded-[4px] uppercase">
+                  {product.category}
+                </span>
               </div>
 
-              <div className={styles.priceCard}>
-                <div className={styles.priceRow}>
-                  <span className={styles.priceLabel}>Wholesale Price:</span>
-                  <span className={styles.priceValue}>{formatCurrency(product.price)}</span>
-                  <span className={styles.unit}>/ {product.unit}</span>
-                </div>
-                <p className={styles.gstInfo}>+ {formatCurrency(gstAmount)} GST ({product.gstRate}%)</p>
-                <p className={styles.totalPrice}>Total: {formatCurrency(totalPrice)}</p>
-              </div>
-
-              <div className={styles.stats}>
-                <div className={styles.statItem}>
-                  <Package size={18} />
-                  <div>
-                    <strong>{product.minOrderQty} {product.unit}s</strong>
-                    <span>Min. Order</span>
-                  </div>
-                </div>
-                <div className={styles.statItem}>
-                  <Truck size={18} />
-                  <div>
-                    <strong>PAN India</strong>
-                    <span>Shipping</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.actions}>
-                <Button size="lg" className={styles.buyBtn} onClick={handleAddToCart}>
-                  <ShoppingCart size={20} />
-                  {isInCart ? 'Go to Cart' : 'Add to Cart'}
-                </Button>
-                <Button size="lg" variant="primary" className={styles.buyNowBtn} onClick={handleBuyNow}>
-                  <CreditCard size={20} />
-                  Buy Now
-                </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className={styles.inquiryBtn}
-                  onClick={handleContactSupplier}
-                  disabled={contactingSupplier}
+              {/* Title + wishlist */}
+              <div className="flex justify-between items-start gap-4 mb-3">
+                <h1 className="text-2xl font-extrabold text-heading leading-[1.2] max-[992px]:text-xl max-sm:text-lg">{product.name}</h1>
+                <button
+                  onClick={handleToggleWishlist}
+                  aria-label="Add to wishlist"
+                  className="bg-surface border border-border rounded-full w-11 h-11 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-sm hover:scale-105 hover:border-primary"
                 >
-                  <MessageCircle size={18} />
-                  {contactingSupplier ? 'Opening Chat…' : 'Chat with Supplier'}
+                  <Heart size={22} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
+                </button>
+              </div>
+
+              {/* Rating */}
+              <div className="flex items-center gap-2 mb-6">
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={15} fill={i < Math.floor(product.rating) ? 'var(--color-primary)' : 'none'} color={i < Math.floor(product.rating) ? 'var(--color-primary)' : 'var(--color-muted)'} />
+                  ))}
+                </div>
+                <span className="text-sm text-body font-semibold">{product.rating} / 5.0</span>
+              </div>
+
+              {/* Price box */}
+              <div className="bg-cream p-4 rounded-[var(--radius-md)] mb-5 border-l-4 border-primary">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm text-body font-semibold">Wholesale Price:</span>
+                  <span className="text-xl font-extrabold text-primary">{formatCurrency(product.price)}</span>
+                  <span className="text-base text-muted">/ {product.unit}</span>
+                </div>
+                {product.gstIncluded ? (
+                  <p className="text-xs text-muted mt-0.5">GST inclusive ({product.gstRate}% included in price)</p>
+                ) : (
+                  <p className="text-xs text-muted mt-0.5">+ {formatCurrency(gstAmount)} GST ({product.gstRate}%) extra</p>
+                )}
+                <p className="text-base font-bold text-heading mt-2">
+                  {product.gstIncluded ? 'All-inclusive price' : `Total: ${formatCurrency(totalPrice)}`}
+                </p>
+              </div>
+
+              {/* Key details row */}
+              <div className="flex gap-6 mb-6 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <Package size={17} className="text-muted" />
+                  <div>
+                    <strong className="block text-sm text-heading">{product.minOrderQty} {product.unit}s</strong>
+                    <span className="block text-xs text-muted">Min. Order</span>
+                  </div>
+                </div>
+                {product.leadTime && (
+                  <div className="flex items-center gap-2.5">
+                    <Truck size={17} className="text-muted" />
+                    <div>
+                      <strong className="block text-sm text-heading">{product.leadTime}</strong>
+                      <span className="block text-xs text-muted">Lead Time</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3 mb-8 max-md:flex-col">
+                <Button size="lg" onClick={handleAddToCart} className="flex-1 h-[52px] whitespace-nowrap">
+                  <ShoppingCart size={18} /> {isInCart ? 'Go to Cart' : 'Add to Cart'}
+                </Button>
+                <Button size="lg" variant="primary" onClick={handleBuyNow} className="flex-1 h-[52px] whitespace-nowrap">
+                  <CreditCard size={18} /> Buy Now
+                </Button>
+                <Button variant="outline" size="lg" onClick={handleContactSupplier} disabled={contactingSupplier} className="flex-1 h-[52px]">
+                  <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'Enquire Now'}
                 </Button>
               </div>
 
-              <div className={styles.supplierCard}>
-                <h3 className={styles.supplierTitle}>Supplier Information</h3>
-                <div className={styles.supplierDetailsList}>
-                  <div className={styles.supplierDetailItem}>
-                    <span className={styles.detailLabel}>Company Name:</span>
-                    <span className={styles.detailValue}>{companyDetails.companyName}</span>
-                  </div>
-                  <div className={styles.supplierDetailItem}>
-                    <span className={styles.detailLabel}>Nature of Business:</span>
-                    <span className={styles.detailValue}>{companyDetails.nature}</span>
-                  </div>
-                  <div className={styles.supplierDetailItem}>
-                    <span className={styles.detailLabel}>GST Number:</span>
-                    <span className={styles.detailValue}>{companyDetails.mockGST}</span>
-                  </div>
-                  <div className={styles.supplierDetailItem}>
-                    <span className={styles.detailLabel}>Location:</span>
-                    <span className={styles.detailValue}>{companyDetails.location}</span>
-                  </div>
+              {/* Minimal supplier card */}
+              <div className="bg-surface border border-border p-4 rounded-[var(--radius-md)] flex items-center gap-4">
+                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-lg shrink-0">
+                  {(product.supplierName || 'S')[0].toUpperCase()}
                 </div>
-                <div className={styles.supplierActions}>
-                  <button className={styles.viewStoreBtn}>View Store</button>
-                  <button
-                    className={styles.supplierContactBtn}
-                    onClick={handleContactSupplier}
-                    disabled={contactingSupplier}
-                  >
-                    <MessageCircle size={14} />
-                    {contactingSupplier ? 'Connecting...' : 'Contact Supplier'}
-                  </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-heading truncate">{product.supplierName}</p>
+                  {(product.supplierCity || product.supplierState) && (
+                    <p className="text-xs text-muted flex items-center gap-1 mt-0.5">
+                      <MapPin size={11} /> {[product.supplierCity, product.supplierState].filter(Boolean).join(', ')}
+                    </p>
+                  )}
                 </div>
+                <button
+                  onClick={() => setActiveTab('company')}
+                  className="text-xs text-primary font-semibold bg-transparent border-none cursor-pointer shrink-0 hover:underline"
+                >
+                  Company Info
+                </button>
               </div>
-
-
             </div>
           </div>
 
-          <section className={styles.descriptionSection}>
-            <h2 className={styles.descTitle}>Product Description</h2>
-            <div className={styles.description}>
-              {product.description}
+          {/* Tabs */}
+          <div className="border-b border-border mb-8">
+            <div className="flex gap-0">
+              {(['details', 'company'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors cursor-pointer bg-transparent ${
+                    activeTab === tab
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted hover:text-heading'
+                  }`}
+                >
+                  {tab === 'details' ? 'Product Details' : 'Company Details'}
+                </button>
+              ))}
             </div>
-          </section>
+          </div>
+
+          {/* Tab: Product Details */}
+          {activeTab === 'details' && (
+            <div className="mb-20 max-w-[860px]">
+              {/* Description */}
+              <h2 className="text-lg font-bold text-heading mb-4">Description</h2>
+              <div className="text-base text-body leading-[1.8] mb-10">{product.description}</div>
+
+              {/* Specifications table */}
+              {(hasSpecs || hasCerts) && (
+                <>
+                  <h2 className="text-lg font-bold text-heading mb-4">Specifications</h2>
+                  {hasSpecs && (
+                    <div className="border border-border rounded-[var(--radius-md)] overflow-hidden mb-6">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {product.countryOfOrigin && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream w-[220px] max-sm:w-[140px]">Country of Origin</td>
+                              <td className="py-3 px-5 text-heading">{product.countryOfOrigin}</td>
+                            </tr>
+                          )}
+                          {product.leadTime && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream">Lead Time</td>
+                              <td className="py-3 px-5 text-heading">{product.leadTime}</td>
+                            </tr>
+                          )}
+                          {product.packagingType && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream">Packaging</td>
+                              <td className="py-3 px-5 text-heading">{packagingLabel[product.packagingType] || product.packagingType}</td>
+                            </tr>
+                          )}
+                          {product.hsnCode && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream">HSN Code</td>
+                              <td className="py-3 px-5 text-heading">{product.hsnCode}</td>
+                            </tr>
+                          )}
+                          {product.specifications && Object.entries(product.specifications).map(([key, value], idx, arr) =>
+                            value ? (
+                              <tr key={key} className={idx < arr.length - 1 || hasCerts ? 'border-b border-border' : ''}>
+                                <td className="py-3 px-5 font-semibold text-muted bg-cream capitalize">{key}</td>
+                                <td className="py-3 px-5 text-heading">{value as string}</td>
+                              </tr>
+                            ) : null
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {hasCerts && (
+                    <div className="mb-6">
+                      <p className="text-sm font-bold text-heading mb-3">Certifications</p>
+                      <div className="flex flex-wrap gap-2">
+                        {product.certifications!.map((cert: string) => (
+                          <span key={cert} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] rounded-full text-xs font-semibold">
+                            <ShieldCheck size={12} /> {cert}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Tab: Company Details */}
+          {activeTab === 'company' && (
+            <div className="mb-20 max-w-[680px]">
+              <div className="bg-surface border border-border rounded-[var(--radius-md)] p-7">
+                {/* Header */}
+                <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-2xl shrink-0">
+                    {(product.supplierName || 'S')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-extrabold text-heading mb-1">{product.supplierName}</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {product.isVerified && (
+                        <span className="inline-flex items-center gap-1 bg-[#e8f5e9] text-[#2e7d32] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                          <ShieldCheck size={11} /> Verified Supplier
+                        </span>
+                      )}
+                      {product.isGSTVerified && (
+                        <span className="inline-flex items-center gap-1 bg-[#eff6ff] text-[#1d4ed8] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                          <BadgeCheck size={11} /> GST Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details grid */}
+                <div className="grid grid-cols-2 gap-x-8 gap-y-5 max-sm:grid-cols-1">
+                  {(product.supplierCity || product.supplierState) && (
+                    <div className="flex items-start gap-2.5">
+                      <MapPin size={16} className="text-muted mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted font-semibold mb-0.5">Location</p>
+                        <p className="text-sm text-heading font-medium">
+                          {[product.supplierCity, product.supplierState].filter(Boolean).join(', ')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {product.supplierYearEst && (
+                    <div className="flex items-start gap-2.5">
+                      <Calendar size={16} className="text-muted mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-muted font-semibold mb-0.5">Year of Establishment</p>
+                        <p className="text-sm text-heading font-medium">{product.supplierYearEst}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* About */}
+                {product.supplierAbout && (
+                  <div className="mt-6 pt-6 border-t border-border">
+                    <p className="text-xs text-muted font-semibold mb-2">About the Company</p>
+                    <p className="text-sm text-body leading-[1.7]">{product.supplierAbout}</p>
+                  </div>
+                )}
+
+                {/* CTA */}
+                <div className="mt-6 pt-6 border-t border-border">
+                  <Button onClick={handleContactSupplier} disabled={contactingSupplier} className="w-full">
+                    <MessageCircle size={16} /> {contactingSupplier ? 'Opening…' : 'Enquire Now'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
       <Footer />
+
+      {showEnquiryModal && product && (
+        <EnquiryModal
+          productName={product.name}
+          basePrice={product.price}
+          moq={product.minOrderQty}
+          unit={product.unit}
+          onSubmit={handleEnquirySubmit}
+          onClose={() => setShowEnquiryModal(false)}
+        />
+      )}
+
+      <Modal
+        isOpen={showAdminModal}
+        onClose={() => setShowAdminModal(false)}
+        title="Hey, Admin!"
+        footer={<Button onClick={() => setShowAdminModal(false)}>Got it</Button>}
+      >
+        <div className="py-2 text-center">
+          <div className="text-4xl mb-4">👋</div>
+          <p className="text-base font-semibold text-[#0f172a] mb-3">
+            Looks like you're trying to shop as an Admin — that's a no-go!
+          </p>
+          <p className="text-sm text-[#64748b] leading-relaxed">
+            Admin accounts are kept separate from buyer activity. Admins can't place orders, add to cart, or chat with suppliers.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };

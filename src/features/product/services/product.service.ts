@@ -11,7 +11,17 @@ export interface ProductInput {
   subcategoryId?: string;
   hsnCode: string;
   images?: string[];
+  stock?: number;
+  brand?: string;
+  keywords?: string[];
   specifications?: Record<string, string>;
+  leadTime?: string;
+  packagingType?: string;
+  countryOfOrigin?: string;
+  certifications?: string[];
+  gstIncluded?: boolean;
+  gstRate?: number;
+  status?: 'DRAFT' | 'PENDING';
 }
 
 export const productService = {

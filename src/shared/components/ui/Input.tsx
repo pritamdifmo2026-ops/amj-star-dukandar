@@ -25,20 +25,25 @@ const Input: React.FC<InputProps> = ({
   return (
     <div className={['flex flex-col gap-1', fullWidth ? 'w-full' : '', className].filter(Boolean).join(' ')}>
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-slate-500">
+        <label htmlFor={inputId} className="text-sm font-medium text-body">
           {label}
         </label>
       )}
       <div className={[
-        'flex items-center border bg-[oklch(0.99_0.01_80)] rounded-sm transition-[border-color] duration-150 focus-within:border-[var(--color-primary)]',
-        error ? 'border-[var(--color-error)]' : 'border-slate-300',
+        'flex items-center border bg-[oklch(0.99_0.01_80)] rounded-[4px] transition-colors duration-150',
+        'focus-within:border-primary',
+        error ? 'border-error' : 'border-border',
       ].join(' ')}>
-        {leftIcon && <span className="flex items-center px-2 text-slate-400">{leftIcon}</span>}
-        <input id={inputId} className="flex-1 border-none outline-none bg-transparent py-2 px-2.5 text-base text-slate-900 placeholder:text-slate-400" {...rest} />
-        {rightIcon && <span className="flex items-center px-2 text-slate-400">{rightIcon}</span>}
+        {leftIcon && <span className="flex items-center px-2 text-muted">{leftIcon}</span>}
+        <input
+          id={inputId}
+          className="flex-1 border-none outline-none bg-transparent px-2.5 py-2 text-base text-heading placeholder:text-muted"
+          {...rest}
+        />
+        {rightIcon && <span className="flex items-center px-2 text-muted">{rightIcon}</span>}
       </div>
-      {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
-      {!error && helperText && <p className="text-xs text-slate-400">{helperText}</p>}
+      {error && <p className="text-xs text-error">{error}</p>}
+      {!error && helperText && <p className="text-xs text-muted">{helperText}</p>}
     </div>
   );
 };

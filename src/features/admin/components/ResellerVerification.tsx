@@ -3,20 +3,29 @@ import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, ExternalLink } from 'lucide-react';
 import Pagination from '@/shared/components/ui/Pagination';
 
+import type { AdminReseller } from '../types/admin.types';
+
 interface ResellerVerificationProps {
-  resellers: any[];
-  onVerify: (id: string, status: 'APPROVED' | 'REJECTED') => Promise<void>;
+  resellers: AdminReseller[];
+  onVerify: (id: string, status: 'APPROVED' | 'REJECTED') => void;
 }
 
-interface ResellerTableProps {
-  title: string;
-  resellers: any[];
-  onVerify: (id: string, status: 'APPROVED' | 'REJECTED') => Promise<void>;
-  onView: (resellerId: string) => void;
+const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9]";
+const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
+
+const DetailItem = ({ label, children, span2 = false }: { label: string; children: React.ReactNode; span2?: boolean }) => (
+  <div className={span2 ? 'col-span-2 max-sm:col-span-1' : ''}>
+    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">{label}</label>
+    <div className="text-sm text-[#1e293b] font-medium">{children}</div>
+  </div>
+);
+
+const ResellerTable: React.FC<{
+  title: string; resellers: AdminReseller[];
+  onVerify: (id: string, status: 'APPROVED' | 'REJECTED') => void;
+  onView: (id: string) => void;
   showActions?: boolean;
-}
-
-const ResellerTable: React.FC<ResellerTableProps> = ({ title, resellers, onVerify, onView, showActions }) => {
+}> = ({ title, resellers, onVerify, onView, showActions }) => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 5;
@@ -26,83 +35,57 @@ const ResellerTable: React.FC<ResellerTableProps> = ({ title, resellers, onVerif
     r.fullName?.toLowerCase().includes(search.toLowerCase()) ||
     r.phone?.includes(search)
   );
-
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
+  const statusCls = (status: string) => {
+    if (status === 'APPROVED') return 'bg-[#ecfdf5] text-[#059669]';
+    if (status === 'REJECTED') return 'bg-[#fef2f2] text-[#dc2626]';
+    return 'bg-[#fffbeb] text-[#a16207]';
+  };
+
   return (
-    <div className={styles.tableSection}>
-      <div className={styles.tableHeaderRow}>
-        <h3 className={styles.tableTitle}>{title} ({filtered.length})</h3>
-        <div className={styles.tableSearch}>
-          <Search size={16} />
-          <input
-            type="text"
-            placeholder={`Search ${title.toLowerCase()}...`}
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          />
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
+        <h3 className="text-base font-extrabold text-[#0f172a] m-0">{title} ({filtered.length})</h3>
+        <div className="flex items-center gap-2 border border-[#e2e8f0] rounded-[8px] px-3 py-2 bg-white focus-within:border-primary min-w-[200px]">
+          <Search size={14} className="text-[#94a3b8] shrink-0" />
+          <input className="border-none outline-none text-sm bg-transparent flex-1 text-[#1e293b] placeholder:text-[#94a3b8]" type="text" placeholder={`Search ${title.toLowerCase()}...`} value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
         </div>
       </div>
-
-      <div className={styles.tableWrapper}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Store Name</th>
-              <th>Reseller Name</th>
-              <th>Contact</th>
-              <th>Status</th>
-              <th>Plan</th>
-              <th>Reach</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginated.map(r => (
-              <tr key={r._id}>
-                <td data-label="Store Name">{r.storeName}</td>
-                <td data-label="Reseller Name">{r.fullName || r.user?.name || 'N/A'}</td>
-                <td data-label="Contact">{r.phone || r.user?.phone || r.user?.email || 'N/A'}</td>
-                <td data-label="Status">
-                  <span className={`${styles.statusBadge} ${r.status === 'APPROVED' ? styles.statusVerified : r.status === 'REJECTED' ? styles.statusRejected : styles.statusPending}`}>
-                    {r.status}
-                  </span>
-                </td>
-                <td data-label="Plan"><span className={styles.badge} style={{ background: '#f0f9ff', color: '#0369a1' }}>{r.subscriptionPlan || 'Starter'}</span></td>
-                <td data-label="Reach"><span className={styles.badge}>{r.reach}</span></td>
-                <td data-label="Actions" className={styles.actions}>
-                  <button onClick={() => onView(r._id)} className={styles.viewTextBtn}>View</button>
-                  {showActions && r.status === 'PENDING' && (
-                    <>
-                      <button onClick={() => onVerify(r._id, 'APPROVED')} className={styles.approveBtn} title="Approve">
-                        <CheckCircle size={18} />
-                      </button>
-                      <button
-                        onClick={() => onVerify(r._id, 'REJECTED')}
-                        className={styles.rejectBtn}
-                        title="Reject"
-                      >
-                        <XCircle size={18} />
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={6} className={styles.empty}>No {title.toLowerCase()} found</td></tr>
-            )}
-          </tbody>
-        </table>
+      <div className="bg-white rounded-[10px] border border-[#eef2f6] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>{['Store Name', 'Reseller Name', 'Contact', 'Status', 'Plan', 'Reach', 'Actions'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
+            </thead>
+            <tbody>
+              {paginated.map(r => (
+                <tr key={r._id} className="hover:bg-[#fafbfc]">
+                  <td className={tdCls + " font-semibold text-[#0f172a]"}>{r.storeName}</td>
+                  <td className={tdCls}>{r.fullName || r.user?.name || 'N/A'}</td>
+                  <td className={tdCls}>{r.phone || r.user?.phone || r.user?.email || 'N/A'}</td>
+                  <td className={tdCls}><span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusCls(r.status)}`}>{r.status}</span></td>
+                  <td className={tdCls}><span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{r.subscriptionPlan || 'Starter'}</span></td>
+                  <td className={tdCls}><span className="text-xs bg-[#f1f5f9] text-[#475569] px-2 py-0.5 rounded-full">{r.reach}</span></td>
+                  <td className={tdCls}>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => onView(r._id)} className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">View</button>
+                      {showActions && r.status === 'PENDING' && (
+                        <>
+                          <button onClick={() => onVerify(r._id, 'APPROVED')} className="w-7 h-7 rounded-full bg-[#ecfdf5] text-[#059669] flex items-center justify-center border-none cursor-pointer hover:bg-[#d1fae5]" title="Approve"><CheckCircle size={15} /></button>
+                          <button onClick={() => onVerify(r._id, 'REJECTED')} className="w-7 h-7 rounded-full bg-[#fef2f2] text-[#dc2626] flex items-center justify-center border-none cursor-pointer hover:bg-[#fee2e2]" title="Reject"><XCircle size={15} /></button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#64748b]">No {title.toLowerCase()} found</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <Pagination totalItems={filtered.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={page} onPageChange={setPage} />
       </div>
-
-      <Pagination 
-        totalItems={filtered.length}
-        itemsPerPage={ITEMS_PER_PAGE}
-        currentPage={page}
-        onPageChange={setPage}
-        styles={styles}
-      />
     </div>
   );
 };
@@ -111,169 +94,91 @@ const ResellerVerification: React.FC<ResellerVerificationProps> = ({ resellers, 
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'resellers';
   const resellerId = searchParams.get('id');
-
   const selectedReseller = resellers.find(r => r._id === resellerId);
-
   const pendingResellers = resellers.filter(r => r.status === 'PENDING');
   const approvedResellers = resellers.filter(r => r.status === 'APPROVED');
 
   if (activeTab === 'reseller-detail' && selectedReseller) {
     return (
-      <div className={styles.detailPage}>
-        <div className={styles.detailHeader}>
-          <button onClick={() => setSearchParams({ tab: 'resellers' })} className={styles.backLink}>
-            <ChevronLeft size={20} /> Back to List
+      <div>
+        <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <button onClick={() => setSearchParams({ tab: 'resellers' })} className="flex items-center gap-1.5 text-sm font-semibold text-[#475569] bg-transparent border-none cursor-pointer hover:text-[#1e293b] p-0">
+            <ChevronLeft size={18} /> Back to List
           </button>
-          <div className={styles.headerActions}>
-            {selectedReseller.status === 'PENDING' && (
-              <>
-                <button
-                  className={styles.largeRejectBtn}
-                  onClick={() => onVerify(selectedReseller._id, 'REJECTED')}
-                >
-                  <XCircle size={18} /> Reject Application
-                </button>
-                <button
-                  className={styles.verifyBtn}
-                  onClick={() => onVerify(selectedReseller._id, 'APPROVED')}
-                >
-                  <CheckCircle size={18} /> Approve Reseller
-                </button>
-              </>
-            )}
-          </div>
+          {selectedReseller.status === 'PENDING' && (
+            <div className="flex items-center gap-2">
+              <button onClick={() => onVerify(selectedReseller._id, 'REJECTED')} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[8px] cursor-pointer hover:bg-[#fee2e2]">
+                <XCircle size={16} /> Reject Application
+              </button>
+              <button onClick={() => onVerify(selectedReseller._id, 'APPROVED')} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857]">
+                <CheckCircle size={16} /> Approve Reseller
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className={styles.detailCard}>
-          <div className={styles.detailSection}>
-            <div className={styles.sectionHeader}>
-              <ShieldCheck size={20} />
-              <h3>Reseller Onboarding Profile</h3>
-            </div>
-
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem}>
-                <label>Store Name</label>
-                <p>{selectedReseller.storeName}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Full Name</label>
-                <p>{selectedReseller.fullName || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Location</label>
-                <p>{selectedReseller.city}, {selectedReseller.state}, {selectedReseller.country}</p>
-              </div>
-              <div className={styles.detailItem} style={{ gridColumn: 'span 2' }}>
-                <label>Full Address</label>
-                <p>{selectedReseller.address || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Contact Info</label>
-                <p>
-                  {selectedReseller.phone || selectedReseller.user?.phone || 'N/A'}
-                  <br />
-                  <span style={{ color: '#64748b', fontSize: '0.9rem' }}>
-                    {selectedReseller.email || selectedReseller.user?.email || 'No email provided'}
-                  </span>
-                </p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Profile Type</label>
-                <p>{selectedReseller.profileType || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Experience</label>
-                <p>{selectedReseller.experience || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Reach</label>
-                <span className={styles.badge}>{selectedReseller.reach}</span>
-              </div>
-               <div className={styles.detailItem}>
-                <label>Monthly Volume</label>
-                <p>{selectedReseller.monthlyVolume || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Subscription Plan</label>
-                <span className={styles.badge} style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #10b981' }}>
-                  {selectedReseller.subscriptionPlan || 'Free Starter'}
-                </span>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Sales Experience</label>
-                <p>{selectedReseller.experience} ({selectedReseller.soldBefore ? 'Has sold before' : 'New seller'})</p>
-              </div>
+        <div className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+          <div className="p-6 border-b border-[#f1f5f9]">
+            <div className="flex items-center gap-2 mb-4 text-primary"><ShieldCheck size={20} /><h3 className="text-base font-extrabold text-[#0f172a] m-0">Reseller Onboarding Profile</h3></div>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              <DetailItem label="Store Name">{selectedReseller.storeName}</DetailItem>
+              <DetailItem label="Full Name">{selectedReseller.fullName || 'N/A'}</DetailItem>
+              <DetailItem label="Location">{selectedReseller.city}, {selectedReseller.state}, {selectedReseller.country}</DetailItem>
+              <DetailItem label="Full Address" span2>{selectedReseller.address || 'N/A'}</DetailItem>
+              <DetailItem label="Contact Info">
+                {selectedReseller.phone || selectedReseller.user?.phone || 'N/A'}<br />
+                <span className="text-[#64748b] text-xs">{selectedReseller.email || selectedReseller.user?.email || 'No email provided'}</span>
+              </DetailItem>
+              <DetailItem label="Profile Type">{selectedReseller.profileType || 'N/A'}</DetailItem>
+              <DetailItem label="Experience">{selectedReseller.experience || 'N/A'}</DetailItem>
+              <DetailItem label="Reach"><span className="text-xs bg-[#f1f5f9] text-[#475569] px-2 py-0.5 rounded-full">{selectedReseller.reach}</span></DetailItem>
+              <DetailItem label="Monthly Volume">{selectedReseller.monthlyVolume || 'N/A'}</DetailItem>
+              <DetailItem label="Subscription Plan">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#ecfdf5] text-[#059669] border border-[#10b981]">{selectedReseller.subscriptionPlan || 'Free Starter'}</span>
+              </DetailItem>
+              <DetailItem label="Sales Experience">{selectedReseller.experience} ({selectedReseller.soldBefore ? 'Has sold before' : 'New seller'})</DetailItem>
             </div>
           </div>
 
-          <div className={styles.detailSection}>
-            <h3>Channels & Platforms</h3>
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem} style={{ gridColumn: 'span 2' }}>
-                <label>Selling Platforms</label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+          <div className="p-6 border-b border-[#f1f5f9]">
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Channels & Platforms</h3>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              <DetailItem label="Selling Platforms" span2>
+                <div className="flex gap-2 flex-wrap mt-2">
                   {selectedReseller.platforms?.map((p: string) => (
-                    <span key={p} className={styles.badge} style={{ background: '#f1f5f9', color: '#475569' }}>{p}</span>
+                    <span key={p} className="text-xs bg-[#f1f5f9] text-[#475569] px-2 py-0.5 rounded-full">{p}</span>
                   )) || 'None listed'}
                 </div>
-              </div>
-              <div className={styles.detailItem} style={{ gridColumn: 'span 2' }}>
-                <label>About Business</label>
-                <p className={styles.aboutText}>{selectedReseller.profileDescription || 'No description provided'}</p>
-              </div>
+              </DetailItem>
+              <DetailItem label="About Business" span2>
+                <p className="text-sm text-[#475569] leading-relaxed m-0">{selectedReseller.profileDescription || 'No description provided'}</p>
+              </DetailItem>
             </div>
           </div>
 
-          <div className={styles.detailSection}>
-            <h3>Bank & Tax Details</h3>
-            <div className={styles.detailGrid}>
-              <div className={styles.detailItem} style={{ gridColumn: 'span 2' }}>
-                <label>Account Holder Name</label>
-                <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>{selectedReseller.accountName || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Bank Name</label>
-                <p>{selectedReseller.bankName || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>Account Number</label>
-                <p>{selectedReseller.accountNumber || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>IFSC Code</label>
-                <p>{selectedReseller.ifscCode || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>GST Number</label>
-                <p style={{ color: '#0f172a', fontWeight: 700 }}>{selectedReseller.gstNumber || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem}>
-                <label>PAN Number</label>
-                <p>{selectedReseller.panNumber || 'N/A'}</p>
-              </div>
-              <div className={styles.detailItem} style={{ gridColumn: 'span 2' }}>
-                <label>Verification Document</label>
+          <div className="p-6 border-b border-[#f1f5f9]">
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Bank & Tax Details</h3>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              <DetailItem label="Account Holder Name" span2><span className="text-base font-bold">{selectedReseller.accountName || 'N/A'}</span></DetailItem>
+              <DetailItem label="Bank Name">{selectedReseller.bankName || 'N/A'}</DetailItem>
+              <DetailItem label="Account Number">{selectedReseller.accountNumber || 'N/A'}</DetailItem>
+              <DetailItem label="IFSC Code">{selectedReseller.ifscCode || 'N/A'}</DetailItem>
+              <DetailItem label="GST Number"><strong>{selectedReseller.gstNumber || 'N/A'}</strong></DetailItem>
+              <DetailItem label="PAN Number">{selectedReseller.panNumber || 'N/A'}</DetailItem>
+              <DetailItem label="Verification Document" span2>
                 {selectedReseller.idProofUrl ? (
-                  <a
-                    href={selectedReseller.idProofUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.docLink}
-                  >
-                    <ExternalLink size={18} /> View ID Proof Document
+                  <a href={selectedReseller.idProofUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary font-bold no-underline hover:underline text-sm">
+                    <ExternalLink size={16} /> View ID Proof Document
                   </a>
-                ) : (
-                  <p style={{ color: '#ef4444' }}>Document not uploaded</p>
-                )}
-              </div>
+                ) : <p className="text-[#ef4444] text-sm m-0">Document not uploaded</p>}
+              </DetailItem>
             </div>
           </div>
 
           {selectedReseller.status === 'REJECTED' && (
-            <div className={styles.detailSection} style={{ border: '2px solid #fee2e2', background: '#fffafb' }}>
-              <h3 style={{ color: '#ef4444' }}>Rejection Reason</h3>
-              <p style={{ color: '#7f1d1d', marginTop: '8px' }}>{selectedReseller.rejectionReason || 'No reason provided'}</p>
+            <div className="p-6 border-2 border-[#fee2e2] bg-[#fffafb] m-4 rounded-[10px]">
+              <h3 className="text-base font-extrabold text-[#ef4444] m-0 mb-2">Rejection Reason</h3>
+              <p className="text-sm text-[#7f1d1d] m-0 mt-2">{selectedReseller.rejectionReason || 'No reason provided'}</p>
             </div>
           )}
         </div>
@@ -282,23 +187,10 @@ const ResellerVerification: React.FC<ResellerVerificationProps> = ({ resellers, 
   }
 
   return (
-    <div className={styles.verificationContainer}>
-      <ResellerTable
-        title="Pending Resellers"
-        resellers={pendingResellers}
-        onVerify={onVerify}
-        onView={(id) => setSearchParams({ tab: 'reseller-detail', id })}
-        showActions
-      />
-
-      <div style={{ margin: '40px 0', borderTop: '2px solid #e2e8f0' }} />
-
-      <ResellerTable
-        title="Approved Resellers"
-        resellers={approvedResellers}
-        onVerify={onVerify}
-        onView={(id) => setSearchParams({ tab: 'reseller-detail', id })}
-      />
+    <div>
+      <ResellerTable title="Pending Resellers" resellers={pendingResellers} onVerify={onVerify} onView={id => setSearchParams({ tab: 'reseller-detail', id })} showActions />
+      <div className="my-8 border-t-2 border-[#e2e8f0]" />
+      <ResellerTable title="Approved Resellers" resellers={approvedResellers} onVerify={onVerify} onView={id => setSearchParams({ tab: 'reseller-detail', id })} />
     </div>
   );
 };

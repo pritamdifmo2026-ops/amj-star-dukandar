@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Filter, SlidersHorizontal, X } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Filter, SlidersHorizontal, X, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
@@ -8,336 +8,344 @@ import ErrorState from '@/shared/components/feedback/ErrorState';
 import EmptyState from '@/shared/components/feedback/EmptyState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
+import type { ProductFilters } from '../types';
+
+const LEAD_TIME_OPTIONS = ['Any', '1-3 days', '1 week', '2 weeks', '1 month', '2+ months'];
+const CERT_OPTIONS = ['ISO', 'FSSAI', 'BIS', 'MSME', 'GMP', 'CE', 'Organic'];
+const SORT_OPTIONS: { value: ProductFilters['sort']; label: string }[] = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+];
+
+interface FilterState {
+  minPrice: string;
+  maxPrice: string;
+  minMoq: string;
+  maxMoq: string;
+  certifications: string[];
+  leadTime: string;
+  verifiedOnly: boolean;
+}
+
+const DEFAULT_FILTERS: FilterState = {
+  minPrice: '', maxPrice: '', minMoq: '', maxMoq: '',
+  certifications: [], leadTime: '', verifiedOnly: false,
+};
+
+function filterCount(f: FilterState): number {
+  let count = 0;
+  if (f.minPrice) count++;
+  if (f.maxPrice) count++;
+  if (f.minMoq) count++;
+  if (f.maxMoq) count++;
+  if (f.certifications.length) count++;
+  if (f.leadTime) count++;
+  if (f.verifiedOnly) count++;
+  return count;
+}
 
 const ProductList: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const category = searchParams.get('category') || undefined;
   const subcategory = searchParams.get('subcategory') || undefined;
-  const searchQuery = searchParams.get('search') || undefined;
-  
-  const { data, isLoading, isError, refetch } = useProducts({
-    category,
-    subcategory,
-    search: searchQuery,
-  });
+  const searchQuery = searchParams.get('q') || undefined;
 
+  const [showFilters, setShowFilters] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [sort, setSort] = useState<ProductFilters['sort']>('newest');
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<FilterState>(DEFAULT_FILTERS);
+
+  const queryFilters: ProductFilters = {
+    category, subcategory, q: searchQuery, sort,
+    ...(appliedFilters.minPrice ? { minPrice: Number(appliedFilters.minPrice) } : {}),
+    ...(appliedFilters.maxPrice ? { maxPrice: Number(appliedFilters.maxPrice) } : {}),
+    ...(appliedFilters.minMoq ? { minMoq: Number(appliedFilters.minMoq) } : {}),
+    ...(appliedFilters.maxMoq ? { maxMoq: Number(appliedFilters.maxMoq) } : {}),
+    ...(appliedFilters.certifications.length ? { certifications: appliedFilters.certifications } : {}),
+    ...(appliedFilters.leadTime ? { leadTime: appliedFilters.leadTime } : {}),
+    ...(appliedFilters.verifiedOnly ? { verifiedOnly: true } : {}),
+  };
+
+  const { data, isLoading, isError, refetch } = useProducts(queryFilters);
   const products = data?.data || [];
 
-  // Filter and Sort states
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [sortBy, setSortBy] = useState<string>('default');
-  const [priceRange, setPriceRange] = useState<string>('all');
-  const [moqRange, setMoqRange] = useState<string>('all');
-  const [onlyVerified, setOnlyVerified] = useState<boolean>(false);
+  const applyFilters = useCallback(() => {
+    setAppliedFilters({ ...filters });
+    setShowFilters(false);
+  }, [filters]);
 
-  // Client-side instant filter and sort logic
-  const filteredAndSortedProducts = useMemo(() => {
-    let result = [...products];
+  const clearAllFilters = useCallback(() => {
+    setFilters(DEFAULT_FILTERS);
+    setAppliedFilters(DEFAULT_FILTERS);
+  }, []);
 
-    // 1. Price Range Filter
-    if (priceRange === 'under10') {
-      result = result.filter(p => p.price < 10000);
-    } else if (priceRange === '10to50') {
-      result = result.filter(p => p.price >= 10000 && p.price <= 50000);
-    } else if (priceRange === '50to100') {
-      result = result.filter(p => p.price >= 50000 && p.price <= 100000);
-    } else if (priceRange === 'above100') {
-      result = result.filter(p => p.price > 100000);
-    }
+  const toggleCert = (cert: string) => {
+    setFilters(prev => ({
+      ...prev,
+      certifications: prev.certifications.includes(cert)
+        ? prev.certifications.filter(c => c !== cert)
+        : [...prev.certifications, cert],
+    }));
+  };
 
-    // 2. MOQ Range Filter
-    if (moqRange === 'moq5') {
-      result = result.filter(p => p.minOrderQty <= 5);
-    } else if (moqRange === 'moq20') {
-      result = result.filter(p => p.minOrderQty <= 20);
-    } else if (moqRange === 'moq100') {
-      result = result.filter(p => p.minOrderQty <= 100);
-    }
+  const activeFilterCount = filterCount(appliedFilters);
+  const currentSortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || 'Newest First';
 
-    // 3. Verified Supplier Filter
-    if (onlyVerified) {
-      result = result.filter(p => p.isVerified);
-    }
-
-    // 4. Sorting Logic
-    if (sortBy === 'priceLow') {
-      result.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'priceHigh') {
-      result.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'moqLow') {
-      result.sort((a, b) => a.minOrderQty - b.minOrderQty);
-    } else if (sortBy === 'newest') {
-      result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-    }
-
-    return result;
-  }, [products, sortBy, priceRange, moqRange, onlyVerified]);
-
-  const activeFiltersCount = (priceRange !== 'all' ? 1 : 0) + (moqRange !== 'all' ? 1 : 0) + (onlyVerified ? 1 : 0) + (sortBy !== 'default' ? 1 : 0);
+  const controlBtnCls = "flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-[8px] text-sm font-semibold text-body cursor-pointer transition-all hover:border-primary hover:text-primary max-md:px-3 select-none relative";
 
   return (
-    <div className={styles.page}>
+    <div className="min-h-screen flex flex-col bg-cream">
       <Navbar />
-      
-      <main className={styles.main}>
-        <div className={styles.container}>
-          {/* Filter Sidebar / Header */}
-          <div className={styles.header}>
-            <div className={styles.titleArea}>
-              <div className={styles.titleRow}>
-                <h1 className={styles.title}>
+
+      <main className="flex-1 py-8 pb-12">
+        <div className="w-full max-w-[var(--width-container)] mx-auto px-8 max-md:px-4">
+
+          {/* Header row */}
+          <div className="flex items-end justify-between mb-6 pb-4 border-b border-border max-md:flex-col max-md:items-start max-md:gap-3 max-md:pb-3">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl font-bold text-heading">
                   {searchQuery ? `Results for "${searchQuery}"` : subcategory || category || 'All Products'}
                 </h1>
                 {(category || subcategory || searchQuery) && (
-                  <button 
-                    className={styles.clearBtn} 
+                  <button
                     onClick={() => navigate('/products')}
-                    title="View All Products"
+                    className="flex items-center gap-1.5 bg-white border border-primary text-primary px-3 py-1 rounded-[10px] text-xs font-semibold cursor-pointer transition-all hover:bg-primary hover:text-white"
                   >
-                    <X size={16} />
-                    <span>View All</span>
+                    <X size={14} /> View All
                   </button>
                 )}
               </div>
-              <p className={styles.count}>{filteredAndSortedProducts.length} products found</p>
+              <p className="text-sm text-muted">
+                {isLoading ? 'Searching...' : `${products.length} product${products.length !== 1 ? 's' : ''} found`}
+                {activeFilterCount > 0 && (
+                  <button onClick={clearAllFilters} className="ml-3 text-primary font-semibold hover:underline text-xs">
+                    Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+                  </button>
+                )}
+              </p>
             </div>
-            
-            <div className={styles.controls}>
-              <button className={styles.controlBtn} onClick={() => setIsFilterOpen(true)}>
-                <Filter size={16} />
+
+            <div className="flex gap-2">
+              {/* Filter button */}
+              <button className={controlBtnCls} onClick={() => setShowFilters(p => !p)}>
+                <Filter size={15} />
                 <span>Filter</span>
-                {activeFiltersCount > 0 && (
-                  <span className={styles.badge}>{activeFiltersCount}</span>
+                {activeFilterCount > 0 && (
+                  <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-extrabold flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
                 )}
               </button>
-              <button className={styles.controlBtn} onClick={() => setIsFilterOpen(true)}>
-                <SlidersHorizontal size={16} />
-                <span>Sort</span>
-              </button>
+
+              {/* Sort dropdown */}
+              <div className="relative">
+                <button className={controlBtnCls} onClick={() => setShowSortMenu(p => !p)}>
+                  <SlidersHorizontal size={15} />
+                  <span className="max-md:hidden">{currentSortLabel}</span>
+                  <span className="hidden max-md:inline">Sort</span>
+                  <ChevronDown size={14} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+                </button>
+                {showSortMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-border rounded-[10px] shadow-[0_8px_24px_rgba(0,0,0,0.1)] z-20 overflow-hidden">
+                      {SORT_OPTIONS.map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => { setSort(opt.value); setShowSortMenu(false); }}
+                          className={`w-full text-left px-4 py-2.5 text-sm font-medium cursor-pointer border-none transition-colors ${sort === opt.value ? 'bg-primary text-white' : 'bg-white text-body hover:bg-cream'}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className={styles.content}>
-            <div className={styles.mainGrid}>
-              {isLoading ? (
-                <div className={styles.center}>
-                  <Loader size="lg" />
+          {/* Filter Panel */}
+          {showFilters && (
+            <div className="bg-white border border-border rounded-[12px] p-5 mb-6 shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
+              <div className="grid grid-cols-4 gap-x-6 gap-y-5 max-lg:grid-cols-2 max-md:grid-cols-1">
+
+                {/* Price Range */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Price Range (₹)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number" placeholder="Min"
+                      className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
+                      value={filters.minPrice}
+                      onChange={e => setFilters(p => ({ ...p, minPrice: e.target.value }))}
+                      onWheel={e => e.currentTarget.blur()}
+                      min={0}
+                    />
+                    <span className="text-muted text-xs">—</span>
+                    <input
+                      type="number" placeholder="Max"
+                      className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
+                      value={filters.maxPrice}
+                      onChange={e => setFilters(p => ({ ...p, maxPrice: e.target.value }))}
+                      onWheel={e => e.currentTarget.blur()}
+                      min={0}
+                    />
+                  </div>
                 </div>
-              ) : isError ? (
-                <ErrorState onRetry={() => refetch()} />
-              ) : filteredAndSortedProducts.length === 0 ? (
-                <EmptyState title="No products matched your filters." />
-              ) : (
-                <div className={styles.grid}>
-                  {filteredAndSortedProducts.map((product: any) => (
-                    <ProductCard key={product._id || product.id} product={product} showAddToCart={false} />
-                  ))}
+
+                {/* MOQ Range */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">MOQ Range</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number" placeholder="Min"
+                      className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
+                      value={filters.minMoq}
+                      onChange={e => setFilters(p => ({ ...p, minMoq: e.target.value }))}
+                      onWheel={e => e.currentTarget.blur()}
+                      min={1}
+                    />
+                    <span className="text-muted text-xs">—</span>
+                    <input
+                      type="number" placeholder="Max"
+                      className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
+                      value={filters.maxMoq}
+                      onChange={e => setFilters(p => ({ ...p, maxMoq: e.target.value }))}
+                      onWheel={e => e.currentTarget.blur()}
+                      min={1}
+                    />
+                  </div>
                 </div>
-              )}
+
+                {/* Lead Time */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Lead Time</label>
+                  <select
+                    className="border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary bg-white cursor-pointer"
+                    value={filters.leadTime}
+                    onChange={e => setFilters(p => ({ ...p, leadTime: e.target.value === 'Any' ? '' : e.target.value }))}
+                  >
+                    {LEAD_TIME_OPTIONS.map(o => <option key={o} value={o === 'Any' ? '' : o}>{o}</option>)}
+                  </select>
+                </div>
+
+                {/* Verified Only */}
+                <div className="flex flex-col gap-2 justify-center">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Supplier</label>
+                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                    <div
+                      onClick={() => setFilters(p => ({ ...p, verifiedOnly: !p.verifiedOnly }))}
+                      className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${filters.verifiedOnly ? 'bg-primary' : 'bg-[#e2e8f0]'}`}
+                    >
+                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${filters.verifiedOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </div>
+                    <span className="flex items-center gap-1 text-sm font-medium text-body">
+                      <ShieldCheck size={14} className={filters.verifiedOnly ? 'text-primary' : 'text-muted'} />
+                      Verified only
+                    </span>
+                  </label>
+                </div>
+
+                {/* Certifications */}
+                <div className="col-span-4 flex flex-col gap-2 max-lg:col-span-2 max-md:col-span-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Certifications</label>
+                  <div className="flex flex-wrap gap-2">
+                    {CERT_OPTIONS.map(cert => (
+                      <button
+                        key={cert}
+                        onClick={() => toggleCert(cert)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-all ${
+                          filters.certifications.includes(cert)
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-white text-body border-border hover:border-primary hover:text-primary'
+                        }`}
+                      >
+                        {cert}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center justify-end gap-3 mt-5 pt-4 border-t border-border">
+                <button
+                  onClick={() => { setFilters(DEFAULT_FILTERS); }}
+                  className="px-4 py-2 text-sm font-semibold text-muted border border-border rounded-[8px] bg-white cursor-pointer hover:text-body hover:border-body transition-colors"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={applyFilters}
+                  className="px-5 py-2 text-sm font-semibold text-white bg-primary border border-primary rounded-[8px] cursor-pointer hover:bg-primary-dark transition-colors"
+                >
+                  Apply Filters
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-2 mb-5">
+              {appliedFilters.verifiedOnly && (
+                <span className="flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full border border-primary/20">
+                  <ShieldCheck size={12} /> Verified Only
+                  <button onClick={() => { setFilters(p => ({ ...p, verifiedOnly: false })); setAppliedFilters(p => ({ ...p, verifiedOnly: false })); }} className="ml-1 cursor-pointer"><X size={11} /></button>
+                </span>
+              )}
+              {(appliedFilters.minPrice || appliedFilters.maxPrice) && (
+                <span className="flex items-center gap-1.5 bg-[#f0fdf4] text-[#16a34a] text-xs font-semibold px-3 py-1 rounded-full border border-[#bbf7d0]">
+                  ₹{appliedFilters.minPrice || '0'} — ₹{appliedFilters.maxPrice || '∞'}
+                  <button onClick={() => { setFilters(p => ({ ...p, minPrice: '', maxPrice: '' })); setAppliedFilters(p => ({ ...p, minPrice: '', maxPrice: '' })); }} className="ml-1 cursor-pointer"><X size={11} /></button>
+                </span>
+              )}
+              {(appliedFilters.minMoq || appliedFilters.maxMoq) && (
+                <span className="flex items-center gap-1.5 bg-[#fffbeb] text-[#d97706] text-xs font-semibold px-3 py-1 rounded-full border border-[#fde68a]">
+                  MOQ: {appliedFilters.minMoq || '1'} — {appliedFilters.maxMoq || '∞'}
+                  <button onClick={() => { setFilters(p => ({ ...p, minMoq: '', maxMoq: '' })); setAppliedFilters(p => ({ ...p, minMoq: '', maxMoq: '' })); }} className="ml-1 cursor-pointer"><X size={11} /></button>
+                </span>
+              )}
+              {appliedFilters.leadTime && (
+                <span className="flex items-center gap-1.5 bg-[#f0f9ff] text-[#0369a1] text-xs font-semibold px-3 py-1 rounded-full border border-[#bae6fd]">
+                  Lead: {appliedFilters.leadTime}
+                  <button onClick={() => { setFilters(p => ({ ...p, leadTime: '' })); setAppliedFilters(p => ({ ...p, leadTime: '' })); }} className="ml-1 cursor-pointer"><X size={11} /></button>
+                </span>
+              )}
+              {appliedFilters.certifications.map(cert => (
+                <span key={cert} className="flex items-center gap-1.5 bg-[#f5f3ff] text-[#7c3aed] text-xs font-semibold px-3 py-1 rounded-full border border-[#ddd6fe]">
+                  {cert}
+                  <button onClick={() => { const next = appliedFilters.certifications.filter(c => c !== cert); setFilters(p => ({ ...p, certifications: next })); setAppliedFilters(p => ({ ...p, certifications: next })); }} className="ml-1 cursor-pointer"><X size={11} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Product grid */}
+          <div className="min-h-[400px]">
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader size="lg" />
+              </div>
+            ) : isError ? (
+              <ErrorState onRetry={() => refetch()} />
+            ) : products.length === 0 ? (
+              <EmptyState title={searchQuery ? `No products found for "${searchQuery}"` : 'No products match your filters.'} />
+            ) : (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6 max-sm:grid-cols-2 max-sm:gap-3">
+                {products.map((product: any) => (
+                  <ProductCard key={product._id || product.id} product={product} showAddToCart={false} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
-
-      {/* Slide-over Filter & Sort Drawer Panel */}
-      <div 
-        className={`${styles.drawerOverlay} ${isFilterOpen ? styles.overlayOpen : ''}`} 
-        onClick={() => setIsFilterOpen(false)} 
-      />
-      <div className={`${styles.filterDrawer} ${isFilterOpen ? styles.drawerOpen : ''}`}>
-        <div className={styles.drawerHeader}>
-          <h3>Filter & Sort Products</h3>
-          <button className={styles.closeDrawerBtn} onClick={() => setIsFilterOpen(false)}>
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className={styles.drawerBody}>
-          {/* Sorting Group */}
-          <div className={styles.filterGroup}>
-            <h4 className={styles.groupTitle}>Sort By</h4>
-            <div className={styles.optionsList}>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="sortBy" 
-                  value="default" 
-                  checked={sortBy === 'default'} 
-                  onChange={() => setSortBy('default')} 
-                />
-                <span>Default</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="sortBy" 
-                  value="priceLow" 
-                  checked={sortBy === 'priceLow'} 
-                  onChange={() => setSortBy('priceLow')} 
-                />
-                <span>Price: Low to High</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="sortBy" 
-                  value="priceHigh" 
-                  checked={sortBy === 'priceHigh'} 
-                  onChange={() => setSortBy('priceHigh')} 
-                />
-                <span>Price: High to Low</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="sortBy" 
-                  value="moqLow" 
-                  checked={sortBy === 'moqLow'} 
-                  onChange={() => setSortBy('moqLow')} 
-                />
-                <span>MOQ: Low to High</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Price Range Group */}
-          <div className={styles.filterGroup}>
-            <h4 className={styles.groupTitle}>Price Range</h4>
-            <div className={styles.optionsList}>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="priceRange" 
-                  value="all" 
-                  checked={priceRange === 'all'} 
-                  onChange={() => setPriceRange('all')} 
-                />
-                <span>All Prices</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="priceRange" 
-                  value="under10" 
-                  checked={priceRange === 'under10'} 
-                  onChange={() => setPriceRange('under10')} 
-                />
-                <span>Under ₹10,000</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="priceRange" 
-                  value="10to50" 
-                  checked={priceRange === '10to50'} 
-                  onChange={() => setPriceRange('10to50')} 
-                />
-                <span>₹10,000 - ₹50,000</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="priceRange" 
-                  value="50to100" 
-                  checked={priceRange === '50to100'} 
-                  onChange={() => setPriceRange('50to100')} 
-                />
-                <span>₹50,000 - ₹1,00,000</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="priceRange" 
-                  value="above100" 
-                  checked={priceRange === 'above100'} 
-                  onChange={() => setPriceRange('above100')} 
-                />
-                <span>Above ₹1,00,000</span>
-              </label>
-            </div>
-          </div>
-
-          {/* MOQ Group */}
-          <div className={styles.filterGroup}>
-            <h4 className={styles.groupTitle}>Minimum Order Qty (MOQ)</h4>
-            <div className={styles.optionsList}>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="moqRange" 
-                  value="all" 
-                  checked={moqRange === 'all'} 
-                  onChange={() => setMoqRange('all')} 
-                />
-                <span>All MOQs</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="moqRange" 
-                  value="moq5" 
-                  checked={moqRange === 'moq5'} 
-                  onChange={() => setMoqRange('moq5')} 
-                />
-                <span>MOQ ≤ 5 pcs</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="moqRange" 
-                  value="moq20" 
-                  checked={moqRange === 'moq20'} 
-                  onChange={() => setMoqRange('moq20')} 
-                />
-                <span>MOQ ≤ 20 pcs</span>
-              </label>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="radio" 
-                  name="moqRange" 
-                  value="moq100" 
-                  checked={moqRange === 'moq100'} 
-                  onChange={() => setMoqRange('moq100')} 
-                />
-                <span>MOQ ≤ 100 pcs</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Seller Group */}
-          <div className={styles.filterGroup}>
-            <h4 className={styles.groupTitle}>Seller Verification</h4>
-            <div className={styles.optionsList}>
-              <label className={styles.optionLabel}>
-                <input 
-                  type="checkbox" 
-                  checked={onlyVerified} 
-                  onChange={(e) => setOnlyVerified(e.target.checked)} 
-                />
-                <span>Verified Suppliers Only</span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.drawerFooter}>
-          <button 
-            className={styles.resetBtn} 
-            onClick={() => {
-              setSortBy('default');
-              setPriceRange('all');
-              setMoqRange('all');
-              setOnlyVerified(false);
-            }}
-          >
-            Reset All
-          </button>
-          <button className={styles.applyBtn} onClick={() => setIsFilterOpen(false)}>
-            Apply Filters
-          </button>
-        </div>
-      </div>
 
       <Footer />
     </div>
