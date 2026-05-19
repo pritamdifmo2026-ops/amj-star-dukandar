@@ -120,6 +120,32 @@ const adminService = {
     return response.data;
   },
 
+  setCommissionRate: async (supplierId: string, commissionRate: number) => {
+    const response = await api.patch(`/admin/suppliers/${supplierId}/commission-rate`, { commissionRate });
+    return response.data.supplier;
+  },
+
+  getPlatformSettings: async () => {
+    const response = await api.get('/admin/platform-settings');
+    return response.data.settings;
+  },
+
+  updatePlatformSettings: async (data: { minimumWalletBalance?: number; minimumWithdrawalAmount?: number; contactPhone?: string }) => {
+    const response = await api.put('/admin/platform-settings', data);
+    return response.data.settings;
+  },
+
+  getWithdrawals: async (status?: string) => {
+    const params = status ? { status } : {};
+    const response = await api.get('/admin/withdrawals', { params });
+    return response.data.withdrawals;
+  },
+
+  processWithdrawal: async (id: string, action: 'approve' | 'reject' | 'complete', adminNote?: string) => {
+    const response = await api.patch(`/admin/withdrawals/${id}/process`, { action, adminNote });
+    return response.data.withdrawal;
+  },
+
   uploadImage: async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('image', file);

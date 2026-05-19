@@ -254,7 +254,7 @@ const ChatInbox: React.FC = () => {
     const other = getOtherParticipant(activeConv);
     const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
     try {
-      await quotationApi.createQuotation({
+      const result = await quotationApi.createQuotation({
         conversationId: activeConv._id,
         buyerId,
         items: [{
@@ -276,10 +276,36 @@ const ChatInbox: React.FC = () => {
       setIsQuoteModalOpen(false);
       setShowPreview(false);
       loadMessages();
-      toast.success('Quotation sent successfully!');
-    } catch (err) {
+      if (result?.held) {
+        toast.custom(t => (
+          <div className={`flex items-start gap-3 bg-white border border-[#fcd34d] rounded-[12px] shadow-lg px-4 py-3 max-w-sm w-full ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
+            <span className="text-2xl shrink-0">⏸️</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-[#92400e] m-0">Quotation held — insufficient balance</p>
+              <div className="mt-1.5 bg-[#fffbeb] border border-[#fde68a] rounded-[6px] px-2.5 py-2 text-xs text-[#92400e] flex flex-col gap-0.5">
+                <div className="flex justify-between"><span>Commission due</span><span className="font-bold">₹{result.commission}</span></div>
+                <div className="flex justify-between"><span>Min. wallet reserve</span><span className="font-bold">₹{result.minimumWalletBalance}</span></div>
+                <div className="flex justify-between border-t border-[#fde68a] pt-1 mt-0.5"><span className="font-bold">Total required</span><span className="font-bold">₹{result.requiredBalance}</span></div>
+                <div className="flex justify-between text-[#b45309]"><span>Your balance</span><span className="font-bold">₹{result.availableBalance}</span></div>
+              </div>
+              <p className="text-xs text-[#b45309] mt-1.5 m-0">Top up your wallet and it will be sent to the buyer automatically.</p>
+              <a
+                href="/supplier/dashboard?tab=wallet"
+                onClick={() => toast.dismiss(t.id)}
+                className="inline-block mt-2 text-xs font-bold text-[#e65c00] underline underline-offset-2 hover:text-[#c94f00]"
+              >
+                Top up wallet →
+              </a>
+            </div>
+            <button onClick={() => toast.dismiss(t.id)} className="text-[#94a3b8] bg-transparent border-none cursor-pointer text-lg p-0 shrink-0">×</button>
+          </div>
+        ), { duration: Infinity, position: 'top-right' });
+      } else {
+        toast.success('Quotation sent successfully!');
+      }
+    } catch (err: any) {
       console.error('Failed to create quotation', err);
-      toast.error('Failed to send quotation');
+      toast.error(err?.response?.data?.message || 'Failed to send quotation');
     }
   };
 
@@ -603,9 +629,13 @@ const ChatInbox: React.FC = () => {
                   {other?.name?.[0]?.toUpperCase() || '?'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  {conv.productId?.name && (
-                    <span className="text-[10px] font-bold text-primary bg-[#fff7ed] px-1.5 py-0.5 rounded-full">{conv.productId.name}</span>
-                  )}
+                  {(() => {
+                    const label = conv.productId?.name ||
+                      (conv.lastMessage?.match(/^Quotation sent:\s*(.+)/i)?.[1]);
+                    return label ? (
+                      <span className="text-[10px] font-bold text-primary bg-[#fff7ed] px-1.5 py-0.5 rounded-full">{label}</span>
+                    ) : null;
+                  })()}
                   <div className="flex items-center justify-between mt-0.5">
                     <span className="text-sm font-semibold text-[#0f172a] truncate">{other?.name || 'User'}</span>
                     <span className="text-[10px] text-[#94a3b8] shrink-0 mr-5">{new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -655,7 +685,14 @@ const ChatInbox: React.FC = () => {
               </div>
               <div className="flex-1">
                 <div className="text-sm font-bold text-[#0f172a]">{getOtherParticipant(activeConv)?.name || 'User'}</div>
-                <div className="text-xs text-[#94a3b8]">{isTyping ? 'Typing…' : activeConv.productId?.name ? `Re: ${activeConv.productId.name}` : 'Active enquiry'}</div>
+                <div className="text-xs text-[#94a3b8]">
+                {isTyping ? 'Typing…' : (() => {
+                  if (activeConv.productId?.name) return `Re: ${activeConv.productId.name}`;
+                  const qMsg = messages.find(m => m.messageType === 'quotation' && m.text);
+                  if (qMsg?.text) return `Re: ${qMsg.text.replace(/^Quotation sent:\s*/i, '')}`;
+                  return 'General Enquiry';
+                })()}
+              </div>
               </div>
               {user?.role === 'supplier' && (
                 <button

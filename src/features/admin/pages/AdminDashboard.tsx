@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import DashboardOverview from '../components/DashboardOverview';
@@ -17,6 +17,8 @@ import CategoryManagement from '../components/CategoryManagement';
 import ResellerVerification from '../components/ResellerVerification';
 import BannerManagement from '../components/BannerManagement';
 import EnquiryManagement from '../components/EnquiryManagement';
+import AdminPlatformSettings from '../components/AdminPlatformSettings';
+import AdminWithdrawals from '../components/AdminWithdrawals';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
 
@@ -32,6 +34,8 @@ const tabLabel: Record<string, string> = {
   categories: 'Category Management',
   banners: 'Banner Management',
   enquiry: 'Customer Enquiries',
+  'platform-settings': 'Platform Settings',
+  withdrawals: 'Withdrawal Requests',
 };
 
 const AdminDashboard: React.FC = () => {
@@ -59,6 +63,8 @@ const AdminDashboard: React.FC = () => {
     { id: 'categories', label: 'Categories', icon: Tags },
     { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
+    { id: 'withdrawals', label: 'Withdrawals', icon: Wallet },
+    { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
   ];
 
   useEffect(() => {
@@ -151,6 +157,8 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'categories' && <CategoryManagement />}
             {activeTab === 'banners' && <BannerManagement />}
             {activeTab === 'enquiry' && <EnquiryManagement />}
+            {activeTab === 'platform-settings' && <AdminPlatformSettings />}
+            {activeTab === 'withdrawals' && <AdminWithdrawals />}
           </div>
         )}
       </main>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { quotationApi } from '@/features/supplier/services/quotation.api';
-import { FileText, Clock, CheckCircle, XCircle, ShoppingBag, RefreshCw, User } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, ShoppingBag, RefreshCw, User, Wallet, AlertTriangle } from 'lucide-react';
 
 interface QuotationItem { name: string; quantity: number; price: number; unit: string; }
 interface Quotation {
@@ -10,6 +10,7 @@ interface Quotation {
 }
 
 const statusConfig: Record<string, { label: string; icon: React.ReactNode; cls: string }> = {
+  held:     { label: 'Held — Low Balance', icon: <AlertTriangle size={14} />, cls: 'bg-[#fffbeb] text-[#d97706]' },
   pending:  { label: 'Pending',  icon: <Clock size={14} />,        cls: 'bg-[#fff7ed] text-[#c2410c]' },
   accepted: { label: 'Accepted', icon: <CheckCircle size={14} />,  cls: 'bg-[#ecfdf5] text-[#059669]' },
   rejected: { label: 'Rejected', icon: <XCircle size={14} />,      cls: 'bg-[#fef2f2] text-[#dc2626]' },
@@ -20,7 +21,7 @@ const statusConfig: Record<string, { label: string; icon: React.ReactNode; cls: 
 const sectionCls = "bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] max-lg:p-5";
 const refreshBtnCls = "flex items-center gap-1.5 bg-[#f8fafc] border border-[#e2e8f0] text-[#64748b] font-bold cursor-pointer text-[0.8rem] px-4 py-2 rounded-[8px] transition-all hover:bg-[#f1f5f9] hover:text-[#1e293b]";
 
-const SupplierQuotations: React.FC = () => {
+const SupplierQuotations: React.FC<{ onGoToWallet?: () => void }> = ({ onGoToWallet }) => {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +107,20 @@ const SupplierQuotations: React.FC = () => {
                   </div>
                 </div>
 
+                {q.status === 'held' && (
+                  <div className="mt-3 flex items-start gap-2.5 bg-[#fffbeb] border border-[#fcd34d] rounded-[8px] px-3 py-2.5">
+                    <AlertTriangle size={15} className="text-[#d97706] shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-[#92400e] m-0">Quotation on hold — not visible to buyer</p>
+                      <p className="text-xs text-[#b45309] mt-0.5 m-0">Top up your AMJSTAR wallet to cover the commission. It will be sent automatically once balance is sufficient.</p>
+                    </div>
+                    {onGoToWallet && (
+                      <button onClick={onGoToWallet} className="shrink-0 flex items-center gap-1 text-xs font-bold text-white bg-[#e65c00] border-none px-2.5 py-1.5 rounded-[6px] cursor-pointer hover:bg-[#c94f00] whitespace-nowrap">
+                        <Wallet size={12} /> Top Up
+                      </button>
+                    )}
+                  </div>
+                )}
                 {q.terms && <div className="mt-3 text-xs text-[#64748b] bg-[#f8fafc] px-3 py-2 rounded-[6px]">📝 {q.terms}</div>}
               </div>
             );

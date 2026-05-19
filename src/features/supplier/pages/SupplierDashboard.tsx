@@ -9,7 +9,7 @@ import Button from '@/shared/components/ui/Button';
 import {
   LayoutDashboard, Package, Truck, LogOut, Trash2, FileText, MessageCircle,
   Handshake, Menu, Edit, Image as ImageIcon, Layers, CheckCircle, Clock,
-  AlertCircle, ShoppingBag, Settings as SettingsIcon
+  AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet
 } from 'lucide-react';
 
 import ProductTable from '../components/ProductTable';
@@ -19,6 +19,7 @@ import SupplierPartnerships from '../components/SupplierPartnerships';
 import SupplierOverview from '../components/SupplierOverview';
 import SupplierInventory from '../components/SupplierInventory';
 import SupplierSettings from '../components/SupplierSettings';
+import SupplierWallet from '../components/SupplierWallet';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import SupplierQuotations from '../components/SupplierQuotations';
 import Modal from '@/shared/components/ui/Modal';
@@ -166,6 +167,7 @@ const SupplierDashboard: React.FC = () => {
     { id: 'partnerships', label: 'Reseller Partnerships', icon: Handshake },
     { id: 'quotations', label: 'Quotations', icon: FileText },
     { id: 'enquiry', label: 'Enquiry', icon: MessageCircle, badge: unreadEnquiries || undefined },
+    { id: 'wallet', label: 'Wallet', icon: Wallet },
     { id: 'logistics', label: 'Logistics', icon: Truck },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
@@ -247,8 +249,9 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'overview' && <SupplierOverview profile={profile} products={products} isTrusted={isTrusted} handleRefresh={() => fetchProducts(true)} setActiveView={setActiveView} renderProductListing={renderProductListing} />}
         {activeView === 'inventory' && <SupplierInventory products={products} handleRefresh={() => fetchProducts(true)} onAddProduct={handleAddProduct} renderProductListing={renderProductListing} />}
         {activeView === 'orders' && <div className="p-5"><OrderList /></div>}
-        {activeView === 'quotations' && <SupplierQuotations />}
+        {activeView === 'quotations' && <SupplierQuotations onGoToWallet={() => setActiveView('wallet')} />}
         {activeView === 'enquiry' && <div className="h-screen max-lg:h-[calc(100vh-64px)] w-full"><ChatInbox /></div>}
+        {activeView === 'wallet' && <SupplierWallet />}
         {activeView === 'logistics' && <PlaceholderView title="Logistics Tracking" icon={Truck} description="Manage your shipments and track delivery status for all your bulk orders." />}
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}

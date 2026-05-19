@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { User, Building2, Mail, Phone, ShieldCheck, ExternalLink, Save, AlertCircle } from 'lucide-react';
+import { User, Building2, Mail, Phone, ShieldCheck, Save, AlertCircle, PhoneCall } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import supplierService from '../services/supplier.service';
+import { useQuery } from '@tanstack/react-query';
+import walletApi from '../services/wallet.api';
 
 interface SupplierSettingsProps { profile: any; }
 
@@ -13,6 +15,11 @@ const inputWrapCls = "flex items-center gap-3 border border-[#e2e8f0] rounded-[8
 const inputCls = "flex-1 border-none outline-none text-sm text-[#1e293b] bg-transparent disabled:text-[#64748b] disabled:cursor-not-allowed";
 
 const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
+  const { data: walletData } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.getWallet });
+  const rawPhone: string = (walletData as any)?.contactPhone || '';
+  const contactPhone = rawPhone.length === 10 ? `+91 ${rawPhone.slice(0, 5)} ${rawPhone.slice(5)}` : rawPhone;
+  const contactHref = rawPhone.length === 10 ? `tel:+91${rawPhone}` : '';
+
   const [isEditing, setIsEditing] = useState(false);
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
   const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
@@ -170,11 +177,23 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               </div>
             ))}
           </div>
-          <div className="flex items-start gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] px-4 py-3 text-[#c2410c] text-sm mb-4">
+          <div className="flex items-start gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] px-4 py-3 text-[#c2410c] text-sm mb-5">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <p className="m-0">Legal and Tier details are managed by AMJStar Admin. Contact support to request changes to these records.</p>
+            <p className="m-0">Legal and Tier details are managed by AMJStar Team. To set your commission rate or request changes, call us directly.</p>
           </div>
-          <Button variant="outline" className="flex items-center gap-2">Contact Admin Support <ExternalLink size={14} /></Button>
+          {contactHref ? (
+            <a
+              href={contactHref}
+              className="inline-flex items-center gap-3 px-5 py-3 bg-[#e65c00] text-white rounded-[10px] font-bold text-sm no-underline hover:bg-[#c94f00] transition-colors shadow-[0_4px_12px_rgba(230,92,0,0.25)]"
+            >
+              <PhoneCall size={18} />
+              Call AMJStar — {contactPhone}
+            </a>
+          ) : (
+            <Button variant="outline" className="flex items-center gap-2 !text-[#94a3b8] !border-[#e2e8f0]" disabled>
+              <PhoneCall size={16} /> Contact number not configured yet
+            </Button>
+          )}
         </div>
       </div>
     </div>

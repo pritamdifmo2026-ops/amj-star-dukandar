@@ -1,7 +1,10 @@
-import React from 'react';
-import { ShieldCheck, Zap, RefreshCw, Plus } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { ShieldCheck, Zap, RefreshCw, Plus, AlertTriangle, Wallet } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import SupplierStats from './SupplierStats';
+import { useQuery } from '@tanstack/react-query';
+import walletApi from '../services/wallet.api';
+import toast from 'react-hot-toast';
 
 interface SupplierOverviewProps {
   profile: any;
@@ -15,6 +18,51 @@ interface SupplierOverviewProps {
 const SupplierOverview: React.FC<SupplierOverviewProps> = ({
   profile, products, isTrusted, handleRefresh, setActiveView, renderProductListing
 }) => {
+  const { data: walletData } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.getWallet });
+  const commissionRate = walletData?.commissionRate;
+  const commissionNotSet = walletData !== undefined && commissionRate == null;
+  const toastShown = useRef(false);
+
+  useEffect(() => {
+    if (!walletData || toastShown.current) return;
+    const available: number = walletData.wallet?.availableBalance ?? 0;
+    const minBalance: number = walletData.minimumWalletBalance ?? 500;
+    if (available < minBalance) {
+      toastShown.current = true;
+      toast.custom(
+        t => (
+          <div
+            className={`flex items-start gap-3 bg-white border border-[#fcd34d] rounded-[12px] shadow-lg px-4 py-3 max-w-sm w-full transition-all ${t.visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
+          >
+            <div className="w-9 h-9 rounded-full bg-[#fffbeb] flex items-center justify-center shrink-0 mt-0.5">
+              <Wallet size={18} className="text-[#d97706]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-[#92400e] m-0">Low wallet balance</p>
+              <p className="text-xs text-[#b45309] mt-0.5 m-0">
+                ₹{available.toFixed(2)} available — minimum is ₹{minBalance}. Top up to avoid PO blocks.
+              </p>
+              <button
+                onClick={() => { setActiveView('wallet'); toast.dismiss(t.id); }}
+                className="mt-2 text-xs font-bold text-[#e65c00] bg-transparent border-none cursor-pointer p-0 hover:underline"
+              >
+                Add wallet balance →
+              </button>
+            </div>
+            <button
+              onClick={() => toast.dismiss(t.id)}
+              className="text-[#94a3b8] bg-transparent border-none cursor-pointer text-lg leading-none p-0 shrink-0 hover:text-[#475569]"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        ),
+        { duration: Infinity, position: 'top-right' }
+      );
+    }
+  }, [walletData]);
+
   return (
     <>
       <div className="flex justify-between items-start mb-10 gap-6 max-lg:flex-col max-lg:items-stretch max-lg:gap-4 max-lg:mb-6">
@@ -45,6 +93,20 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
           </Button>
         </div>
       </div>
+
+      {commissionNotSet && (
+        <button
+          onClick={() => setActiveView('settings')}
+          className="w-full flex items-start gap-3 p-4 mb-6 bg-[#fffbeb] border border-[#fcd34d] rounded-[10px] text-left hover:bg-[#fef3c7] transition-colors cursor-pointer group"
+        >
+          <AlertTriangle size={20} className="text-[#d97706] shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-bold text-sm text-[#92400e]">Commission rate not configured</p>
+            <p className="text-xs text-[#b45309] mt-0.5">PO generation is paused until AMJStar sets your commission rate. Tap to go to Settings and find the contact CTA.</p>
+          </div>
+          <span className="text-xs font-bold text-[#d97706] group-hover:underline whitespace-nowrap">Go to Settings →</span>
+        </button>
+      )}
 
       <SupplierStats products={products} />
 

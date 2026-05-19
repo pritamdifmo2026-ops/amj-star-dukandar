@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink, Percent } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import Pagination from '@/shared/components/ui/Pagination';
 import { useSupplierProducts } from '../hooks/useSupplierProducts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import adminService from '../services/admin.service';
+import { toast } from 'react-hot-toast';
 
 import type { AdminSupplier } from '../types/admin.types';
 
@@ -182,6 +185,50 @@ const SupplierProducts: React.FC<{
   );
 };
 
+const CommissionRateEditor: React.FC<{ supplierId: string; currentRate: number | null | undefined }> = ({ supplierId, currentRate }) => {
+  const [rate, setRate] = useState(currentRate != null ? String(currentRate) : '');
+  const qc = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: () => adminService.setCommissionRate(supplierId, Number(rate)),
+    onSuccess: () => {
+      toast.success('Commission rate saved');
+      qc.invalidateQueries({ queryKey: ['admin', 'suppliers'] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to save'),
+  });
+
+  return (
+    <div className="p-6 border-t border-[#f1f5f9]">
+      <div className="flex items-center gap-2 mb-4 text-[#7c3aed]"><Percent size={18} /><h3 className="text-base font-extrabold text-[#0f172a] m-0">Commission Rate</h3></div>
+      <div className="flex items-center gap-3 max-w-xs">
+        <div className="flex-1 flex items-center gap-2 border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 focus-within:border-primary">
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={0.1}
+            value={rate}
+            onChange={e => setRate(e.target.value)}
+            placeholder="e.g. 5"
+            className="flex-1 border-none outline-none text-sm text-[#1e293b] bg-transparent"
+          />
+          <span className="text-[#94a3b8] text-sm font-bold">%</span>
+        </div>
+        <Button
+          onClick={() => mutation.mutate()}
+          disabled={!rate || isNaN(Number(rate)) || mutation.isPending}
+          className="!py-2.5 !text-sm"
+        >
+          {mutation.isPending ? 'Saving…' : 'Save'}
+        </Button>
+      </div>
+      {currentRate != null && <p className="text-xs text-[#94a3b8] mt-2">Current rate: {currentRate}%</p>}
+      {currentRate == null && <p className="text-xs text-[#d97706] mt-2">Not yet configured — PO generation is blocked for this supplier.</p>}
+    </div>
+  );
+};
+
 const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, onVerify, onVerifyProduct }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'suppliers';
@@ -266,6 +313,7 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
               </span>
             </div>
           )}
+          <CommissionRateEditor supplierId={selectedSupplier._id} currentRate={(selectedSupplier as any).commissionRate} />
         </div>
       </div>
     );
