@@ -169,125 +169,163 @@ const ProductList: React.FC = () => {
             </div>
           </div>
 
-          {/* Filter Panel */}
+          {/* Sliding Filter Sidebar (Drawer) */}
           {showFilters && (
-            <div className="bg-white border border-border rounded-[12px] p-5 mb-6 shadow-[0_4px_16px_rgba(0,0,0,0.06)]">
-              <div className="grid grid-cols-4 gap-x-6 gap-y-5 max-lg:grid-cols-2 max-md:grid-cols-1">
+            <>
+              {/* Backdrop */}
+              <div 
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[100] transition-opacity" 
+                onClick={() => setShowFilters(false)}
+              />
+              
+              {/* Drawer Container */}
+              <div className="fixed top-0 right-0 h-full w-[360px] max-w-full bg-white shadow-2xl z-[101] flex flex-col animate-slide-in">
+                <style>{`
+                  @keyframes slideIn {
+                    from { transform: translateX(100%); }
+                    to { transform: translateX(0); }
+                  }
+                  .animate-slide-in {
+                    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                  }
+                `}</style>
 
-                {/* Price Range */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Price Range (₹)</label>
+                {/* Drawer Header */}
+                <div className="flex items-center justify-between p-5 border-b border-border">
                   <div className="flex items-center gap-2">
-                    <input
-                      type="number" placeholder="Min"
-                      className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
-                      value={filters.minPrice}
-                      onChange={e => setFilters(p => ({ ...p, minPrice: e.target.value }))}
-                      onWheel={e => e.currentTarget.blur()}
-                      min={0}
-                    />
-                    <span className="text-muted text-xs">—</span>
-                    <input
-                      type="number" placeholder="Max"
-                      className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
-                      value={filters.maxPrice}
-                      onChange={e => setFilters(p => ({ ...p, maxPrice: e.target.value }))}
-                      onWheel={e => e.currentTarget.blur()}
-                      min={0}
-                    />
+                    <SlidersHorizontal size={18} className="text-primary" />
+                    <h2 className="text-base font-extrabold text-heading m-0">Filters</h2>
+                    {activeFilterCount > 0 && (
+                      <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-0.5 rounded-full">
+                        {activeFilterCount}
+                      </span>
+                    )}
                   </div>
-                </div>
-
-                {/* MOQ Range */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">MOQ Range</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number" placeholder="Min"
-                      className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
-                      value={filters.minMoq}
-                      onChange={e => setFilters(p => ({ ...p, minMoq: e.target.value }))}
-                      onWheel={e => e.currentTarget.blur()}
-                      min={1}
-                    />
-                    <span className="text-muted text-xs">—</span>
-                    <input
-                      type="number" placeholder="Max"
-                      className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
-                      value={filters.maxMoq}
-                      onChange={e => setFilters(p => ({ ...p, maxMoq: e.target.value }))}
-                      onWheel={e => e.currentTarget.blur()}
-                      min={1}
-                    />
-                  </div>
-                </div>
-
-                {/* Lead Time */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Lead Time</label>
-                  <select
-                    className="border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary bg-white cursor-pointer"
-                    value={filters.leadTime}
-                    onChange={e => setFilters(p => ({ ...p, leadTime: e.target.value === 'Any' ? '' : e.target.value }))}
+                  <button 
+                    onClick={() => setShowFilters(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-cream transition-colors text-muted hover:text-heading cursor-pointer border-none bg-transparent"
                   >
-                    {LEAD_TIME_OPTIONS.map(o => <option key={o} value={o === 'Any' ? '' : o}>{o}</option>)}
-                  </select>
+                    <X size={18} />
+                  </button>
                 </div>
 
-                {/* Verified Only */}
-                <div className="flex flex-col gap-2 justify-center">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Supplier</label>
-                  <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                    <div
-                      onClick={() => setFilters(p => ({ ...p, verifiedOnly: !p.verifiedOnly }))}
-                      className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${filters.verifiedOnly ? 'bg-primary' : 'bg-[#e2e8f0]'}`}
-                    >
-                      <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${filters.verifiedOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                {/* Drawer Body (Scrollable) */}
+                <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
+                  {/* Price Range */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Price Range (₹)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number" placeholder="Min"
+                        className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
+                        value={filters.minPrice}
+                        onChange={e => setFilters(p => ({ ...p, minPrice: e.target.value }))}
+                        onWheel={e => e.currentTarget.blur()}
+                        min={0}
+                      />
+                      <span className="text-muted text-xs">—</span>
+                      <input
+                        type="number" placeholder="Max"
+                        className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
+                        value={filters.maxPrice}
+                        onChange={e => setFilters(p => ({ ...p, maxPrice: e.target.value }))}
+                        onWheel={e => e.currentTarget.blur()}
+                        min={0}
+                      />
                     </div>
-                    <span className="flex items-center gap-1 text-sm font-medium text-body">
-                      <ShieldCheck size={14} className={filters.verifiedOnly ? 'text-primary' : 'text-muted'} />
-                      Verified only
-                    </span>
-                  </label>
-                </div>
+                  </div>
 
-                {/* Certifications */}
-                <div className="col-span-4 flex flex-col gap-2 max-lg:col-span-2 max-md:col-span-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Certifications</label>
-                  <div className="flex flex-wrap gap-2">
-                    {CERT_OPTIONS.map(cert => (
-                      <button
-                        key={cert}
-                        onClick={() => toggleCert(cert)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-all ${
-                          filters.certifications.includes(cert)
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-body border-border hover:border-primary hover:text-primary'
-                        }`}
+                  {/* MOQ Range */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted">MOQ Range</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number" placeholder="Min"
+                        className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
+                        value={filters.minMoq}
+                        onChange={e => setFilters(p => ({ ...p, minMoq: e.target.value }))}
+                        onWheel={e => e.currentTarget.blur()}
+                        min={1}
+                      />
+                      <span className="text-muted text-xs">—</span>
+                      <input
+                        type="number" placeholder="Max"
+                        className="flex-1 border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary w-0"
+                        value={filters.maxMoq}
+                        onChange={e => setFilters(p => ({ ...p, maxMoq: e.target.value }))}
+                        onWheel={e => e.currentTarget.blur()}
+                        min={1}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Lead Time */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Lead Time</label>
+                    <select
+                      className="border border-border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary bg-white cursor-pointer"
+                      value={filters.leadTime}
+                      onChange={e => setFilters(p => ({ ...p, leadTime: e.target.value === 'Any' ? '' : e.target.value }))}
+                    >
+                      {LEAD_TIME_OPTIONS.map(o => <option key={o} value={o === 'Any' ? '' : o}>{o}</option>)}
+                    </select>
+                  </div>
+
+                  {/* Verified Only */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Supplier Verification</label>
+                    <label className="flex items-center justify-between cursor-pointer select-none bg-cream/30 border border-border/60 rounded-[8px] p-3">
+                      <span className="flex items-center gap-1.5 text-sm font-medium text-body">
+                        <ShieldCheck size={16} className={filters.verifiedOnly ? 'text-primary' : 'text-muted'} />
+                        Verified only
+                      </span>
+                      <div
+                        onClick={() => setFilters(p => ({ ...p, verifiedOnly: !p.verifiedOnly }))}
+                        className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${filters.verifiedOnly ? 'bg-primary' : 'bg-[#e2e8f0]'}`}
                       >
-                        {cert}
-                      </button>
-                    ))}
+                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${filters.verifiedOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Certifications */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-muted">Certifications</label>
+                    <div className="flex flex-wrap gap-2">
+                      {CERT_OPTIONS.map(cert => (
+                        <button
+                          key={cert}
+                          onClick={() => toggleCert(cert)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-all ${
+                            filters.certifications.includes(cert)
+                              ? 'bg-primary text-white border-primary'
+                              : 'bg-white text-body border-border hover:border-primary hover:text-primary'
+                          }`}
+                        >
+                          {cert}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action buttons */}
-              <div className="flex items-center justify-end gap-3 mt-5 pt-4 border-t border-border">
-                <button
-                  onClick={() => { setFilters(DEFAULT_FILTERS); }}
-                  className="px-4 py-2 text-sm font-semibold text-muted border border-border rounded-[8px] bg-white cursor-pointer hover:text-body hover:border-body transition-colors"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={applyFilters}
-                  className="px-5 py-2 text-sm font-semibold text-white bg-primary border border-primary rounded-[8px] cursor-pointer hover:bg-primary-dark transition-colors"
-                >
-                  Apply Filters
-                </button>
+                {/* Drawer Footer (Sticky) */}
+                <div className="p-4 border-t border-border bg-white flex gap-3">
+                  <button
+                    onClick={() => { setFilters(DEFAULT_FILTERS); }}
+                    className="flex-1 py-3 text-sm font-bold text-muted border border-border rounded-[8px] bg-white cursor-pointer hover:text-body hover:border-body transition-colors"
+                  >
+                    Reset
+                  </button>
+                  <button
+                    onClick={applyFilters}
+                    className="flex-1 py-3 text-sm font-bold text-white bg-primary border border-primary rounded-[8px] cursor-pointer hover:bg-primary-dark transition-colors"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* Active filter chips */}
