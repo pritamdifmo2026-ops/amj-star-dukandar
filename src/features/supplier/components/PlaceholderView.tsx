@@ -1,6 +1,5 @@
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
-import styles from '../pages/SupplierDashboard.module.css';
 
 interface PlaceholderViewProps {
   title: string;

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink } from 'lucide-react';
-import styles from '../pages/AdminDashboard.module.css';
 import adminService from '../services/admin.service';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';

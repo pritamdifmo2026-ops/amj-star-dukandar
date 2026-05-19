@@ -16,7 +16,6 @@ import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 import ImageMagnifier from '../components/ImageMagnifier';
 import { ROUTES } from '@/shared/constants/routes';
-import styles from './ProductDetail.module.css';
 
 const getSupplierExtraDetails = (supplierName: string = '') => {
   const name = supplierName || 'Test Supplier';

@@ -17,7 +17,6 @@ import adminService from '@/features/admin/services/admin.service';
 import { Camera, Loader2 } from 'lucide-react';
 import OrderList from '../components/OrderList';
 import { orderApi } from '@/shared/services/order.api';
-import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -202,62 +201,62 @@ const Profile: React.FC = () => {
   const CurrentIcon = currentMenuItem?.icon;
 
   return (
-    <div className={styles.container}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarAvatar}>
+    <div className="max-w-[1200px] mx-auto mt-10 px-5 flex gap-6 max-lg:flex-col max-sm:px-3 max-sm:my-5">
+      <aside className="w-[280px] shrink-0 bg-white border border-slate-200 rounded-md py-6 h-fit max-lg:w-full">
+        <div className="flex items-center gap-3 px-5 pb-5 border-b border-slate-200 mb-4">
+          <div className="w-12 h-12 bg-[#D94F00] text-white rounded-full flex items-center justify-center text-xl font-bold overflow-hidden">
             {user?.avatar ? (
-              <img src={user.avatar} alt={user.name} className={styles.avatarImg} />
+              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
             ) : (
               user?.name ? user.name.charAt(0).toUpperCase() : 'U'
             )}
           </div>
-          <div className={styles.sidebarUserInfo}>
-            <h4>{user?.name?.split(' ')[0] || 'Guest'}</h4>
-            <p>{user?.role || 'Buyer'}</p>
+          <div className="flex flex-col">
+            <h4 className="text-base font-semibold text-[#0f172a] m-0">{user?.name?.split(' ')[0] || 'Guest'}</h4>
+            <p className="text-[0.8rem] text-slate-500 m-0 mt-0.5">{user?.role || 'Buyer'}</p>
           </div>
         </div>
-        <nav className={styles.sidebarNav}>
+        <nav className="flex flex-col max-lg:flex-row max-lg:overflow-x-auto [&::-webkit-scrollbar]:hidden">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
               <div
                 key={item.id}
-                className={`${styles.sidebarItem} ${activeTab === item.id ? styles.active : ''}`}
+                className={`flex items-center gap-3 py-3 px-5 text-slate-800 font-medium cursor-pointer transition-colors duration-200 hover:bg-[#D94F00]/10 max-lg:whitespace-nowrap ${activeTab === item.id ? 'bg-blue-50 text-[#D94F00]' : ''}`}
                 onClick={() => setActiveTab(item.id)}
               >
                 <Icon size={18} />
                 <span>{item.label}</span>
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className={styles.badge}>{item.badge}</span>
+                  <span className="bg-[#D94F00] text-white text-[0.7rem] py-0.5 px-1.5 rounded-[10px] ml-auto">{item.badge}</span>
                 )}
-                <ChevronRight size={16} className={styles.chevron} />
+                <ChevronRight size={16} className="ml-auto text-slate-400 max-lg:hidden" />
               </div>
             );
           })}
         </nav>
-        <div className={styles.sidebarFooter}>
-          <div className={styles.logoutBtn}>
+        <div className="px-5 pt-5 border-t border-slate-200 mt-5">
+          <div className="flex items-center gap-3 py-3 px-4 text-[#f85f06] rounded-lg cursor-pointer font-medium hover:bg-red-50">
             <LogOut size={18} />
             <span>Sign Out</span>
           </div>
         </div>
       </aside>
-      <main className={styles.mainContent}>
+      <main className="flex-1 flex flex-col gap-6 min-w-0">
         {activeTab === 'overview' && (
-          <div className={styles.profileCover}>
-            <div className={styles.coverGradient}></div>
-            <div className={styles.profileHeader}>
-              <div className={styles.avatarWrapper}>
-                <div className={styles.avatar}>
+          <div className="bg-white border border-slate-200 rounded-md overflow-hidden">
+            <div className="h-[120px] bg-[#D94F00]"></div>
+            <div className="px-6 pb-6 flex gap-6 -mt-[30px] max-md:flex-col max-md:items-center max-md:text-center">
+              <div className="relative">
+                <div className="w-[100px] h-[100px] bg-[#f3742a] text-white rounded-md flex items-center justify-center text-[2.5rem] font-bold border-4 border-white relative overflow-hidden group">
                   {isUploadingAvatar ? (
-                    <Loader2 className={styles.spinner} />
+                    <Loader2 className="animate-spin" />
                   ) : user?.avatar ? (
-                    <img src={user.avatar} alt={user.name} className={styles.avatarImg} />
+                    <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
                   ) : (
                     user?.name ? user.name.charAt(0).toUpperCase() : 'U'
                   )}
-                  <label className={styles.avatarEditOverlay}>
+                  <label className="absolute inset-0 bg-black/40 flex items-center justify-center text-white cursor-pointer opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     <Camera size={20} />
                     <input
                       type="file"
@@ -268,26 +267,26 @@ const Profile: React.FC = () => {
                   </label>
                 </div>
               </div>
-              <div className={styles.userInfo}>
-                <div className={styles.nameSection}>
-                  <h1>{user?.name || 'Valued Partner'}</h1>
+              <div className="pt-10 flex-1 max-md:pt-4 max-md:flex max-md:flex-col max-md:items-center">
+                <div className="flex items-center gap-3 mb-2 max-md:justify-center max-md:flex-wrap">
+                  <h1 className="text-2xl m-0 text-slate-900">{user?.name || 'Valued Partner'}</h1>
                   {isEmailVerified && (
-                    <span className={styles.verifiedBadge}>
-                      <Check size={14} style={{ marginRight: '4px' }} /> Verified
+                    <span className="text-[0.75rem] text-green-600 bg-green-50 py-0.5 px-2 rounded-[10px] font-semibold flex items-center gap-1">
+                      <Check size={14} /> Verified
                     </span>
                   )}
                 </div>
-                <div className={styles.userMeta}>
-                  <span className={styles.roleTag}>{user?.role || 'Buyer'} Account</span>
-                  <span className={styles.memberSince}>Member since {memberSince}</span>
+                <div className="flex gap-4 mb-4 text-[0.85rem] max-md:justify-center max-md:flex-wrap">
+                  <span className="text-[#D94F00] font-semibold">{user?.role || 'Buyer'} Account</span>
+                  <span className="text-slate-500">Member since {memberSince}</span>
                 </div>
-                <div className={styles.contactInfo}>
-                  <div className={styles.contactItem}>
+                <div className="flex gap-6 text-[0.9rem] max-md:flex-col max-md:items-center max-md:gap-3">
+                  <div className="flex items-center gap-2 max-md:justify-center">
                     <Mail size={16} />
                     <span>{user?.email || 'Not provided'}</span>
                     {!isEmailVerified && user?.email && (
                       <button
-                        className={styles.verifyEmailBtn}
+                        className="bg-[#D94F00]/10 border border-slate-200 py-1 px-2.5 rounded-md text-[0.75rem] cursor-pointer"
                         onClick={handleSendVerifyEmail}
                         disabled={isSendingEmail}
                       >
@@ -295,10 +294,10 @@ const Profile: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  <div className={styles.contactItem}>
+                  <div className="flex items-center gap-2 max-md:justify-center">
                     <Phone size={16} />
                     <span>{user?.phone || 'Not provided'}</span>
-                    <button className={styles.editContactBtn} onClick={() => setIsChangingPhone(true)}>Update</button>
+                    <button className="bg-[#D94F00]/10 border border-slate-200 py-1 px-2.5 rounded-md text-[0.75rem] cursor-pointer" onClick={() => setIsChangingPhone(true)}>Update</button>
                   </div>
                 </div>
               </div>
@@ -307,63 +306,63 @@ const Profile: React.FC = () => {
         )}
 
         {activeTab === 'overview' && (
-          <div className={styles.statsRow}>
-            <div className={styles.statCard}>
-              <ShoppingBag size={24} className={styles.statIcon} />
+          <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-3">
+            <div className="bg-white p-5 border border-slate-200 rounded-md flex items-center gap-4 max-sm:p-4 max-sm:px-3 max-sm:gap-2 max-sm:flex-col max-sm:text-center max-sm:justify-center">
+              <ShoppingBag size={24} className="text-[#D94F00]" />
               <div>
-                <span className={styles.statValue}>{orderCount}</span>
-                <span className={styles.statLabel}>Orders</span>
+                <span className="text-2xl font-bold block max-sm:text-[1.25rem]">{orderCount}</span>
+                <span className="text-[0.8rem] text-slate-500">Orders</span>
               </div>
             </div>
-            <div className={styles.statCard}>
-              <Heart size={24} className={styles.statIcon} />
+            <div className="bg-white p-5 border border-slate-200 rounded-md flex items-center gap-4 max-sm:p-4 max-sm:px-3 max-sm:gap-2 max-sm:flex-col max-sm:text-center max-sm:justify-center">
+              <Heart size={24} className="text-[#D94F00]" />
               <div>
-                <span className={styles.statValue}>{wishlistItems.length}</span>
-                <span className={styles.statLabel}>Wishlist</span>
+                <span className="text-2xl font-bold block max-sm:text-[1.25rem]">{wishlistItems.length}</span>
+                <span className="text-[0.8rem] text-slate-500">Wishlist</span>
               </div>
             </div>
-            <div className={styles.statCard}>
-              <Star size={24} className={styles.statIcon} />
+            <div className="bg-white p-5 border border-slate-200 rounded-md flex items-center gap-4 max-sm:p-4 max-sm:px-3 max-sm:gap-2 max-sm:flex-col max-sm:text-center max-sm:justify-center">
+              <Star size={24} className="text-[#D94F00]" />
               <div>
-                <span className={styles.statValue}>0</span>
-                <span className={styles.statLabel}>Reviews</span>
+                <span className="text-2xl font-bold block max-sm:text-[1.25rem]">0</span>
+                <span className="text-[0.8rem] text-slate-500">Reviews</span>
               </div>
             </div>
-            <div className={styles.statCard}>
-              <Clock size={24} className={styles.statIcon} />
+            <div className="bg-white p-5 border border-slate-200 rounded-md flex items-center gap-4 max-sm:p-4 max-sm:px-3 max-sm:gap-2 max-sm:flex-col max-sm:text-center max-sm:justify-center">
+              <Clock size={24} className="text-[#D94F00]" />
               <div>
-                <span className={styles.statValue}>0</span>
-                <span className={styles.statLabel}>Pending</span>
+                <span className="text-2xl font-bold block max-sm:text-[1.25rem]">0</span>
+                <span className="text-[0.8rem] text-slate-500">Pending</span>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'overview' && (
-          <div className={styles.overviewContent}>
-            <div className={styles.infoCard}>
-              <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}>Personal Information</h3>
+          <div className="flex flex-col gap-6">
+            <div className="bg-white border border-slate-200 rounded-md p-6">
+              <div className="flex justify-between items-center mb-5 max-sm:flex-col max-sm:items-start max-sm:gap-3">
+                <h3 className="text-[1.1rem] font-semibold m-0 flex items-center gap-2">Personal Information</h3>
                 {!isEditingInfo ? (
-                  <button className={styles.editButton} onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
+                  <button className="bg-transparent border border-slate-200 py-1.5 px-3 rounded-md text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-blue-50" onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
                 ) : (
-                  <div className={styles.editActions}>
-                    <button className={styles.cancelBtn} onClick={() => setIsEditingInfo(false)}>Cancel</button>
-                    <button className={styles.saveBtn} onClick={handleSaveInfo}>Save</button>
+                  <div className="flex gap-2">
+                    <button className="bg-white border border-slate-200 text-slate-500 py-1 px-3 rounded-md text-[0.85rem] cursor-pointer font-medium" onClick={() => setIsEditingInfo(false)}>Cancel</button>
+                    <button className="bg-[#D94F00] text-white border-none py-1 px-3 rounded-md text-[0.85rem] cursor-pointer font-medium" onClick={handleSaveInfo}>Save</button>
                   </div>
                 )}
               </div>
-              <div className={styles.infoFields}>
-                <div className={styles.infoField}>
-                  <label>Full Name</label>
+              <div className="grid grid-cols-2 gap-6 max-md:grid-cols-1">
+                <div className="flex flex-col">
+                  <label className="block text-[0.75rem] text-slate-500 mb-1">Full Name</label>
                   {isEditingInfo ? (
-                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className={styles.editInput} />
+                    <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full py-2 px-3 border border-slate-200 rounded-md" />
                   ) : (
-                    <p>{user?.name || 'Not provided'}</p>
+                    <p className="m-0 font-medium">{user?.name || 'Not provided'}</p>
                   )}
                 </div>
-                <div className={styles.infoField}>
-                  <label>Email</label>
+                <div className="flex flex-col">
+                  <label className="block text-[0.75rem] text-slate-500 mb-1">Email</label>
                   {isEditingInfo ? (
                     <input 
                       type="email" 
@@ -374,41 +373,41 @@ const Profile: React.FC = () => {
                         if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
                         setEditEmail(val);
                       }} 
-                      className={styles.editInput} 
+                      className="w-full py-2 px-3 border border-slate-200 rounded-md" 
                     />
                   ) : (
-                    <p>{user?.email || 'Not provided'}</p>
+                    <p className="m-0 font-medium">{user?.email || 'Not provided'}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className={styles.infoCard}>
-              <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}>Default Address</h3>
-                <button className={styles.manageBtn}>Manage</button>
+            <div className="bg-white border border-slate-200 rounded-md p-6">
+              <div className="flex justify-between items-center mb-5 max-sm:flex-col max-sm:items-start max-sm:gap-3">
+                <h3 className="text-[1.1rem] font-semibold m-0 flex items-center gap-2">Default Address</h3>
+                <button className="bg-transparent border border-slate-200 py-1.5 px-3 rounded-md text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-blue-50">Manage</button>
               </div>
-              <div className={styles.addressBox}>
-                <p className={styles.addressName}>Primary Address</p>
-                <p>123 Trade Center, Mumbai, India</p>
+              <div className="bg-white p-4 border border-slate-200 rounded-lg">
+                <p className="font-semibold mb-1">Primary Address</p>
+                <p className="text-[0.9rem] my-0.5">123 Trade Center, Mumbai, India</p>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'wishlist' && (
-          <div className={styles.wishlistTab}>
-            <div className={styles.wishlistHeader}>
-              <h3>My Wishlist ({wishlistItems.length})</h3>
+          <div className="bg-white border border-slate-200 rounded-md p-6">
+            <div className="flex justify-between mb-5">
+              <h3 className="m-0 font-semibold text-lg">My Wishlist ({wishlistItems.length})</h3>
             </div>
             {wishlistItems.length > 0 ? (
-              <div className={styles.wishlistGrid}>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 max-sm:grid-cols-[repeat(auto-fill,minmax(140px,1fr))]">
                 {wishlistItems.map((item) => (
                   <ProductCard key={item.id} product={item} variant="wishlist" />
                 ))}
               </div>
             ) : (
-              <p>Your wishlist is empty.</p>
+              <p className="text-slate-500">Your wishlist is empty.</p>
             )}
           </div>
         )}
@@ -425,49 +424,47 @@ const Profile: React.FC = () => {
 
         {/* Placeholder for other tabs */}
         {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && currentMenuItem && (
-          <div className={styles.placeholderCard}>
-            {CurrentIcon && <CurrentIcon size={48} strokeWidth={1.5} />}
-            <h3>{currentMenuItem.label}</h3>
-            <p>This section is coming soon. We're working hard to bring you a great experience.</p>
+          <div className="bg-white border border-slate-200 rounded-md py-[60px] px-5 text-center">
+            {CurrentIcon && <CurrentIcon size={48} strokeWidth={1.5} className="text-slate-300 mb-4 mx-auto" />}
+            <h3 className="m-0 mb-2 text-[1.25rem]">{currentMenuItem.label}</h3>
+            <p className="text-slate-500 m-0">This section is coming soon. We're working hard to bring you a great experience.</p>
           </div>
         )}
       </main>
 
       {/* Change Phone Modal with OTP logic */}
       {isChangingPhone && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
-            <div className={styles.modalHeader}>
-              <h3>{showOtpInput ? 'Verify OTP' : 'Change Phone Number'}</h3>
-              <button onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }} className={styles.closeBtn}><X size={20} /></button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000]">
+          <div className="bg-white w-[400px] rounded-md p-6 max-w-[90vw]">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="m-0 font-semibold">{showOtpInput ? 'Verify OTP' : 'Change Phone Number'}</h3>
+              <button onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }} className="bg-transparent border-none cursor-pointer text-slate-500 flex items-center justify-center"><X size={20} /></button>
             </div>
             {!showOtpInput ? (
-              <div className={styles.modalBody}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>New Phone Number</label>
+              <div>
+                <label className="block mb-2 text-[0.9rem] text-slate-500">New Phone Number</label>
                 <input
                   type="text"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ''))}
-                  className={styles.editInput}
+                  className="w-full py-2 px-3 border border-slate-200 rounded-md mb-4"
                   placeholder="Enter 10-digit mobile number"
                   maxLength={10}
-                  style={{ width: '100%', marginBottom: '16px' }}
                 />
-                <button onClick={handleSendPhoneOtp} className={styles.modalPrimaryBtn} style={{ width: '100%' }}>Send OTP</button>
+                <button onClick={handleSendPhoneOtp} className="bg-[#D94F00] text-white border-none p-2.5 w-full rounded-md mt-4 cursor-pointer font-medium hover:bg-[#bf4500]">Send OTP</button>
               </div>
             ) : (
-              <div className={styles.modalBody}>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Enter OTP sent to {newPhone}</label>
+              <div>
+                <label className="block mb-2 text-[0.9rem] text-slate-500">Enter OTP sent to {newPhone}</label>
                 <input
                   type="text"
                   value={phoneOtp}
                   onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ''))}
-                  className={styles.editInput}
+                  className="w-full py-2 px-3 border border-slate-200 rounded-md mb-4"
                   placeholder="Enter 123456"
                   maxLength={6}
-                  style={{ width: '100%', marginBottom: '16px' }}
                 />
-                <button onClick={handleVerifyPhoneOtp} className={styles.modalPrimaryBtn} style={{ width: '100%' }}>Verify & Update</button>
+                <button onClick={handleVerifyPhoneOtp} className="bg-[#D94F00] text-white border-none p-2.5 w-full rounded-md mt-4 cursor-pointer font-medium hover:bg-[#bf4500]">Verify & Update</button>
               </div>
             )}
           </div>

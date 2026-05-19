@@ -2,7 +2,6 @@ import React from 'react';
 import { ShieldCheck, Zap, RefreshCw, Plus } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import SupplierStats from './SupplierStats';
-import styles from '../pages/SupplierDashboard.module.css';
 
 interface SupplierOverviewProps {
   profile: any;

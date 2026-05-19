@@ -6,7 +6,6 @@ import ProductForm from '../components/ProductForm';
 import { toast } from 'react-hot-toast';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
-import styles from './AddProduct.module.css';
 
 const AddProduct: React.FC = () => {
   const navigate = useNavigate();

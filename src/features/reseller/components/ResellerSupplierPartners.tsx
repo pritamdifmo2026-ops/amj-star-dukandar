@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Handshake, Search, Phone, Mail, Building } from 'lucide-react';
 import resellerService from '../services/reseller.service';
-import styles from './ResellerSupplierPartners.module.css';
 
 const ResellerSupplierPartners: React.FC = () => {
   const [partners, setPartners] = useState<any[]>([]);

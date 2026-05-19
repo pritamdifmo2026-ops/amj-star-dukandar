@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/shared/constants/routes';
 import { addressApi } from '@/shared/services/address.api';
-import styles from './Checkout.module.css';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();

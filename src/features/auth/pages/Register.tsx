@@ -5,7 +5,6 @@ import Input from '@/shared/components/ui/Input';
 import Button from '@/shared/components/ui/Button';
 import { ROUTES } from '@/shared/constants/routes';
 import { useRegister } from '../hooks/useRegister';
-import styles from './Register.module.css';
 
 const Register: React.FC = () => {
   const [form, setForm] = useState({
@@ -55,21 +54,21 @@ const Register: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <h2 className={styles.heading}>Create Account</h2>
-      <p className={styles.sub}>Join AMJStar as a buyer or supplier</p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Create Account</h2>
+      <p className="text-sm text-[var(--color-text-muted)] -mt-3">Join AMJStar as a buyer or supplier</p>
 
-      <div className={styles.fields}>
+      <div className="flex flex-col gap-4">
         <Input label="Full Name" type="text" placeholder="Your full name" value={form.name} onChange={set('name')} leftIcon={<User size={16} />} fullWidth required error={errors.name} />
         <Input label="Email Address" type="email" placeholder="you@example.com" value={form.email} onChange={set('email')} leftIcon={<Mail size={16} />} fullWidth required error={errors.email} />
         <Input label="Phone Number" type="tel" placeholder="10-digit mobile number" value={form.phone} onChange={set('phone')} leftIcon={<Phone size={16} />} fullWidth required error={errors.phone} maxLength={10} />
         <Input label="Password" type="password" placeholder="Min. 8 characters" value={form.password} onChange={set('password')} leftIcon={<Lock size={16} />} fullWidth required error={errors.password} />
 
-        <div className={styles.roleGroup}>
-          <label className={styles.roleLabel}>I am a</label>
-          <div className={styles.roleOptions}>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-[var(--color-text-secondary)]">I am a</label>
+          <div className="flex gap-3">
             {(['reseller', 'supplier'] as const).map((r) => (
-              <label key={r} className={[styles.roleOption, form.role === r ? styles.active : ''].join(' ')}>
+              <label key={r} className={`flex-1 py-[9px] px-3 border border-[var(--color-border)] text-center text-sm cursor-pointer text-[var(--color-text-secondary)] rounded-sm transition-colors duration-150 ${form.role === r ? 'border-[var(--color-primary)] text-[var(--color-primary)] font-medium' : ''}`}>
                 <input type="radio" name="role" value={r} checked={form.role === r} onChange={set('role')} hidden />
                 {r === 'reseller' ? 'Reseller / Buyer' : 'Supplier / Manufacturer'}
               </label>
@@ -82,9 +81,9 @@ const Register: React.FC = () => {
         Create Account
       </Button>
 
-      <p className={styles.switch}>
+      <p className="text-sm text-[var(--color-text-muted)] text-center">
         Already have an account?{' '}
-        <Link to={ROUTES.LOGIN} className={styles.link}>
+        <Link to={ROUTES.LOGIN} className="text-[var(--color-primary)] font-medium hover:underline">
           Sign In
         </Link>
       </p>

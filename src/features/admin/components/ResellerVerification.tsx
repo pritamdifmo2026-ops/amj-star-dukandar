@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, ExternalLink } from 'lucide-react';
-import styles from '../pages/AdminDashboard.module.css';
 import Pagination from '@/shared/components/ui/Pagination';
 
 interface ResellerVerificationProps {

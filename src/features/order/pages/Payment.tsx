@@ -10,7 +10,6 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { ROUTES } from '@/shared/constants/routes';
-import styles from './Payment.module.css';
 
 import toast from 'react-hot-toast';
 

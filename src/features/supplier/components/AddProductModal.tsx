@@ -7,7 +7,6 @@ import categoryService from '@/features/product/services/category.service';
 import uploadService from '@/features/product/services/upload.service';
 import ImageCropper from '@/features/product/components/ImageCropper';
 import { X, Plus } from 'lucide-react';
-import styles from './AddProductModal.module.css';
 
 interface AddProductModalProps {
   isOpen: boolean;

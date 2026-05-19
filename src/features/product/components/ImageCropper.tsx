@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import Button from '@/shared/components/ui/Button';
-import styles from './ImageCropper.module.css';
 
 interface ImageCropperProps {
   image: string;

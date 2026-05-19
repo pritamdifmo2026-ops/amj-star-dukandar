@@ -8,7 +8,6 @@ import {
 import { useAppSelector } from '@/store/hooks';
 import Button from '@/shared/components/ui/Button';
 import resellerService from '../services/reseller.service';
-import styles from './ResellerStorefront.module.css';
 
 const ResellerStorefront: React.FC = () => {
   const { profile } = useAppSelector(state => state.reseller);

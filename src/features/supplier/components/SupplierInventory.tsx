@@ -1,6 +1,5 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
-import styles from '../pages/SupplierDashboard.module.css';
 
 interface SupplierInventoryProps {
   products: any[];

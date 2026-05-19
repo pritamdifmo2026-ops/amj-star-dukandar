@@ -1,7 +1,6 @@
 import React from 'react';
 import { Package, Edit2, Trash2 } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
-import styles from '../pages/SupplierDashboard.module.css';
 
 interface ProductTableProps {
   products: any[];

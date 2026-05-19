@@ -8,7 +8,6 @@ import {
   Trash2, 
   Upload
 } from 'lucide-react';
-import styles from './BannerManagement.module.css';
 
 interface Banner {
   _id: string;

@@ -37,7 +37,6 @@ import ResellerSettings from '../components/ResellerSettings';
 import ResellerStorefront from '../components/ResellerStorefront';
 import ResellerPerformance from '../components/ResellerPerformance';
 import ResellerActionCenter from '../components/ResellerActionCenter';
-import styles from './ResellerDashboard.module.css';
 
 const ResellerDashboard: React.FC = () => {
   const navigate = useNavigate();

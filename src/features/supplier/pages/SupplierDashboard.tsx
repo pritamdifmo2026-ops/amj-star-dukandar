@@ -36,7 +36,6 @@ import SupplierQuotations from '../components/SupplierQuotations';
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import OrderList from '../../buyer/components/OrderList';
-import styles from './SupplierDashboard.module.css';
 
 // ✅ Product Grid Component – Horizontal Card Layout (like first image)
 interface ProductGridProps {

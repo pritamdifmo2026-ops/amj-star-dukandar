@@ -13,7 +13,6 @@ import SupplierOnboardingLayout from '../layout/SupplierOnboardingLayout';
 import Button from '@/shared/components/ui/Button';
 import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Star, Handshake, XCircle, Upload } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
-import styles from './Onboarding.module.css';
 
 const INDIA_STATES: Record<string, string[]> = {
   "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],

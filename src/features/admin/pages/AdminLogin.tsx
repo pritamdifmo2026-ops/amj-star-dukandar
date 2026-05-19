@@ -4,7 +4,6 @@ import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import Button from '@/shared/components/ui/Button';
-import styles from './AdminLogin.module.css';
 import { ShieldCheck, Lock, Mail } from 'lucide-react';
 
 const AdminLogin: React.FC = () => {

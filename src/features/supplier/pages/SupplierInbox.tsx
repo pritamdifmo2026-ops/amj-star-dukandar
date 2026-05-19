@@ -4,7 +4,6 @@ import { useSelector } from 'react-redux';
 import { chatApi } from '@/shared/services/chat.api';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { useChat } from '@/shared/hooks/useChat';
-import styles from './SupplierInbox.module.css';
 
 type Filter = 'all' | 'unread';
 

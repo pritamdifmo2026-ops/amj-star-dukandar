@@ -1,6 +1,5 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
-import styles from './ErrorState.module.css';
 import Button from '../ui/Button';
 
 interface ErrorStateProps {
@@ -13,9 +12,9 @@ const ErrorState: React.FC<ErrorStateProps> = ({
   onRetry,
 }) => {
   return (
-    <div className={styles.container}>
+    <div className="flex flex-col items-center gap-4 py-12 px-4 text-center">
       <AlertCircle size={36} color="var(--color-error)" />
-      <p className={styles.message}>{message}</p>
+      <p className="text-base text-slate-500 max-w-[360px]">{message}</p>
       {onRetry && (
         <Button variant="outline" size="sm" onClick={onRetry}>
           Retry

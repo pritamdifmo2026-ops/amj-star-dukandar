@@ -18,7 +18,6 @@ import CategoryManagement from '../components/CategoryManagement';
 import ResellerVerification from '../components/ResellerVerification';
 import BannerManagement from '../components/BannerManagement';
 
-import styles from './AdminDashboard.module.css';
 import {
   Users,
   ShieldCheck,

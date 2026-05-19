@@ -1,5 +1,4 @@
 import React, { useCallback, useRef, useState } from 'react';
-import styles from './ImageMagnifier.module.css';
 
 interface ImageMagnifierProps {
   src: string;

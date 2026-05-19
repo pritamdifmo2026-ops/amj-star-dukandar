@@ -3,7 +3,6 @@ import Input from '@/shared/components/ui/Input';
 import Button from '@/shared/components/ui/Button';
 import type { CreateProductPayload } from '../types';
 import categoryService from '../services/category.service';
-import styles from './ProductForm.module.css';
 
 interface Props {
   initialValues?: Partial<CreateProductPayload>;

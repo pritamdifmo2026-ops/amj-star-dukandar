@@ -13,7 +13,6 @@ import {
 import Button from '@/shared/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import supplierService from '../services/supplier.service';
-import styles from './SupplierSettings.module.css';
 
 interface SupplierSettingsProps {
   profile: any;

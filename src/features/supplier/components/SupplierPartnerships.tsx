@@ -4,7 +4,6 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import toast from 'react-hot-toast';
 import supplierService from '../services/supplier.service';
-import styles from './SupplierPartnerships.module.css';
 
 const SupplierPartnerships: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);

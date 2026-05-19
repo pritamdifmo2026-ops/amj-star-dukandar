@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Star } from 'lucide-react';
-import styles from './SupplierOnboardingLayout.module.css';
 
 interface Step {
   n: number;

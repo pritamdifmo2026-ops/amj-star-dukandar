@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, ShoppingCart, Percent, TrendingUp, MousePointer, Users, BarChart2, ArrowUpRight, Package, Info } from 'lucide-react';
 import resellerService from '../services/reseller.service';
-import styles from './ResellerPerformance.module.css';
 
 const ResellerPerformance: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);

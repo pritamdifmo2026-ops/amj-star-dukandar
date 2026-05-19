@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/store/slices/auth.slice';
-import styles from './ResellerOnboardingLayout.module.css';
 
 interface Step {
   n: number;

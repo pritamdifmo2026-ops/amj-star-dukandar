@@ -7,7 +7,6 @@ import { quotationApi } from '@/shared/services/quotation.api';
 import { useChat } from '@/shared/hooks/useChat';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { paymentApi } from '@/shared/services/payment.api';
-import styles from './ChatInbox.module.css';
 
 type Filter = 'all' | 'unread';
 

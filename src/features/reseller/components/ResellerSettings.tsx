@@ -7,7 +7,6 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/auth.slice';
 import Button from '@/shared/components/ui/Button';
 import toast from 'react-hot-toast';
-import styles from './ResellerSettings.module.css';
 
 import authService from '@/features/auth/services/auth.service';
 import resellerService from '@/features/reseller/services/reseller.service';

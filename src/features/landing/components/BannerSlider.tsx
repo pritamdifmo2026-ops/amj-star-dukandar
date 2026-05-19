@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import adminService from '@/features/admin/services/admin.service';
-import styles from './BannerSlider.module.css';
 
 interface Banner {
   _id: string;
@@ -68,12 +67,12 @@ const BannerSlider: React.FC = () => {
 
   return (
     <div 
-      className={styles.sliderContainer}
+      className="group relative w-full h-[280px] max-lg:h-[220px] max-sm:h-[180px] overflow-hidden bg-[#f8f9fa] my-4 mb-8 max-sm:my-0 rounded-lg max-sm:rounded-none shadow-[0_4px_20px_rgba(0,0,0,0.08)] max-sm:shadow-none"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
       <div 
-        className={styles.slider}
+        className="flex w-full h-full transition-transform duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {banners.map((banner, index) => {
@@ -82,19 +81,18 @@ const BannerSlider: React.FC = () => {
           return (
             <div 
               key={banner._id} 
-              className={`${styles.slide} ${index === currentSlide ? styles.active : ''}`}
+              className="min-w-full h-full relative flex items-center justify-center"
             >
               <img 
                 src={imageUrl} 
                 alt="Promotion Banner" 
-                className={styles.image} 
+                className={`w-full h-full object-cover transition-transform duration-[1500ms] ease-out ${index === currentSlide ? 'scale-105' : ''}`} 
               />
-              <div className={styles.overlay}>
-                <div className={styles.contentContainer}>
-                  <div className={styles.content}>
-                    {/* Title and Subtitle removed as requested */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent max-sm:bg-gradient-to-t max-sm:from-black/40 max-sm:to-transparent flex items-end justify-end p-6 max-sm:p-4 z-[2]">
+                <div className="w-full max-w-[1200px] mx-auto px-8 max-sm:px-0">
+                  <div className={`transition-all duration-[800ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${index === currentSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
                     {banner.link && (
-                      <Link to={banner.link} className={styles.button}>
+                      <Link to={banner.link} className="inline-block py-2.5 px-[18px] max-sm:py-1.5 max-sm:px-[12px] bg-black text-white text-sm max-sm:text-[11px] font-semibold rounded-lg max-sm:rounded-md border border-black hover:bg-slate-800 hover:-translate-y-0.5 hover:shadow-lg hover:scale-105 transition-all duration-300">
                         View Details
                       </Link>
                     )}
@@ -108,18 +106,18 @@ const BannerSlider: React.FC = () => {
 
       {banners.length > 1 && (
         <>
-          <button className={`${styles.arrow} ${styles.prev}`} onClick={prevSlide}>
+          <button className="absolute left-5 max-sm:hidden top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md border-none w-[50px] h-[50px] rounded-full flex items-center justify-center text-white cursor-pointer z-10 transition-all duration-300 hover:bg-white/40 hover:scale-110 opacity-0 group-hover:opacity-100" onClick={prevSlide}>
             <ChevronLeft size={30} />
           </button>
-          <button className={`${styles.arrow} ${styles.next}`} onClick={nextSlide}>
+          <button className="absolute right-5 max-sm:hidden top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-md border-none w-[50px] h-[50px] rounded-full flex items-center justify-center text-white cursor-pointer z-10 transition-all duration-300 hover:bg-white/40 hover:scale-110 opacity-0 group-hover:opacity-100" onClick={nextSlide}>
             <ChevronRight size={30} />
           </button>
 
-          <div className={styles.indicators}>
+          <div className="absolute bottom-3 max-sm:bottom-2.5 left-1/2 -translate-x-1/2 flex gap-2.5 z-10">
             {banners.map((_, index) => (
               <div
                 key={index}
-                className={`${styles.indicator} ${index === currentSlide ? styles.activeIndicator : ''}`}
+                className={`h-2.5 rounded-full cursor-pointer transition-all duration-300 ${index === currentSlide ? 'w-6 rounded-[10px] bg-white' : 'w-2.5 bg-white/30'}`}
                 onClick={() => setCurrentSlide(index)}
               />
             ))}

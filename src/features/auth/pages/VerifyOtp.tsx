@@ -4,7 +4,6 @@ import authService from '../services/auth.service';
 import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/store/slices/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
-import styles from '../components/Auth.module.css';
 
 const VerifyOtp: React.FC = () => {
   const [otp, setOtp] = useState('');
@@ -98,19 +97,19 @@ const VerifyOtp: React.FC = () => {
   };
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Verify OTP</h1>
-      <p className={styles.subtitle}>
+    <div className="flex flex-col">
+      <h1 className="text-[1.75rem] font-extrabold mb-3 text-slate-900 tracking-tight leading-tight">Verify OTP</h1>
+      <p className="text-[0.95rem] text-slate-500 mb-10 leading-relaxed">
         Enter the 6-digit code sent to <br/>
         <strong>{phone}</strong>
       </p>
       
-      <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.inputGroup}>
-          <label className={styles.label}>OTP Code</label>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <div className="text-left">
+          <label className="block text-[0.85rem] font-bold mb-2.5 text-slate-600 tracking-wider">OTP Code</label>
           <input
             type="text"
-            className={styles.input}
+            className="w-full py-3.5 px-[18px] border-[1.5px] border-slate-200 rounded-md text-base text-slate-900 transition-all duration-200 bg-slate-50 focus:outline-none focus:border-[var(--color-primary)] focus:bg-[oklch(0.99_0.01_80)] focus:shadow-[0_0_0_4px_rgba(230,92,0,0.1)] placeholder:text-slate-400"
             placeholder="123456"
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
@@ -119,23 +118,23 @@ const VerifyOtp: React.FC = () => {
           />
         </div>
 
-        {error && <p className={styles.error}>{error}</p>}
+        {error && <p className="text-red-500 text-[0.85rem] font-semibold mt-2 text-left bg-red-50 p-[12px_16px] rounded-[10px] border border-red-200">{error}</p>}
 
         <button 
           type="submit" 
-          className={styles.button} 
+          className="bg-gradient-to-br from-[var(--color-primary)] to-[#cc5200] text-white p-4 border-none rounded-md text-base font-bold cursor-pointer transition-all duration-300 shadow-[0_8px_16px_-4px_rgba(230,92,0,0.3)] mt-2 disabled:bg-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed disabled:shadow-none hover:not-disabled:-translate-y-0.5 hover:not-disabled:shadow-[0_12px_24px_-6px_rgba(230,92,0,0.4)] active:not-disabled:translate-y-0" 
           disabled={loading}
         >
           {loading ? 'Verifying...' : 'Verify OTP'}
         </button>
 
-        <div className={styles.resendWrapper}>
+        <div className="flex justify-center items-center mt-4">
           {timer > 0 ? (
-            <p className={styles.timerText}>Resend OTP in <strong>{timer}s</strong></p>
+            <p className="text-[0.85rem] text-slate-500 m-0">Resend OTP in <strong className="color-[var(--color-primary)]">{timer}s</strong></p>
           ) : (
             <button 
               type="button" 
-              className={styles.linkButton} 
+              className="bg-none border-none text-slate-500 text-[0.85rem] font-bold cursor-pointer transition-colors duration-200 p-2 rounded-lg block w-fit hover:text-[var(--color-primary)] hover:bg-[oklch(0.99_0.01_80)]" 
               onClick={handleResend}
               disabled={loading}
             >
@@ -146,9 +145,8 @@ const VerifyOtp: React.FC = () => {
         
         <button 
           type="button" 
-          className={styles.linkButton} 
+          className="bg-none border-none text-slate-500 text-[0.85rem] font-bold cursor-pointer transition-colors duration-200 p-2 rounded-lg block w-fit mx-auto hover:text-[var(--color-primary)] hover:bg-[oklch(0.99_0.01_80)] mt-2" 
           onClick={() => navigate('/login')}
-          style={{ marginTop: '0.5rem' }}
         >
           Change Details
         </button>

@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import resellerService from '../services/reseller.service';
-import styles from './ResellerMyProducts.module.css';
 
 interface ProductRequest {
   _id: string;

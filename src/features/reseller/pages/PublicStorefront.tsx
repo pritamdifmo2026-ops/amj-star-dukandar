@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Star, ShieldCheck, Package } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import resellerService from '../services/reseller.service';
-import styles from './PublicStorefront.module.css';
 
 const PublicStorefront: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();

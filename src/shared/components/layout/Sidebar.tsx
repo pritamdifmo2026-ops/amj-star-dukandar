@@ -7,7 +7,6 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import styles from './Sidebar.module.css';
 import MessageModal from '@/shared/components/ui/MessageModal';
 
 export interface MenuItem {
@@ -84,61 +83,87 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
+  const adminBg = theme === 'admin' ? 'bg-[#020617] border-r border-[rgba(230,92,0,0.1)]' : '';
+
   return (
     <aside
-      className={`${styles.sidebar} ${!isSidebarOpen ? styles.sidebarCollapsed : ''} ${styles[theme]}`}
+      className={`${isSidebarOpen ? 'w-[280px]' : 'w-24'} bg-slate-900 text-white py-10 px-5 flex flex-col fixed h-screen left-0 top-0 z-[1000] transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] overflow-y-auto scrollbar-none border-r border-white/[0.03] shadow-[4px_0_24px_rgba(0,0,0,0.05)] max-lg:!w-[280px] max-lg:data-[open=false]:-translate-x-full max-lg:data-[open=true]:translate-x-0 max-lg:shadow-[30px_0_60px_rgba(0,0,0,0.5)] ${adminBg}`}
       data-open={isSidebarOpen}
       style={{ '--brand-color': brandColor } as React.CSSProperties}
     >
-      <div className={styles.sidebarHeader}>
-        <div className={styles.sidebarBrand} onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <div className={styles.logoWrapper}>
+      <div className="flex items-center justify-between mb-14 px-2">
+        <div className="flex items-center gap-4 no-underline cursor-pointer" onClick={() => navigate('/')}>
+          <div className="w-[52px] h-[52px] bg-[oklch(0.99_0.01_80)] rounded-md flex items-center justify-center shadow-[0_8px_16px_rgba(0,0,0,0.2)] p-2 transition-transform duration-300">
             {logoSrc ? (
-              <img src={logoSrc} alt="Logo" className={styles.logoImg} />
+              <img src={logoSrc} alt="Logo" className="w-full h-full object-contain" />
             ) : (
               LogoIcon && <LogoIcon size={24} />
             )}
           </div>
-          <span className={styles.brandTitle}>{title}</span>
+          <span className={`text-base font-extrabold text-slate-50 tracking-[-0.02em] whitespace-nowrap transition-all duration-300 ${!isSidebarOpen ? 'opacity-0 w-0 pointer-events-none' : ''}`}>{title}</span>
         </div>
-        <button className={styles.toggleBtn} onClick={onToggle}>
+        <button
+          className="bg-white/5 border border-white/10 text-slate-400 w-8 h-8 rounded-[10px] cursor-pointer flex items-center justify-center transition-all duration-300 hover:bg-white/10 hover:text-[var(--brand-color)] hover:border-white/30 max-lg:hidden"
+          onClick={onToggle}
+        >
           {isSidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
         </button>
-        <button className={styles.mobileCloseBtn} onClick={onToggle}>
+        <button
+          className="hidden bg-none border-none text-slate-400 p-2 cursor-pointer max-lg:flex"
+          onClick={onToggle}
+        >
           <X size={20} />
         </button>
       </div>
 
-      <nav className={styles.sidebarNav}>
-        <div className={styles.navSection}>
+      <nav className="flex flex-col gap-10">
+        <div className="flex flex-col gap-2">
           {menu.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
-                className={`${activeTab === item.id ? styles.active : ''} ${item.comingSoon ? styles.disabledLink : ''}`}
+                className={`flex items-center gap-4 py-3.5 px-4 rounded-lg border-none text-[0.85rem] font-semibold text-left whitespace-nowrap relative transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  activeTab === item.id
+                    ? 'text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)]'
+                    : item.comingSoon
+                    ? 'bg-transparent text-slate-400 opacity-40 cursor-not-allowed'
+                    : 'bg-transparent text-slate-400 cursor-pointer hover:bg-white/5 hover:text-slate-100 hover:translate-x-1'
+                } ${!isSidebarOpen ? 'justify-center px-3.5' : ''}`}
+                style={activeTab === item.id ? { background: brandColor } : {}}
                 onClick={() => handleTabClick(item)}
               >
-                <div className={styles.iconBox}><Icon size={18} /></div>
-                <span>{item.label}</span>
+                <div className={`flex items-center justify-center w-6 h-6 transition-transform duration-300 ${activeTab === item.id ? 'scale-110' : ''}`}>
+                  <Icon size={18} />
+                </div>
+                {isSidebarOpen && <span>{item.label}</span>}
               </button>
             );
           })}
         </div>
 
         {footerMenu.length > 0 && (
-          <div className={styles.navSection}>
-            <div className={styles.navDivider}>Advanced</div>
+          <div className="flex flex-col gap-2">
+            {isSidebarOpen && <div className="text-[0.7rem] font-extrabold uppercase text-slate-600 my-2 ml-4 tracking-[0.1em] opacity-60">Advanced</div>}
             {footerMenu.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.id}
-                  className={`${activeTab === item.id ? styles.active : ''} ${item.comingSoon ? styles.disabledLink : ''}`}
+                  className={`flex items-center gap-4 py-3.5 px-4 rounded-lg border-none text-[0.85rem] font-semibold text-left whitespace-nowrap relative transition-all duration-300 ${
+                    activeTab === item.id
+                      ? 'text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.2)]'
+                      : item.comingSoon
+                      ? 'bg-transparent text-slate-400 opacity-40 cursor-not-allowed'
+                      : 'bg-transparent text-slate-400 cursor-pointer hover:bg-white/5 hover:text-slate-100 hover:translate-x-1'
+                  } ${!isSidebarOpen ? 'justify-center px-3.5' : ''}`}
+                  style={activeTab === item.id ? { background: brandColor } : {}}
                   onClick={() => handleTabClick(item)}
                 >
-                  <div className={styles.iconBox}><Icon size={18} /></div>
-                  <span>{item.label}</span>
+                  <div className="flex items-center justify-center w-6 h-6">
+                    <Icon size={18} />
+                  </div>
+                  {isSidebarOpen && <span>{item.label}</span>}
                 </button>
               );
             })}
@@ -146,19 +171,24 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </nav>
 
-      <div className={styles.sidebarFooter}>
-        <div className={styles.userProfile}>
-          <div className={styles.userAvatar}>
+      <div className="mt-auto pt-8 flex flex-col gap-6">
+        <div className={`flex items-center gap-4 px-2 mb-2 ${!isSidebarOpen ? 'justify-center p-0' : ''}`}>
+          <div className="w-11 h-11 bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-lg flex items-center justify-center font-extrabold text-slate-100 shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
             {displayName.charAt(0).toUpperCase()}
           </div>
-          <div className={styles.userInfo}>
-            <p className={styles.userName}>{displayName}</p>
-            <p className={styles.userEmail}>{displayEmail}</p>
-          </div>
+          {isSidebarOpen && (
+            <div className="min-w-0">
+              <p className="text-[0.8rem] font-bold text-slate-50 m-0 mb-0.5 whitespace-nowrap overflow-hidden text-ellipsis">{displayName}</p>
+              <p className="text-[0.75rem] text-slate-500 m-0 whitespace-nowrap overflow-hidden text-ellipsis">{displayEmail}</p>
+            </div>
+          )}
         </div>
-        <button className={styles.logoutBtn} onClick={onLogout}>
+        <button
+          className={`flex items-center gap-4 w-full py-3.5 px-4 rounded-lg border border-red-500/10 bg-red-500/5 text-red-400 cursor-pointer transition-all duration-300 text-[0.8rem] font-bold hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-[0_8px_16px_rgba(239,68,68,0.25)] hover:-translate-y-0.5 ${!isSidebarOpen ? 'justify-center px-3.5' : ''}`}
+          onClick={onLogout}
+        >
           <LogOut size={18} />
-          <span>Sign Out</span>
+          {isSidebarOpen && <span>Sign Out</span>}
         </button>
       </div>
 

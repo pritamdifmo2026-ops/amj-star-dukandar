@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { quotationApi } from '@/shared/services/quotation.api';
 import { FileText, Clock, CheckCircle, XCircle, ShoppingBag, RefreshCw, User } from 'lucide-react';
-import styles from './SupplierQuotations.module.css';
 
 interface QuotationItem {
   name: string;

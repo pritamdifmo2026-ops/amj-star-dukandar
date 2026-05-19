@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2, Plus, X, Tags, CheckCircle2, Edit2 } from 'lucide-react';
 // removed unused import
-import styles from '../pages/AdminDashboard.module.css';
-import localStyles from './CategoryManagement.module.css';
 import Pagination from '@/shared/components/ui/Pagination';
 import categoryService from '@/features/product/services/category.service';
 

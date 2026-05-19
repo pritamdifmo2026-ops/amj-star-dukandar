@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { History, Search, CheckCircle, XCircle, Clock } from 'lucide-react';
 import resellerService from '../services/reseller.service';
 import Pagination from '@/shared/components/ui/Pagination';
-import styles from './ResellerHistory.module.css';
 
 interface Activity {
   id: string;

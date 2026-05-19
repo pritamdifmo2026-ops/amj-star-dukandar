@@ -1,6 +1,5 @@
 import React from 'react';
 import { Package, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import styles from '../pages/SupplierDashboard.module.css';
 
 interface SupplierStatsProps {
   products: any[];

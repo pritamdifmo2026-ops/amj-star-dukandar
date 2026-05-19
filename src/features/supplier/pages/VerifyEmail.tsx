@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import supplierService from '../services/supplier.service';
-import styles from './VerifyEmail.module.css';
 
 const VerifyEmail: React.FC = () => {
   const [searchParams] = useSearchParams();

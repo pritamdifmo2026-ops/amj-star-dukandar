@@ -5,7 +5,6 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend 
 } from 'recharts';
 import type { AdminStats } from '../services/admin.service';
-import styles from '../pages/AdminDashboard.module.css';
 
 interface DashboardOverviewProps {
   stats: AdminStats;

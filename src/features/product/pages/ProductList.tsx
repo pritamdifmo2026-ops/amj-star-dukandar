@@ -8,7 +8,6 @@ import ErrorState from '@/shared/components/feedback/ErrorState';
 import EmptyState from '@/shared/components/feedback/EmptyState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
-import styles from './ProductList.module.css';
 
 const ProductList: React.FC = () => {
   const navigate = useNavigate();

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Power } from 'lucide-react';
-import styles from '../pages/AdminDashboard.module.css';
 import Pagination from '@/shared/components/ui/Pagination';
 
 interface UserManagementProps {

@@ -23,7 +23,6 @@ import {
   XCircle,
   Handshake
 } from 'lucide-react';
-import styles from './ResellerOnboarding.module.css';
 
 const STATE_CITY_MAP: Record<string, string[]> = {
   "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Thane"],

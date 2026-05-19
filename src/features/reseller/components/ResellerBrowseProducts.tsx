@@ -7,7 +7,6 @@ import apiClient from '@/api/client';
 import resellerService from '../services/reseller.service';
 import Modal from '@/shared/components/ui/Modal';
 import Pagination from '@/shared/components/ui/Pagination';
-import styles from './ResellerBrowseProducts.module.css';
 
 const ResellerBrowseProducts: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);

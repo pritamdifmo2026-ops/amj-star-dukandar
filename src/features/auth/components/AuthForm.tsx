@@ -5,7 +5,6 @@ import Input from '@/shared/components/ui/Input';
 import Button from '@/shared/components/ui/Button';
 import { ROUTES } from '@/shared/constants/routes';
 import { useLogin } from '../hooks/useLogin';
-import styles from './AuthForm.module.css';
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -19,11 +18,11 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={styles.form}>
-      <h2 className={styles.heading}>Sign In</h2>
-      <p className={styles.sub}>Welcome back to AMJStar</p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Sign In</h2>
+      <p className="text-sm text-[var(--color-text-muted)] -mt-3">Welcome back to AMJStar</p>
 
-      <div className={styles.fields}>
+      <div className="flex flex-col gap-4">
         <Input
           label="Email Address"
           type="email"
@@ -55,9 +54,9 @@ const LoginForm: React.FC = () => {
         Sign In
       </Button>
 
-      <p className={styles.switch}>
+      <p className="text-sm text-[var(--color-text-muted)] text-center">
         Don't have an account?{' '}
-        <Link to={ROUTES.REGISTER} className={styles.link}>
+        <Link to={ROUTES.REGISTER} className="text-[var(--color-primary)] font-medium hover:underline">
           Register
         </Link>
       </p>

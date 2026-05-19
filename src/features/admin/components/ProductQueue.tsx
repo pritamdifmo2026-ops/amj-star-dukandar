@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Package, CheckCircle, XCircle } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
-import styles from '../pages/AdminDashboard.module.css';
 import Pagination from '@/shared/components/ui/Pagination';
 
 interface ProductQueueProps {

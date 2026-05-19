@@ -9,7 +9,6 @@ import {
 import { addressApi } from '@/shared/services/address.api';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
-import styles from './Addresses.module.css';
 
 const Addresses: React.FC = () => {
   const navigate = useNavigate();
