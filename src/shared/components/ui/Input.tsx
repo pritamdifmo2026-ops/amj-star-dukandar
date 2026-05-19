@@ -30,7 +30,7 @@ const Input: React.FC<InputProps> = ({
         </label>
       )}
       <div className={[
-        'flex items-center border bg-cream rounded-[4px] transition-colors duration-150',
+        'flex items-center border bg-[oklch(0.99_0.01_80)] rounded-[4px] transition-colors duration-150',
         'focus-within:border-primary',
         error ? 'border-error' : 'border-border',
       ].join(' ')}>

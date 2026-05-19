@@ -3,7 +3,7 @@ import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
-  Store, ShoppingBag, Truck, List, LayoutDashboard
+  Store, ShoppingBag, Truck, List, LayoutDashboard, Search
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
@@ -96,8 +96,8 @@ const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-[1000] bg-cream">
       {/* Top strip */}
-      <div className="bg-cream border-b border-border py-0.5">
-        <div className="max-w-[var(--width-container)] mx-auto px-8 flex justify-between items-center">
+      <div className="hidden sm:block bg-cream border-b border-border py-0.5">
+        <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
           <span className="text-[9px] text-body flex items-center gap-1.5">
             <Phone size={10} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
           </span>
@@ -115,7 +115,7 @@ const Navbar: React.FC = () => {
 
       {/* Main navbar */}
       <nav className="bg-surface py-1 border-b border-border">
-        <div className="max-w-[var(--width-container)] mx-auto px-8 flex justify-between items-center">
+        <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
           <Link to={ROUTES.HOME} className="no-underline">
             <img src={logo} alt="AMJStar Logo" style={{ height: '38px', objectFit: 'contain' }} />
           </Link>
@@ -152,7 +152,7 @@ const Navbar: React.FC = () => {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-5">
+              <div className="hidden lg:flex items-center gap-5">
                 <Link to="/about" className={navLinkCls}>About</Link>
                 <Link to={ROUTES.BUYERS} className={navLinkCls}>For Buyers</Link>
                 <Link to={ROUTES.RESELLERS} className={navLinkCls}>For Resellers</Link>
@@ -171,15 +171,15 @@ const Navbar: React.FC = () => {
                 </span>
               )}
             </div>
-            <button className="hidden lg:hidden bg-transparent border-none text-heading cursor-pointer" onClick={() => setMobileOpen(p => !p)}>
+            <button className="flex lg:hidden bg-transparent border-none text-heading cursor-pointer p-1" onClick={() => setMobileOpen(p => !p)}>
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Category bar */}
-      <div className="bg-surface border-b border-border">
+      {/* Category bar — desktop only */}
+      <div className="hidden lg:block bg-surface border-b border-border">
         <div className="max-w-[var(--width-container)] mx-auto px-8 flex items-center gap-6">
           <div className="flex items-center gap-5 flex-1">
             {categories.map(cat => {
@@ -247,6 +247,9 @@ const Navbar: React.FC = () => {
           <div className="flex-1 overflow-y-auto px-6 py-6">
             <div className="mb-8">
               <div className="text-xs font-bold uppercase text-muted tracking-widest mb-4">Quick Links</div>
+              <Link to={ROUTES.PRODUCT_LIST} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
+                <Search size={18} /><span>Search Products</span>
+              </Link>
               <Link to="/about" className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
                 <List size={18} /><span>About AMJStar</span>
               </Link>
@@ -264,6 +267,13 @@ const Navbar: React.FC = () => {
                   <Link to={ROUTES.BUYERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><ShoppingBag size={18} /><span>For Buyers</span></Link>
                   <Link to={ROUTES.SUPPLIERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><Store size={18} /><span>For Suppliers</span></Link>
                   <Link to={ROUTES.RESELLERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><Truck size={18} /><span>For Resellers</span></Link>
+                  <Link
+                    to={`${ROUTES.LOGIN}?mode=buyer`}
+                    className="mt-3 flex items-center justify-center gap-2 w-full py-3 bg-heading text-white rounded-[8px] no-underline font-semibold text-sm"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Join Free
+                  </Link>
                 </>
               )}
             </div>

@@ -19,7 +19,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
       onClick={onClose}
     >
       <div
-        className="bg-cream w-[90%] max-w-[450px] rounded-[6px] shadow-xl overflow-hidden animate-slide-up"
+        className="bg-[oklch(0.99_0.01_80)] w-[90%] max-w-[450px] rounded-[6px] shadow-xl overflow-hidden animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100">

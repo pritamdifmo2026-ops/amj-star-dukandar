@@ -26,7 +26,7 @@ const DEFAULT_COLORS = [
   '#E8F5E9', '#E0F7FA', '#FFEBEE', '#F1F8E9'
 ];
 
-const containerCls = "w-full max-w-[var(--width-container)] mx-auto px-8";
+const containerCls = "w-full max-w-[var(--width-container)] mx-auto px-4 sm:px-8";
 const PLACEHOLDER = 'https://placehold.co/300x200/f5f5f5/999?text=No+Image';
 
 /** IndiaMart-style: hero card (left) + 2×3 mini product grid (right) */
@@ -57,7 +57,7 @@ const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolea
             {/* Left: Hero card with background image + product name links */}
             {heroProduct && (
               <div
-                className="w-[280px] max-md:w-full shrink-0 rounded-[10px] overflow-hidden relative min-h-[280px] bg-cover bg-center"
+                className="w-[280px] max-md:w-full shrink-0 rounded-[10px] overflow-hidden relative min-h-[280px] max-sm:min-h-[200px] bg-cover bg-center"
                 style={{ backgroundImage: `url(${heroProduct.images?.[0] || PLACEHOLDER})` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent flex flex-col justify-end p-4 gap-1">
@@ -83,26 +83,29 @@ const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolea
               </div>
             )}
 
-            {/* Right: 2×3 mini product grid */}
-            <div className="flex-1 grid grid-cols-3 gap-3 max-sm:grid-cols-2">
+            {/* Right: 2 cols × 3 rows list-style cards */}
+            <div className="flex-1 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
               {gridProducts.map(product => (
                 <Link
                   key={product.id}
                   to={`/products/${product.id}`}
-                  className="no-underline flex flex-col border border-[#eee] rounded-[8px] overflow-hidden hover:border-primary hover:shadow-sm transition-all group"
+                  className="no-underline flex gap-3 items-center border border-[#eee] rounded-[10px] p-3 hover:border-primary hover:shadow-sm transition-all"
                 >
                   <img
                     src={product.images?.[0] || PLACEHOLDER}
                     alt={product.name}
-                    className="w-full h-[120px] object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-[80px] h-[80px] object-cover rounded-[8px] shrink-0"
                     onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
                   />
-                  <div className="p-2.5 flex flex-col gap-1">
-                    <h4 className="text-heading text-xs font-semibold m-0 leading-snug">
-                      {product.name.length > 30 ? product.name.slice(0, 30) + '…' : product.name}
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <h4 className="text-heading text-sm font-semibold m-0 leading-snug line-clamp-2">
+                      {product.name.length > 36 ? product.name.slice(0, 36) + '…' : product.name}
                     </h4>
-                    <span className="text-primary text-xs font-bold">₹{product.price?.toLocaleString('en-IN')}</span>
-                    <span className="text-muted text-[10px]">MOQ: {product.minOrderQty} units</span>
+                    {product.supplierName && (
+                      <span className="text-primary text-xs">{product.supplierName}</span>
+                    )}
+                    <span className="text-muted text-xs">MOQ: {product.minOrderQty} units</span>
+                    <span className="text-primary text-sm font-bold">₹{product.price?.toLocaleString('en-IN')}</span>
                   </div>
                 </Link>
               ))}
@@ -139,7 +142,7 @@ const Landing: React.FC = () => {
       <Navbar />
 
       <main>
-        <div className="w-full max-w-[1600px] mx-auto px-8">
+        <div className="w-full max-w-[1600px] mx-auto px-0 sm:px-8">
           <BannerSlider />
         </div>
         <Hero />
@@ -183,17 +186,17 @@ const Landing: React.FC = () => {
             <div className="flex justify-between items-center mb-12 border-l-[6px] border-primary pl-4">
               <h2 className="text-2xl font-extrabold text-heading">Why Choose AMJStar?</h2>
             </div>
-            <div className="grid grid-cols-3 gap-12 max-lg:gap-4 max-sm:gap-6">
+            <div className="grid grid-cols-3 gap-12 max-lg:gap-4 max-sm:gap-3">
               {[
                 { Icon: ShieldCheck, title: 'Secure Payments', desc: '100% payment protection for both buyers and suppliers.' },
                 { Icon: Truck, title: 'Pan India Delivery', desc: 'Reliable logistics partners for timely delivery everywhere.' },
                 { Icon: BadgeCheck, title: 'Verified Sellers', desc: 'All suppliers go through a strict background verification.' },
               ].map(({ Icon, title, desc }) => (
-                <div key={title} className="text-center flex flex-col items-center gap-6">
-                  <div className="w-20 h-20 max-sm:w-12 max-sm:h-12 bg-white border border-border text-primary rounded-[8px] max-sm:rounded-[4px] flex items-center justify-center shadow-sm">
+                <div key={title} className="text-center flex flex-col items-center gap-4 max-sm:gap-2">
+                  <div className="w-20 h-20 max-sm:w-12 max-sm:h-12 bg-white border border-border text-primary rounded-[8px] max-sm:rounded-[6px] flex items-center justify-center shadow-sm">
                     <Icon size={32} className="max-sm:w-5 max-sm:h-5" />
                   </div>
-                  <h3 className="text-lg font-extrabold text-heading max-sm:text-[11px] max-sm:mt-1 max-sm:leading-tight">{title}</h3>
+                  <h3 className="text-lg font-extrabold text-heading max-sm:text-xs max-sm:leading-tight">{title}</h3>
                   <p className="text-body text-sm leading-[1.7] max-sm:hidden">{desc}</p>
                 </div>
               ))}

@@ -72,7 +72,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ categories }) => {
   };
 
   return (
-    <div className="relative flex-1 max-w-[380px] mx-6 max-md:max-w-full max-md:mx-0" ref={searchRef}>
+    <div className="relative flex-1 max-w-[380px] mx-3 sm:mx-6 max-md:max-w-full" ref={searchRef}>
       <form
         className="flex items-center bg-white border border-primary rounded-[8px] overflow-hidden h-8 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus-within:shadow-[0_0_0_2px_rgba(187,70,30,0.1)]"
         onSubmit={handleSearch}

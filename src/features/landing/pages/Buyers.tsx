@@ -21,51 +21,51 @@ const perks = [
 const Buyers: React.FC = () => (
   <MainLayout>
     <div className="min-h-screen">
-      <section className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] text-white py-24 px-4">
-        <div className="max-w-[1200px] mx-auto text-center">
-          <h1 className="text-[clamp(2rem,5vw,3rem)] font-extrabold mb-4 m-0">
+      <section className="bg-gradient-to-br from-white to-[oklch(0.97_0.02_75)] py-20 pb-12 text-center">
+        <div className="max-w-[var(--width-container)] mx-auto px-8">
+          <h1 className="text-[42px] font-extrabold text-heading leading-[1.1] mb-4 max-md:text-[36px]">
             Welcome to the <span className="text-primary">Buyer</span> Portal
           </h1>
-          <p className="text-lg text-[#94a3b8] max-w-[600px] mx-auto mb-8">
+          <p className="text-base text-body leading-relaxed max-w-[600px] mx-auto mb-8">
             Discover top-quality products from verified manufacturers. Enjoy seamless purchasing, secure transactions, and unparalleled support.
           </p>
-          <Link to={`${ROUTES.LOGIN}?mode=buyer`} className="inline-block bg-primary text-white font-bold px-8 py-3.5 rounded-[10px] no-underline hover:opacity-90 transition-opacity">
+          <Link to={`${ROUTES.LOGIN}?mode=buyer`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
             Join as a Buyer
           </Link>
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-extrabold text-[#0f172a] mb-2">How it Works for Buyers</h2>
-            <p className="text-[#64748b]">Simple, transparent, and secure procurement in just four steps.</p>
+      <section className="py-16 bg-white">
+        <div className="max-w-[var(--width-container)] mx-auto px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-[28px] font-extrabold text-heading mb-3">How it Works for Buyers</h2>
+            <p className="text-[18px] text-body max-w-[600px] mx-auto">Simple, transparent, and secure procurement in just four steps.</p>
           </div>
-          <div className="grid grid-cols-4 gap-6 max-lg:grid-cols-2 max-sm:grid-cols-1">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-8 max-md:grid-cols-1">
             {stepCards.map(({ n, title, desc }) => (
-              <div key={n} className="bg-[#f8fafc] border border-[#eef2f6] rounded-[12px] p-6 text-center">
-                <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center text-lg font-extrabold mx-auto mb-3">{n}</div>
-                <h4 className="font-bold text-[#0f172a] mb-2">{title}</h4>
-                <p className="text-sm text-[#64748b] m-0">{desc}</p>
+              <div key={n} className="relative p-10 bg-white rounded-[10px] border border-border hover:border-primary transition-colors">
+                <div className="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center font-bold text-lg mb-6">{n}</div>
+                <h4 className="text-heading font-bold text-base mb-2">{title}</h4>
+                <p className="text-body text-sm leading-relaxed m-0">{desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="py-20 px-4 bg-[#f8fafc]">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl font-extrabold text-[#0f172a] mb-2">Why Source with AMJStar?</h2>
-            <p className="text-[#64748b]">We provide the tools and trust you need to grow your retail business.</p>
+      <section className="py-16 bg-cream">
+        <div className="max-w-[var(--width-container)] mx-auto px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-[28px] font-extrabold text-heading mb-3">Why Source with AMJStar?</h2>
+            <p className="text-[18px] text-body max-w-[600px] mx-auto">We provide the tools and trust you need to grow your retail business.</p>
           </div>
-          <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6 max-sm:grid-cols-1">
             {perks.map(({ title, desc }) => (
-              <div key={title} className="flex items-start gap-4 bg-white border border-[#eef2f6] rounded-[12px] p-5">
+              <div key={title} className="flex items-start gap-4 p-6 bg-white rounded-[8px]">
                 <ShieldCheck size={24} className="text-primary shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-[#0f172a] mb-1">{title}</h4>
-                  <p className="text-sm text-[#64748b] m-0">{desc}</p>
+                  <h4 className="text-heading font-bold text-[18px] mb-1">{title}</h4>
+                  <p className="text-body text-[15px] m-0">{desc}</p>
                 </div>
               </div>
             ))}

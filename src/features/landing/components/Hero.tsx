@@ -7,17 +7,16 @@ import heroImage from '@/assets/images/image.png';
 const Hero: React.FC = () => {
   return (
     <section className="bg-cream py-10 overflow-hidden">
-      <div className="max-w-[var(--width-container)] mx-auto px-8 flex items-center justify-between gap-10 max-[1100px]:flex-col max-[1100px]:text-center max-[1100px]:gap-12">
+      <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex items-center justify-between gap-10 max-[1100px]:flex-col max-[1100px]:text-center max-[1100px]:gap-12">
         <div className="flex-1 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-center">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-cream border border-border rounded-full font-sans text-[10px] font-medium uppercase tracking-[0.12em] text-primary mb-4">
             <span className="w-2 h-2 bg-primary rounded-full" />
-            Now onboarding founding vendors & resellers
+            Join AMJstar and grow your wholesale business today.
           </div>
 
           <h1 className="font-display text-[clamp(1.8rem,5vw,2.8rem)] leading-none text-heading mb-4 font-normal">
-            The B2B marketplace that puts{' '}
-            <span className="text-primary italic">local wholesalers</span>{' '}
-            at the center.
+            <span className="text-primary italic">AMJstar</span>{' '}
+            connects wholesalers, suppliers, and resellers with a smarter B2B wholesale platform.
           </h1>
 
           <p className="font-sans text-sm text-body mb-6 max-w-[600px] leading-relaxed max-[1100px]:mx-auto max-[1100px]:mb-12">
