@@ -3,7 +3,8 @@ import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
-  Store, ShoppingBag, Truck, List, LayoutDashboard, Search
+  Store, ShoppingBag, Truck, List, LayoutDashboard, Search,
+  Info, Factory, RefreshCw
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
@@ -153,10 +154,18 @@ const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="hidden lg:flex items-center gap-5">
-                <Link to="/about" className={navLinkCls}>About</Link>
-                <Link to={ROUTES.BUYERS} className={navLinkCls}>For Buyers</Link>
-                <Link to={ROUTES.RESELLERS} className={navLinkCls}>For Resellers</Link>
-                <Link to={ROUTES.SUPPLIERS} className={navLinkCls}>For Suppliers</Link>
+                <Link to="/about" className={`${navLinkCls} flex items-center gap-1`}>
+                  <Info size={12} /> About
+                </Link>
+                <Link to={ROUTES.BUYERS} className={`${navLinkCls} flex items-center gap-1`}>
+                  <ShoppingBag size={12} /> For Buyers
+                </Link>
+                <Link to={ROUTES.RESELLERS} className={`${navLinkCls} flex items-center gap-1`}>
+                  <RefreshCw size={12} /> For Resellers
+                </Link>
+                <Link to={ROUTES.SUPPLIERS} className={`${navLinkCls} flex items-center gap-1`}>
+                  <Factory size={12} /> For Suppliers
+                </Link>
                 <Link to={`${ROUTES.LOGIN}?mode=buyer`}
                   className="bg-heading text-white px-[18px] py-1.5 rounded-full no-underline font-semibold text-[11px] transition-all ml-2 hover:opacity-90 hover:-translate-y-px">
                   Join Free

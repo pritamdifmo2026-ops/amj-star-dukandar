@@ -14,8 +14,9 @@ interface SupplierVerificationProps {
   onVerifyProduct: (id: string, status: 'APPROVED' | 'REJECTED') => void;
 }
 
-const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9]";
-const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
+const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9] max-md:hidden";
+const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155] max-md:flex max-md:justify-between max-md:items-center max-md:border-none max-md:py-2 max-md:px-0 text-right md:text-left";
+const trCls = "hover:bg-[#fafbfc] max-md:block max-md:p-4 max-md:border-b max-md:border-[#e2e8f0] last:border-none";
 
 const DetailItem = ({ label, children, span2 = false }: { label: string; children: React.ReactNode; span2?: boolean }) => (
   <div className={span2 ? 'col-span-2 max-sm:col-span-1' : ''}>
@@ -51,22 +52,24 @@ const SupplierTable: React.FC<{
         </div>
       </div>
       <div className="bg-white rounded-[10px] border border-[#eef2f6] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
+        <div className="w-full">
+          <table className="w-full border-collapse max-md:block">
+            <thead className="max-md:hidden">
               <tr>{['Business Name', 'Owner', 'Contact', 'Status', 'Tier', 'Actions'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr>
             </thead>
-            <tbody>
+            <tbody className="max-md:block">
               {paginated.map(s => (
-                <tr key={s._id} className="hover:bg-[#fafbfc]">
-                  <td className={tdCls + " font-semibold text-[#0f172a]"}>{s.businessName}</td>
-                  <td className={tdCls}>{s.businessDetails?.ownerName || s.userId?.name || 'N/A'}</td>
-                  <td className={tdCls}>{s.phone}</td>
+                <tr key={s._id} className={trCls}>
+                  <td className={tdCls + " font-semibold text-[#0f172a]"}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Business Name</span> {s.businessName}</td>
+                  <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Owner</span> {s.businessDetails?.ownerName || s.userId?.name || 'N/A'}</td>
+                  <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Contact</span> {s.phone}</td>
                   <td className={tdCls}>
+                    <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Status</span>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.kycStatus === 'VERIFIED' ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#fffbeb] text-[#a16207]'}`}>{s.kycStatus}</span>
                   </td>
-                  <td className={tdCls}><span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{s.tier}</span></td>
+                  <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Tier</span> <span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{s.tier}</span></td>
                   <td className={tdCls}>
+                    <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Actions</span>
                     <div className="flex items-center gap-2">
                       <button onClick={() => onView(s._id)} className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">View</button>
                       {showActions && s.kycStatus === 'PENDING' && (
@@ -79,7 +82,7 @@ const SupplierTable: React.FC<{
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-[#64748b]">No {title.toLowerCase()} found</td></tr>}
+              {filtered.length === 0 && <tr className="max-md:block max-md:p-4"><td colSpan={6} className="px-4 py-8 text-center text-sm text-[#64748b] max-md:block max-md:p-0">No {title.toLowerCase()} found</td></tr>}
             </tbody>
           </table>
         </div>
@@ -121,24 +124,27 @@ const SupplierProducts: React.FC<{
         <div className="py-8 text-center text-sm text-[#64748b]">Loading products...</div>
       ) : (
         <div className="bg-white rounded-[10px] border border-[#eef2f6] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead><tr>{['Product', 'Category', 'Price', 'Status', 'Actions'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr></thead>
-              <tbody>
+          <div className="w-full">
+            <table className="w-full border-collapse max-md:block">
+              <thead className="max-md:hidden"><tr>{['Product', 'Category', 'Price', 'Status', 'Actions'].map(h => <th key={h} className={thCls}>{h}</th>)}</tr></thead>
+              <tbody className="max-md:block">
                 {products.map(p => (
-                  <tr key={p._id} className="hover:bg-[#fafbfc]">
+                  <tr key={p._id} className={trCls}>
                     <td className={tdCls}>
+                      <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Product</span>
                       <div className="flex items-center gap-3">
                         {p.images?.[0] && <img src={p.images[0]} alt="" className="w-10 h-10 rounded-[4px] object-cover" />}
                         <span className="font-semibold">{p.name}</span>
                       </div>
                     </td>
-                    <td className={tdCls}>{p.category}</td>
-                    <td className={tdCls}>₹{p.basePrice}/{p.unit}</td>
+                    <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Category</span> {p.category}</td>
+                    <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Price</span> ₹{p.basePrice}/{p.unit}</td>
                     <td className={tdCls}>
+                      <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Status</span>
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${p.status === 'APPROVED' ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#fffbeb] text-[#a16207]'}`}>{p.status}</span>
                     </td>
                     <td className={tdCls}>
+                      <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Actions</span>
                       <div className="flex items-center gap-2">
                         {p.status === 'PENDING' && (
                           <>
@@ -153,7 +159,7 @@ const SupplierProducts: React.FC<{
                     </td>
                   </tr>
                 ))}
-                {products.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b]">No products found for this supplier</td></tr>}
+                {products.length === 0 && <tr className="max-md:block max-md:p-4"><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b] max-md:block max-md:p-0">No products found for this supplier</td></tr>}
               </tbody>
             </table>
           </div>
