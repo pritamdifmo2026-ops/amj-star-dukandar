@@ -37,17 +37,18 @@ const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* Main footer */}
+      {/* Main footer — 5 columns */}
       <div className="py-20 pb-16">
         <div className="max-w-[var(--width-container)] mx-auto px-8">
-          <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr] gap-16 max-lg:grid-cols-2 max-lg:gap-12 max-md:grid-cols-1 max-md:gap-10">
+          <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.5fr] gap-12 max-xl:grid-cols-[2fr_1fr_1fr_1fr] max-lg:grid-cols-2 max-lg:gap-10 max-md:grid-cols-1 max-md:gap-8">
+
             {/* Brand */}
             <div className="flex flex-col gap-6 max-md:items-center max-md:text-center">
               <Link to={ROUTES.HOME} className="font-display text-[1.4rem] font-normal text-heading no-underline flex items-center gap-2.5">
                 <img src="/favicon.jpeg" alt="AMJStar Logo" className="w-9 h-9 rounded-[8px] object-contain bg-primary p-1" />
                 <span>{appConfig.appName}</span>
               </Link>
-              <p className="text-body leading-[1.7] text-[0.9375rem] max-w-[320px] max-md:max-w-full">
+              <p className="text-body leading-[1.7] text-[0.9375rem] max-w-[280px] max-md:max-w-full">
                 India's leading B2B marketplace connecting verified buyers with trusted suppliers across the nation. Grow your business with AMJStar.
               </p>
               <div className="flex gap-3">
@@ -65,31 +66,44 @@ const Footer: React.FC = () => {
               </div>
             </div>
 
-            {/* Solutions */}
+            {/* Quick Links */}
             <div className="flex flex-col max-md:items-center">
-              <h4 className={colTitleCls}>Solutions</h4>
+              <h4 className={colTitleCls}>Quick Links</h4>
+              <ul className="list-none p-0 m-0 flex flex-col gap-[0.85rem] max-md:items-center">
+                <li><Link to="/about" className={linkCls}>About Us</Link></li>
+                <li><Link to={ROUTES.PRODUCT_LIST} className={linkCls}>Browse Products</Link></li>
+                <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Become a Seller</Link></li>
+                <li><Link to={ROUTES.RESELLERS} className={linkCls}>Bulk Orders</Link></li>
+                <li><a href="#" className={linkCls}>Help Center</a></li>
+              </ul>
+            </div>
+
+            {/* For Buyers */}
+            <div className="flex flex-col max-md:items-center">
+              <h4 className={colTitleCls}>For Buyers</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-[0.85rem] max-md:items-center">
                 <li><Link to={ROUTES.PRODUCT_LIST} className={linkCls}>Browse Products</Link></li>
-                <li><Link to={ROUTES.LOGIN} className={linkCls}>Post a Requirement</Link></li>
+                <li><Link to={ROUTES.BUYERS} className={linkCls}>Request a Quote</Link></li>
+                <li><a href="#" className={linkCls}>Buyer Protection</a></li>
                 <li><a href="#" className={linkCls}>Industry Reports</a></li>
                 <li><a href="#" className={linkCls}>Bulk Discounts</a></li>
               </ul>
             </div>
 
-            {/* Support */}
+            {/* For Sellers */}
             <div className="flex flex-col max-md:items-center">
-              <h4 className={colTitleCls}>Support</h4>
+              <h4 className={colTitleCls}>For Sellers</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-[0.85rem] max-md:items-center">
-                <li><a href="#" className={linkCls}>Help Center</a></li>
-                <li><a href="#" className={linkCls}>Safety &amp; Trust</a></li>
+                <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Sell on AMJStar</Link></li>
+                <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Supplier Membership</Link></li>
+                <li><Link to={ROUTES.SUPPLIER_DASHBOARD} className={linkCls}>Seller Dashboard</Link></li>
+                <li><a href="#" className={linkCls}>Advertising</a></li>
                 <li><a href="#" className={linkCls}>Supplier FAQ</a></li>
-                <li><a href="#" className={linkCls}>Buyer Protection</a></li>
-                <li><a href="#" className={linkCls}>Contact Us</a></li>
               </ul>
             </div>
 
             {/* Contact */}
-            <div className="flex flex-col max-md:items-center">
+            <div className="flex flex-col max-md:items-center max-xl:col-span-2 max-lg:col-span-1">
               <h4 className={`${colTitleCls} max-md:after:left-1/2 max-md:after:-translate-x-1/2`}>Get in Touch</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-[0.85rem]">
                 {[
@@ -114,7 +128,7 @@ const Footer: React.FC = () => {
         <div className="max-w-[var(--width-container)] mx-auto px-8">
           <div className="flex justify-between items-center gap-8 flex-wrap max-md:flex-col max-md:text-center max-md:gap-4">
             <div className="flex gap-8 max-md:justify-center max-md:gap-4">
-              {['Terms of Service', 'Privacy Policy', 'Cookie Policy'].map(label => (
+              {['Terms of Service', 'Privacy Policy', 'Cookie Policy', 'Refund Policy'].map(label => (
                 <a key={label} href="#" className="text-[oklch(0.50_0.02_60)] no-underline text-sm transition-colors hover:text-primary">{label}</a>
               ))}
             </div>

@@ -32,6 +32,16 @@ export interface Product {
   isGSTVerified?: boolean;
   createdAt: string;
   updatedAt: string;
+  supplierDetails?: {
+    businessName?: string;
+    nature?: string;
+    gstin?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    pinCode?: string;
+    ownerName?: string;
+  };
 }
 
 export interface ProductFilters {

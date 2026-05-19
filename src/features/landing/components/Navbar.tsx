@@ -3,7 +3,7 @@ import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
-  Store, ShoppingBag, Truck, List
+  Store, ShoppingBag, Truck, List, LayoutDashboard
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
@@ -21,6 +21,7 @@ const Navbar: React.FC = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showSoonModal, setShowSoonModal] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const navigate = useNavigate();
   const userMenuRef = React.useRef<HTMLDivElement>(null);
@@ -127,11 +128,26 @@ const Navbar: React.FC = () => {
                 <span className="font-semibold text-heading text-[11px]">{displayName}</span>
                 {userMenuOpen && (
                   <div className="absolute top-full right-0 mt-3 bg-cream border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] min-w-[200px] p-2 z-10">
-                    {isSupplier ? <Link to="/supplier/onboarding" className={dropdownItemCls}>Dashboard</Link>
-                      : isReseller ? <Link to="/reseller/dashboard" className={dropdownItemCls}>Dashboard</Link>
-                      : isAdmin ? <Link to="/admin/dashboard" className={dropdownItemCls}>Control Panel</Link>
-                      : <Link to="/profile" className={dropdownItemCls}>Profile</Link>}
-                    <button className={dropdownItemCls} onClick={() => setShowLogoutModal(true)}>Sign Out</button>
+                    {isSupplier ? (
+                      <Link to="/supplier/onboarding" className={dropdownItemCls}>
+                        <LayoutDashboard size={14} className="inline mr-2" />Dashboard
+                      </Link>
+                    ) : isReseller ? (
+                      <Link to="/reseller/dashboard" className={dropdownItemCls}>
+                        <LayoutDashboard size={14} className="inline mr-2" />Dashboard
+                      </Link>
+                    ) : isAdmin ? (
+                      <Link to="/admin/dashboard" className={dropdownItemCls}>
+                        <LayoutDashboard size={14} className="inline mr-2" />Control Panel
+                      </Link>
+                    ) : (
+                      <Link to="/profile" className={dropdownItemCls}>
+                        <User size={14} className="inline mr-2" />Profile
+                      </Link>
+                    )}
+                    <button className={dropdownItemCls} onClick={() => setShowLogoutModal(true)}>
+                      <LogOut size={14} className="inline mr-2" />Sign Out
+                    </button>
                   </div>
                 )}
               </div>
@@ -256,21 +272,57 @@ const Navbar: React.FC = () => {
 
             <div>
               <div className="text-xs font-bold uppercase text-muted tracking-widest mb-4">Browse Categories</div>
-              {categories.map(cat => (
-                <div key={cat._id}>
-                  <Link to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                    className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
-                    <List size={18} /><span>{cat.name}</span>
-                  </Link>
-                  {(cat.subcategories || []).map((sub: any) => (
-                    <Link key={sub._id}
-                      to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                      className="flex items-center gap-3 py-2 pl-9 text-slate-500 no-underline text-xs" onClick={() => setMobileOpen(false)}>
-                      <span>- {sub.name}</span>
-                    </Link>
-                  ))}
-                </div>
-              ))}
+              {categories.map((cat) => {
+                const hasSubs = cat.subcategories && cat.subcategories.length > 0;
+                const isExpanded = expandedCategory === cat._id;
+                return (
+                  <div key={cat._id}>
+                    <div
+                      className="flex items-center justify-between py-3 text-heading font-medium cursor-pointer"
+                      onClick={() => {
+                        if (hasSubs) {
+                          setExpandedCategory(isExpanded ? null : cat._id);
+                        } else {
+                          navigate(`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`);
+                          setMobileOpen(false);
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <List size={18} />
+                        <span>{cat.name}</span>
+                      </div>
+                      {hasSubs && (
+                        <ChevronDown
+                          size={16}
+                          className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                        />
+                      )}
+                    </div>
+                    {isExpanded && hasSubs && (
+                      <div className="pl-9 flex flex-col">
+                        <Link
+                          to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                          className="py-2 text-slate-500 no-underline text-xs"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          - All {cat.name}
+                        </Link>
+                        {cat.subcategories.map((sub: any) => (
+                          <Link
+                            key={sub._id}
+                            to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                            className="py-2 text-slate-500 no-underline text-xs"
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            - {sub.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

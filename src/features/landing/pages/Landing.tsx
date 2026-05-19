@@ -8,7 +8,6 @@ import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import BannerSlider from '../components/BannerSlider';
 import Footer from '../components/Footer';
-import ProductCard from '@/features/product/components/ProductCard';
 import { ROUTES } from '@/shared/constants/routes';
 import { productApi } from '@/features/product/services/product.api';
 import categoryService from '@/features/product/services/category.service';
@@ -28,28 +27,92 @@ const DEFAULT_COLORS = [
 ];
 
 const containerCls = "w-full max-w-[var(--width-container)] mx-auto px-8";
+const PLACEHOLDER = 'https://placehold.co/300x200/f5f5f5/999?text=No+Image';
 
-const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolean }> = ({ cat, products, loading }) => (
-  <section className="py-16 mb-20 bg-white max-lg:py-12 max-lg:mb-12 max-sm:py-8 max-sm:mb-8">
-    <div className={containerCls}>
-      <div className="flex justify-between items-center mb-12 border-l-[6px] border-primary pl-4 max-sm:mb-6">
-        <h2 className="text-2xl font-extrabold text-heading max-sm:text-xl">{cat.name}</h2>
-        <Link
-          to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-          className="text-[#0066c0] font-medium text-sm no-underline hover:text-[#c45500] hover:underline"
-        >
-          See more
-        </Link>
+/** IndiaMart-style: hero card (left) + 2×3 mini product grid (right) */
+const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolean }> = ({ cat, products, loading }) => {
+  const catProducts = products.filter(p => p.category === cat.name).slice(0, 7);
+  const heroProduct = catProducts[0];
+  const gridProducts = catProducts.slice(1, 7);
+
+  return (
+    <section className="py-10 mb-6 bg-white border-b border-[#f0f0f0]">
+      <div className={containerCls}>
+        <div className="flex justify-between items-center mb-6 border-l-[6px] border-primary pl-4">
+          <h2 className="text-xl font-extrabold text-heading">{cat.name}</h2>
+          <Link
+            to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+            className="text-[#0066c0] font-medium text-sm no-underline hover:text-[#c45500] hover:underline"
+          >
+            See more
+          </Link>
+        </div>
+
+        {loading ? (
+          <p className="text-body text-sm">Loading products...</p>
+        ) : catProducts.length === 0 ? (
+          <p className="text-body text-sm">No products yet in this category.</p>
+        ) : (
+          <div className="flex gap-4 max-md:flex-col">
+            {/* Left: Hero card with background image + product name links */}
+            {heroProduct && (
+              <div
+                className="w-[280px] max-md:w-full shrink-0 rounded-[10px] overflow-hidden relative min-h-[280px] bg-cover bg-center"
+                style={{ backgroundImage: `url(${heroProduct.images?.[0] || PLACEHOLDER})` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent flex flex-col justify-end p-4 gap-1">
+                  <ul className="list-none m-0 p-0 flex flex-col gap-1.5 mb-3">
+                    {catProducts.slice(1, 5).map(p => (
+                      <li key={p.id}>
+                        <Link
+                          to={`/products/${p.id}`}
+                          className="text-white text-xs no-underline hover:underline leading-tight block"
+                        >
+                          {p.name.length > 32 ? p.name.slice(0, 32) + '…' : p.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                    className="text-center bg-white text-heading text-xs font-bold py-2 px-4 rounded-[6px] no-underline hover:bg-primary hover:text-white transition-colors"
+                  >
+                    View All
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Right: 2×3 mini product grid */}
+            <div className="flex-1 grid grid-cols-3 gap-3 max-sm:grid-cols-2">
+              {gridProducts.map(product => (
+                <Link
+                  key={product.id}
+                  to={`/products/${product.id}`}
+                  className="no-underline flex flex-col border border-[#eee] rounded-[8px] overflow-hidden hover:border-primary hover:shadow-sm transition-all group"
+                >
+                  <img
+                    src={product.images?.[0] || PLACEHOLDER}
+                    alt={product.name}
+                    className="w-full h-[120px] object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
+                  />
+                  <div className="p-2.5 flex flex-col gap-1">
+                    <h4 className="text-heading text-xs font-semibold m-0 leading-snug">
+                      {product.name.length > 30 ? product.name.slice(0, 30) + '…' : product.name}
+                    </h4>
+                    <span className="text-primary text-xs font-bold">₹{product.price?.toLocaleString('en-IN')}</span>
+                    <span className="text-muted text-[10px]">MOQ: {product.minOrderQty} units</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6 max-sm:grid-cols-2 max-sm:gap-3">
-        {loading ? <p>Loading products...</p> : products
-          .filter(p => p.category === cat.name)
-          .slice(0, 8)
-          .map(product => <ProductCard key={product.id} product={product} showAddToCart={false} />)}
-      </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const Landing: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -57,13 +120,18 @@ const Landing: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([productApi.list({ pageSize: 50 }), categoryService.getAll()])
-      .then(([prodRes, catRes]) => {
+    const fetchData = async () => {
+      try {
+        const [prodRes, catRes] = await Promise.all([
+          productApi.list({ pageSize: 100 }),
+          categoryService.getAll()
+        ]);
         setProducts(prodRes.data || []);
         if (catRes.categories) setCategories(catRes.categories);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      } catch {}
+      finally { setLoading(false); }
+    };
+    fetchData();
   }, []);
 
   return (
@@ -109,7 +177,7 @@ const Landing: React.FC = () => {
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />
         ))}
 
-        {/* Features */}
+        {/* Why Choose AMJStar */}
         <section className="py-20 pb-24 bg-white border-t border-[#f0f0f0] mb-20 max-lg:py-12 max-lg:mb-12 max-sm:py-8 max-sm:mb-8">
           <div className={containerCls}>
             <div className="flex justify-between items-center mb-12 border-l-[6px] border-primary pl-4">

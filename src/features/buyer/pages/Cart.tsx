@@ -43,6 +43,14 @@ const Cart: React.FC = () => {
     navigate(ROUTES.CHECKOUT);
   };
 
+  const handleBuyNowSingle = (item: any) => {
+    if (!user) {
+      navigate(`${ROUTES.LOGIN}?redirect=/cart`);
+      return;
+    }
+    navigate(ROUTES.CHECKOUT, { state: { buyNowItem: item } });
+  };
+
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
@@ -129,7 +137,7 @@ const Cart: React.FC = () => {
                     </div>
                     <button
                       className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white font-bold text-xs rounded-[8px] border-none cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={handleCheckout}
+                      onClick={() => handleBuyNowSingle(item)}
                     >
                       <CreditCard size={14} /> Buy Now
                     </button>

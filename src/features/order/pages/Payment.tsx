@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   CreditCard,
   Wallet,
@@ -17,6 +17,9 @@ const labelCls = "text-xs font-bold uppercase text-[#94a3b8] tracking-wider bloc
 
 const Payment: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const buyNowItem = location.state?.buyNowItem;
+
   const [selectedMethod, setSelectedMethod] = useState<string>('upi');
   const [selectedUpi, setSelectedUpi] = useState<string>('gpay');
 
@@ -42,7 +45,7 @@ const Payment: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] px-4 py-8 max-w-[1100px] mx-auto">
       <button
         className="flex items-center gap-2 text-sm text-[#64748b] bg-transparent border-none cursor-pointer hover:text-[#0f172a] p-0 mb-4"
-        onClick={() => navigate(ROUTES.CHECKOUT)}
+        onClick={() => navigate(ROUTES.CHECKOUT, { state: { buyNowItem } })}
       >
         <ArrowLeft size={18} /> Back to Checkout
       </button>

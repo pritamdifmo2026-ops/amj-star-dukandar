@@ -70,7 +70,14 @@ No admin notification on new submissions — when a supplier or reseller submits
 
 Business Logic Edge Cases
 Order / Payment
+
+
+
+
 Razorpay webhook failure: payment succeeds on Razorpay side but the webhook call back fails → order stays pending forever. No retry/reconciliation logic exists.
+
+
+
 Quotation expiry: quotation has a 7-day validity in the model, but no cron job or UI warning triggers when it expires. A buyer can try to place an order on an expired quotation.
 Multi-buyer race on low stock: Two buyers accept quotations for the same product simultaneously. No stock reservation/locking mechanism.
 Platform fee is stored but never computed: platformFee field exists in Order model but is default 0 — no actual fee calculation is applied.

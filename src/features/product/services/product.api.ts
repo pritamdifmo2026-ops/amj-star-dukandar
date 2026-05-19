@@ -40,6 +40,15 @@ const mapProduct = (item: any): Product => {
     isGSTVerified: !!(item.supplierId?.businessDetails?.gstin),
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
+    supplierDetails: item.supplierId && typeof item.supplierId === 'object' ? {
+      businessName: item.supplierId.businessName,
+      gstin: item.supplierId.businessDetails?.gstin || item.supplierId.businessDetails?.gstNumber,
+      address: item.supplierId.businessDetails?.address,
+      city: item.supplierId.businessDetails?.city,
+      state: item.supplierId.businessDetails?.state,
+      pinCode: item.supplierId.businessDetails?.pinCode || item.supplierId.businessDetails?.pincode,
+      ownerName: item.supplierId.businessDetails?.ownerName,
+    } : undefined
   };
 };
 
