@@ -128,7 +128,7 @@ const AdminDashboard: React.FC = () => {
         theme="admin"
       />
 
-      <main className="flex-1 ml-[260px] p-8 transition-all max-lg:ml-0 max-lg:p-4">
+      <main className={`flex-1 p-8 transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] max-lg:ml-0 max-lg:p-4 ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'}`}>
         <header className="mb-6">
           <h2 className="text-xl font-extrabold text-[#0f172a] m-0">{tabLabel[activeTab] || ''}</h2>
         </header>

@@ -3,8 +3,9 @@ import { Trash2, Plus, X, Tags, CheckCircle2, Edit2 } from 'lucide-react';
 import Pagination from '@/shared/components/ui/Pagination';
 import { useCategoryManagement } from '../hooks/useCategoryManagement';
 
-const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9]";
-const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
+const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9] max-md:hidden";
+const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155] max-md:flex max-md:justify-between max-md:items-center max-md:border-none max-md:py-2 max-md:px-0 text-right md:text-left";
+const trCls = "hover:bg-[#fafbfc] max-md:block max-md:p-4 max-md:border-b max-md:border-[#e2e8f0] last:border-none";
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
 
 const CategoryManagement: React.FC = () => {
@@ -64,21 +65,22 @@ const CategoryManagement: React.FC = () => {
       </form>
 
       <div className="bg-white rounded-[10px] border border-[#eef2f6] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
+        <div className="w-full">
+          <table className="w-full border-collapse max-md:block">
+            <thead className="max-md:hidden">
               <tr>
                 <th className={thCls}>Category</th>
                 <th className={thCls}>Subcategories</th>
                 <th className={thCls + " text-right"}>Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="max-md:block">
               {pagedCategories.map(c => (
-                <tr key={c._id} className="hover:bg-[#fafbfc]">
-                  <td className={tdCls + " font-semibold"}>{c.name}</td>
+                <tr key={c._id} className={trCls}>
+                  <td className={tdCls + " font-semibold"}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Category</span> {c.name}</td>
                   <td className={tdCls}>
-                    <div className="flex flex-wrap gap-2 items-center">
+                    <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Subcategories</span>
+                    <div className="flex flex-wrap gap-2 items-center justify-end md:justify-start">
                       {(c.subcategories || []).map((sub: any) => (
                         <span key={sub._id} className="inline-flex items-center gap-1.5 bg-[#f3f4f6] border border-[#e5e7eb] text-xs px-2.5 py-1 rounded-full">
                           {sub.name}
@@ -94,6 +96,7 @@ const CategoryManagement: React.FC = () => {
                     </div>
                   </td>
                   <td className={tdCls}>
+                    <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Actions</span>
                     <div className="flex justify-end gap-2">
                       <button onClick={() => openModal('edit-cat', c._id, c.name, 'Edit Category')} disabled={loadingAction === `edit-cat-${c._id}`} className="w-8 h-8 rounded-[6px] border border-[#e2e8f0] flex items-center justify-center text-[#475569] cursor-pointer hover:bg-[#f8fafc] bg-white">
                         <Edit2 size={15} />
@@ -106,7 +109,7 @@ const CategoryManagement: React.FC = () => {
                 </tr>
               ))}
               {categories.length === 0 && (
-                <tr><td colSpan={3} className="px-4 py-8 text-center text-sm text-[#64748b]">No categories found</td></tr>
+                <tr className="max-md:block max-md:p-4"><td colSpan={3} className="px-4 py-8 text-center text-sm text-[#64748b] max-md:block max-md:p-0">No categories found</td></tr>
               )}
             </tbody>
           </table>

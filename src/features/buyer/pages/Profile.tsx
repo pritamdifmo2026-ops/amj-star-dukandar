@@ -251,43 +251,56 @@ const Profile: React.FC = () => {
     <div className="h-screen flex flex-col overflow-hidden">
     <Navbar />
     <div className="flex flex-1 min-h-0 bg-[#f8fafc] max-lg:flex-col">
-      <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b max-lg:overflow-y-auto">
-        <div className="flex items-center gap-3 p-5 border-b border-[#f1f5f9]">
-          <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center shrink-0 overflow-hidden">
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-base font-extrabold">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
-            )}
+      <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b">
+        <div className="flex items-center justify-between p-5 border-b border-[#f1f5f9] max-lg:py-3 max-lg:px-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 max-lg:w-9 max-lg:h-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 overflow-hidden">
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-base max-lg:text-sm font-extrabold">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
+              )}
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-[#0f172a] m-0">{user?.name?.split(' ')[0] || 'Guest'}</h4>
+              <p className="text-xs text-[#64748b] m-0 capitalize">{user?.role || 'Buyer'}</p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-sm font-bold text-[#0f172a] m-0">{user?.name?.split(' ')[0] || 'Guest'}</h4>
-            <p className="text-xs text-[#64748b] m-0 capitalize">{user?.role || 'Buyer'}</p>
-          </div>
+          <button 
+            onClick={() => setShowLogoutModal(true)}
+            className="hidden max-lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#dc2626] bg-[#fef2f2] border-none rounded-[6px] cursor-pointer hover:bg-[#fee2e2] transition-colors"
+          >
+            <LogOut size={13} />
+            <span>Sign Out</span>
+          </button>
         </div>
 
-        <nav className="flex-1 py-2">
+        <nav className="flex-1 py-2 max-lg:flex max-lg:overflow-x-auto max-lg:py-1 max-lg:px-4 max-lg:scrollbar-none max-lg:gap-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
               <div
                 key={item.id}
-                className={`flex items-center gap-3 px-5 py-3 cursor-pointer transition-colors text-sm ${isActive ? 'bg-[#fff7ed] text-primary font-bold border-r-2 border-primary' : 'text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] font-medium'}`}
+                className={`flex items-center gap-3 px-5 py-3 cursor-pointer transition-all text-sm whitespace-nowrap max-lg:px-4 max-lg:py-2.5 max-lg:gap-1.5 max-lg:rounded-t-[8px] ${
+                  isActive 
+                    ? 'bg-[#fff7ed] text-primary font-bold border-r-2 border-primary max-lg:border-r-0 max-lg:border-b-2' 
+                    : 'text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] font-medium'
+                }`}
                 onClick={() => setActiveTab(item.id)}
               >
-                <Icon size={18} className="shrink-0" />
+                <Icon size={18} className="shrink-0 max-lg:w-4 max-lg:h-4" />
                 <span className="flex-1">{item.label}</span>
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
+                  <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center ml-1">{item.badge}</span>
                 )}
-                <ChevronRight size={15} className="text-[#d1d5db]" />
+                <ChevronRight size={15} className="text-[#d1d5db] max-lg:hidden" />
               </div>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-[#f1f5f9]">
+        <div className="p-4 border-t border-[#f1f5f9] max-lg:hidden">
           <div onClick={() => setShowLogoutModal(true)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
             <LogOut size={18} />
             <span>Sign Out</span>
@@ -297,49 +310,57 @@ const Profile: React.FC = () => {
 
       <main className={`flex-1 min-w-0 flex flex-col ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-auto'}`}>
         {activeTab === 'overview' && (
-          <div className="relative bg-gradient-to-br from-[#1e293b] to-[#0f172a] px-8 pt-8 pb-8 max-sm:px-4">
-            <div className="flex items-end gap-5 max-sm:flex-col max-sm:items-start">
+          <div className="relative bg-gradient-to-r from-[#9a2f0c] via-[#BC461E] to-[#c0622a] px-8 pt-8 pb-16 max-sm:px-5 max-sm:pt-7 max-sm:pb-14 shadow-md">
+            {/* Decorative blobs — contained, won't clip avatar */}
+            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-1/3 w-40 h-40 rounded-full bg-black/10 blur-2xl pointer-events-none" />
+
+            <div className="flex items-center gap-6 max-sm:gap-4 relative z-10">
+              {/* Avatar */}
               <div className="relative shrink-0">
-                <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center overflow-hidden border-4 border-white shadow-[0_4px_16px_rgba(0,0,0,0.2)]">
+                <div className="w-20 h-20 max-sm:w-16 max-sm:h-16 rounded-full bg-[#BC461E] text-white flex items-center justify-center overflow-hidden border-[3px] border-white/70 shadow-lg">
                   <AvatarContent />
                 </div>
-                <label className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center cursor-pointer shadow-md border border-[#e2e8f0] hover:bg-[#f8fafc]">
-                  <Camera size={16} className="text-[#475569]" />
+                <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center cursor-pointer shadow border border-[#e2e8f0] hover:bg-[#f1f5f9] transition-colors">
+                  <Camera size={13} className="text-[#475569]" />
                   <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
                 </label>
               </div>
-              <div className="pb-1">
+
+              {/* User Info */}
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h1 className="text-xl font-extrabold text-white m-0">{user?.name || 'Valued Partner'}</h1>
+                  <h1 className="text-lg font-extrabold text-white m-0 truncate max-sm:text-base">{user?.name || 'Valued Partner'}</h1>
                   {isEmailVerified && (
-                    <span className="flex items-center gap-1 text-xs font-bold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
-                      <Check size={12} /> Verified
+                    <span className="flex items-center gap-1 text-[10px] font-bold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-full shrink-0">
+                      <Check size={10} /> Verified
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 flex-wrap text-xs text-[#94a3b8] mb-2">
-                  <span className="capitalize font-semibold text-[#e2e8f0]">{user?.role || 'Buyer'} Account</span>
+                <div className="flex items-center gap-2 flex-wrap text-[11px] text-white/60 mb-3">
+                  <span className="capitalize font-semibold text-white/80">{user?.role || 'Buyer'} Account</span>
+                  <span>·</span>
                   <span>Member since {memberSince}</span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
-                    <Mail size={14} className="text-[#94a3b8]" />
-                    <span>{user?.email || 'Not provided'}</span>
+                  <div className="flex items-center gap-2 text-xs text-white/70">
+                    <Mail size={12} className="text-white/50 shrink-0" />
+                    <span className="truncate">{user?.email || 'Not provided'}</span>
                     {!isEmailVerified && user?.email && (
                       <button
-                        className="text-xs font-bold text-[#fbbf24] bg-transparent border border-[#fbbf24] rounded-full px-2 py-0.5 cursor-pointer hover:bg-[#fffbeb] hover:text-[#92400e]"
+                        className="shrink-0 text-[10px] font-bold text-[#fbbf24] bg-transparent border border-[#fbbf24] rounded-full px-2 py-0.5 cursor-pointer hover:bg-[#fbbf24]/10"
                         onClick={handleSendVerifyEmail}
                         disabled={isSendingEmail}
                       >
-                        {isSendingEmail ? 'Sending...' : 'Verify'}
+                        {isSendingEmail ? 'Sending…' : 'Verify'}
                       </button>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-[#e2e8f0]">
-                    <Phone size={14} className="text-[#94a3b8]" />
+                  <div className="flex items-center gap-2 text-xs text-white/70">
+                    <Phone size={12} className="text-white/50 shrink-0" />
                     <span>{user?.phone || 'Not provided'}</span>
                     <button
-                      className="text-xs font-bold text-[#94a3b8] bg-transparent border-none cursor-pointer hover:text-white p-0"
+                      className="text-[10px] font-bold text-white/40 bg-transparent border-none cursor-pointer hover:text-white p-0 transition-colors"
                       onClick={() => setIsChangingPhone(true)}
                     >
                       Update
@@ -358,20 +379,20 @@ const Profile: React.FC = () => {
           </div>
         )}
 
-        <div className={`px-8 pt-6 max-sm:px-4 ${activeTab === 'messages' ? 'hidden' : ''}`}>
+        <div className={`px-8 pt-5 max-sm:px-4 ${activeTab === 'messages' ? 'hidden' : ''}`}>
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-4 gap-4 mb-6 max-sm:grid-cols-2">
+            <div className="grid grid-cols-4 gap-3 mb-6 max-sm:grid-cols-2">
               {[
-                { icon: <ShoppingBag size={22} />, value: orderCount, label: 'Orders' },
-                { icon: <Heart size={22} />, value: wishlistItems.length, label: 'Wishlist' },
-                { icon: <Star size={22} />, value: 0, label: 'Reviews' },
-                { icon: <Clock size={22} />, value: 0, label: 'Pending' },
+                { icon: <ShoppingBag size={20} />, value: orderCount, label: 'Orders' },
+                { icon: <Heart size={20} />, value: wishlistItems.length, label: 'Wishlist' },
+                { icon: <Star size={20} />, value: 0, label: 'Reviews' },
+                { icon: <Clock size={20} />, value: 0, label: 'Pending' },
               ].map((stat) => (
-                <div key={stat.label} className="bg-white border border-[#eef2f6] rounded-[12px] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#fff7ed] rounded-[8px] flex items-center justify-center text-primary shrink-0">{stat.icon}</div>
+                <div key={stat.label} className="bg-white border border-[#eef2f6] rounded-[14px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-3">
+                  <div className="w-9 h-9 bg-[#fff7ed] rounded-[8px] flex items-center justify-center text-primary shrink-0">{stat.icon}</div>
                   <div>
-                    <div className="text-xl font-extrabold text-[#0f172a]">{stat.value}</div>
-                    <div className="text-xs text-[#94a3b8]">{stat.label}</div>
+                    <div className="text-xl font-extrabold text-[#0f172a] leading-none">{stat.value}</div>
+                    <div className="text-[11px] text-[#94a3b8] mt-0.5">{stat.label}</div>
                   </div>
                 </div>
               ))}
@@ -380,8 +401,8 @@ const Profile: React.FC = () => {
 
           {activeTab === 'overview' && (
             <div className="grid grid-cols-2 gap-5 mb-8 max-lg:grid-cols-1">
-              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                <div className="flex items-center justify-between mb-4">
+              <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all">
+                <div className="flex items-center justify-between mb-5">
                   <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Personal Information</h3>
                   {!isEditingInfo ? (
                     <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0" onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
@@ -422,8 +443,8 @@ const Profile: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                <div className="flex items-center justify-between mb-4">
+              <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all">
+                <div className="flex items-center justify-between mb-5">
                   <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Default Delivery Address</h3>
                   {!isEditingAddress ? (
                     <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
@@ -488,7 +509,7 @@ const Profile: React.FC = () => {
             <div className="py-6">
               <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">My Wishlist ({wishlistItems.length})</h3>
               {wishlistItems.length > 0 ? (
-                <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
+                <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-2">
                   {wishlistItems.map((item) => (
                     <ProductCard key={item.id} product={item} variant="wishlist" />
                   ))}

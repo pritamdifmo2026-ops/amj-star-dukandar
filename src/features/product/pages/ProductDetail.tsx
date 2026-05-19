@@ -121,8 +121,19 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
     if (isAdmin) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
-    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage }));
-    navigate(ROUTES.CHECKOUT);
+    navigate(ROUTES.CHECKOUT, {
+      state: {
+        buyNowItem: {
+          productId: currentProductId,
+          name: product.name,
+          price: product.price,
+          quantity: product.minOrderQty,
+          unit: product.unit,
+          supplierId: product.supplierId,
+          imageUrl: currentImage
+        }
+      }
+    });
   };
 
   const gstAmount = product.gstIncluded ? 0 : calculateGST(product.price, product.gstRate);
@@ -149,11 +160,18 @@ const ProductDetail: React.FC = () => {
           </button>
 
           {/* Main grid: image + info */}
-          <div className="grid grid-cols-[1fr_1.2fr] gap-8 mb-10 max-lg:grid-cols-[1fr_1.1fr] max-lg:gap-6 max-[992px]:grid-cols-1 max-[992px]:gap-8">
+          <div className="flex flex-col lg:grid lg:grid-cols-[1fr_1.2fr] gap-6 lg:gap-8 mb-10">
             {/* Image gallery */}
-            <div className="flex flex-col gap-4 max-[992px]:max-w-[600px] max-[992px]:mx-auto max-[992px]:w-full">
-              <div className="w-full aspect-square bg-cream border border-border rounded-[var(--radius-md)] overflow-visible flex items-center justify-center">
+            <div className="flex flex-col gap-4 w-full max-w-[600px] mx-auto lg:max-w-none">
+              <div className="relative w-full aspect-square bg-cream border border-border rounded-[var(--radius-md)] overflow-visible flex items-center justify-center">
                 <ImageMagnifier key={currentImage} src={currentImage} alt={product.name} />
+                <button
+                  onClick={handleToggleWishlist}
+                  aria-label="Add to wishlist"
+                  className="absolute top-4 right-4 bg-surface border border-border rounded-full w-11 h-11 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-md hover:scale-105 hover:border-primary z-[5]"
+                >
+                  <Heart size={22} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
+                </button>
               </div>
               {galleryImages.length > 1 && (
                 <div className="flex gap-3 overflow-x-auto scrollbar-none p-1">
@@ -171,7 +189,7 @@ const ProductDetail: React.FC = () => {
             </div>
 
             {/* Product info */}
-            <div className="flex flex-col max-[992px]:mt-4">
+            <div className="flex flex-col mt-4 lg:mt-0">
               {/* Badges */}
               <div className="flex gap-2 mb-4 flex-wrap">
                 {product.isVerified && (
@@ -189,16 +207,9 @@ const ProductDetail: React.FC = () => {
                 </span>
               </div>
 
-              {/* Title + wishlist */}
-              <div className="flex justify-between items-start gap-4 mb-3">
-                <h1 className="text-2xl font-extrabold text-heading leading-[1.2] max-[992px]:text-xl max-sm:text-lg">{product.name}</h1>
-                <button
-                  onClick={handleToggleWishlist}
-                  aria-label="Add to wishlist"
-                  className="bg-surface border border-border rounded-full w-11 h-11 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-sm hover:scale-105 hover:border-primary"
-                >
-                  <Heart size={22} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
-                </button>
+              {/* Title */}
+              <div className="mb-3">
+                <h1 className="text-xl font-extrabold text-heading leading-[1.2] md:text-2xl">{product.name}</h1>
               </div>
 
               {/* Rating */}
@@ -214,16 +225,16 @@ const ProductDetail: React.FC = () => {
               {/* Price box */}
               <div className="bg-cream p-4 rounded-[var(--radius-md)] mb-5 border-l-4 border-primary">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm text-body font-semibold">Wholesale Price:</span>
-                  <span className="text-xl font-extrabold text-primary">{formatCurrency(product.price)}</span>
-                  <span className="text-base text-muted">/ {product.unit}</span>
+                  <span className="text-[13px] text-body font-semibold">Wholesale Price:</span>
+                  <span className="text-lg font-extrabold text-primary">{formatCurrency(product.price)}</span>
+                  <span className="text-sm text-muted">/ {product.unit}</span>
                 </div>
                 {product.gstIncluded ? (
                   <p className="text-xs text-muted mt-0.5">GST inclusive ({product.gstRate}% included in price)</p>
                 ) : (
-                  <p className="text-xs text-muted mt-0.5">+ {formatCurrency(gstAmount)} GST ({product.gstRate}%) extra</p>
+                  <p className="text-[11px] text-muted mt-0.5">+ {formatCurrency(gstAmount)} GST ({product.gstRate}%) extra</p>
                 )}
-                <p className="text-base font-bold text-heading mt-2">
+                <p className="text-sm font-bold text-heading mt-2">
                   {product.gstIncluded ? 'All-inclusive price' : `Total: ${formatCurrency(totalPrice)}`}
                 </p>
               </div>
@@ -249,7 +260,7 @@ const ProductDetail: React.FC = () => {
               </div>
 
               {/* Action buttons */}
-              <div className="flex gap-3 mb-8 max-md:flex-col">
+              <div className="flex flex-col sm:flex-row gap-3 mb-8">
                 <Button size="lg" onClick={handleAddToCart} className="flex-1 h-[52px] whitespace-nowrap">
                   <ShoppingCart size={18} /> {isInCart ? 'Go to Cart' : 'Add to Cart'}
                 </Button>
@@ -307,16 +318,16 @@ const ProductDetail: React.FC = () => {
           {activeTab === 'details' && (
             <div className="mb-20 max-w-[860px]">
               {/* Description */}
-              <h2 className="text-lg font-bold text-heading mb-4">Description</h2>
-              <div className="text-base text-body leading-[1.8] mb-10">{product.description}</div>
+              <h2 className="text-base font-bold text-heading mb-4">Description</h2>
+              <div className="text-sm text-body leading-[1.8] mb-10">{product.description}</div>
 
               {/* Specifications table */}
               {(hasSpecs || hasCerts) && (
                 <>
-                  <h2 className="text-lg font-bold text-heading mb-4">Specifications</h2>
+                  <h2 className="text-base font-bold text-heading mb-4">Specifications</h2>
                   {hasSpecs && (
                     <div className="border border-border rounded-[var(--radius-md)] overflow-hidden mb-6">
-                      <table className="w-full text-sm">
+                      <table className="w-full text-xs">
                         <tbody>
                           {product.countryOfOrigin && (
                             <tr className="border-b border-border">
@@ -377,11 +388,11 @@ const ProductDetail: React.FC = () => {
               <div className="bg-surface border border-border rounded-[var(--radius-md)] p-7">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-2xl shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-xl shrink-0">
                     {(product.supplierName || 'S')[0].toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="text-lg font-extrabold text-heading mb-1">{product.supplierName}</h2>
+                    <h2 className="text-base font-extrabold text-heading mb-1">{product.supplierName}</h2>
                     <div className="flex flex-wrap gap-2">
                       {product.isVerified && (
                         <span className="inline-flex items-center gap-1 bg-[#e8f5e9] text-[#2e7d32] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">

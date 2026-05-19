@@ -15,7 +15,7 @@ const Hero: React.FC = () => {
           </div>
 
           <h1 className="font-display text-[clamp(1.8rem,5vw,2.8rem)] leading-none text-heading mb-4 font-normal">
-            <span className="text-primary italic">AMJstar</span>{' '}
+            <span className="text-primary italic">AMJSTAR</span>{' '}
             connects wholesalers, suppliers, and resellers with a smarter B2B wholesale platform.
           </h1>
 
@@ -24,16 +24,16 @@ const Hero: React.FC = () => {
             buyers in one trade network. Quote-based ordering and bulk fulfillment.
           </p>
 
-          <div className="flex gap-4 mb-8 max-[1100px]:justify-center max-[640px]:flex-col max-[640px]:w-full">
+          <div className="flex flex-row gap-4 mb-8 max-[1100px]:justify-center max-[640px]:w-full items-center">
             <Link
               to={`${ROUTES.LOGIN}?mode=buyer`}
-              className="bg-primary text-white px-6 py-3 text-sm font-semibold rounded-full no-underline flex items-center gap-3 transition-all hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-10px_var(--color-primary)]"
+              className="flex-1 justify-center bg-primary text-white px-6 py-3 max-[640px]:px-3 max-[640px]:py-2 max-[640px]:text-xs text-sm font-semibold rounded-full no-underline flex items-center gap-2 transition-all hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-10px_var(--color-primary)] whitespace-nowrap"
             >
-              Join as Buyer <ArrowRight size={20} />
+              Join as Buyer <ArrowRight size={18} className="max-[640px]:w-4 max-[640px]:h-4" />
             </Link>
             <Link
               to={`${ROUTES.LOGIN}?mode=seller`}
-              className="bg-cream text-heading px-6 py-3 text-sm font-semibold rounded-full no-underline border border-border transition-all hover:border-heading hover:bg-[#f8f8f8]"
+              className="flex-1 justify-center text-center bg-cream text-heading px-6 py-3 max-[640px]:px-3 max-[640px]:py-2 max-[640px]:text-xs text-sm font-semibold rounded-full no-underline border border-border transition-all hover:border-heading hover:bg-[#f8f8f8] whitespace-nowrap"
             >
               Become a Supplier
             </Link>

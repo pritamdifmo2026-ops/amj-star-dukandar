@@ -12,17 +12,17 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  primary:   'bg-primary text-white border-primary hover:bg-primary-dark hover:border-primary-dark',
-  secondary: 'bg-[#1A3C5E] text-white border-[#1A3C5E] rounded-full hover:bg-[#142f4a] hover:-translate-y-px',
-  outline:   'bg-transparent text-primary border-primary hover:bg-primary hover:text-white',
+  primary:   'bg-primary text-white border-primary hover:bg-primary-dark hover:border-primary-dark hover:-translate-y-px',
+  secondary: 'bg-[#1A3C5E] text-white border-[#1A3C5E] hover:bg-[#142f4a] hover:-translate-y-px',
+  outline:   'bg-transparent text-primary border-primary hover:bg-primary hover:text-white hover:-translate-y-px',
   ghost:     'bg-transparent text-body border-transparent hover:bg-border-light',
-  danger:    'bg-error text-white border-error hover:bg-[#a02020]',
+  danger:    'bg-error text-white border-error hover:bg-[#a02020] hover:-translate-y-px',
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: 'px-4 py-1.5 text-[13px] font-bold',
-  md: 'px-[18px] py-2 text-base rounded-[4px]',
-  lg: 'px-6 py-[11px] text-lg rounded-[4px]',
+  sm: 'px-4 py-1.5 text-[13px] font-bold rounded-[6px]',
+  md: 'px-[18px] py-2 text-base rounded-[6px]',
+  lg: 'px-6 py-[11px] text-lg rounded-[6px]',
 };
 
 const Button: React.FC<ButtonProps> = ({

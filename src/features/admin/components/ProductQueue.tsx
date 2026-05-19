@@ -12,8 +12,9 @@ interface ProductQueueProps {
   onVerify: (id: string, status: 'APPROVED' | 'REJECTED') => void;
 }
 
-const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9]";
-const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
+const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9] max-md:hidden";
+const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155] max-md:flex max-md:justify-between max-md:items-center max-md:border-none max-md:py-2 max-md:px-0 text-right md:text-left";
+const trCls = "hover:bg-[#fafbfc] max-md:block max-md:p-4 max-md:border-b max-md:border-[#e2e8f0] last:border-none";
 
 const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedProducts, onVerify }) => {
   const [productConfirm, setProductConfirm] = useState<{ product: any; status: 'APPROVED' | 'REJECTED' } | null>(null);
@@ -33,9 +34,9 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
     const paged = products.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
     return (
       <div className="bg-white rounded-[10px] border border-[#eef2f6] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
+        <div className="w-full">
+          <table className="w-full border-collapse max-md:block">
+            <thead className="max-md:hidden">
               <tr>
                 <th className={thCls}>Product</th>
                 <th className={thCls}>Supplier</th>
@@ -44,10 +45,11 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
                 <th className={thCls}>{isPending ? 'Actions' : 'Status'}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="max-md:block">
               {paged.map(p => (
-                <tr key={p._id ?? p.id} className="hover:bg-[#fafbfc]">
+                <tr key={p._id ?? p.id} className={trCls}>
                   <td className={tdCls}>
+                    <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Product</span>
                     <div className="flex items-center gap-3">
                       {p.images?.[0] ? (
                         <img src={p.images[0]} alt="" className="w-10 h-10 rounded-[6px] object-cover border border-[#eef2f6]" />
@@ -57,11 +59,12 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
                       <span className="font-semibold text-[#0f172a]">{p.name}</span>
                     </div>
                   </td>
-                  <td className={tdCls}>{p.supplierId?.businessName}</td>
-                  <td className={tdCls}>₹{p.basePrice}</td>
-                  <td className={tdCls}>{p.category}</td>
+                  <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Supplier</span> {p.supplierId?.businessName}</td>
+                  <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Price</span> ₹{p.basePrice}</td>
+                  <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Category</span> {p.category}</td>
                   {isPending ? (
                     <td className={tdCls}>
+                      <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Actions</span>
                       <div className="flex items-center gap-2">
                         <button onClick={() => setProductConfirm({ product: p, status: 'APPROVED' })} className="w-8 h-8 rounded-full bg-[#ecfdf5] text-[#059669] flex items-center justify-center border-none cursor-pointer hover:bg-[#d1fae5]" title="Approve">
                           <CheckCircle size={16} />
@@ -73,6 +76,7 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
                     </td>
                   ) : (
                     <td className={tdCls}>
+                      <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Status</span>
                       <span className="flex items-center gap-1 text-xs font-bold text-[#059669]">
                         <CheckCircle size={14} /> Approved
                       </span>
@@ -81,7 +85,7 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
                 </tr>
               ))}
               {products.length === 0 && (
-                <tr key="empty"><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b]">No {isPending ? 'pending' : 'approved'} products</td></tr>
+                <tr key="empty" className="max-md:block max-md:p-4"><td colSpan={5} className="px-4 py-8 text-center text-sm text-[#64748b] max-md:block max-md:p-0">No {isPending ? 'pending' : 'approved'} products</td></tr>
               )}
             </tbody>
           </table>

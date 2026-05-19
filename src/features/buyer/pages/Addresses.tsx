@@ -133,9 +133,18 @@ const Addresses: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <main className="py-10 px-4">
+    <div className={redirectPath ? 'h-screen flex flex-col bg-[#f8fafc] overflow-hidden' : 'min-h-screen bg-[#f8fafc]'}>
+      {!redirectPath && <Navbar />}
+      <main className={redirectPath ? 'flex-1 overflow-y-auto py-8 px-4' : 'py-10 px-4'}>
         <div className="max-w-[800px] mx-auto">
+          {/* Back button */}
+          <button
+            onClick={() => navigate(redirectPath || -1 as any)}
+            className="flex items-center gap-2 bg-transparent border-none text-[#475569] text-sm font-medium cursor-pointer mb-6 p-0 transition-colors hover:text-primary"
+          >
+            <ArrowLeft size={18} /> {redirectPath ? 'Back to Checkout' : 'Back'}
+          </button>
+
           <div className="flex items-center justify-between mb-7 flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-extrabold text-[#0f172a] m-0 mb-1">My Addresses</h1>
@@ -281,7 +290,7 @@ const Addresses: React.FC = () => {
 
                   {redirectPath && (
                     <button
-                      className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 bg-[#0f172a] text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:bg-[#1e293b] transition-colors"
+                      className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 bg-[#BC461E] text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:bg-[#BC461E] transition-colors"
                       onClick={() => navigate(redirectPath)}
                     >
                       Deliver to this address <ChevronRight size={16} />

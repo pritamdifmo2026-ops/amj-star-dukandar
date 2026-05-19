@@ -31,9 +31,9 @@ const PLACEHOLDER = 'https://placehold.co/300x200/f5f5f5/999?text=No+Image';
 
 /** IndiaMart-style: hero card (left) + 2×3 mini product grid (right) */
 const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolean }> = ({ cat, products, loading }) => {
-  const catProducts = products.filter(p => p.category === cat.name).slice(0, 7);
+  const catProducts = products.filter(p => p.category === cat.name).slice(0, 5);
   const heroProduct = catProducts[0];
-  const gridProducts = catProducts.slice(1, 7);
+  const gridProducts = catProducts.slice(1, 5);
 
   return (
     <section className="py-10 mb-6 bg-white border-b border-[#f0f0f0]">
@@ -57,7 +57,7 @@ const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolea
             {/* Left: Hero card with background image + product name links */}
             {heroProduct && (
               <div
-                className="w-[280px] max-md:w-full shrink-0 rounded-[10px] overflow-hidden relative min-h-[280px] max-sm:min-h-[200px] bg-cover bg-center"
+                className="w-[280px] max-md:w-full shrink-0 rounded-[10px] overflow-hidden relative min-h-[280px] max-sm:min-h-[200px] bg-contain bg-no-repeat bg-center bg-white border border-[#eee]"
                 style={{ backgroundImage: `url(${heroProduct.images?.[0] || PLACEHOLDER})` }}
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent flex flex-col justify-end p-4 gap-1">
@@ -131,7 +131,7 @@ const Landing: React.FC = () => {
         ]);
         setProducts(prodRes.data || []);
         if (catRes.categories) setCategories(catRes.categories);
-      } catch {}
+      } catch { }
       finally { setLoading(false); }
     };
     fetchData();
@@ -147,7 +147,7 @@ const Landing: React.FC = () => {
         </div>
         <Hero />
 
-        {categories.slice(0, 3).map(cat => (
+        {categories.slice(0, 4).map(cat => (
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />
         ))}
 
@@ -176,14 +176,14 @@ const Landing: React.FC = () => {
           </div>
         </section>
 
-        {categories.slice(3, 6).map(cat => (
+        {categories.slice(4).map(cat => (
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />
         ))}
 
         {/* Why Choose AMJStar */}
-        <section className="py-20 pb-24 bg-white border-t border-[#f0f0f0] mb-20 max-lg:py-12 max-lg:mb-12 max-sm:py-8 max-sm:mb-8">
+        <section className="py-10 pb-12 bg-white border-t border-[#f0f0f0] mb-10 max-lg:py-8 max-lg:mb-8 max-sm:py-6 max-sm:mb-6">
           <div className={containerCls}>
-            <div className="flex justify-between items-center mb-12 border-l-[6px] border-primary pl-4">
+            <div className="flex justify-between items-center mb-6 border-l-[6px] border-primary pl-4">
               <h2 className="text-2xl font-extrabold text-heading">Why Choose AMJStar?</h2>
             </div>
             <div className="grid grid-cols-3 gap-12 max-lg:gap-4 max-sm:gap-3">

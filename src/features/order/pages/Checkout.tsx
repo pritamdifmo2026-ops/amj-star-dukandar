@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/store/hooks';
 import {
   ShoppingBag, MapPin, Plus,
@@ -10,10 +10,14 @@ import { addressApi } from '@/features/buyer/services/address.api';
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const buyNowItem = location.state?.buyNowItem;
+  
   const cartItems = useAppSelector((state) => state.cart.items);
+  const checkoutItems = buyNowItem ? [buyNowItem] : cartItems;
   const [addresses, setAddresses] = useState<any[]>([]);
 
-  const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = checkoutItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = subtotal > 1000 ? 0 : 50;
   const total = subtotal + shipping;
 
@@ -36,13 +40,13 @@ const Checkout: React.FC = () => {
       alert('Please add a delivery address.');
       return;
     }
-    navigate(ROUTES.PAYMENT);
+    navigate(ROUTES.PAYMENT, { state: { buyNowItem } });
   };
 
   const cardCls = "bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)]";
   const cardTitleCls = "flex items-center gap-2 text-base font-extrabold text-[#0f172a] m-0 mb-5";
 
-  if (cartItems.length === 0) {
+  if (checkoutItems.length === 0) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center px-4">
         <div className={cardCls + " text-center p-16"}>
@@ -75,10 +79,10 @@ const Checkout: React.FC = () => {
         <div className="flex-1 flex flex-col gap-5">
           <div className={cardCls}>
             <h2 className={cardTitleCls}>
-              <ShoppingBag size={20} /> Order Items ({cartItems.length})
+              <ShoppingBag size={20} /> Order Items ({checkoutItems.length})
             </h2>
             <div className="flex flex-col gap-4">
-              {cartItems.map((item) => {
+              {checkoutItems.map((item) => {
                 const mrp = Math.round(item.price * 1.15);
                 const discount = Math.round(((mrp - item.price) / mrp) * 100);
                 return (
