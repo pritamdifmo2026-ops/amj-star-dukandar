@@ -174,6 +174,7 @@ Suppliers can download monthly sales summaries and invoice records from dashboar
 - Order value
 
 Useful for:
+
 - GST return filing for supplier
 - accountant reconciliation
 - monthly bookkeeping
