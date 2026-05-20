@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import loginBanner from '@/assets/login_banner.png';
+import logo from '@/assets/logoo.png';
 import { ShieldCheck, ShoppingBag, Tag, Headphones } from 'lucide-react';
 
 const AuthLayout: React.FC = () => {
@@ -61,7 +62,7 @@ const AuthLayout: React.FC = () => {
       {/* Right: form */}
       <div className="flex flex-col items-center justify-center relative px-6 py-10 lg:px-10 bg-white h-screen overflow-y-auto">
         <div className="absolute top-8 left-10">
-          <img src="/favicon.jpeg" alt="Logo" className="w-11 h-11 rounded-[6px] shadow-md" />
+          <img src={logo} alt="Logo" className="w-11 h-11 rounded-full shadow-md" />
         </div>
         <div className="w-full max-w-[420px] mt-14 lg:mt-0">
           <Outlet />

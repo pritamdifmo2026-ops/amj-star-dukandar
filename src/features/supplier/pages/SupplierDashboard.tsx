@@ -3,13 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import logo from '@/assets/logoo.png';
 import productService from '@/features/product/services/product.service';
 import { chatApi } from '@/features/chat/services/chat.api';
 import Button from '@/shared/components/ui/Button';
 import {
   LayoutDashboard, Package, Truck, LogOut, Trash2, FileText, MessageCircle,
   Handshake, Menu, Edit, Image as ImageIcon, Layers, CheckCircle, Clock,
-  AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet
+  AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2
 } from 'lucide-react';
 
 import ProductTable from '../components/ProductTable';
@@ -20,6 +21,7 @@ import SupplierOverview from '../components/SupplierOverview';
 import SupplierInventory from '../components/SupplierInventory';
 import SupplierSettings from '../components/SupplierSettings';
 import SupplierWallet from '../components/SupplierWallet';
+import SupplierReports from '../components/SupplierReports';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import SupplierQuotations from '../components/SupplierQuotations';
 import Modal from '@/shared/components/ui/Modal';
@@ -168,6 +170,7 @@ const SupplierDashboard: React.FC = () => {
     { id: 'enquiry', label: 'Enquiry', icon: MessageCircle, badge: unreadEnquiries || undefined },
     { id: 'quotations', label: 'Quotations', icon: FileText },
     { id: 'wallet', label: 'Wallet', icon: Wallet },
+    { id: 'reports', label: 'Reports', icon: BarChart2 },
     { id: 'logistics', label: 'Logistics', icon: Truck },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
@@ -217,7 +220,7 @@ const SupplierDashboard: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-white overflow-x-hidden w-full relative max-lg:flex-col">
       <Sidebar
-        title="Supplier Hub" logoSrc="/favicon.jpeg"
+        title="Supplier Hub" logoSrc={logo}
         menu={supplierMenu}
         activeTab={activeView} onTabChange={id => setActiveView(id as any)}
         onLogout={handleLogout} isSidebarOpen={isSidebarOpen}
@@ -252,6 +255,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'quotations' && <SupplierQuotations onGoToWallet={() => setActiveView('wallet')} />}
         {activeView === 'enquiry' && <div className="h-screen max-lg:h-[calc(100vh-64px)] w-full"><ChatInbox /></div>}
         {activeView === 'wallet' && <SupplierWallet />}
+        {activeView === 'reports' && <SupplierReports />}
         {activeView === 'logistics' && <PlaceholderView title="Logistics Tracking" icon={Truck} description="Manage your shipments and track delivery status for all your bulk orders." />}
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}

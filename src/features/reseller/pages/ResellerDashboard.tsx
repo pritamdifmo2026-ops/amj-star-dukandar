@@ -4,6 +4,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
 import { LayoutDashboard, ShoppingBag, CreditCard, History, LogOut, TrendingUp, Package, Users, Search, ArrowUpRight, Menu, Bell, Mail, LifeBuoy, Store, UserPlus, BarChart3, Settings as SettingsIcon, Handshake, Zap } from 'lucide-react';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
+import logo from '@/assets/logoo.png';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import PlaceholderView from '@/features/supplier/components/PlaceholderView';
@@ -149,7 +150,7 @@ const ResellerDashboard: React.FC = () => {
 
       <Sidebar
         title="Reseller Hub"
-        logoSrc="/favicon.jpeg"
+        logoSrc={logo}
         menu={resellerMenu}
         footerMenu={resellerFooterMenu}
         activeTab={activeView}

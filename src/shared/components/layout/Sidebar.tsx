@@ -87,11 +87,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex items-center justify-between mb-14 px-2">
         <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/')}>
           <div className={[
-            'w-[52px] h-[52px] rounded-[6px] flex items-center justify-center p-2',
+            'w-[52px] h-[52px] rounded-full flex items-center justify-center p-2',
             'shadow-[0_8px_16px_rgba(0,0,0,0.2)] transition-transform duration-300',
             isAdmin
               ? 'bg-gradient-to-br from-white to-slate-100 shadow-[0_0_20px_rgba(230,92,0,0.2)]'
-              : 'bg-cream',
+              : 'bg-transparent',
           ].join(' ')}>
             {logoSrc ? (
               <img src={logoSrc} alt="Logo" className="w-full h-full object-contain" />

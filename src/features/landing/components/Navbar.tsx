@@ -118,7 +118,7 @@ const Navbar: React.FC = () => {
       <nav className="bg-surface py-1 border-b border-border">
         <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
           <Link to={ROUTES.HOME} className="no-underline">
-            <img src={logo} alt="AMJSTAR Logo" style={{ height: '38px', objectFit: 'contain' }} />
+            <img src={logo} alt="AMJSTAR Logo" className="h-[38px] rounded-full object-contain" />
           </Link>
 
           <SearchBar categories={categories} />
@@ -248,7 +248,7 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <img src={logo} alt="Logo" className="h-8" />
+              <img src={logo} alt="Logo" className="h-8 rounded-full" />
             )}
             <button className="bg-transparent border-none cursor-pointer text-heading" onClick={() => setMobileOpen(false)}>
               <X size={20} />

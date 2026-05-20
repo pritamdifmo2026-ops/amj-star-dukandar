@@ -306,12 +306,11 @@ const ChatInbox: React.FC = () => {
             <div className="flex-1">
               <p className="text-sm font-bold text-[#92400e] m-0">Quotation held — insufficient balance</p>
               <div className="mt-1.5 bg-[#fffbeb] border border-[#fde68a] rounded-[6px] px-2.5 py-2 text-xs text-[#92400e] flex flex-col gap-0.5">
-                <div className="flex justify-between"><span>Commission due</span><span className="font-bold">₹{result.commission}</span></div>
-                <div className="flex justify-between"><span>Min. wallet reserve</span><span className="font-bold">₹{result.minimumWalletBalance}</span></div>
-                <div className="flex justify-between border-t border-[#fde68a] pt-1 mt-0.5"><span className="font-bold">Total required</span><span className="font-bold">₹{result.requiredBalance}</span></div>
-                <div className="flex justify-between text-[#b45309]"><span>Your balance</span><span className="font-bold">₹{result.availableBalance}</span></div>
+                <div className="flex justify-between"><span>Commission required</span><span className="font-bold">₹{Number(result.commission).toFixed(2)}</span></div>
+                <div className="flex justify-between text-[#b45309]"><span>Your balance</span><span className="font-bold">₹{Number(result.availableBalance).toFixed(2)}</span></div>
+                <div className="flex justify-between border-t border-[#fde68a] pt-1 mt-0.5 text-[#dc2626]"><span className="font-bold">Shortfall</span><span className="font-bold">₹{Math.max(0, result.commission - result.availableBalance).toFixed(2)}</span></div>
               </div>
-              <p className="text-xs text-[#b45309] mt-1.5 m-0">Top up your wallet and it will be sent to the buyer automatically.</p>
+              <p className="text-xs text-[#b45309] mt-1.5 m-0">Top up ₹{Math.max(0, result.commission - result.availableBalance).toFixed(2)} and it will be sent to the buyer automatically.</p>
               <a
                 href="/supplier/dashboard?tab=wallet"
                 onClick={() => toast.dismiss(t.id)}

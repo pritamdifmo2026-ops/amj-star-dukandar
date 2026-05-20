@@ -120,6 +120,11 @@ const adminService = {
     return response.data;
   },
 
+  getEarnings: async () => {
+    const response = await api.get('/admin/earnings');
+    return response.data as { rows: any[]; totals: { totalCommissionEarned: number; totalFrozen: number; totalSupplierEarned: number } };
+  },
+
   setCommissionRate: async (supplierId: string, commissionRate: number) => {
     const response = await api.patch(`/admin/suppliers/${supplierId}/commission-rate`, { commissionRate });
     return response.data.supplier;

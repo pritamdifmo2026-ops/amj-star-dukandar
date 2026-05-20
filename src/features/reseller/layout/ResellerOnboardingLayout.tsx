@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
+import logo from '@/assets/logoo.png';
 
 interface Step { n: number; label: string; desc: string; }
 interface ResellerOnboardingLayoutProps { children: React.ReactNode; currentStep: number; steps: Step[]; }
@@ -18,7 +19,7 @@ const ResellerOnboardingLayout: React.FC<ResellerOnboardingLayoutProps> = ({ chi
       <aside className="w-[300px] bg-[#0f172a] text-white px-7 py-10 flex flex-col justify-between max-md:w-full max-md:py-6">
         <div className="flex flex-col gap-10">
           <Link to="/" className="flex items-center gap-2.5 text-white no-underline font-bold text-lg">
-            <img src="/favicon.jpeg" alt="AMJSTAR Logo" className="w-7 h-7 rounded-[4px]" />
+            <img src={logo} alt="AMJSTAR Logo" className="w-7 h-7 rounded-full" />
             AMJSTAR
           </Link>
 

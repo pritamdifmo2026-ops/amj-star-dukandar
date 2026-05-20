@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Wallet, ArrowUpCircle, ArrowDownCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import walletApi from '../services/wallet.api';
+import { useSocket } from '@/shared/contexts/SocketContext';
 
 const cardCls = "bg-white rounded-[10px] border border-[#eef2f6] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)]";
 
@@ -35,8 +36,11 @@ function loadRazorpay(): Promise<boolean> {
   });
 }
 
+const WALLET_EVENTS = new Set(['wallet_updated', 'QUOTATION_HELD', 'QUOTATION_RELEASED']);
+
 const SupplierWallet: React.FC = () => {
   const qc = useQueryClient();
+  const { socket } = useSocket();
   const [showTopupModal, setShowTopupModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
@@ -44,19 +48,35 @@ const SupplierWallet: React.FC = () => {
   const [bankDetails, setBankDetails] = useState({ accountName: '', accountNumber: '', ifscCode: '', bankName: '' });
   const [txPage, setTxPage] = useState(1);
 
+  useEffect(() => {
+    if (!socket) return;
+    const invalidate = () => qc.invalidateQueries({ queryKey: ['wallet'] });
+    socket.on('wallet_updated', invalidate);
+    socket.on('new_notification', (payload: any) => {
+      if (WALLET_EVENTS.has(payload?.type)) invalidate();
+    });
+    return () => {
+      socket.off('wallet_updated', invalidate);
+      socket.off('new_notification');
+    };
+  }, [socket, qc]);
+
   const { data: walletData, isLoading: walletLoading, refetch: refetchWallet } = useQuery({
     queryKey: ['wallet'],
     queryFn: walletApi.getWallet,
+    refetchInterval: 30_000,
   });
 
   const { data: txData, isLoading: txLoading } = useQuery({
     queryKey: ['wallet', 'transactions', txPage],
     queryFn: () => walletApi.getTransactions(txPage, 15),
+    refetchInterval: 30_000,
   });
 
   const { data: withdrawalData } = useQuery({
     queryKey: ['wallet', 'withdrawals'],
     queryFn: walletApi.getWithdrawals,
+    refetchInterval: 30_000,
   });
 
   const topupMutation = useMutation({

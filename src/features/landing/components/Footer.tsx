@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 import appConfig from '@/config/app.config';
+import logo from '@/assets/logoo.png';
 import { ROUTES } from '@/shared/constants/routes';
 
 const colTitleCls = "text-[0.95rem] font-semibold text-[oklch(0.18_0.02_240)] mb-5";
@@ -17,7 +18,7 @@ const Footer: React.FC = () => (
           {/* Brand */}
           <div className="flex flex-col gap-5 max-md:col-span-2">
             <Link to={ROUTES.HOME} className="font-display text-[1.3rem] font-semibold text-[oklch(0.18_0.02_240)] no-underline flex items-center gap-2.5">
-              <img src="/favicon.jpeg" alt="AMJSTAR Logo" className="w-8 h-8 rounded-[6px] object-contain bg-primary p-0.5" />
+              <img src={logo} alt="AMJSTAR Logo" className="w-8 h-8 rounded-full object-contain" />
               <span>{appConfig.appName}</span>
             </Link>
             <p className="text-[oklch(0.40_0.02_240)] leading-[1.6] text-[0.9rem]">

@@ -58,7 +58,7 @@ const AdminLogin: React.FC = () => {
         >
           {/* Logo Section */}
           <div className="absolute top-8 left-8 flex flex-col items-start gap-1">
-            <img src={logo} alt="AMJSTAR" className="h-7 brightness-0 invert" />
+            <img src={logo} alt="AMJSTAR" className="h-10 rounded-full" />
             <div className="bg-black/60 rounded px-2 py-0.5 mt-1">
               <span className="text-[7px] font-bold text-white tracking-[0.1em] uppercase">Wholesale Marketplace</span>
             </div>

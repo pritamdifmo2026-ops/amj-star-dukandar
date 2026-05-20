@@ -6,7 +6,8 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp } from 'lucide-react';
+import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 
 import DashboardOverview from '../components/DashboardOverview';
@@ -19,6 +20,7 @@ import BannerManagement from '../components/BannerManagement';
 import EnquiryManagement from '../components/EnquiryManagement';
 import AdminPlatformSettings from '../components/AdminPlatformSettings';
 import AdminWithdrawals from '../components/AdminWithdrawals';
+import AdminEarnings from '../components/AdminEarnings';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
 
@@ -34,6 +36,7 @@ const tabLabel: Record<string, string> = {
   categories: 'Category Management',
   banners: 'Banner Management',
   enquiry: 'Customer Enquiries',
+  earnings: 'AMJStar Earnings',
   'platform-settings': 'Platform Settings',
   withdrawals: 'Withdrawal Requests',
 };
@@ -63,6 +66,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'categories', label: 'Categories', icon: Tags },
     { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
+    { id: 'earnings', label: 'AMJ Earnings', icon: TrendingUp },
     { id: 'withdrawals', label: 'Withdrawals', icon: Wallet },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
   ];
@@ -116,7 +120,7 @@ const AdminDashboard: React.FC = () => {
 
       <Sidebar
         title="AMJ Admin"
-        logoSrc="/favicon.jpeg"
+        logoSrc={logo}
         menu={adminMenu}
         activeTab={activeTab}
         onTabChange={id => { setActiveTab(id); if (window.innerWidth <= 1024) setIsSidebarOpen(false); }}
@@ -157,6 +161,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'categories' && <CategoryManagement />}
             {activeTab === 'banners' && <BannerManagement />}
             {activeTab === 'enquiry' && <EnquiryManagement />}
+            {activeTab === 'earnings' && <AdminEarnings />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}
             {activeTab === 'withdrawals' && <AdminWithdrawals />}
           </div>
