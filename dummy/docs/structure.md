@@ -59,7 +59,7 @@ quotation ≠ order)
 - Commission % is agreed between AMJStar and supplier **at onboarding**
 - Stored per supplier profile (`commissionRate: number` as percentage)
 - On Deal Confirmed:
-  - Commission amount = `dealValue × commissionRate / 100`
+  - Commission amount = `(subtotal + gstAmount + shippingCost) × commissionRate / 100`
   - Amount **frozen** in supplier wallet (cannot be withdrawn)
 - On Delivery Confirmed:
   - Frozen amount **released** to AMJStar

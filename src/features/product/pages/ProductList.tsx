@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Filter, SlidersHorizontal, X, ChevronDown, ShieldCheck } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ROUTES } from '@/shared/constants/routes';
 import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
 import Loader from '@/shared/components/feedback/Loader';
@@ -47,10 +48,11 @@ function filterCount(f: FilterState): number {
 
 const ProductList: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get('category') || undefined;
   const subcategory = searchParams.get('subcategory') || undefined;
   const searchQuery = searchParams.get('q') || undefined;
+  const originalQuery = searchParams.get('original') || undefined;
 
   const [showFilters, setShowFilters] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -108,17 +110,29 @@ const ProductList: React.FC = () => {
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold text-heading">
-                  {searchQuery ? `Results for "${searchQuery}"` : subcategory || category || 'All Products'}
+                  {searchQuery && originalQuery
+                    ? <>Showing results for <em>{searchQuery}</em></>
+                    : searchQuery
+                      ? `Results for "${searchQuery}"`
+                      : subcategory || category || 'All Products'}
                 </h1>
                 {(category || subcategory || searchQuery) && (
                   <button
-                    onClick={() => navigate('/products')}
+                    onClick={() => navigate(ROUTES.HOME)}
                     className="flex items-center gap-1.5 bg-white border border-primary text-primary px-3 py-1 rounded-[10px] text-xs font-semibold cursor-pointer transition-all hover:bg-primary hover:text-white"
                   >
                     <X size={14} /> View All
                   </button>
                 )}
               </div>
+              {searchQuery && originalQuery && (
+                <button
+                  onClick={() => setSearchParams({ q: originalQuery, ...(category ? { category } : {}) })}
+                  className="text-sm text-primary underline bg-transparent border-none cursor-pointer p-0 text-left w-fit"
+                >
+                  Search instead for {originalQuery}
+                </button>
+              )}
               <p className="text-sm text-muted">
                 {isLoading ? 'Searching...' : `${products.length} product${products.length !== 1 ? 's' : ''} found`}
                 {activeFilterCount > 0 && (

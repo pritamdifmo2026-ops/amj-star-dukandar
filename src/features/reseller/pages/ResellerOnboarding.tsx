@@ -70,6 +70,7 @@ const ResellerOnboarding: React.FC = () => {
   const [email, setEmail] = useState(user?.email || '');
   const [address, setAddress] = useState('');
   const [phone] = useState(user?.phone || '');
+  const [pinCode, setPinCode] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [country] = useState('India');
@@ -114,6 +115,7 @@ const ResellerOnboarding: React.FC = () => {
           if (data.address) setAddress(data.address);
           if (data.city) setCity(data.city);
           if (data.state) setState(data.state);
+          if (data.pinCode) setPinCode(data.pinCode);
           if (data.storeName) setStoreName(data.storeName);
           if (data.profileType) setProfileType(data.profileType);
           if (data.profileDescription) setProfileDescription(data.profileDescription);
@@ -152,6 +154,7 @@ const ResellerOnboarding: React.FC = () => {
       else if (address.length < 10) errors.address = 'Detailed address (min 10 characters) is required';
       if (!state) errors.state = 'State is required';
       if (!city) errors.city = 'City is required';
+      if (!pinCode.trim() || !/^\d{6}$/.test(pinCode)) errors.pinCode = 'Valid 6-digit PIN code is required';
     }
     if (step === 2) {
       if (!storeName.trim()) errors.storeName = 'Store name is required';
@@ -202,7 +205,7 @@ const ResellerOnboarding: React.FC = () => {
         setIdProofFile(null);
       }
       const data: any = {
-        fullName, email, storeName, address, city, state, country, profileType,
+        fullName, email, storeName, address, pinCode, city, state, country, profileType,
         profileDescription, profileImage: profileImageUrl, platforms, socialLinks,
         primarySellingMethod, monthlyVolume, reach, experience, soldBefore,
         accountName, accountNumber, ifscCode, bankName, panNumber, gstNumber,
@@ -312,17 +315,31 @@ const ResellerOnboarding: React.FC = () => {
                 {formErrors.address && <span className={errorCls}>{formErrors.address}</span>}
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className={labelCls}>State *</label>
-                <select
-                  className={inputCls(!!formErrors.state)}
-                  value={state}
-                  onChange={e => { setState(e.target.value); setCity(''); clearError('state'); }}
-                >
-                  <option value="">Select State</option>
-                  {Object.keys(STATE_CITY_MAP).sort().map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-                {formErrors.state && <span className={errorCls}>{formErrors.state}</span>}
+              <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls}>PIN Code *</label>
+                  <input
+                    className={inputCls(!!formErrors.pinCode)}
+                    value={pinCode}
+                    onChange={e => { setPinCode(e.target.value.replace(/\D/g, '')); clearError('pinCode'); }}
+                    placeholder="e.g. 400001"
+                    maxLength={6}
+                    inputMode="numeric"
+                  />
+                  {formErrors.pinCode && <span className={errorCls}>{formErrors.pinCode}</span>}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls}>State *</label>
+                  <select
+                    className={inputCls(!!formErrors.state)}
+                    value={state}
+                    onChange={e => { setState(e.target.value); setCity(''); clearError('state'); }}
+                  >
+                    <option value="">Select State</option>
+                    {Object.keys(STATE_CITY_MAP).sort().map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  {formErrors.state && <span className={errorCls}>{formErrors.state}</span>}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">

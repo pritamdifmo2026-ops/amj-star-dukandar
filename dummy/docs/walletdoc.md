@@ -59,7 +59,7 @@ Backend — Changes to existing modules
 quotation.service.ts → acceptQuotation() (PO trigger)
 
 Check supplier has commissionRate set → else block PO
-Calculate commission = (subtotal + gstAmount + shippingCost) × commissionRate / 100
+Calculate commission = (subtotal + gstAmount + shippingCost) × commissionRate / 100   ← canonical formula (includes shipping)
 Check wallet.availableBalance >= commission + platformSettings.minimumWalletBalance → else throw "Insufficient wallet balance"
 availableBalance -= commission, frozenBalance += commission
 Create WalletTransaction (type: freeze)

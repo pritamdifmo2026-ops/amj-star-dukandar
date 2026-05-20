@@ -1,123 +1,93 @@
-AMJ Star — Full Business Analysis, Gaps & Edge Cases
-What the Business Is
-AMJ Star is a B2B wholesale marketplace (think IndiaMart but with a built-in reseller network). It has three distinct user roles:
+Bugs Confirmed in Code
+Supplier Onboarding (Onboarding.tsx)
+BUG 1 — Phone change with zero verification (Security)
+Onboarding.tsx:83:
 
-Role	What they do
-Supplier	Manufacturer/wholesaler — lists bulk products with MOQ + pricing, goes through KYC
-Reseller	Middleman/dropshipper — picks supplier products, adds margin, sells via their own channels
-Buyer	Retailer/end-buyer — browses, chats, requests quotations, pays via Razorpay
-Admin	Verifies KYC, approves/rejects products, manages platform
-Core flow: Supplier lists → Admin approves → Reseller/Buyer discovers → Chat + Quotation → Order + Razorpay payment
 
-Critical Missing Fields in Forms
-Supplier Onboarding — Missing from UI (but needed for business)
-Missing Field	Why it matters
-isWomenEntrepreneur flag	✅ DONE — Collected in Onboarding.tsx, included in form submission
-Business logo / profile image	Buyers see no brand identity — IndiaMart, Udaan all show logos
-Nature of business	Manufacturer / Trader / Exporter / Importer — critical for buyer trust
-Product category during onboarding	Supplier should declare what sector they operate in (textile, food, electronics)
-Annual turnover range	Required for B2B credibility display
-Banking details	Supplier never submits bank account for payment settlement
-Upload: PAN card document	Only string entered, no document proof
-Upload: GST certificate	Only string entered, no verification document
-Website URL	Standard on all B2B platforms
-Product Form — Missing from UI (but in database model)
-Missing Field	Location
-stock (inventory count)	✅ DONE — product.model.ts:91 — captured in AddProductForm.tsx
-brand name	✅ DONE — product.model.ts:97 — captured in AddProductForm.tsx
-keywords for search	✅ DONE — product.model.ts:99 — captured in AddProductForm.tsx
-specifications (key-value: color, size, material)	❌ OPEN — product.model.ts:101 — not in form
-Lead/delivery time	Buyers need to know how long dispatch takes
-Sample availability	Very common requirement in B2B
-Packaging details	Required for logistics/shipping
-Reseller Onboarding — Missing from UI
-Missing Field	Why
-PIN code	Address has city/state but no pincode — reseller.model.ts has no pinCode field at all
-Profile image upload	profileImage field exists in model (reseller.model.ts:14), Step 2 mentions it, but upload UI is never shown
-Social link URLs	Platforms are toggled (WhatsApp, Instagram, etc.) but actual profile URLs are never collected even though socialLinks: Record<string, string> exists in model
-Bugs in Forms and Logic
-Supplier Onboarding
-isPhoneVerified is hardcoded true at Onboarding.tsx:72 — the "Change" phone button shows, but OTP re-verification flow is never implemented. A supplier can change to any phone number with zero verification.
+const [isPhoneVerified] = useState(true);  // no setter
+The "Change" button at line 293 sets isPhoneEditable(true), letting the supplier type any new number. isPhoneVerified is permanently true so there is no OTP gate. A supplier can change their registered phone to anything with zero verification.
 
-Step resume logic is fragile — only checks if address or businessName exists to determine which step to resume from. If a supplier fills Step 1 + 2, refreshes, and then businessName exists but address doesn't, they're dropped back to Step 2 and could overwrite nothing.
 
-isActive never set on verification — ✅ DONE — admin.service.ts:82 now sets `isActive = true` on VERIFIED and `isActive = false` on REJECTED.
+BUG 3 — GSTIN still Optional
+Onboarding.tsx:364: Label reads "GSTIN (Optional)". For a B2B platform where every transaction requires GST compliance, this is a compliance gap. Also, the GSTIN validation regex at line 169 only fires if GSTIN is entered, meaning the format check is correct but the field itself is never enforced.
 
-State/City dropdown is severely limited — ❌ OPEN — only 10 states out of 28. Bihar, Odisha, Andhra Pradesh, Himachal Pradesh, Assam, etc. are missing. Real-world suppliers from these states cannot register.
+BUG 4 — Supplier bank details never collected
+The onboarding is 4 steps (Basic Info → Business Details → Profile → Plan). There is no bank account / IFSC / account holder name field anywhere. But the wallet & commission system requires payout bank details for withdrawal requests. A supplier can complete onboarding and receive orders with no settlement details on file.
 
-GSTIN is optional — ❌ OPEN — for a B2B platform where GST compliance is legally required for business-to-business transactions in India, this should be mandatory for non-micro businesses.
+BUG 5 — Step resume logic uses fragile OR condition
+Onboarding.tsx:129:
 
-Reseller Onboarding
-Step 3 vs Step 4 validation mismatch — ❌ OPEN — monthlyVolume and reach are rendered in Step 3's UI (ResellerOnboarding.tsx:549-578) but validated only in validateStep(4) (ResellerOnboarding.tsx:185-189). A user can skip through Step 3 without selecting them.
 
-ID Proof uploaded at wrong step — file is uploaded only when moving from Step 6 → Step 7 (nextStep === 7), but the button disables at Step 6 if no file. If upload fails at that transition, they're stuck.
+else if (data.supplier.businessDetails?.address || data.supplier.businessDetails?.gstin) setCurrentStep(3);
+If the user submits step 2 (which saves both address and GSTIN), the condition works. But if somehow only GSTIN is saved and address is not (edge case in partial save), the user is erroneously pushed to step 3 and the address state will be empty.
+
+Reseller Onboarding (ResellerOnboarding.tsx)
+BUG 6 — Step 3/4 validation mismatch (documented but under-explained)
+
+Step 3 UI renders primarySellingMethod, monthlyVolume, reach (lines 434–476)
+validateStep(3) (line 161–163) only checks primarySellingMethod
+validateStep(4) (line 164–168) checks monthlyVolume, reach, experience
+Step 4 UI only renders experience and soldBefore (lines 489–522)
+Practical consequence: monthlyVolume and reach have default values ('0–50 orders', 'Local') so they'll never be empty — the step 4 validation always passes for them regardless. This means those two required-looking fields in step 3 have no actual enforcement. A user who never touches them gets through with defaults silently. This is a logic correctness issue even if it doesn't visibly break today.
+
+BUG 7 — profileImageUrl setter never exposed
+ResellerOnboarding.tsx:80:
+
+
+const [profileImageUrl] = useState('');  // no setter destructured
+Even if an image upload UI were added, the URL could never be stored in this component's state. The model has profileImage field, the doc says the upload UI is missing — but the root cause is that even adding the UI wouldn't work without fixing this.
+
+BUG 8 — Social platform URLs never collected
+ResellerOnboarding.tsx:82–83: socialLinks is initialized as {} and is sent to the backend, but in step 3 only platform names are toggled (WhatsApp, Instagram, etc.) via handlePlatformToggle. There's no URL input field. The model has socialLinks: Record<string, string> (expecting { WhatsApp: "https://..." }), but the UI only stores ["WhatsApp", "Instagram"] in platforms[] and sends an empty socialLinks: {}. Data contract mismatch.
+
+BUG 9 — ID proof upload on wrong transition
+ResellerOnboarding.tsx:198:
+
+
+if (idProofFile && nextStep === 7) {
+  const uploadRes = await resellerService.uploadDoc(idProofFile);
+The upload only happens when transitioning from step 6 → 7. The "Choose Plan" button in step 6 is disabled until a file is selected (line 656). If the upload call fails (network error, file too large, Cloudinary down), the user gets an error but stays on step 6 in a broken state — they can't proceed because the upload failed, but the file is still selected. There's no retry mechanism.
 
 Product Form
-No minimum images validation — ❌ OPEN — a product can be submitted with zero images. B2B buyers reject listings without photos immediately.
+BUG 11 — No minimum image validation
+A product can be submitted with zero images. B2B buyers routinely reject unphoto'd listings. This needs a submit-time check.
 
-HSN code no format validation — ❌ OPEN — any string passes. HSN codes are 4-8 digit numbers. Invalid HSN causes GST filing issues for the supplier.
+BUG 12 — No HSN code format validation
+HSN must be 4–8 digits (/^\d{4,8}$/). Any string passes currently. Invalid HSN codes cause problems in GST filing.
 
-No stock management UI — once a product is live, there's no way for the supplier to update stock count from the dashboard.
+BUG 13 — Product specifications field missing from form
+product.model.ts has a specifications field (key-value pairs like color, size, material) but AddProductForm has no corresponding UI. Data is never collected.
+
+Business Logic / Platform
+BUG 14 — Commission system completely absent
+The walletdoc.md describes a full wallet system (Wallet model, WalletTransaction, WithdrawalRequest, freeze/release logic). None of this exists in the current codebase. The frontend has a SupplierWallet.tsx component and wallet.api.ts, but the backend module doesn't exist. The critical flow — "commission frozen on deal confirmation, released on delivery" — has no implementation. Every PO generated currently has zero commission impact.
+
+BUG 15 — Commission rate gate-keeps PO but admin has no UI to set it
+Per walletdoc.md, acceptQuotation() should check supplierProfile.commissionRate before allowing a PO. If it's null, it blocks the PO. But there's no admin UI to set a commission rate per supplier yet. This means any supplier who gets approved can receive enquiries and confirm deals, but no PO can be generated for any of them until admin sets rates — and there's no way for admin to do that.
+
+BUG 16 — Supplier KYC revocation doesn't cascade
+If admin rejects/deactivates a supplier who already has approved products, those products remain live in the marketplace. Buyers can still enquire on them. Documented but worth emphasizing.
+
+BUG 17 — Platform fee always 0
+Order.platformFee field exists but defaults to 0 with no calculation. AMJStar never charges a platform fee on any order.
+
+BUG 18 — Razorpay webhook failure = order stuck forever
+No retry or reconciliation logic for Razorpay webhook failures. Payment can succeed client-side but the order stays pending.
+
+BUG 19 — Multi-buyer stock race condition
+Two buyers can accept quotations for the same product simultaneously with no stock reservation locking.
 
 Admin Panel
-Supplier rejection has no reason prompt — ✅ DONE — AdminDashboard.tsx now shows a modal to enter rejection reason before calling verifySupplier with REJECTED + reason.
-
-Product approval only — no rejection — ✅ DONE — SupplierVerification.tsx now has a reject button that opens a confirm modal with REJECTED action.
-
-Admin cannot see reseller bank/ID details — ❌ OPEN — ResellerVerification component only shows basic info. Admin has no view of bank account, PAN, or ID proof document to make an informed approval decision.
-
-No admin notification on new submissions — when a supplier or reseller submits, admin has no alert/email/badge count notification.
-
-Business Logic Edge Cases
-Order / Payment
+BUG 20 — No notification on new submission
+When a supplier or reseller submits, admin gets no alert, badge count, or email. Admin has to manually poll the panel.
 
 
+Design/Conceptual Mistakes in the Docs
+MISTAKE 1 — Cart/checkout exists in code but documented as V2
+structure.md line 7 explicitly says add-to-cart / buy-now is a "version 2 feature, no working on this right now." But the code has Cart.tsx, Checkout.tsx, Payment.tsx, cart.api.ts, cart.slice.ts. This creates confusion — either the V2 boundary is wrong in the docs, or the code has orphaned V2 work in the V1 branch.
 
+MISTAKE 3 — "Nature of business" field is missing from onboarding but critical
+The supplier onboarding has no "Nature of Business" field (Manufacturer / Trader / Exporter / Importer). This is displayed prominently on every IndiaMart/Udaan listing and is how buyers evaluate trust. It's mentioned in doc1.md as missing but has no plan to be added.
 
-Razorpay webhook failure: payment succeeds on Razorpay side but the webhook call back fails → order stays pending forever. No retry/reconciliation logic exists.
-
-
-
-Quotation expiry: quotation has a 7-day validity in the model, but no cron job or UI warning triggers when it expires. A buyer can try to place an order on an expired quotation.
-Multi-buyer race on low stock: Two buyers accept quotations for the same product simultaneously. No stock reservation/locking mechanism.
-Platform fee is stored but never computed: platformFee field exists in Order model but is default 0 — no actual fee calculation is applied.
-Supplier
-Tier gating not enforced: ✅ DONE — product.service.ts:15 checks `supplierProfile.maxProducts` against current product count before allowing creation.
-Supplier KYC rejected after products approved: If admin reverts a supplier's KYC, their previously APPROVED products stay live on the marketplace.
-Reseller-purchased product stock depletion: No connection between reseller orders and supplier inventory.
-Reseller
-Negative margin: Reseller can set a selling price lower than supplier's base price. No floor price enforcement.
-Commission tracking: commissionPolicyAccepted is captured but there's no actual commission calculation, disbursement, or ledger anywhere in the backend.
-Storefront when supplier is deactivated: If supplier gets deactivated, their products should be removed from all reseller storefronts — no cascade logic exists.
-UI/UX Improvements (IndiaMart-style reference)
-Feature	Current State	What's needed
-Product listing page	Basic grid	Price range filter, MOQ filter, verified-supplier filter, location filter
-Supplier profile page	No public page	Trust score, years in business, response rate, product count, reviews
-Quotation flow	Chat-based	Structured RFQ form with quantity, target price, delivery date
-Buyer dashboard	Basic	Order tracking with status timeline, reorder button
-Reseller storefront	Exists but minimal	Custom domain support, branded banner, featured products section
-Search	Text-only	Category browse tree, trending keywords, related products
-Admin dashboard	Functional	Revenue analytics, registration trends, dispute management
-Summary of Priority Fixes
-P0 — Breaks core business:
-
-✅ 1. Add rejection reason modal for admin (supplier + product) — DONE
-✅ 2. Fix isActive being set on supplier verification — DONE
-✅ 3. Add stock field to product form — DONE
-❌ 4. Fix Step 3/4 validation mismatch in reseller onboarding — OPEN (monthlyVolume/reach validated at step 4, rendered at step 3)
-❌ 5. Add all Indian states to dropdown — OPEN (only 10/28 states in INDIA_STATES constant, Onboarding.tsx:18)
-
-P1 — Required for compliance/trust:
-✅ 6. Collect isWomenEntrepreneur in supplier form — DONE
-❌ 7. Validate HSN code format — OPEN (no /^\d{4,8}$/ regex on AddProductForm.tsx:260)
-❌ 8. Enforce product image minimum (at least 1) — OPEN (no submit-time image count check)
-❌ 9. Implement GSTIN as mandatory for non-micro businesses — OPEN (still "GSTIN (Optional)" label)
-✅ 10. Add brand, keywords to product form — DONE
-❌ 10b. Add specifications (key-value pairs) to product form — OPEN (model has field, form does not)
-
-P2 — Business completeness:
-❌ 11. Commission calculation and disbursement ledger — OPEN
-❌ 12. Supplier bank details for settlement — OPEN
-❌ 13. Quotation expiry notifications — OPEN
-✅ 14. Tier-based product count enforcement — DONE (product.service.ts:15)
-❌ 15. Admin reseller KYC document view — OPEN
+MISTAKE 4 — Phone unlock timing is ambiguous
+structure.md says phone numbers unlock after po_generated state. But if payment is off-platform, the PO is generated first, then the buyer and supplier need to contact each other to arrange payment. This is correct. However, if the order is cancelled before shipment, the phone numbers are already visible — there's no re-hiding mechanism. Someone could generate a PO and immediately cancel just to get contact details.

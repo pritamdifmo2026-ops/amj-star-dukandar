@@ -128,7 +128,7 @@ const ResellerVerification: React.FC<ResellerVerificationProps> = ({ resellers, 
             <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
               <DetailItem label="Store Name">{selectedReseller.storeName}</DetailItem>
               <DetailItem label="Full Name">{selectedReseller.fullName || 'N/A'}</DetailItem>
-              <DetailItem label="Location">{selectedReseller.city}, {selectedReseller.state}, {selectedReseller.country}</DetailItem>
+              <DetailItem label="Location">{selectedReseller.city}, {selectedReseller.state}{selectedReseller.pinCode ? ` — ${selectedReseller.pinCode}` : ''}, {selectedReseller.country}</DetailItem>
               <DetailItem label="Full Address" span2>{selectedReseller.address || 'N/A'}</DetailItem>
               <DetailItem label="Contact Info">
                 {selectedReseller.phone || selectedReseller.user?.phone || 'N/A'}<br />

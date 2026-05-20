@@ -47,6 +47,7 @@ export interface AdminReseller {
   state?: string;
   country?: string;
   address?: string;
+  pinCode?: string;
   profileType?: string;
   experience?: string;
   reach?: string;
