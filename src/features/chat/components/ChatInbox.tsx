@@ -363,6 +363,7 @@ const ChatInbox: React.FC = () => {
     const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
     const isSupplier = user?.role === 'supplier';
     const [quote, setQuote] = useState<any>(null);
+    const [quoteNotFound, setQuoteNotFound] = useState(false);
     const [showCounter, setShowCounter] = useState(false);
     const [counterPrice, setCounterPrice] = useState('');
     const [counterNote, setCounterNote] = useState('');
@@ -374,7 +375,11 @@ const ChatInbox: React.FC = () => {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchQuote = () => {
-      if (msg.quotationId) quotationApi.getQuotation(msg.quotationId).then(setQuote);
+      if (msg.quotationId) {
+        quotationApi.getQuotation(msg.quotationId)
+          .then(q => { setQuoteNotFound(false); setQuote(q); })
+          .catch(() => setQuoteNotFound(true));
+      }
     };
 
     useEffect(() => { fetchQuote(); }, [msg.quotationId]);
@@ -400,8 +405,17 @@ const ChatInbox: React.FC = () => {
       }
     }, [quote?.status, quote?.orderId?._id]);
 
-    if (!quote) return <div className="text-xs text-[#94a3b8] italic">Loading quotation...</div>;
+    if (quoteNotFound) return null;
+    if (!quote) return null;
     if (quote.status === 'held' && !isSupplier) return null;
+
+    const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const timeRow = (
+      <div className={`flex items-center gap-1 mt-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
+        <span className="text-[10px] text-[#94a3b8]">{msgTime}</span>
+        {isMine && (msg.isRead ? <CheckCheck size={12} className="text-[#38bdf8]" /> : <Check size={12} className="text-[#94a3b8]" />)}
+      </div>
+    );
 
     const statusMeta: Record<string, { label: string; cls: string }> = {
       pending: { label: 'Awaiting Response', cls: 'bg-[#fffbeb] text-[#a16207]' },
@@ -696,8 +710,8 @@ const ChatInbox: React.FC = () => {
               <Clock size={12} className="text-white" />
             </div>
           </div>
-          {/* Buttons outside the faded wrapper — always fully interactive */}
           {actionButtons}
+          {timeRow}
         </div>
       );
     }
@@ -706,6 +720,7 @@ const ChatInbox: React.FC = () => {
       <div className="flex flex-col">
         {cardContent}
         {actionButtons}
+        {timeRow}
       </div>
     );
   };
@@ -847,9 +862,12 @@ const ChatInbox: React.FC = () => {
                         {msg.text}
                       </div>
                     )}
-                    {isMine && msg.messageType !== 'system' && (
+                    {msg.messageType !== 'system' && msg.messageType !== 'quotation' && (
                       <div className="flex items-center gap-1 mt-0.5">
-                        {msg.isRead ? <CheckCheck size={13} className="text-[#38bdf8]" /> : <Check size={13} className="text-[#94a3b8]" />}
+                        <span className="text-[10px] text-[#94a3b8]">
+                          {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                        {isMine && (msg.isRead ? <CheckCheck size={13} className="text-[#38bdf8]" /> : <Check size={13} className="text-[#94a3b8]" />)}
                       </div>
                     )}
                   </div>

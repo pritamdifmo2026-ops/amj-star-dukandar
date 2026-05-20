@@ -68,3 +68,27 @@
 - Approach: supplier declares rate + whether their stated price already includes GST or not
 - Product detail page respects the flag — shows "GST inclusive" or "+ GST extra" accordingly
 - PO generation (not built yet) should use `gstIncluded` to avoid double-charging; IGST vs CGST+SGST split to be handled at PO time based on buyer/seller state
+
+---
+
+## Wallet, Earnings & Chat Fixes — COMPLETED ✅
+*Completed: 20 May 2026*
+
+### Real-time Supplier Wallet Updates
+- `wallet.service.ts`: emits `wallet_updated` socket event (via `getIO()`) after every wallet mutation — top-up credit, commission freeze, commission release
+- `SupplierWallet.tsx`: listens on `wallet_updated` and `new_notification` (for QUOTATION_HELD / QUOTATION_RELEASED events) to auto-invalidate React Query wallet cache
+- Added `refetchInterval: 30_000` to all three wallet queries (wallet, transactions, withdrawals) as polling fallback
+
+### Admin AMJ Earnings Panel
+- New sidebar entry "AMJ Earnings" (TrendingUp icon) in AdminDashboard
+- `AdminEarnings.tsx`: 3 summary cards (Total AMJ Earnings, Currently Frozen, Total Supplier Earnings) + per-supplier table
+- Table columns: Supplier name, Commission Rate (inline editable), Wallet Balance, Frozen, AMJ Earned, Supplier Earned — with totals row in `<tfoot>`
+- Inline commission rate editing: pencil icon → number input → check/X; saves via `adminService.setCommissionRate` and invalidates both `['admin', 'earnings']` and `['admin', 'suppliers']` queries
+- Backend: `GET /admin/earnings` aggregates Supplier + User + Wallet collections via parallel `Promise.all` (no populate — avoids null-ref errors on missing userId refs); returns per-row data and platform totals
+
+### Chat Fixes
+- **Duplicate quotation cards**: `releaseHeldQuotations` in `wallet.service.ts` was calling `Message.create()` on release, creating a second message for the same quotation. Fixed to `Message.findOneAndUpdate({ quotationId })` — updates the existing message instead of creating a new one.
+- **"Loading quotation..." after retract**: `QuotationCard` now tracks `quoteNotFound` state; if the quotation API returns 404/error (i.e. retracted), the card returns `null` — disappears completely as if it never existed.
+- **Decimal precision in held toast**: All money values in the "wallet held" toast (commission required, available balance, shortfall) now use `.toFixed(2)` — fixes floating-point display like `₹65.92000000000002`.
+- **Message timestamps**: All non-system messages (text + quotation cards) now show time in `HH:MM` format. Outgoing messages show time + tick mark (blue double-tick if read, grey if not). Quotation cards show time row below the card footer.
+- **FloatingChat viewport overflow**: Fixed buyer floating chat panel extending above viewport on shorter screens (X button unreachable). Changed from fixed Tailwind height classes to inline `style={{ height: ..., maxHeight: 'calc(100dvh - 112px)' }}` — caps panel at viewport height minus bottom trigger button space.

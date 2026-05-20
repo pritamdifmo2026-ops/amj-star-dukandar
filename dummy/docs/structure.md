@@ -1,8 +1,8 @@
-# AMJStar — Project Structure & Business Logic
+# AMJSTAR — Project Structure & Business Logic
 
-## What is AMJStar?
+## What is AMJSTAR?
 
-AMJStar is a **supplier-first B2B marketplace** connecting Indian manufacturers/suppliers with domestic buyers and resellers. It is NOT a direct retail platform. The core loop is:
+AMJSTAR is a **supplier-first B2B marketplace** connecting Indian manufacturers/suppliers with domestic buyers and resellers. It is NOT a direct retail platform. The core loop is:
 
 > Supplier lists products → Buyer discovers & enquires (enquires if they want to negotiate- if they dont want to negotiate and satisfied with price already mentioned on product details they can simply add to cart or buy now straight away (version 2 feature, no working on this right now)) → Negotiation via structured chat (not free end. chat only for work related) → Deal confirmed → PO auto-generated on supplier side→ Commission cut from supplier wallet and that amount is frozen→ Delivery tracked → Commission (frozen amount) released to AMJ
 
@@ -358,4 +358,4 @@ Useful for:
 
 ---
 
-*Last updated: 2026-05-14*
+*Last updated: 2026-05-20*

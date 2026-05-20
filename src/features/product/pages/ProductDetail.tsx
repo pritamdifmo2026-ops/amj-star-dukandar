@@ -20,6 +20,7 @@ import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 import ImageMagnifier from '../components/ImageMagnifier';
 import EnquiryModal, { type EnquiryPayload } from '@/features/chat/components/EnquiryModal';
+import ProfileCompletionModal from '@/features/chat/components/ProfileCompletionModal';
 import { ROUTES } from '@/shared/constants/routes';
 
 const ProductDetail: React.FC = () => {
@@ -30,6 +31,7 @@ const ProductDetail: React.FC = () => {
   const { socket, setActiveChatId } = useSocket();
   const [contactingSupplier, setContactingSupplier] = useState(false);
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'company'>('details');
 
@@ -62,6 +64,7 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
     if (isAdmin) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`); return; }
+    if (!user.name?.trim()) { setShowProfilePrompt(true); return; }
     setShowEnquiryModal(true);
   };
 
@@ -453,6 +456,12 @@ const ProductDetail: React.FC = () => {
       </main>
 
       <Footer />
+
+      <ProfileCompletionModal
+        isOpen={showProfilePrompt}
+        onClose={() => setShowProfilePrompt(false)}
+        onComplete={() => { setShowProfilePrompt(false); setShowEnquiryModal(true); }}
+      />
 
       {showEnquiryModal && product && (
         <EnquiryModal

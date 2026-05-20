@@ -540,7 +540,7 @@ export const FloatingChat: React.FC = () => {
 
       {/* ACTIVE: full chat window */}
       {uiState === 'ACTIVE' && (
-        <div className={`w-[360px] bg-cream rounded-[10px] shadow-[0_12px_48px_rgba(0,0,0,0.18)] flex flex-col overflow-hidden animate-slide-up border border-black/5 ${panel === 'list' ? 'h-[460px]' : 'h-[520px]'}`}>
+        <div className={`w-[360px] bg-cream rounded-[10px] shadow-[0_12px_48px_rgba(0,0,0,0.18)] flex flex-col overflow-hidden animate-slide-up border border-black/5`} style={{ height: panel === 'list' ? 460 : 520, maxHeight: 'calc(100dvh - 112px)' }}>
           {/* Header */}
           <div className="px-4 py-3.5 bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
