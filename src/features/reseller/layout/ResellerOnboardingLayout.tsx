@@ -18,8 +18,8 @@ const ResellerOnboardingLayout: React.FC<ResellerOnboardingLayoutProps> = ({ chi
       <aside className="w-[300px] bg-[#0f172a] text-white px-7 py-10 flex flex-col justify-between max-md:w-full max-md:py-6">
         <div className="flex flex-col gap-10">
           <Link to="/" className="flex items-center gap-2.5 text-white no-underline font-bold text-lg">
-            <img src="/favicon.jpeg" alt="AMJStar Logo" className="w-7 h-7 rounded-[4px]" />
-            AMJStar
+            <img src="/favicon.jpeg" alt="AMJSTAR Logo" className="w-7 h-7 rounded-[4px]" />
+            AMJSTAR
           </Link>
 
           <div className="relative before:content-[''] before:absolute before:top-[15px] before:bottom-[15px] before:left-[15px] before:w-[2px] before:border-l-2 before:border-dashed before:border-[#334155] max-md:before:hidden flex flex-col gap-5">

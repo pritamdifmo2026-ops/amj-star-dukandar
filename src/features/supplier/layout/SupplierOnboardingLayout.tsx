@@ -24,7 +24,7 @@ const SupplierOnboardingLayout: React.FC<SupplierOnboardingLayoutProps> = ({ chi
             to="/"
             className="text-[1.4rem] font-bold text-white no-underline flex items-center gap-2 pb-3 mb-10 relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[3px] after:bg-primary max-md:mb-5"
           >
-            AMJStar Dukandar <Star size={20} className="text-primary fill-primary" />
+            AMJSTAR <Star size={20} className="text-primary fill-primary" />
           </Link>
 
           <div className="flex flex-col gap-[60px] relative before:content-[''] before:absolute before:top-[15px] before:bottom-[15px] before:left-[15px] before:w-[2px] before:border-l-2 before:border-dashed before:border-[#334155] before:z-0 max-md:flex-row max-md:overflow-x-auto max-md:gap-3 max-md:pb-2 max-md:before:hidden">

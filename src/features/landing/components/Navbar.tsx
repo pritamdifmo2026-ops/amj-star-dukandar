@@ -105,7 +105,7 @@ const Navbar: React.FC = () => {
           <div className="flex items-center gap-3">
             {!isAuth && (
               <>
-                <Link to="/login?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJStar</Link>
+                <Link to="/login?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
                 <span className="text-border">|</span>
               </>
             )}
@@ -118,7 +118,7 @@ const Navbar: React.FC = () => {
       <nav className="bg-surface py-1 border-b border-border">
         <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
           <Link to={ROUTES.HOME} className="no-underline">
-            <img src={logo} alt="AMJStar Logo" style={{ height: '38px', objectFit: 'contain' }} />
+            <img src={logo} alt="AMJSTAR Logo" style={{ height: '38px', objectFit: 'contain' }} />
           </Link>
 
           <SearchBar categories={categories} />
@@ -172,14 +172,16 @@ const Navbar: React.FC = () => {
                 </Link>
               </div>
             )}
-            <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate(ROUTES.CART)}>
-              <ShoppingCart size={20} />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2.5 bg-primary text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-surface">
-                  {cartCount}
-                </span>
-              )}
-            </div>
+            {isAuth && !isSupplier && !isReseller && !isAdmin && (
+              <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate(ROUTES.CART)}>
+                <ShoppingCart size={20} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2.5 bg-primary text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-surface">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+            )}
             <button className="flex lg:hidden bg-transparent border-none text-heading cursor-pointer p-1" onClick={() => setMobileOpen(p => !p)}>
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -260,7 +262,7 @@ const Navbar: React.FC = () => {
                 <Search size={18} /><span>Search Products</span>
               </Link>
               <Link to="/about" className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
-                <List size={18} /><span>About AMJStar</span>
+                <List size={18} /><span>About AMJSTAR</span>
               </Link>
             </div>
 

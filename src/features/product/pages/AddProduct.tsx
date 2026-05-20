@@ -43,7 +43,7 @@ const AddProduct: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-heading">List New Product</h1>
-                <p className="text-sm text-body">Add your product to the AMJStar Marketplace</p>
+                <p className="text-sm text-body">Add your product to the AMJSTAR Marketplace</p>
               </div>
             </div>
           </header>

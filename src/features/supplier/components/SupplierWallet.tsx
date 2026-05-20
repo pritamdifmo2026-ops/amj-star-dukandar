@@ -71,7 +71,7 @@ const SupplierWallet: React.FC = () => {
           key: order.keyId,
           amount: order.amount,
           currency: order.currency,
-          name: 'AMJStar Wallet',
+          name: 'AMJSTAR Wallet',
           description: 'Wallet Top-up',
           order_id: order.razorpayOrderId,
           handler: async (response: any) => {
@@ -138,7 +138,7 @@ const SupplierWallet: React.FC = () => {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[1.75rem] font-extrabold text-[#0f172a] tracking-tight">AMJStar Wallet</h1>
+          <h1 className="text-[1.75rem] font-extrabold text-[#0f172a] tracking-tight">AMJSTAR Wallet</h1>
           <p className="text-[#64748b] text-[0.95rem] mt-1">Manage your commission balance and payouts</p>
         </div>
         <button onClick={() => refetchWallet()} className="w-10 h-10 flex items-center justify-center rounded-[10px] bg-[#f8fafc] border border-[#e2e8f0] text-[#64748b] hover:bg-[#f1f5f9] transition-colors">
@@ -151,7 +151,7 @@ const SupplierWallet: React.FC = () => {
           <AlertCircle size={20} className="shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-sm">Commission rate not configured</p>
-            <p className="text-sm mt-0.5">Contact AMJStar to set your commission rate. Until then, PO generation is paused.</p>
+            <p className="text-sm mt-0.5">Contact AMJSTAR to set your commission rate. Until then, PO generation is paused.</p>
           </div>
         </div>
       )}
@@ -275,7 +275,7 @@ const SupplierWallet: React.FC = () => {
       {/* Top-up Modal */}
       <Modal isOpen={showTopupModal} onClose={() => setShowTopupModal(false)} title="Top Up Wallet">
         <div className="flex flex-col gap-4 p-1">
-          <p className="text-sm text-[#64748b]">Add funds to your AMJStar wallet to cover commissions on POs.</p>
+          <p className="text-sm text-[#64748b]">Add funds to your AMJSTAR wallet to cover commissions on POs.</p>
           <div>
             <label className="block text-xs font-bold uppercase text-[#94a3b8] tracking-wider mb-2">Amount (₹)</label>
             <input

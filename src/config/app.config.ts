@@ -1,5 +1,5 @@
 const appConfig = {
-  appName: 'AMJStar',
+  appName: 'AMJSTAR',
   appTagline: 'India ka Apna B2B Bazaar',
   currency: 'INR',
   currencySymbol: '₹',

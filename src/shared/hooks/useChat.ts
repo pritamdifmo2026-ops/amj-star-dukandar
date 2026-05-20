@@ -68,15 +68,19 @@ export const useChat = (conversationId?: string) => {
       }
     };
 
+    const handleReloadMessages = () => loadMessages();
+
     socket.on('new_message', handleNewMessage);
     socket.on('user_typing', handleUserTyping);
     socket.on('messages_read', handleMessagesRead);
+    socket.on('reload_messages', handleReloadMessages);
 
     return () => {
       // Remove ONLY this hook's specific listener, not all listeners
       socket.off('new_message', handleNewMessage);
       socket.off('user_typing', handleUserTyping);
       socket.off('messages_read', handleMessagesRead);
+      socket.off('reload_messages', handleReloadMessages);
 
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };

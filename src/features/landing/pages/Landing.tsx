@@ -180,11 +180,11 @@ const Landing: React.FC = () => {
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />
         ))}
 
-        {/* Why Choose AMJStar */}
+        {/* Why Choose AMJSTAR */}
         <section className="py-10 pb-12 bg-white border-t border-[#f0f0f0] mb-10 max-lg:py-8 max-lg:mb-8 max-sm:py-6 max-sm:mb-6">
           <div className={containerCls}>
             <div className="flex justify-between items-center mb-6 border-l-[6px] border-primary pl-4">
-              <h2 className="text-2xl font-extrabold text-heading">Why Choose AMJStar?</h2>
+              <h2 className="text-2xl font-extrabold text-heading">Why Choose AMJSTAR?</h2>
             </div>
             <div className="grid grid-cols-3 gap-12 max-lg:gap-4 max-sm:gap-3">
               {[

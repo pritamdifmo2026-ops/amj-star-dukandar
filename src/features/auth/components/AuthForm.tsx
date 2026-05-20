@@ -20,7 +20,7 @@ const LoginForm: React.FC = () => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <h2 className="text-2xl font-bold text-heading m-0">Sign In</h2>
-      <p className="text-sm text-muted -mt-3 m-0">Welcome back to AMJStar Dukandar</p>
+      <p className="text-sm text-muted -mt-3 m-0">Welcome back to AMJSTAR</p>
 
       <div className="flex flex-col gap-4">
         <Input

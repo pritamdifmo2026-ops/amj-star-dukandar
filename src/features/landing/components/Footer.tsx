@@ -17,7 +17,7 @@ const Footer: React.FC = () => (
           {/* Brand */}
           <div className="flex flex-col gap-5 max-md:col-span-2">
             <Link to={ROUTES.HOME} className="font-display text-[1.3rem] font-semibold text-[oklch(0.18_0.02_240)] no-underline flex items-center gap-2.5">
-              <img src="/favicon.jpeg" alt="AMJStar Logo" className="w-8 h-8 rounded-[6px] object-contain bg-primary p-0.5" />
+              <img src="/favicon.jpeg" alt="AMJSTAR Logo" className="w-8 h-8 rounded-[6px] object-contain bg-primary p-0.5" />
               <span>{appConfig.appName}</span>
             </Link>
             <p className="text-[oklch(0.40_0.02_240)] leading-[1.6] text-[0.9rem]">
@@ -65,7 +65,7 @@ const Footer: React.FC = () => (
           <div className="flex flex-col">
             <h4 className={colTitleCls}>For Sellers</h4>
             <ul className="list-none p-0 m-0 flex flex-col gap-3">
-              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Sell on AMJStar</Link></li>
+              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Sell on AMJSTAR</Link></li>
               <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Supplier Membership</Link></li>
               <li><Link to={ROUTES.SUPPLIER_DASHBOARD} className={linkCls}>Seller Dashboard</Link></li>
               <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Advertising</Link></li>

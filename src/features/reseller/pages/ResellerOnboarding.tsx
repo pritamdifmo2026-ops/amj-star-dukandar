@@ -373,7 +373,7 @@ const ResellerOnboarding: React.FC = () => {
       case 2:
         return (
           <div className="flex flex-col gap-5">
-            <StepHeader icon={<Store size={24} />} title="Reseller Profile" desc="Your storefront identity on AMJStar." />
+            <StepHeader icon={<Store size={24} />} title="Reseller Profile" desc="Your storefront identity on AMJSTAR." />
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className={labelCls}>Store Name *</label>

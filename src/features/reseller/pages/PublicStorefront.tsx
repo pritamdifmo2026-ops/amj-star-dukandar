@@ -38,7 +38,7 @@ const PublicStorefront: React.FC = () => {
           <div>
             <h1 className="text-2xl font-extrabold text-[#0f172a] m-0 mb-1">{storeName}</h1>
             <p className="flex items-center gap-1.5 text-sm text-[#059669] font-semibold m-0">
-              <ShieldCheck size={15} /> Verified AMJStar Reseller
+              <ShieldCheck size={15} /> Verified AMJSTAR Reseller
             </p>
           </div>
         </div>
@@ -100,8 +100,8 @@ const PublicStorefront: React.FC = () => {
 
       <footer className="bg-white border-t border-[#eef2f6] py-5">
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between max-sm:flex-col max-sm:gap-3">
-          <p className="text-sm text-[#94a3b8] m-0">Powered by AMJStar</p>
-          <Button variant="outline" onClick={() => navigate('/')}>Explore AMJStar</Button>
+          <p className="text-sm text-[#94a3b8] m-0">Powered by AMJSTAR</p>
+          <Button variant="outline" onClick={() => navigate('/')}>Explore AMJSTAR</Button>
         </div>
       </footer>
     </div>

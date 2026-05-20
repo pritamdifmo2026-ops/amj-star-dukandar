@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone } from 'lucide-react';
+import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone, Clock } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { chatApi } from '@/features/chat/services/chat.api';
@@ -164,6 +164,24 @@ const ChatInbox: React.FC = () => {
   const { socket } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [isSendingQuote, setIsSendingQuote] = useState(false);
+  const [quoteFormErrors, setQuoteFormErrors] = useState<{ price?: string; deliveryTimeline?: string }>({});
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const heldToastIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const onHide = () => {
+      if (document.hidden && heldToastIdRef.current) {
+        toast.dismiss(heldToastIdRef.current);
+        heldToastIdRef.current = null;
+      }
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      if (heldToastIdRef.current) toast.dismiss(heldToastIdRef.current);
+    };
+  }, []);
 
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
@@ -250,34 +268,39 @@ const ChatInbox: React.FC = () => {
   };
 
   const handleCreateQuotation = async () => {
-    if (!activeConv) return;
+    if (!activeConv || isSendingQuote) return;
+    setIsSendingQuote(true);
     const other = getOtherParticipant(activeConv);
     const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
+    const payload = {
+      conversationId: activeConv._id,
+      buyerId,
+      items: [{
+        name: quoteForm.itemName,
+        quantity: quoteForm.quantity,
+        price: quoteForm.quantity > 0 ? quoteForm.price / quoteForm.quantity : quoteForm.price,
+        hsnCode: quoteForm.hsnCode || undefined,
+      }],
+      taxableAmount: quoteForm.price,
+      totalAmount: quoteForm.price,
+      gstType: quoteForm.gstType,
+      gstRate: quoteForm.gstType === 'exempt' ? 0 : quoteForm.gstRate,
+      gstAmount: computedGstAmount,
+      shippingCost: quoteForm.shipping,
+      deliveryTimeline: quoteForm.deliveryTimeline || undefined,
+      shippingNotes: quoteForm.shippingNotes || undefined,
+      terms: quoteForm.terms,
+    };
     try {
-      const result = await quotationApi.createQuotation({
-        conversationId: activeConv._id,
-        buyerId,
-        items: [{
-          name: quoteForm.itemName,
-          quantity: quoteForm.quantity,
-          price: quoteForm.quantity > 0 ? quoteForm.price / quoteForm.quantity : quoteForm.price,
-          hsnCode: quoteForm.hsnCode || undefined,
-        }],
-        taxableAmount: quoteForm.price,
-        totalAmount: quoteForm.price,
-        gstType: quoteForm.gstType,
-        gstRate: quoteForm.gstType === 'exempt' ? 0 : quoteForm.gstRate,
-        gstAmount: computedGstAmount,
-        shippingCost: quoteForm.shipping,
-        deliveryTimeline: quoteForm.deliveryTimeline || undefined,
-        shippingNotes: quoteForm.shippingNotes || undefined,
-        terms: quoteForm.terms,
-      });
+      const result = editingQuoteId
+        ? await quotationApi.updateQuotation(editingQuoteId, payload)
+        : await quotationApi.createQuotation(payload);
       setIsQuoteModalOpen(false);
       setShowPreview(false);
+      setEditingQuoteId(null);
       loadMessages();
       if (result?.held) {
-        toast.custom(t => (
+        const tid = toast.custom(t => (
           <div className={`flex items-start gap-3 bg-white border border-[#fcd34d] rounded-[12px] shadow-lg px-4 py-3 max-w-sm w-full ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
             <span className="text-2xl shrink-0">⏸️</span>
             <div className="flex-1">
@@ -300,12 +323,15 @@ const ChatInbox: React.FC = () => {
             <button onClick={() => toast.dismiss(t.id)} className="text-[#94a3b8] bg-transparent border-none cursor-pointer text-lg p-0 shrink-0">×</button>
           </div>
         ), { duration: Infinity, position: 'top-right' });
+        heldToastIdRef.current = tid;
       } else {
-        toast.success('Quotation sent successfully!');
+        toast.success(editingQuoteId ? 'Quotation updated!' : 'Quotation sent successfully!');
       }
     } catch (err: any) {
       console.error('Failed to create quotation', err);
       toast.error(err?.response?.data?.message || 'Failed to send quotation');
+    } finally {
+      setIsSendingQuote(false);
     }
   };
 
@@ -345,6 +371,8 @@ const ChatInbox: React.FC = () => {
     const [contactPhone, setContactPhone] = useState<string | null>(null);
     const hasFetchedContact = useRef(false);
     const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchQuote = () => {
       if (msg.quotationId) quotationApi.getQuotation(msg.quotationId).then(setQuote);
@@ -374,9 +402,11 @@ const ChatInbox: React.FC = () => {
     }, [quote?.status, quote?.orderId?._id]);
 
     if (!quote) return <div className="text-xs text-[#94a3b8] italic">Loading quotation...</div>;
+    if (quote.status === 'held' && !isSupplier) return null;
 
     const statusMeta: Record<string, { label: string; cls: string }> = {
       pending: { label: 'Awaiting Response', cls: 'bg-[#fffbeb] text-[#a16207]' },
+      held: { label: 'On Hold', cls: 'bg-[#fef3c7] text-[#92400e]' },
       counter_offered: { label: 'Counter Offered', cls: 'bg-[#eff6ff] text-[#2563eb]' },
       accepted: { label: 'Deal Confirmed ✅', cls: 'bg-[#ecfdf5] text-[#059669]' },
       rejected: { label: 'Declined', cls: 'bg-[#fef2f2] text-[#dc2626]' },
@@ -403,12 +433,83 @@ const ChatInbox: React.FC = () => {
       } finally { setCounterSubmitting(false); }
     };
 
-    return (
+    const canEdit = isSupplier && isMine && (quote.status === 'pending' || quote.status === 'held');
+
+    const handleEdit = () => {
+      setQuoteForm({
+        itemName: quote.items?.[0]?.name || '',
+        hsnCode: quote.items?.[0]?.hsnCode || '',
+        quantity: quote.items?.[0]?.quantity || 1,
+        price: quote.taxableAmount ?? 0,
+        gstType: quote.gstType || 'CGST_SGST',
+        gstRate: quote.gstRate ?? 18,
+        shipping: quote.shippingCost ?? 0,
+        deliveryTimeline: quote.deliveryTimeline || '',
+        shippingNotes: quote.shippingNotes || '',
+        terms: quote.terms || 'Standard delivery terms apply.',
+      });
+      setEditingQuoteId(quote._id);
+      setQuoteFormErrors({});
+      setIsQuoteModalOpen(true);
+    };
+
+    const handleDelete = async () => {
+      setIsDeleting(true);
+      try {
+        await quotationApi.deleteQuotation(quote._id);
+        loadMessages();
+        toast.success('Quotation retracted.');
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Failed to retract quotation');
+      } finally {
+        setIsDeleting(false);
+        setShowDeleteConfirm(false);
+      }
+    };
+
+    // Action buttons — rendered outside the card so faded wrapper never blocks them
+    const actionButtons = canEdit && (
+      <div className="min-w-[260px] max-w-[340px]">
+        {!showDeleteConfirm ? (
+          <div className="flex gap-2 mt-1.5">
+            <button
+              onClick={handleEdit}
+              className="flex-1 py-1.5 text-xs font-bold text-[#2563eb] bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] cursor-pointer hover:bg-[#dbeafe]"
+            >✏️ Edit</button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex-1 py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fee2e2]"
+            >✕ Retract</button>
+          </div>
+        ) : (
+          <div className="mt-1.5 bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-3 py-2.5">
+            <p className="text-xs font-extrabold text-[#dc2626] m-0 mb-1">Retract this quotation?</p>
+            <p className="text-[11px] text-[#475569] m-0 mb-2.5 leading-relaxed">
+              The quotation will be removed from the chat. The buyer will no longer see it.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]"
+              >Cancel</button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer hover:bg-[#b91c1c] disabled:opacity-50"
+              >{isDeleting ? 'Retracting…' : 'Yes, Retract'}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+
+    const cardContent = (
       <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden min-w-[260px] max-w-[340px]">
         <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
           <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
         </div>
+
 
         <div className="px-4 py-3 flex flex-col gap-1.5">
           {quote.items.map((item: any, i: number) => (
@@ -586,6 +687,28 @@ const ChatInbox: React.FC = () => {
         )}
       </div>
     );
+
+    if (quote.status === 'held' && isSupplier) {
+      return (
+        <div className="flex flex-col">
+          <div className="relative" style={{ opacity: 0.55 }}>
+            {cardContent}
+            <div className="absolute bottom-2 right-2 bg-[#fbbf24] rounded-full p-1 shadow-md">
+              <Clock size={12} className="text-white" />
+            </div>
+          </div>
+          {/* Buttons outside the faded wrapper — always fully interactive */}
+          {actionButtons}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col">
+        {cardContent}
+        {actionButtons}
+      </div>
+    );
   };
 
   return (
@@ -697,7 +820,7 @@ const ChatInbox: React.FC = () => {
               {user?.role === 'supplier' && (
                 <button
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5]"
-                  onClick={() => setIsQuoteModalOpen(true)}>
+                  onClick={() => { setIsQuoteModalOpen(true); setQuoteFormErrors({}); }}>
                   <FileText size={14} /> Send Quotation
                 </button>
               )}
@@ -814,25 +937,48 @@ const ChatInbox: React.FC = () => {
       {isQuoteModalOpen && !showPreview && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-50 flex items-center justify-center px-4" onClick={() => setIsQuoteModalOpen(false)}>
           <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[480px] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">Send Quotation</h2>
+            <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">{editingQuoteId ? 'Edit Quotation' : 'Send Quotation'}</h2>
             <div className="flex flex-col gap-4">
               <div>
                 <label className={labelCls}>Item Name</label>
-                <input type="text" value={quoteForm.itemName} onChange={e => setQuoteForm({ ...quoteForm, itemName: e.target.value })} className={inputCls} />
+                <input type="text" value={quoteForm.itemName} readOnly className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>HSN Code</label>
-                  <input type="text" value={quoteForm.hsnCode} onChange={e => setQuoteForm({ ...quoteForm, hsnCode: e.target.value })} placeholder="Optional" className={inputCls} />
+                  <input type="text" value={quoteForm.hsnCode || '—'} readOnly className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"} />
                 </div>
                 <div>
                   <label className={labelCls}>Quantity</label>
-                  <input type="number" min="1" value={quoteForm.quantity} onChange={e => setQuoteForm({ ...quoteForm, quantity: Number(e.target.value) })} onWheel={e => e.currentTarget.blur()} className={inputCls} />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={quoteForm.quantity}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, '');
+                      setQuoteForm({ ...quoteForm, quantity: v === '' ? 1 : Number(v) });
+                    }}
+                    className={inputCls}
+                  />
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Amount ₹ (before GST)</label>
-                <input type="number" min="0" value={quoteForm.price} onChange={e => setQuoteForm({ ...quoteForm, price: Number(e.target.value) })} onWheel={e => e.currentTarget.blur()} className={inputCls} />
+                <label className={labelCls}>Amount ₹ (before GST) <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={quoteForm.price || ''}
+                  onChange={e => {
+                    const v = e.target.value.replace(/\D/g, '');
+                    setQuoteForm({ ...quoteForm, price: v === '' ? 0 : Number(v) });
+                    if (quoteFormErrors.price) setQuoteFormErrors(prev => ({ ...prev, price: undefined }));
+                  }}
+                  className={inputCls + (quoteFormErrors.price ? ' border-red-400' : '')}
+                  placeholder="Enter total amount before GST"
+                />
+                {quoteFormErrors.price && <p className="text-[11px] text-red-500 mt-1 m-0">{quoteFormErrors.price}</p>}
               </div>
               <div>
                 <label className={labelCls}>GST Type</label>
@@ -861,11 +1007,42 @@ const ChatInbox: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>Shipping Cost ₹</label>
-                  <input type="number" min="0" value={quoteForm.shipping} onChange={e => setQuoteForm({ ...quoteForm, shipping: Number(e.target.value) })} onWheel={e => e.currentTarget.blur()} className={inputCls} />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={quoteForm.shipping || ''}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, '');
+                      setQuoteForm({ ...quoteForm, shipping: v === '' ? 0 : Number(v) });
+                    }}
+                    placeholder="0"
+                    className={inputCls}
+                  />
                 </div>
                 <div>
-                  <label className={labelCls}>Delivery Timeline</label>
-                  <input type="text" value={quoteForm.deliveryTimeline} onChange={e => setQuoteForm({ ...quoteForm, deliveryTimeline: e.target.value })} placeholder="e.g. 7–10 days" className={inputCls} />
+                  <label className={labelCls}>Delivery Timeline <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    value={quoteForm.deliveryTimeline}
+                    onChange={e => {
+                      setQuoteForm({ ...quoteForm, deliveryTimeline: e.target.value });
+                      if (quoteFormErrors.deliveryTimeline) setQuoteFormErrors(prev => ({ ...prev, deliveryTimeline: undefined }));
+                    }}
+                    onBlur={e => {
+                      const raw = e.target.value.trim();
+                      if (!raw) return;
+                      // Normalise bare numbers: "7" → "7 days", "7-10" → "7–10 days"
+                      const hasUnit = /day|week|month|hour/i.test(raw);
+                      if (!hasUnit) {
+                        const normalised = raw.replace(/-/g, '–') + ' days';
+                        setQuoteForm(prev => ({ ...prev, deliveryTimeline: normalised }));
+                      }
+                    }}
+                    placeholder="e.g. 7–10 days"
+                    className={inputCls + (quoteFormErrors.deliveryTimeline ? ' border-red-400' : '')}
+                  />
+                  {quoteFormErrors.deliveryTimeline && <p className="text-[11px] text-red-500 mt-1 m-0">{quoteFormErrors.deliveryTimeline}</p>}
                 </div>
               </div>
               <div>
@@ -898,9 +1075,19 @@ const ChatInbox: React.FC = () => {
               </div>
             </div>
             <div className="flex gap-3 justify-end mt-5">
-              <button className="px-4 py-2 text-sm font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f1f5f9]" onClick={() => setIsQuoteModalOpen(false)}>Cancel</button>
-              <button className="px-5 py-2 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90" onClick={() => setShowPreview(true)}>
-                Preview & Send →
+              <button className="px-4 py-2 text-sm font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f1f5f9]" onClick={() => { setIsQuoteModalOpen(false); setEditingQuoteId(null); }}>Cancel</button>
+              <button
+                className="px-5 py-2 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90"
+                onClick={() => {
+                  const errors: { price?: string; deliveryTimeline?: string } = {};
+                  if (!quoteForm.price || quoteForm.price <= 0) errors.price = 'Amount is required';
+                  if (!quoteForm.deliveryTimeline.trim()) errors.deliveryTimeline = 'Delivery timeline is required';
+                  if (Object.keys(errors).length > 0) { setQuoteFormErrors(errors); return; }
+                  setQuoteFormErrors({});
+                  setShowPreview(true);
+                }}
+              >
+                {editingQuoteId ? 'Preview & Update →' : 'Preview & Send →'}
               </button>
             </div>
           </div>
@@ -930,9 +1117,10 @@ const ChatInbox: React.FC = () => {
                 ← Edit
               </button>
               <button
-                className="flex-1 py-2.5 text-sm font-bold text-white bg-primary rounded-[10px] border-none cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={handleCreateQuotation}>
-                ✓ Confirm & Send
+                className="flex-1 py-2.5 text-sm font-bold text-white bg-primary rounded-[10px] border-none cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={handleCreateQuotation}
+                disabled={isSendingQuote}>
+                {isSendingQuote ? 'Sending...' : '✓ Confirm & Send'}
               </button>
             </div>
           </div>

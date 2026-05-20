@@ -98,7 +98,7 @@ const AdminPlatformSettings: React.FC = () => {
           </div>
 
           <div>
-            <label className={labelCls}>AMJStar Contact Phone</label>
+            <label className={labelCls}>AMJSTAR Contact Phone</label>
             <div className={`flex items-center gap-0 border rounded-[8px] overflow-hidden transition-colors ${phoneError ? 'border-[#dc2626]' : 'border-[#e2e8f0] focus-within:border-primary'}`}>
               <span className="flex items-center gap-1.5 px-3 py-2.5 bg-[#f1f5f9] border-r border-[#e2e8f0] text-sm font-bold text-[#475569] shrink-0 select-none">
                 <Phone size={13} /> +91
@@ -118,7 +118,7 @@ const AdminPlatformSettings: React.FC = () => {
             </div>
             {phoneError
               ? <p className="text-xs text-[#dc2626] mt-1.5 font-medium">{phoneError}</p>
-              : <p className="text-xs text-[#94a3b8] mt-1.5">10-digit Indian mobile number. Shown to suppliers as "Call AMJStar".</p>
+              : <p className="text-xs text-[#94a3b8] mt-1.5">10-digit Indian mobile number. Shown to suppliers as "Call AMJSTAR".</p>
             }
           </div>
 

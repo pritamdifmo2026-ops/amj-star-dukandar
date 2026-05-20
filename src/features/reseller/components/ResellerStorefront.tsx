@@ -58,7 +58,7 @@ const ResellerStorefront: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="w-3 h-3 bg-[#10b981] rounded-full animate-pulse" />
           <div>
-            <h2 className="text-base font-extrabold text-[#065f46] m-0 mb-0.5">Your Store is Live on AMJStar</h2>
+            <h2 className="text-base font-extrabold text-[#065f46] m-0 mb-0.5">Your Store is Live on AMJSTAR</h2>
             <p className="text-sm text-[#059669] m-0">Buyers can discover and purchase from your curated storefront</p>
           </div>
         </div>
@@ -132,7 +132,7 @@ const ResellerStorefront: React.FC = () => {
               </button>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <a href={`https://wa.me/?text=Shop%20from%20my%20store%20on%20AMJStar%3A%20${encodeURIComponent(storeUrl)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25d366] text-white font-semibold text-xs rounded-[8px] no-underline hover:opacity-90 transition-opacity">
+              <a href={`https://wa.me/?text=Shop%20from%20my%20store%20on%20AMJSTAR%3A%20${encodeURIComponent(storeUrl)}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#25d366] text-white font-semibold text-xs rounded-[8px] no-underline hover:opacity-90 transition-opacity">
                 <MessageCircle size={15} /> Share on WhatsApp
               </a>
               <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white font-semibold text-xs rounded-[8px] no-underline hover:opacity-90 transition-opacity">

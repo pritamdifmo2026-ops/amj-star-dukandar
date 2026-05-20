@@ -20,7 +20,7 @@ const About: React.FC = () => {
                   Redefining <span className="text-primary">B2B Commerce</span> for the Digital Age
                 </h1>
                 <p className="text-xl text-body leading-[1.6] mb-10 max-md:text-base">
-                  AMJStar is not just a marketplace; it's a movement to empower millions of businesses
+                  AMJSTAR is not just a marketplace; it's a movement to empower millions of businesses
                   by bridging the gap between quality manufacturing and retail accessibility.
                 </p>
                 <div className="flex gap-5">
@@ -46,7 +46,7 @@ const About: React.FC = () => {
               <div>
                 <h2 className="text-[40px] font-extrabold text-heading mb-8">Our Story</h2>
                 <p className="text-lg text-body leading-[1.8] mb-6">
-                  Founded in 2024, AMJStar started with a simple observation: the wholesale market was
+                  Founded in 2024, AMJSTAR started with a simple observation: the wholesale market was
                   fragmented and difficult to navigate for small-scale resellers and growing manufacturers.
                   We saw an opportunity to build a bridge—a digital ecosystem where trust is the primary currency.
                 </p>
@@ -57,13 +57,13 @@ const About: React.FC = () => {
               </div>
               <div className="bg-white p-10 rounded-[6px] border border-border">
                 <div className="italic text-lg text-heading leading-[1.6] mb-8 relative before:content-['\\201C'] before:text-[80px] before:absolute before:-top-10 before:-left-5 before:opacity-10">
-                  <p>"We believe that every business, no matter how small, deserves a global platform to shine. AMJStar is that stage."</p>
+                  <p>"We believe that every business, no matter how small, deserves a global platform to shine. AMJSTAR is that stage."</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-bold">AV</div>
                   <div>
                     <h4 className="text-base font-bold text-heading">Founder's Vision</h4>
-                    <span className="text-sm text-muted">CEO, AMJStar</span>
+                    <span className="text-sm text-muted">CEO, AMJSTAR</span>
                   </div>
                 </div>
               </div>

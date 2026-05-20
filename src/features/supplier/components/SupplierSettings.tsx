@@ -179,7 +179,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
           </div>
           <div className="flex items-start gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] px-4 py-3 text-[#c2410c] text-sm mb-5">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <p className="m-0">Legal and Tier details are managed by AMJStar Team. To set your commission rate or request changes, call us directly.</p>
+            <p className="m-0">Legal and Tier details are managed by AMJSTAR Team. To set your commission rate or request changes, call us directly.</p>
           </div>
           {contactHref ? (
             <a
@@ -187,7 +187,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               className="inline-flex items-center gap-3 px-5 py-3 bg-[#e65c00] text-white rounded-[10px] font-bold text-sm no-underline hover:bg-[#c94f00] transition-colors shadow-[0_4px_12px_rgba(230,92,0,0.25)]"
             >
               <PhoneCall size={18} />
-              Call AMJStar — {contactPhone}
+              Call AMJSTAR — {contactPhone}
             </a>
           ) : (
             <Button variant="outline" className="flex items-center gap-2 !text-[#94a3b8] !border-[#e2e8f0]" disabled>

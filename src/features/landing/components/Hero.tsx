@@ -11,7 +11,7 @@ const Hero: React.FC = () => {
         <div className="flex-1 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-center">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-cream border border-border rounded-full font-sans text-[10px] font-medium uppercase tracking-[0.12em] text-primary mb-4">
             <span className="w-2 h-2 bg-primary rounded-full" />
-            Join AMJstar and grow your wholesale business today.
+            Join AMJSTAR and grow your wholesale business today.
           </div>
 
           <h1 className="font-display text-[clamp(1.8rem,5vw,2.8rem)] leading-none text-heading mb-4 font-normal">
@@ -20,7 +20,7 @@ const Hero: React.FC = () => {
           </h1>
 
           <p className="font-sans text-sm text-body mb-6 max-w-[600px] leading-relaxed max-[1100px]:mx-auto max-[1100px]:mb-12">
-            AMJStar connects wholesalers, local retail resellers, and business
+            AMJSTAR connects wholesalers, local retail resellers, and business
             buyers in one trade network. Quote-based ordering and bulk fulfillment.
           </p>
 

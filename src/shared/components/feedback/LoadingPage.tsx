@@ -85,10 +85,10 @@ const LoadingPage: React.FC = () => {
       <div className="flex flex-col items-center gap-8 mt-5">
         <div className="flex flex-col items-center gap-4">
           <div className="w-11 h-11 border-4 border-sky-600/10 border-t-sky-600 rounded-full animate-spin" />
-          <p className="text-sm text-slate-500 font-semibold uppercase tracking-widest">Loading AMJStar...</p>
+          <p className="text-sm text-slate-500 font-semibold uppercase tracking-widest">Loading AMJSTAR...</p>
         </div>
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[22px] font-black text-sky-600 tracking-tight">AMJStar</span>
+          <span className="text-[22px] font-black text-sky-600 tracking-tight">AMJSTAR</span>
           <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">India ka Apna B2B Bazaar</span>
         </div>
       </div>

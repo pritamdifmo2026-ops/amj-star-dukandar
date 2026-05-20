@@ -64,7 +64,7 @@ const SelectRole: React.FC = () => {
       <header className="text-center px-4 pt-8 pb-2 md:pt-10">
         <h1 className="text-[1.8rem] md:text-[2.2rem] font-bold text-heading mb-2 tracking-tight">Choose Your Path</h1>
         <p className="text-[0.9rem] md:text-base text-body max-w-[600px] mx-auto mb-5">
-          Join thousands of businesses on AMJStar Dukandar. Select the role that best describes how you'll use our platform.
+          Join thousands of businesses on AMJSTAR. Select the role that best describes how you'll use our platform.
         </p>
         {error && (
           <div className="text-center text-red-600 bg-red-50 px-3 py-3 mx-auto max-w-[400px] rounded-[8px] border border-red-300 mb-4">

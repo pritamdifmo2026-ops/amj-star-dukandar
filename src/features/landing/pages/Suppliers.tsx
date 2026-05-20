@@ -38,7 +38,7 @@ const Suppliers: React.FC = () => (
       <section className="py-16 bg-white">
         <div className="max-w-[var(--width-container)] mx-auto px-8">
           <div className="text-center mb-14">
-            <h2 className="text-[28px] font-extrabold text-heading mb-3">How to Sell on AMJStar</h2>
+            <h2 className="text-[28px] font-extrabold text-heading mb-3">How to Sell on AMJSTAR</h2>
             <p className="text-[18px] text-body max-w-[600px] mx-auto">List your products and start receiving wholesale orders in minutes.</p>
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-8 max-md:grid-cols-1">

@@ -43,7 +43,7 @@ const Register: React.FC = () => {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <h2 className="text-2xl font-bold text-heading m-0">Create Account</h2>
-      <p className="text-sm text-muted -mt-3 m-0">Join AMJStar Dukandar as a buyer or supplier</p>
+      <p className="text-sm text-muted -mt-3 m-0">Join AMJSTAR as a buyer or supplier</p>
 
       <div className="flex flex-col gap-4">
         <Input label="Full Name" type="text" placeholder="Your full name" value={form.name} onChange={set('name')} leftIcon={<User size={16} />} fullWidth required error={errors.name} />

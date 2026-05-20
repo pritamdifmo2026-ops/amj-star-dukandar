@@ -40,7 +40,7 @@ const Login: React.FC = () => {
       </button>
 
       <h1 className="text-[1.75rem] font-extrabold mb-3 text-slate-900 tracking-tight leading-tight">
-        {mode === 'seller' ? 'Join AMJStar as Partner' : 'Welcome to AMJStar'}
+        {mode === 'seller' ? 'Join AMJSTAR as Partner' : 'Welcome to AMJSTAR'}
       </h1>
       <p className="text-[0.95rem] text-slate-500 mb-10 leading-relaxed">
         Enter your phone number to receive an OTP

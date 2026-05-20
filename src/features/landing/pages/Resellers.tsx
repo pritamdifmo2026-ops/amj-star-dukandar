@@ -39,7 +39,7 @@ const Resellers: React.FC = () => (
         <div className="max-w-[var(--width-container)] mx-auto px-8">
           <div className="text-center mb-14">
             <h2 className="text-[28px] font-extrabold text-heading mb-3">Your Path to Success</h2>
-            <p className="text-[18px] text-body max-w-[600px] mx-auto">Start your online business journey with AMJStar in four simple steps.</p>
+            <p className="text-[18px] text-body max-w-[600px] mx-auto">Start your online business journey with AMJSTAR in four simple steps.</p>
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-8 max-md:grid-cols-1">
             {stepCards.map(({ n, title, desc }) => (
@@ -57,7 +57,7 @@ const Resellers: React.FC = () => (
         <div className="max-w-[var(--width-container)] mx-auto px-8">
           <div className="text-center mb-14">
             <h2 className="text-[28px] font-extrabold text-heading mb-3">Reseller Perks</h2>
-            <p className="text-[18px] text-body max-w-[600px] mx-auto">Why thousands of entrepreneurs choose AMJStar to build their businesses.</p>
+            <p className="text-[18px] text-body max-w-[600px] mx-auto">Why thousands of entrepreneurs choose AMJSTAR to build their businesses.</p>
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6 max-sm:grid-cols-1">
             {perks.map(({ title, desc }) => (

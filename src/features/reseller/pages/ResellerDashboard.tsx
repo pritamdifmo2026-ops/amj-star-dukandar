@@ -167,7 +167,7 @@ const ResellerDashboard: React.FC = () => {
           <header className="flex justify-between items-start mb-8 max-sm:flex-col max-sm:gap-4">
             <div>
               <h1 className="text-[1.75rem] font-extrabold text-[#0f172a] m-0 mb-1">Welcome, {profile?.fullName || user?.name}</h1>
-              <p className="text-[#64748b] m-0">Grow your business with AMJStar's high-quality supplier network.</p>
+              <p className="text-[#64748b] m-0">Grow your business with AMJSTAR's high-quality supplier network.</p>
             </div>
             <Button onClick={() => navigate('/products')} className="flex items-center gap-2">
               <Search size={18} /> Browse Products

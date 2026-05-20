@@ -56,7 +56,7 @@ const Buyers: React.FC = () => (
       <section className="py-16 bg-cream">
         <div className="max-w-[var(--width-container)] mx-auto px-8">
           <div className="text-center mb-14">
-            <h2 className="text-[28px] font-extrabold text-heading mb-3">Why Source with AMJStar?</h2>
+            <h2 className="text-[28px] font-extrabold text-heading mb-3">Why Source with AMJSTAR?</h2>
             <p className="text-[18px] text-body max-w-[600px] mx-auto">We provide the tools and trust you need to grow your retail business.</p>
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(400px,1fr))] gap-6 max-sm:grid-cols-1">

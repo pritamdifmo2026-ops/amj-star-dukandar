@@ -102,7 +102,7 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
           <AlertTriangle size={20} className="text-[#d97706] shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="font-bold text-sm text-[#92400e]">Commission rate not configured</p>
-            <p className="text-xs text-[#b45309] mt-0.5">PO generation is paused until AMJStar sets your commission rate. Tap to go to Settings and find the contact CTA.</p>
+            <p className="text-xs text-[#b45309] mt-0.5">PO generation is paused until AMJSTAR sets your commission rate. Tap to go to Settings and find the contact CTA.</p>
           </div>
           <span className="text-xs font-bold text-[#d97706] group-hover:underline whitespace-nowrap">Go to Settings →</span>
         </button>

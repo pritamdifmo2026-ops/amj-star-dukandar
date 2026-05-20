@@ -223,7 +223,7 @@ const Profile: React.FC = () => {
   const menuItems = [
     { id: 'overview', label: 'Account Overview', icon: User },
     { id: 'orders', label: 'My Orders', icon: Package, badge: orderCount },
-    { id: 'messages', label: 'Messages', icon: MessageCircle, badge: totalUnread },
+    { id: 'messages', label: 'Enquiries', icon: MessageCircle, badge: totalUnread },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistItems.length },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'payments', label: 'Payment Methods', icon: CreditCard },

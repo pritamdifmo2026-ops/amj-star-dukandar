@@ -33,4 +33,12 @@ export const quotationApi = {
     const res = await apiClient.post(`/quotations/${id}/reject-counter`);
     return res.data;
   },
+  deleteQuotation: async (id: string) => {
+    const res = await apiClient.delete(`/quotations/${id}`);
+    return res.data;
+  },
+  updateQuotation: async (id: string, data: any) => {
+    const res = await apiClient.patch(`/quotations/${id}`, data);
+    return res.data;
+  },
 };

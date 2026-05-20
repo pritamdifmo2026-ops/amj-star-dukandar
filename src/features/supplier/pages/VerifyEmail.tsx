@@ -30,7 +30,7 @@ const VerifyEmail: React.FC = () => {
   const titles = { loading: 'Verifying Your Email...', success: 'Email Verified Successfully!', error: 'Verification Failed' };
   const descs = {
     loading: 'Please wait while we secure your account details.',
-    success: 'Your email address has been updated. You can now use your new email for all AMJStar communications.',
+    success: 'Your email address has been updated. You can now use your new email for all AMJSTAR communications.',
     error: message || 'We could not verify your email at this time.',
   };
 
@@ -51,7 +51,7 @@ const VerifyEmail: React.FC = () => {
         )}
         <div className="flex items-center justify-center gap-2 mt-8 text-xs text-muted">
           <ShieldCheck size={14} />
-          <span>Secure verification by AMJStar</span>
+          <span>Secure verification by AMJSTAR</span>
         </div>
       </div>
     </div>
