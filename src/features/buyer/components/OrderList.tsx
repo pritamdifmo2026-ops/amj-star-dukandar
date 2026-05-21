@@ -74,7 +74,7 @@ const OrderList: React.FC = () => {
                   <Clock size={12} /> {isSupplier ? 'To be Processed' : 'Pending (Processing)'}
                 </div>
                 <span className="text-xs text-[#94a3b8]">
-                  {isSupplier ? `Buyer: ${order.buyerId?.name || 'Customer'}` : `Seller: ${order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}`}
+                  {isSupplier ? `Buyer: ${order.buyerId?.name || 'Customer'}` : `Supplier: ${order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}`}
                 </span>
               </div>
               <button className="flex items-center gap-1.5 text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">

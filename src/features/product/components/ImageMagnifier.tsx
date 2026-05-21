@@ -79,11 +79,6 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
           />
         )}
       </div>
-
-      <p className="text-center text-[13px] text-[#007185] mt-2.5 cursor-pointer font-medium hover:underline hover:text-[#c45500] max-lg:hidden">
-        Click to see full view
-      </p>
-
       {isHovering && imgSize.w > 0 && (
         <div
           className="absolute top-0 left-[calc(100%+32px)] bg-surface border border-[#e0e0e0] shadow-[0_4px_24px_rgba(0,0,0,0.15)] z-[100] pointer-events-none bg-no-repeat max-lg:hidden"

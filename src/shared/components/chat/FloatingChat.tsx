@@ -536,11 +536,11 @@ export const FloatingChat: React.FC = () => {
   const otherUser = getOtherUser(activeConv);
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 font-sans">
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 font-sans max-sm:bottom-3 max-sm:right-3 max-sm:left-3 max-sm:gap-2">
 
       {/* ACTIVE: full chat window */}
       {uiState === 'ACTIVE' && (
-        <div className={`w-[360px] bg-cream rounded-[10px] shadow-[0_12px_48px_rgba(0,0,0,0.18)] flex flex-col overflow-hidden animate-slide-up border border-black/5`} style={{ height: panel === 'list' ? 460 : 520, maxHeight: 'calc(100dvh - 112px)' }}>
+        <div className={`w-[360px] max-sm:w-full bg-cream rounded-[10px] shadow-[0_12px_48px_rgba(0,0,0,0.18)] flex flex-col overflow-hidden animate-slide-up border border-black/5`} style={{ height: panel === 'list' ? 460 : 520, maxHeight: 'calc(100dvh - 112px)' }}>
           {/* Header */}
           <div className="px-4 py-3.5 bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
@@ -737,7 +737,7 @@ export const FloatingChat: React.FC = () => {
       {uiState === 'MINIMIZED' && activeConv && (
         <div
           onClick={() => { setUiState('ACTIVE'); setPanel('chat'); }}
-          className="w-[280px] bg-cream rounded-[8px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-black/[0.06] px-3.5 py-2.5 flex items-center gap-2.5 cursor-pointer animate-slide-up hover:shadow-[0_6px_24px_rgba(0,0,0,0.16)] transition-shadow"
+          className="w-[280px] max-sm:w-full bg-cream rounded-[8px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-black/[0.06] px-3.5 py-2.5 flex items-center gap-2.5 cursor-pointer animate-slide-up hover:shadow-[0_6px_24px_rgba(0,0,0,0.16)] transition-shadow"
         >
           <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-center font-bold text-white text-[13px] shrink-0">
             {otherUser?.name?.[0]?.toUpperCase() || '?'}
