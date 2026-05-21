@@ -26,6 +26,16 @@ const DEFAULT_COLORS = [
   '#E8F5E9', '#E0F7FA', '#FFEBEE', '#F1F8E9'
 ];
 
+const CATEGORY_IMAGES: { [key: string]: string } = {
+  'Agriculture': 'https://images.unsplash.com/photo-1592417817098-8f3d6eb19675?w=150&h=150&fit=crop&q=80',
+  'Electronics': 'https://images.unsplash.com/photo-1588508065123-287b28e013da?w=150&h=150&fit=crop&q=80',
+  'Food & Beverages': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=150&h=150&fit=crop&q=80',
+  'Furniture': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=150&h=150&fit=crop&q=80',
+  'Home Furnishing': 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=150&h=150&fit=crop&q=80',
+  'Textiles': 'https://images.unsplash.com/photo-1558271821-65ab901470dc?w=150&h=150&fit=crop&q=80',
+  'Machinery': 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=150&h=150&fit=crop&q=80'
+};
+
 const containerCls = "w-full max-w-[var(--width-container)] mx-auto px-4 sm:px-8";
 const PLACEHOLDER = 'https://placehold.co/300x200/f5f5f5/999?text=No+Image';
 
@@ -137,6 +147,10 @@ const Landing: React.FC = () => {
     fetchData();
   }, []);
 
+  // Create repeated list to guarantee completely seamless infinite scrolling with no gaps
+  const baseMarqueeCats = categories.length > 0 ? [...categories, ...categories, ...categories] : [];
+  const marqueeItems = baseMarqueeCats.length > 0 ? [...baseMarqueeCats, ...baseMarqueeCats] : [];
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
@@ -151,8 +165,60 @@ const Landing: React.FC = () => {
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />
         ))}
 
+        {/* Mobile & Tablet Category Marquee — middle of page (below lg breakpoint) */}
+        {categories.length > 0 && (
+          <div className="lg:hidden w-full bg-white border-y border-[#f0f0f0] py-2 overflow-hidden flex relative">
+            <style dangerouslySetInnerHTML={{__html: `
+              @keyframes marquee-scroll {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+              }
+              .animate-marquee-infinite {
+                display: flex;
+                width: max-content;
+                animation: marquee-scroll 45s linear infinite;
+              }
+              .animate-marquee-infinite:hover {
+                animation-play-state: paused;
+              }
+            `}} />
+
+            <div className="animate-marquee-infinite gap-4 px-3">
+              {marqueeItems.map((cat, index) => {
+                // Dynamically find first uploaded product in this category to show its image
+                const matchingProduct = products.find(p => p.category === cat.name);
+                const productImage = matchingProduct?.images?.[0];
+                const image = cat.image || productImage || CATEGORY_IMAGES[cat.name] || 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=150&h=150&fit=crop&q=80';
+
+                return (
+                  <Link
+                    key={`${cat.name}-${index}`}
+                    to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                    className="flex flex-col items-center text-center no-underline shrink-0 group"
+                    style={{ width: '58px' }}
+                  >
+                    <div className="w-[42px] h-[42px] rounded-full overflow-hidden border border-[#e2e8f0] shadow-[0_2px_6px_rgba(0,0,0,0.04)] mb-1 transition-transform duration-300 group-hover:scale-105">
+                      <img
+                        src={image}
+                        alt={cat.name}
+                        className="w-full h-full object-cover rounded-full"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=150&h=150&fit=crop&q=80';
+                        }}
+                      />
+                    </div>
+                    <span className="text-[9px] font-bold text-heading truncate w-full leading-tight">
+                      {cat.name}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Browse by Industry */}
-        <section className="py-5 my-5 bg-white max-lg:py-12 max-sm:py-8">
+        <section className="py-5 my-5 bg-white max-lg:py-12 max-sm:py-8 hidden lg:block">
           <div className={containerCls}>
             <h2 className="text-center text-2xl font-extrabold text-heading mb-6 max-sm:text-[1.5rem] max-sm:mb-8">Browse by Industry</h2>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-6 max-lg:grid-cols-[repeat(auto-fill,minmax(120px,1fr))] max-sm:grid-cols-2 max-sm:gap-4">
@@ -190,7 +256,7 @@ const Landing: React.FC = () => {
               {[
                 { Icon: ShieldCheck, title: 'Secure Payments', desc: '100% payment protection for both buyers and suppliers.' },
                 { Icon: Truck, title: 'Pan India Delivery', desc: 'Reliable logistics partners for timely delivery everywhere.' },
-                { Icon: BadgeCheck, title: 'Verified Sellers', desc: 'All suppliers go through a strict background verification.' },
+                { Icon: BadgeCheck, title: 'Verified Suppliers', desc: 'All suppliers go through a strict background verification.' },
               ].map(({ Icon, title, desc }) => (
                 <div key={title} className="text-center flex flex-col items-center gap-4 max-sm:gap-2">
                   <div className="w-20 h-20 max-sm:w-12 max-sm:h-12 bg-white border border-border text-primary rounded-[8px] max-sm:rounded-[6px] flex items-center justify-center shadow-sm">

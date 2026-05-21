@@ -391,7 +391,7 @@ const ProductList: React.FC = () => {
             ) : (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6 max-sm:grid-cols-2 max-sm:gap-3">
                 {products.map((product: any) => (
-                  <ProductCard key={product._id || product.id} product={product} showAddToCart={false} />
+                  <ProductCard key={product._id || product.id} product={product} showAddToCart={false} hidePrice={!!searchQuery} />
                 ))}
               </div>
             )}

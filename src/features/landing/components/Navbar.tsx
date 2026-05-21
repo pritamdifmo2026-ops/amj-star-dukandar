@@ -15,6 +15,7 @@ import Button from '@/shared/components/ui/Button';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import categoryService from '@/features/product/services/category.service';
 import SearchBar from './SearchBar';
+import MobileSearchOverlay from './MobileSearchOverlay';
 
 const Navbar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -23,6 +24,7 @@ const Navbar: React.FC = () => {
   const [showSoonModal, setShowSoonModal] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const navigate = useNavigate();
   const userMenuRef = React.useRef<HTMLDivElement>(null);
@@ -121,7 +123,9 @@ const Navbar: React.FC = () => {
             <img src={logo} alt="AMJSTAR Logo" className="h-[38px] rounded-full object-contain" />
           </Link>
 
-          <SearchBar categories={categories} />
+          <div className="hidden lg:block flex-1 max-w-[380px] mx-3 sm:mx-6">
+            <SearchBar categories={categories} />
+          </div>
 
           <div className="flex items-center gap-4">
             {isAuth ? (
@@ -182,6 +186,12 @@ const Navbar: React.FC = () => {
                 )}
               </div>
             )}
+            <button
+              className="flex lg:hidden bg-transparent border-none text-heading cursor-pointer p-1 hover:text-primary transition-colors"
+              onClick={() => setIsMobileSearchOpen(true)}
+            >
+              <Search size={20} />
+            </button>
             <button className="flex lg:hidden bg-transparent border-none text-heading cursor-pointer p-1" onClick={() => setMobileOpen(p => !p)}>
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -371,6 +381,13 @@ const Navbar: React.FC = () => {
       >
         Are you sure you want to sign out of your account?
       </Modal>
+
+      {isMobileSearchOpen && (
+        <MobileSearchOverlay
+          categories={categories}
+          onClose={() => setIsMobileSearchOpen(false)}
+        />
+      )}
     </header>
   );
 };

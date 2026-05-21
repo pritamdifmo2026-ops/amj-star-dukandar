@@ -12,9 +12,10 @@ interface Props {
   product: Product;
   variant?: 'default' | 'wishlist';
   showAddToCart?: boolean;
+  hidePrice?: boolean;
 }
 
-const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToCart = true }) => {
+const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToCart = true, hidePrice = false }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const wishlistItems = useAppSelector(state => state.wishlist.items);
@@ -63,25 +64,31 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
           <div className="w-full h-full flex items-center justify-center bg-[#f1f5f9] text-[#94a3b8] text-sm">No Image</div>
         )}
       </div>
-      <div className="p-2 flex-1 flex flex-col">
-        {variant !== 'wishlist' && (
-          <p className="text-[10px] font-bold uppercase text-primary mb-1.5 tracking-[0.05em]">{product.category}</p>
-        )}
-        <h3 className="text-xs font-semibold text-heading mb-1.5 line-clamp-2 leading-[1.4] flex-1">{product.name}</h3>
-        <div className="flex justify-between items-baseline mb-1.5">
-          <p className="font-display text-[15px] font-normal text-heading">₹{(product.price || 0).toLocaleString('en-IN')}</p>
-          <p className="text-[10px] text-muted">MOQ: {product.minOrderQty} {product.unit}</p>
-        </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <p className="text-[11px] text-body font-medium">{product.supplierName}</p>
-          {product.isVerified && (
-            <span className="flex items-center gap-0.5 text-[9px] font-bold text-[#059669] bg-[#ecfdf5] px-1.5 py-0.5 rounded-full leading-none border border-[#a7f3d0]" title="Verified Supplier">
-              <ShieldCheck size={10} /> Verified
-            </span>
+      <div className="p-2 flex-1 flex flex-col justify-between">
+        <div className="flex-1 flex flex-col">
+          {!hidePrice && variant !== 'wishlist' && (
+            <p className="text-[10px] font-bold uppercase text-primary mb-1.5 tracking-[0.05em]">{product.category}</p>
           )}
+          <h3 className="text-xs font-semibold text-heading mb-1.5 line-clamp-2 leading-[1.4] flex-1">{product.name}</h3>
         </div>
+        {!hidePrice && (
+          <div className="mt-auto">
+            <div className="flex justify-between items-baseline mb-1.5">
+              <p className="font-display text-[15px] font-normal text-heading">₹{(product.price || 0).toLocaleString('en-IN')}</p>
+              <p className="text-[10px] text-muted">MOQ: {product.minOrderQty} {product.unit}</p>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="text-[11px] text-body font-medium">{product.supplierName}</p>
+              {product.isVerified && (
+                <span className="flex items-center gap-0.5 text-[9px] font-bold text-[#059669] bg-[#ecfdf5] px-1.5 py-0.5 rounded-full leading-none border border-[#a7f3d0]" title="Verified Supplier">
+                  <ShieldCheck size={10} /> Verified
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-      {showAddToCart && variant !== 'wishlist' && (
+      {!hidePrice && showAddToCart && variant !== 'wishlist' && (
         <div className="px-2 pb-2">
           <Button variant="secondary" size="sm" onClick={handleAddToCart} className="w-full rounded-full text-[11px] font-semibold">
             {isInCart ? 'Go to Cart' : 'Add to Cart'}

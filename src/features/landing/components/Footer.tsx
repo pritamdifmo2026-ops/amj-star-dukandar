@@ -45,9 +45,9 @@ const Footer: React.FC = () => (
             <ul className="list-none p-0 m-0 flex flex-col gap-3">
               <li><Link to="/about" className={linkCls}>About Us</Link></li>
               <li><Link to={ROUTES.PRODUCT_LIST} className={linkCls}>Categories</Link></li>
-              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Become Seller</Link></li>
+              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Become Supplier</Link></li>
               <li><Link to={ROUTES.RESELLERS} className={linkCls}>Bulk Orders</Link></li>
-              <li><Link to="/about" className={linkCls}>Contact</Link></li>
+              <li><Link to="/profile?tab=contactus" className={linkCls}>Contact</Link></li>
             </ul>
           </div>
 
@@ -62,13 +62,13 @@ const Footer: React.FC = () => (
             </ul>
           </div>
 
-          {/* For Sellers */}
+          {/* For Suppliers */}
           <div className="flex flex-col">
-            <h4 className={colTitleCls}>For Sellers</h4>
+            <h4 className={colTitleCls}>For Suppliers</h4>
             <ul className="list-none p-0 m-0 flex flex-col gap-3">
               <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Sell on AMJSTAR</Link></li>
               <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Supplier Membership</Link></li>
-              <li><Link to={ROUTES.SUPPLIER_DASHBOARD} className={linkCls}>Seller Dashboard</Link></li>
+              <li><Link to={ROUTES.SUPPLIER_DASHBOARD} className={linkCls}>Supplier Dashboard</Link></li>
               <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Advertising</Link></li>
             </ul>
           </div>

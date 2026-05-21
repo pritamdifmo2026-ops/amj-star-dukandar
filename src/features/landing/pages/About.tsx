@@ -23,10 +23,6 @@ const About: React.FC = () => {
                   AMJSTAR is not just a marketplace; it's a movement to empower millions of businesses
                   by bridging the gap between quality manufacturing and retail accessibility.
                 </p>
-                <div className="flex gap-5">
-                  <button className="bg-primary text-white border-none px-8 py-3.5 rounded-[6px] font-bold text-base cursor-pointer">Our Mission</button>
-                  <button className="bg-transparent border-none text-heading font-bold text-base cursor-pointer underline">View Story</button>
-                </div>
               </div>
               <div>
                 <img
