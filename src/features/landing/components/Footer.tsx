@@ -44,10 +44,9 @@ const Footer: React.FC = () => (
             <h4 className={colTitleCls}>Quick Links</h4>
             <ul className="list-none p-0 m-0 flex flex-col gap-3">
               <li><Link to="/about" className={linkCls}>About Us</Link></li>
-              <li><Link to={ROUTES.PRODUCT_LIST} className={linkCls}>Categories</Link></li>
-              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Become Seller</Link></li>
+              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Become Supplier</Link></li>
               <li><Link to={ROUTES.RESELLERS} className={linkCls}>Bulk Orders</Link></li>
-              <li><Link to="/about" className={linkCls}>Contact</Link></li>
+              <li><Link to="/contact" className={linkCls}>Contact</Link></li>
             </ul>
           </div>
 
@@ -58,18 +57,15 @@ const Footer: React.FC = () => (
               <li><Link to={ROUTES.PRODUCT_LIST} className={linkCls}>Browse Products</Link></li>
               <li><Link to={ROUTES.BUYERS} className={linkCls}>Request Quote</Link></li>
               <li><Link to={ROUTES.BUYERS} className={linkCls}>Buyer Protection</Link></li>
-              <li><Link to="/about" className={linkCls}>Help Center</Link></li>
             </ul>
           </div>
 
-          {/* For Sellers */}
+          {/* For Suppliers */}
           <div className="flex flex-col">
-            <h4 className={colTitleCls}>For Sellers</h4>
+            <h4 className={colTitleCls}>For Suppliers</h4>
             <ul className="list-none p-0 m-0 flex flex-col gap-3">
-              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Sell on AMJSTAR</Link></li>
+              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Supply on AMJSTAR</Link></li>
               <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Supplier Membership</Link></li>
-              <li><Link to={ROUTES.SUPPLIER_DASHBOARD} className={linkCls}>Seller Dashboard</Link></li>
-              <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Advertising</Link></li>
             </ul>
           </div>
 
@@ -101,9 +97,9 @@ const Footer: React.FC = () => (
             &copy; {new Date().getFullYear()} {appConfig.appName}. All rights reserved.
           </div>
           <div className="flex gap-6 max-md:justify-center flex-wrap">
-            {['Privacy Policy', 'Terms', 'Refund Policy'].map(label => (
-              <a key={label} href="#" className="text-[oklch(0.40_0.02_240)] no-underline text-[0.85rem] transition-colors hover:text-primary">{label}</a>
-            ))}
+            <Link to="/privacy" className="text-[oklch(0.40_0.02_240)] no-underline text-[0.85rem] transition-colors hover:text-primary">Privacy Policy</Link>
+            <Link to="/terms" className="text-[oklch(0.40_0.02_240)] no-underline text-[0.85rem] transition-colors hover:text-primary">Terms</Link>
+            <a href="#" className="text-[oklch(0.40_0.02_240)] no-underline text-[0.85rem] transition-colors hover:text-primary">Refund Policy</a>
           </div>
         </div>
       </div>

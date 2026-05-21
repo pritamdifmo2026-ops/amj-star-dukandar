@@ -115,6 +115,7 @@ export interface Enquiry {
   email: string;
   message: string;
   status: 'new' | 'read' | 'replied';
+  userRole?: 'buyer' | 'supplier' | 'reseller';
   createdAt: string;
 }
 

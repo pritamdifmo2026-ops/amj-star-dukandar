@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 
@@ -21,6 +21,7 @@ import EnquiryManagement from '../components/EnquiryManagement';
 import AdminPlatformSettings from '../components/AdminPlatformSettings';
 import AdminWithdrawals from '../components/AdminWithdrawals';
 import AdminEarnings from '../components/AdminEarnings';
+import AdminPages from '../components/AdminPages';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
 
@@ -39,6 +40,7 @@ const tabLabel: Record<string, string> = {
   earnings: 'AMJStar Earnings',
   'platform-settings': 'Platform Settings',
   withdrawals: 'Withdrawal Requests',
+  pages: 'Manage Pages',
 };
 
 const AdminDashboard: React.FC = () => {
@@ -68,6 +70,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
     { id: 'earnings', label: 'AMJ Earnings', icon: TrendingUp },
     { id: 'withdrawals', label: 'Withdrawals', icon: Wallet },
+    { id: 'pages', label: 'Manage Pages', icon: FileText },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
   ];
 
@@ -162,6 +165,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'banners' && <BannerManagement />}
             {activeTab === 'enquiry' && <EnquiryManagement />}
             {activeTab === 'earnings' && <AdminEarnings />}
+            {activeTab === 'pages' && <AdminPages />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}
             {activeTab === 'withdrawals' && <AdminWithdrawals />}
           </div>

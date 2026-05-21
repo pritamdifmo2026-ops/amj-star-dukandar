@@ -20,6 +20,9 @@ import About from '@/features/landing/pages/About';
 import Buyers from '@/features/landing/pages/Buyers';
 import Resellers from '@/features/landing/pages/Resellers';
 import Suppliers from '@/features/landing/pages/Suppliers';
+import Contact from '@/features/landing/pages/Contact';
+import Terms from '@/features/landing/pages/Terms';
+import Privacy from '@/features/landing/pages/Privacy';
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -41,6 +44,18 @@ export const publicRoutes: RouteObject[] = [
   {
     path: ROUTES.SUPPLIERS,
     element: <Suppliers />,
+  },
+  {
+    path: '/contact',
+    element: <Contact />,
+  },
+  {
+    path: '/terms',
+    element: <Terms />,
+  },
+  {
+    path: '/privacy',
+    element: <Privacy />,
   },
   {
     element: <AuthLayout />,

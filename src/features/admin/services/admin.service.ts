@@ -115,7 +115,7 @@ const adminService = {
     return response.data.enquiry;
   },
 
-  submitEnquiry: async (data: { name: string; phone: string; email: string; message: string }) => {
+  submitEnquiry: async (data: { name: string; phone: string; email: string; message: string; userRole?: string }) => {
     const response = await api.post('/enquiry', data);
     return response.data;
   },

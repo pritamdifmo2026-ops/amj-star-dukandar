@@ -109,7 +109,7 @@ const Navbar: React.FC = () => {
                 <span className="text-border">|</span>
               </>
             )}
-            <a href="#" className="text-[9px] text-body no-underline hover:text-primary">Help Center</a>
+            <Link to="/contact" className="text-[9px] text-body no-underline hover:text-primary">Contact Us</Link>
           </div>
         </div>
       </div>

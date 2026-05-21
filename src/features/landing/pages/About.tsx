@@ -1,101 +1,148 @@
 import React from 'react';
-import { ShieldCheck, TrendingUp, Handshake } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ShieldCheck, TrendingUp, Handshake, ImageIcon } from 'lucide-react';
 import MainLayout from '@/shared/layout/MainLayout';
+import api from '@/api/client';
 
-const containerCls = "max-w-[var(--width-container)] mx-auto px-8";
+interface Section {
+  id: string;
+  type: string;
+  heading?: string;
+  subheading?: string;
+  body?: string;
+  text?: string;
+  url?: string;
+  meta?: Record<string, string>;
+}
+
+interface PageData {
+  slug: string;
+  title: string;
+  sections: Section[];
+}
+
+const VALUE_ICONS = [
+  <ShieldCheck size={22} className="text-primary" />,
+  <TrendingUp size={22} className="text-primary" />,
+  <Handshake size={22} className="text-primary" />,
+];
 
 const About: React.FC = () => {
+  const { data } = useQuery<PageData>({
+    queryKey: ['page', 'about'],
+    queryFn: async () => {
+      const res = await api.get('/pages/about');
+      return res.data.page;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const hero  = data?.sections.find(s => s.type === 'about-hero');
+  const story = data?.sections.find(s => s.type === 'about-story');
+  const vals  = data?.sections.find(s => s.type === 'about-values');
+
+  const hm = hero?.meta  ?? {};
+  const sm = story?.meta ?? {};
+  const vm = vals?.meta  ?? {};
+
+  const values = [
+    { title: vm.v1Title ?? 'Absolute Trust',     desc: vm.v1Desc ?? '' },
+    { title: vm.v2Title ?? 'Growth First',        desc: vm.v2Desc ?? '' },
+    { title: vm.v3Title ?? 'Solid Partnerships',  desc: vm.v3Desc ?? '' },
+  ];
+
   return (
     <MainLayout>
-      <div className="bg-surface min-h-screen">
-        {/* Hero */}
-        <section className="bg-gradient-to-br from-white to-[oklch(0.97_0.02_75)] pt-[120px] pb-20">
-          <div className={containerCls}>
-            <div className="grid grid-cols-[1.2fr_1fr] gap-[60px] items-center max-md:grid-cols-1 max-md:gap-10">
-              <div>
-                <span className="inline-block px-4 py-1.5 bg-primary-soft text-primary rounded-full text-sm font-bold mb-6">
-                  Our Journey
-                </span>
-                <h1 className="text-[64px] font-extrabold text-heading leading-[1.1] mb-8 max-md:text-[36px]">
-                  Redefining <span className="text-primary">B2B Commerce</span> for the Digital Age
-                </h1>
-                <p className="text-xl text-body leading-[1.6] mb-10 max-md:text-base">
-                  AMJSTAR is not just a marketplace; it's a movement to empower millions of businesses
-                  by bridging the gap between quality manufacturing and retail accessibility.
-                </p>
-                <div className="flex gap-5">
-                  <button className="bg-primary text-white border-none px-8 py-3.5 rounded-[6px] font-bold text-base cursor-pointer">Our Mission</button>
-                  <button className="bg-transparent border-none text-heading font-bold text-base cursor-pointer underline">View Story</button>
-                </div>
-              </div>
-              <div>
-                <img
-                  src="/about image.png"
-                  alt="Professional Workspace"
-                  className="w-full rounded-[32px] shadow-[0_30px_60px_rgba(0,0,0,0.12)]"
-                />
-              </div>
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="bg-[#faf8f5] py-16 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <span className="inline-block px-4 py-1.5 bg-orange-50 text-primary rounded-full text-sm font-bold mb-6">
+              {hero?.subheading ?? 'Our Journey'}
+            </span>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-[#0f172a] leading-tight mb-6">
+              {hero?.heading ?? 'Redefining'}{' '}
+              <span className="text-primary">{hm.headingHighlight ?? 'B2B Commerce'}</span>{' '}
+              {hm.headingSuffix ?? 'for the Digital Age'}
+            </h1>
+            <p className="text-[#475569] text-base leading-relaxed mb-8 max-w-lg">
+              {hero?.body ?? "AMJSTAR is not just a marketplace; it's a movement to empower millions of businesses by bridging the gap between quality manufacturing and retail accessibility."}
+            </p>
+            <div className="flex items-center gap-5">
+              <button className="px-6 py-3 bg-primary text-white font-bold rounded-[8px] text-sm hover:bg-primary/90 transition-colors cursor-pointer">
+                {hm.primaryCta ?? 'Our Mission'}
+              </button>
             </div>
           </div>
-        </section>
 
-        {/* Story */}
-        <section className="py-[100px] bg-white">
-          <div className={containerCls}>
-            <div className="grid grid-cols-[1fr_400px] gap-[100px] items-start max-lg:grid-cols-1 max-lg:gap-12">
-              <div>
-                <h2 className="text-[40px] font-extrabold text-heading mb-8">Our Story</h2>
-                <p className="text-lg text-body leading-[1.8] mb-6">
-                  Founded in 2024, AMJSTAR started with a simple observation: the wholesale market was
-                  fragmented and difficult to navigate for small-scale resellers and growing manufacturers.
-                  We saw an opportunity to build a bridge—a digital ecosystem where trust is the primary currency.
-                </p>
-                <p className="text-lg text-body leading-[1.8]">
-                  Today, we are proud to be one of India's fastest-growing B2B platforms, serving thousands
-                  of partners across the country with a focus on quality, speed, and reliability.
-                </p>
+          <div className="rounded-[18px] overflow-hidden shadow-xl">
+            {hero?.url ? (
+              <img
+                src={hero.url}
+                alt={hm.heroAlt ?? 'About AMJSTAR'}
+                className="w-full h-full object-cover max-h-[420px]"
+              />
+            ) : (
+              <div className="min-h-[280px] bg-[#f1f5f9] border-2 border-dashed border-[#e2e8f0] rounded-[18px] flex flex-col items-center justify-center gap-3 text-[#94a3b8]">
+                <ImageIcon size={36} className="opacity-40" />
+                <span className="text-sm">No image set</span>
               </div>
-              <div className="bg-white p-10 rounded-[6px] border border-border">
-                <div className="italic text-lg text-heading leading-[1.6] mb-8 relative before:content-['\\201C'] before:text-[80px] before:absolute before:-top-10 before:-left-5 before:opacity-10">
-                  <p>"We believe that every business, no matter how small, deserves a global platform to shine. AMJSTAR is that stage."</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center font-bold">AV</div>
-                  <div>
-                    <h4 className="text-base font-bold text-heading">Founder's Vision</h4>
-                    <span className="text-sm text-muted">CEO, AMJSTAR</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Values */}
-        <section className="bg-surface py-20">
-          <div className={containerCls}>
-            <h2 className="text-[36px] font-bold text-heading text-center mb-[60px]">Our Core Values</h2>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-8">
-              {[
-                { Icon: ShieldCheck, title: 'Absolute Trust', desc: 'We implement multi-level verification for every partner to ensure a safe trading environment.' },
-                { Icon: TrendingUp, title: 'Growth First', desc: 'Our tools are designed specifically to help you scale your business volume and reach.' },
-                { Icon: Handshake, title: 'Solid Partnerships', desc: 'We treat our users as partners, ensuring your success is fundamentally linked to ours.' },
-              ].map(({ Icon, title, desc }) => (
-                <div
-                  key={title}
-                  className="bg-cream p-10 rounded-[10px] border border-border transition-all hover:-translate-y-2 hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
-                >
-                  <div className="w-16 h-16 bg-primary-soft text-primary rounded-[8px] flex items-center justify-center mb-6">
-                    <Icon size={32} />
-                  </div>
-                  <h3 className="text-xl font-bold text-heading mb-4">{title}</h3>
-                  <p className="text-[15px] text-body leading-[1.6]">{desc}</p>
-                </div>
-              ))}
+      {/* ── Our Story ──────────────────────────────────────────────────────── */}
+      <section className="bg-white py-20 px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+          <div>
+            <h2 className="text-3xl font-extrabold text-[#0f172a] mb-6">
+              {story?.heading ?? 'Our Story'}
+            </h2>
+            <p className="text-[#475569] text-sm leading-[1.9] mb-5">
+              {story?.text ?? 'Founded in 2024, AMJSTAR started with a simple observation: the wholesale market was fragmented and difficult to navigate for small-scale resellers and growing manufacturers. We saw an opportunity to build a bridge—a digital ecosystem where trust is the primary currency.'}
+            </p>
+            <p className="text-[#475569] text-sm leading-[1.9]">
+              {story?.body ?? "Today, we are proud to be one of India's fastest-growing B2B platforms, serving thousands of partners across the country with a focus on quality, speed, and reliability."}
+            </p>
+          </div>
+
+          <div className="bg-[#fafafa] border border-[#eef2f6] rounded-[16px] p-8">
+            <p className="text-[#1e293b] text-base font-medium leading-relaxed italic mb-8">
+              "{sm.quoteText ?? 'We believe that every business, no matter how small, deserves a global platform to shine. AMJSTAR is that stage.'}"
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-sm font-extrabold shrink-0">
+                {sm.quoteInitials ?? 'AV'}
+              </div>
+              <div>
+                <p className="font-bold text-[#0f172a] text-sm">{sm.quoteAuthor ?? "Founder's Vision"}</p>
+                <p className="text-xs text-[#94a3b8] mt-0.5">{sm.quoteRole ?? 'CEO, AMJSTAR'}</p>
+              </div>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      {/* ── Core Values ────────────────────────────────────────────────────── */}
+      <section className="bg-[#f8f7f4] py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-extrabold text-[#0f172a] text-center mb-12">
+            {vals?.heading ?? 'Our Core Values'}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {values.map((v, i) => (
+              <div key={i} className="bg-white rounded-[14px] border border-[#eef2f6] p-8 hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 rounded-[10px] bg-orange-50 flex items-center justify-center mb-5">
+                  {VALUE_ICONS[i]}
+                </div>
+                <h3 className="font-extrabold text-[#0f172a] text-base mb-2">{v.title}</h3>
+                <p className="text-[#64748b] text-sm leading-relaxed">{v.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </MainLayout>
   );
 };

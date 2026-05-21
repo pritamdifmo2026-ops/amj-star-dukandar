@@ -95,6 +95,15 @@ const EnquiryManagement: React.FC = () => {
                     <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${statusCls[enquiry.status]}`}>
                       <StatusIcon status={enquiry.status} /> {enquiry.status}
                     </span>
+                    {enquiry.userRole && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
+                        enquiry.userRole === 'buyer'    ? 'bg-[#eff6ff] text-[#0284c7] border-[#bfdbfe]' :
+                        enquiry.userRole === 'supplier' ? 'bg-[#ecfdf5] text-[#059669] border-[#6ee7b7]' :
+                                                          'bg-[#fdf4ff] text-[#9333ea] border-[#e9d5ff]'
+                      }`}>
+                        {enquiry.userRole}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-[#64748b] m-0 mb-3 leading-relaxed">{enquiry.message}</p>
                   <div className="flex items-center gap-4 flex-wrap text-xs text-[#94a3b8]">
