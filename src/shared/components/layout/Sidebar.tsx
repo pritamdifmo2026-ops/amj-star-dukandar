@@ -90,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             'w-[52px] h-[52px] rounded-full flex items-center justify-center p-2',
             'shadow-[0_8px_16px_rgba(0,0,0,0.2)] transition-transform duration-300',
             isAdmin
-              ? 'bg-gradient-to-br from-white to-slate-100 shadow-[0_0_20px_rgba(230,92,0,0.2)]'
+              ? 'bg-transparent shadow-[0_0_20px_rgba(230,92,0,0.2)]'
               : 'bg-transparent',
           ].join(' ')}>
             {logoSrc ? (
