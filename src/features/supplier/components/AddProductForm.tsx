@@ -22,7 +22,7 @@ const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-
 const labelCls = "block text-xs font-bold uppercase text-[#94a3b8] tracking-wider mb-1.5";
 const sectionCls = "bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] mb-5";
 
-const CERTIFICATIONS = ['FSSAI', 'ISO 9001', 'BIS', 'Organic India', 'Halal', 'MSME Registered', 'GMP Certified', 'CE Mark', 'Export Quality'];
+type CertDoc = { name: string; certificationTypeId: string; documentUrl: string; mandatory: boolean; };
 
 const CATEGORY_SUGGESTIONS: Record<string, string[]> = {
   textile: ['Fabric Type', 'GSM', 'Width (cm)', 'Pattern', 'Color', 'Dye Type'],
@@ -38,6 +38,68 @@ const getCategorySuggestions = (categoryName: string): string[] => {
   if (n.includes('machin') || n.includes('equipment') || n.includes('industrial') || n.includes('tools')) return CATEGORY_SUGGESTIONS.machinery;
   if (n.includes('chemical') || n.includes('raw material') || n.includes('plastic') || n.includes('polymer')) return CATEGORY_SUGGESTIONS.chemical;
   return [];
+};
+
+const getCategoryKeywords = (categoryName: string, subcategoryName?: string): string[] => {
+  const n = categoryName.toLowerCase();
+  const s = (subcategoryName || '').toLowerCase();
+  const kws: string[] = [];
+
+  if (categoryName) kws.push(categoryName.toLowerCase());
+  if (subcategoryName) kws.push(subcategoryName.toLowerCase());
+
+  if (n.includes('textile') || n.includes('fabric') || n.includes('cloth') || n.includes('garment') || n.includes('yarn')) {
+    kws.push('fabric', 'textile', 'woven', 'knitted', 'wholesale fabric');
+    if (s.includes('cotton')) kws.push('cotton', 'pure cotton', '100% cotton');
+    if (s.includes('silk')) kws.push('silk', 'pure silk', 'mulberry silk');
+    if (s.includes('polyester')) kws.push('polyester', 'synthetic fabric');
+    if (s.includes('denim')) kws.push('denim', 'jeans fabric', 'indigo');
+    if (s.includes('linen')) kws.push('linen', 'linen fabric');
+    if (s.includes('wool')) kws.push('wool', 'woolen fabric');
+  } else if (n.includes('food') || n.includes('agri') || n.includes('grain') || n.includes('spice') || n.includes('rice') || n.includes('dal') || n.includes('pulse')) {
+    kws.push('food grade', 'fresh', 'agri', 'wholesale food');
+    if (s.includes('organic')) kws.push('organic', 'certified organic', 'natural');
+    if (s.includes('rice')) kws.push('rice', 'basmati', 'non-basmati');
+    if (s.includes('spice') || s.includes('masala')) kws.push('spice', 'masala', 'seasoning');
+    if (s.includes('dal') || s.includes('pulse') || s.includes('lentil')) kws.push('dal', 'lentils', 'pulses');
+    if (s.includes('wheat') || s.includes('flour')) kws.push('wheat', 'flour', 'atta');
+  } else if (n.includes('machin') || n.includes('equipment') || n.includes('industrial') || n.includes('tool')) {
+    kws.push('industrial', 'machinery', 'equipment', 'heavy duty', 'manufacturing');
+    if (s.includes('auto')) kws.push('automatic', 'automation', 'CNC');
+    if (s.includes('pump')) kws.push('pump', 'hydraulic', 'water pump');
+    if (s.includes('motor')) kws.push('motor', 'electric motor', 'AC motor');
+    if (s.includes('conveyor')) kws.push('conveyor', 'conveyor belt');
+  } else if (n.includes('chemical') || n.includes('raw material') || n.includes('plastic') || n.includes('polymer')) {
+    kws.push('industrial grade', 'raw material', 'chemical');
+    if (s.includes('plastic')) kws.push('plastic', 'polymer', 'resin', 'granules');
+    if (s.includes('pigment') || s.includes('dye')) kws.push('pigment', 'dye', 'colorant');
+    if (s.includes('solvent')) kws.push('solvent', 'industrial solvent');
+  } else if (n.includes('electronic') || n.includes('electrical')) {
+    kws.push('electronics', 'electrical', 'components', 'industrial electronics');
+    if (s.includes('led')) kws.push('LED', 'LED light', 'energy saving');
+    if (s.includes('wire') || s.includes('cable')) kws.push('wire', 'cable', 'electrical wire');
+    if (s.includes('switch') || s.includes('panel')) kws.push('switchgear', 'control panel');
+  } else if (n.includes('furniture') || n.includes('wood') || n.includes('timber')) {
+    kws.push('furniture', 'wooden', 'timber', 'wholesale furniture');
+    if (s.includes('plywood')) kws.push('plywood', 'marine ply', 'MDF');
+    if (s.includes('office')) kws.push('office furniture', 'commercial furniture');
+  } else if (n.includes('paper') || n.includes('packaging') || n.includes('stationery')) {
+    kws.push('paper', 'packaging material', 'stationery', 'bulk paper');
+    if (s.includes('corrugat')) kws.push('corrugated box', 'carton', 'shipping box');
+    if (s.includes('kraft')) kws.push('kraft paper', 'kraft bag');
+  } else if (n.includes('metal') || n.includes('steel') || n.includes('iron') || n.includes('aluminium') || n.includes('aluminum')) {
+    kws.push('metal', 'steel', 'industrial metal', 'wholesale metal');
+    if (s.includes('stainless')) kws.push('stainless steel', 'SS 304', 'SS 316');
+    if (s.includes('alumin')) kws.push('aluminium', 'aluminium alloy', 'aluminium sheet');
+    if (s.includes('pipe') || s.includes('tube')) kws.push('pipe', 'tube', 'hollow section');
+  } else if (n.includes('pharma') || n.includes('medical') || n.includes('health')) {
+    kws.push('pharmaceutical', 'medical grade', 'healthcare', 'bulk pharma');
+  } else if (n.includes('cosmetic') || n.includes('beauty') || n.includes('personal care')) {
+    kws.push('cosmetic', 'personal care', 'beauty', 'bulk cosmetic');
+  }
+
+  kws.push('bulk', 'wholesale', 'manufacturer', 'supplier');
+  return [...new Set(kws)];
 };
 
 const VALUE_PLACEHOLDERS: [RegExp, string][] = [
@@ -105,11 +167,16 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     keywords: [],
     leadTime: '',
     packagingType: 'bulk',
+    packagingSize: '',
+    packagingDimensions: '',
+    packagingWeight: '',
     countryOfOrigin: 'India',
-    certifications: [],
     gstIncluded: false,
     gstRate: 18,
   });
+  const [packagingWeightUnit, setPackagingWeightUnit] = useState('kg');
+  const [certDocs, setCertDocs] = useState<Record<string, CertDoc>>({});
+  const [uploadingCert, setUploadingCert] = useState<string | null>(null);
   const [keywordInput, setKeywordInput] = useState('');
   const [messageModal, setMessageModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
     isOpen: false, title: '', message: '', type: 'info'
@@ -133,11 +200,23 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     if (!formData.stock || formData.stock <= 0) missing.push('Available Stock (must be greater than 0)');
     if (!formData.images || formData.images.length === 0) missing.push('At least 1 product image');
     if (formData.gstRate === undefined || formData.gstRate === null) missing.push('GST Rate');
+    if (!formData.packagingType) missing.push('Packaging Type');
+    if (!formData.packagingWeight?.trim()) missing.push('Package Weight');
+    if (!formData.packagingSize?.trim()) missing.push('Package Size');
+    if (!formData.packagingDimensions?.trim()) missing.push('Package Dimensions');
+    Object.values(certDocs).forEach(d => {
+      if (d.mandatory && !d.documentUrl.trim()) missing.push(`${d.name} compliance document`);
+    });
     return missing;
   };
 
   const buildPayload = (status: 'DRAFT' | 'PENDING') => {
-    const cleanData: any = { ...formData, specifications: rowsToSpecs(specRows), status };
+    const cleanData: any = {
+      ...formData,
+      specifications: rowsToSpecs(specRows),
+      certificationDocs: Object.values(certDocs).filter(d => d.documentUrl.trim()),
+      status,
+    };
     if (!cleanData.categoryId) delete cleanData.categoryId;
     if (!cleanData.subcategoryId) delete cleanData.subcategoryId;
     return cleanData;
@@ -196,12 +275,30 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
   const handleDiscard = () => navigate(`/supplier/dashboard?tab=${returnTab ?? 'overview'}`);
 
-  const toggleCertification = (cert: string) => {
-    const current = formData.certifications || [];
-    setFormData(prev => ({
-      ...prev,
-      certifications: current.includes(cert) ? current.filter(c => c !== cert) : [...current, cert],
-    }));
+  const initCertDocs = (requiredCertifications: any[], existing?: any[]) => {
+    const docsMap: Record<string, CertDoc> = {};
+    (requiredCertifications || []).forEach((rc: any) => {
+      const prev = existing?.find((d: any) => d.name?.toLowerCase() === rc.name?.toLowerCase());
+      docsMap[rc.name] = {
+        name: rc.name,
+        certificationTypeId: rc.certificationTypeId || '',
+        documentUrl: prev?.documentUrl || '',
+        mandatory: rc.mandatory ?? true,
+      };
+    });
+    setCertDocs(docsMap);
+  };
+
+  const handleCertUpload = async (certName: string, file: File) => {
+    setUploadingCert(certName);
+    try {
+      const res = await uploadService.uploadDoc(file);
+      setCertDocs(prev => ({ ...prev, [certName]: { ...prev[certName], documentUrl: res.url } }));
+    } catch {
+      setMessageModal({ isOpen: true, type: 'error', title: 'Upload Failed', message: `Failed to upload ${certName} document. Please try again.` });
+    } finally {
+      setUploadingCert(null);
+    }
   };
 
   const addSpecRow = () => setSpecRows(prev => [...prev, { id: Date.now().toString(), key: '', value: '' }]);
@@ -216,6 +313,10 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
         setCategories(data.categories);
 
         if (editingProduct) {
+          const wStr: string = editingProduct.packagingWeight || '';
+          const wUnitMatch = wStr.match(/\s*(g|kg|lbs|ton|mt)\s*$/i);
+          if (wUnitMatch) setPackagingWeightUnit(wUnitMatch[1].toLowerCase());
+
           setFormData({
             name: editingProduct.name || '',
             description: editingProduct.description || '',
@@ -232,19 +333,21 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             keywords: editingProduct.keywords || [],
             leadTime: editingProduct.leadTime || '',
             packagingType: editingProduct.packagingType || 'bulk',
+            packagingSize: editingProduct.packagingSize || '',
+            packagingDimensions: editingProduct.packagingDimensions || '',
+            packagingWeight: wStr,
             countryOfOrigin: editingProduct.countryOfOrigin || 'India',
-            certifications: editingProduct.certifications || [],
             gstIncluded: editingProduct.gstIncluded ?? false,
             gstRate: editingProduct.gstRate ?? 18,
           });
           setSpecRows(specsToRows(editingProduct.specifications || {}));
 
-          if (editingProduct.categoryId) {
-            const cat = data.categories.find((c: any) => c._id === editingProduct.categoryId);
-            if (cat?.subcategories) setAvailableSubcategories(cat.subcategories);
-          } else if (editingProduct.category) {
-            const cat = data.categories.find((c: any) => c.name === editingProduct.category);
-            if (cat?.subcategories) setAvailableSubcategories(cat.subcategories);
+          const catForEdit = editingProduct.categoryId
+            ? data.categories.find((c: any) => c._id === editingProduct.categoryId)
+            : data.categories.find((c: any) => c.name === editingProduct.category);
+          if (catForEdit?.subcategories) setAvailableSubcategories(catForEdit.subcategories);
+          if (catForEdit?.requiredCertifications?.length) {
+            initCertDocs(catForEdit.requiredCertifications, editingProduct.certificationDocs || []);
           }
         }
       } catch {
@@ -258,8 +361,12 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     const selectedId = e.target.value;
     const cat = categories.find(c => c._id === selectedId);
     if (cat) {
-      setFormData(prev => ({ ...prev, categoryId: cat._id, category: cat.name, subcategoryId: '' }));
+      setFormData(prev => {
+        const autoKeywords = (prev.keywords ?? []).length === 0 ? getCategoryKeywords(cat.name) : prev.keywords ?? [];
+        return { ...prev, categoryId: cat._id, category: cat.name, subcategoryId: '', keywords: autoKeywords };
+      });
       setAvailableSubcategories(cat.subcategories || []);
+      initCertDocs(cat.requiredCertifications || []);
       const allRowsEmpty = specRows.every(r => r.value.trim() === '');
       if (allRowsEmpty) {
         const suggestions = getCategorySuggestions(cat.name);
@@ -268,6 +375,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     } else {
       setFormData(prev => ({ ...prev, categoryId: '', category: '', subcategoryId: '' }));
       setAvailableSubcategories([]);
+      setCertDocs({});
     }
   };
 
@@ -397,7 +505,18 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                 {availableSubcategories.length > 0 && (
                   <div>
                     <label className={labelCls}>Subcategory <span className="text-[#dc2626]">*</span></label>
-                    <select className={inputCls} value={formData.subcategoryId || ''} onChange={e => setFormData({ ...formData, subcategoryId: e.target.value })}>
+                    <select
+                      className={inputCls}
+                      value={formData.subcategoryId || ''}
+                      onChange={e => {
+                        const subId = e.target.value;
+                        const sub = availableSubcategories.find(s => s._id === subId);
+                        setFormData(prev => {
+                          const extraKws = sub ? getCategoryKeywords(prev.category, sub.name).filter(kw => !(prev.keywords ?? []).includes(kw)) : [];
+                          return { ...prev, subcategoryId: subId, keywords: [...(prev.keywords ?? []), ...extraKws] };
+                        });
+                      }}
+                    >
                       <option value="" disabled>Select a subcategory</option>
                       {availableSubcategories.map(sub => <option key={sub._id} value={sub._id}>{sub.name}</option>)}
                     </select>
@@ -464,7 +583,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                   </div>
                 </div>
                 <div>
-                  <label className={labelCls}>Packaging Type</label>
+                  <label className={labelCls}>Packaging Type <span className="text-[#dc2626]">*</span></label>
                   <select className={inputCls} value={formData.packagingType ?? 'bulk'} onChange={e => setFormData({ ...formData, packagingType: e.target.value })}>
                     <option value="bulk">Bulk</option>
                     <option value="retail">Retail Pack</option>
@@ -472,6 +591,62 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                   </select>
                 </div>
               </div>
+
+              <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
+                <div>
+                  <label className={labelCls}>Package Weight <span className="text-[#dc2626]">*</span></label>
+                  <div className="flex gap-2">
+                    <input
+                      className={inputCls}
+                      type="text"
+                      inputMode="decimal"
+                      value={formData.packagingWeight ? formData.packagingWeight.replace(/\s*(g|kg|lbs|ton|mt)\s*$/i, '').trim() : ''}
+                      onChange={e => {
+                        const num = e.target.value.replace(/[^0-9.]/g, '');
+                        setFormData(prev => ({ ...prev, packagingWeight: num ? `${num} ${packagingWeightUnit}` : '' }));
+                      }}
+                      placeholder="e.g. 500"
+                    />
+                    <select
+                      className="border border-[#e2e8f0] rounded-[8px] px-2 py-2.5 text-sm text-[#1e293b] bg-white outline-none focus:border-primary transition-colors shrink-0"
+                      value={packagingWeightUnit}
+                      onChange={e => {
+                        const newUnit = e.target.value;
+                        setPackagingWeightUnit(newUnit);
+                        const num = (formData.packagingWeight || '').replace(/\s*(g|kg|lbs|ton|mt)\s*$/i, '').trim();
+                        if (num) setFormData(prev => ({ ...prev, packagingWeight: `${num} ${newUnit}` }));
+                      }}
+                    >
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                      <option value="lbs">lbs</option>
+                      <option value="ton">ton</option>
+                      <option value="mt">mt</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelCls}>Package Size <span className="text-[#dc2626]">*</span></label>
+                  <input
+                    className={inputCls}
+                    type="text"
+                    value={formData.packagingSize ?? ''}
+                    onChange={e => setFormData({ ...formData, packagingSize: e.target.value })}
+                    placeholder="e.g. 1 kg, 500 ml, 50 pcs"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Package Dimensions <span className="text-[#dc2626]">*</span></label>
+                  <input
+                    className={inputCls}
+                    type="text"
+                    value={formData.packagingDimensions ?? ''}
+                    onChange={e => setFormData({ ...formData, packagingDimensions: e.target.value })}
+                    placeholder="e.g. 20×15×10 cm"
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-[#64748b] -mt-2">Packaging details are used for logistics and courier calculations.</p>
 
               <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
                 <div>
@@ -534,7 +709,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                   {(formData.keywords ?? []).map((kw, i) => (
                     <span key={i} className="inline-flex items-center gap-1 bg-[#fff7ed] text-[#c2410c] border border-[#fed7aa] rounded-full px-2.5 py-0.5 text-xs font-semibold">
                       {kw}
-                      <button type="button" onClick={() => setFormData({ ...formData, keywords: (formData.keywords ?? []).filter((_, idx) => idx !== i) })} className="bg-none border-none cursor-pointer text-[#c2410c] p-0 leading-none">×</button>
+                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, keywords: (prev.keywords ?? []).filter((_, idx) => idx !== i) }))} className="bg-none border-none cursor-pointer text-[#c2410c] p-0 leading-none">×</button>
                     </span>
                   ))}
                   <input
@@ -546,7 +721,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                         e.preventDefault();
                         const kw = keywordInput.trim().replace(/,$/, '');
                         if (kw && !(formData.keywords ?? []).includes(kw)) {
-                          setFormData({ ...formData, keywords: [...(formData.keywords ?? []), kw] });
+                          setFormData(prev => ({ ...prev, keywords: [...(prev.keywords ?? []), kw] }));
                         }
                         setKeywordInput('');
                       }
@@ -555,29 +730,86 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                     className="border-none outline-none flex-1 min-w-[140px] text-sm bg-transparent"
                   />
                 </div>
+                {(() => {
+                  const subName = availableSubcategories.find(s => s._id === formData.subcategoryId)?.name;
+                  const pending = formData.category
+                    ? getCategoryKeywords(formData.category, subName).filter(kw => !(formData.keywords ?? []).includes(kw))
+                    : [];
+                  if (!pending.length) return null;
+                  return (
+                    <div className="flex flex-wrap gap-1.5 mt-2 items-center">
+                      <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider shrink-0">Suggested:</span>
+                      {pending.map(kw => (
+                        <button
+                          key={kw}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, keywords: [...(prev.keywords ?? []), kw] }))}
+                          className="inline-flex items-center gap-0.5 bg-[#f1f5f9] text-[#475569] border border-[#e2e8f0] rounded-full px-2.5 py-0.5 text-xs font-medium hover:bg-[#fff7ed] hover:text-[#c2410c] hover:border-[#fed7aa] transition-colors cursor-pointer"
+                        >
+                          + {kw}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
 
-          {/* Certifications */}
+          {/* Compliance Documents */}
           <div className={sectionCls}>
-            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Certifications</h3>
-            <p className="text-sm text-[#64748b] mb-4 m-0">Select all certifications applicable to this product.</p>
-            <div className="flex flex-wrap gap-2">
-              {CERTIFICATIONS.map(cert => {
-                const checked = (formData.certifications || []).includes(cert);
-                return (
-                  <button
-                    key={cert}
-                    type="button"
-                    onClick={() => toggleCertification(cert)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${checked ? 'bg-primary text-white border-primary' : 'bg-white text-[#64748b] border-[#e2e8f0] hover:border-primary hover:text-primary'}`}
-                  >
-                    {cert}
-                  </button>
-                );
-              })}
-            </div>
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Compliance Documents</h3>
+            <p className="text-sm text-[#64748b] mb-4 m-0">
+              Upload certification documents required for this product's category.
+            </p>
+            {Object.keys(certDocs).length === 0 ? (
+              <div className="flex items-center gap-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-4 py-3">
+                <span className="text-sm text-[#94a3b8]">
+                  {formData.categoryId
+                    ? 'No compliance documents required for this category.'
+                    : 'Select a category to see required compliance documents.'}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {Object.values(certDocs).map(doc => (
+                  <div key={doc.name} className="flex items-center gap-3 border border-[#e2e8f0] rounded-[8px] px-4 py-3 bg-white">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-semibold text-[#1e293b]">{doc.name}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${doc.mandatory ? 'bg-[#fef2f2] text-[#dc2626] border-[#fecaca]' : 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0]'}`}>
+                          {doc.mandatory ? 'Mandatory' : 'Optional'}
+                        </span>
+                      </div>
+                      {doc.documentUrl ? (
+                        <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline truncate block">
+                          Document uploaded — view file
+                        </a>
+                      ) : (
+                        <span className="text-xs text-[#94a3b8]">No document uploaded yet</span>
+                      )}
+                    </div>
+                    <div className="shrink-0">
+                      {uploadingCert === doc.name ? (
+                        <span className="text-xs text-[#64748b] px-3 py-2 animate-pulse">Uploading...</span>
+                      ) : (
+                        <label className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-primary border border-primary rounded-[8px] cursor-pointer hover:bg-primary hover:text-white transition-colors">
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            hidden
+                            onChange={e => {
+                              if (e.target.files?.[0]) handleCertUpload(doc.name, e.target.files[0]);
+                            }}
+                          />
+                          {doc.documentUrl ? 'Replace' : 'Upload'}
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Specifications */}
@@ -671,7 +903,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
           {/* Required fields reminder */}
           {!isEditingPublished && (
             <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[8px] px-5 py-3 mb-5 text-xs text-[#92400e]">
-              <span className="font-bold">Before publishing:</span> Name, Description, HSN Code, Category, Price &gt; 0, MOQ, Stock &gt; 0, and at least 1 image are required.
+              <span className="font-bold">Before publishing:</span> Name, Description, HSN Code, Category, Price &gt; 0, MOQ, Stock &gt; 0, at least 1 image, and all 4 packaging fields are required.
             </div>
           )}
         </form>

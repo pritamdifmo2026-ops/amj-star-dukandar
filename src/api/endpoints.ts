@@ -20,9 +20,11 @@ export const ENDPOINTS = {
   // Orders
   ORDERS: {
     LIST: '/orders',
+    SUPPLIER_LIST: '/orders/supplier',
     DETAIL: (id: string | number) => `/orders/${id}`,
     CREATE: '/orders',
     UPDATE_STATUS: (id: string | number) => `/orders/${id}/status`,
+    DISPATCH: (id: string | number) => `/orders/${id}/dispatch`,
   },
 
   // Cart

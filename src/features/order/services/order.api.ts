@@ -9,6 +9,11 @@ export const orderApi = {
     return res.data;
   },
 
+  supplierOrders: async (): Promise<{ data: any[]; stats: any }> => {
+    const res = await apiClient.get(ENDPOINTS.ORDERS.SUPPLIER_LIST);
+    return res.data;
+  },
+
   detail: async (id: string): Promise<Order> => {
     const res = await apiClient.get(ENDPOINTS.ORDERS.DETAIL(id));
     return res.data;
@@ -22,5 +27,10 @@ export const orderApi = {
   updateStatus: async (id: string, status: string): Promise<Order> => {
     const res = await apiClient.patch(ENDPOINTS.ORDERS.UPDATE_STATUS(id), { status });
     return res.data;
+  },
+
+  dispatch: async (id: string): Promise<{ trackingId: string; dispatchedAt: string }> => {
+    const res = await apiClient.patch(ENDPOINTS.ORDERS.DISPATCH(id));
+    return res.data.data;
   },
 };

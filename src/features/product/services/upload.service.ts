@@ -18,14 +18,20 @@ export const uploadService = {
   uploadImages: async (files: File[]) => {
     const formData = new FormData();
     files.forEach(file => formData.append('images', file));
-    
     const response = await apiClient.post('/upload/images', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
-  }
+  },
+
+  uploadDoc: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/upload/doc', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };
 
 export default uploadService;

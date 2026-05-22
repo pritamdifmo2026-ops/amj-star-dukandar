@@ -35,7 +35,27 @@ export const categoryService = {
   deleteSubcategory: async (subId: string) => {
     const response = await apiClient.delete(`/categories/subcategories/${subId}`);
     return response.data;
-  }
+  },
+
+  setCertifications: async (categoryId: string, certifications: any[]) => {
+    const response = await apiClient.patch(`/categories/${categoryId}/certifications`, { certifications });
+    return response.data;
+  },
+
+  getCertTypes: async () => {
+    const response = await apiClient.get('/cert-types');
+    return response.data; // { success, data: CertificationType[] }
+  },
+
+  createCertType: async (name: string, description: string) => {
+    const response = await apiClient.post('/cert-types', { name, description });
+    return response.data;
+  },
+
+  deleteCertType: async (id: string) => {
+    const response = await apiClient.delete(`/cert-types/${id}`);
+    return response.data;
+  },
 };
 
 export default categoryService;

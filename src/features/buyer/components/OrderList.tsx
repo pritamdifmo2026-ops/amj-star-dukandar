@@ -1,20 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import { orderApi } from '@/features/order/services/order.api';
-import { ShoppingBag, ChevronRight, Clock, Package } from 'lucide-react';
+import { ShoppingBag, Package, X, Truck, CheckCircle, Clock, XCircle, ChevronRight } from 'lucide-react';
 import { useSelector } from 'react-redux';
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; Icon: React.FC<any> }> = {
+  paid:       { label: 'Pending Dispatch', color: '#a16207', bg: '#fefce8', border: '#fde047', Icon: Clock },
+  processing: { label: 'Pending Dispatch', color: '#a16207', bg: '#fefce8', border: '#fde047', Icon: Clock },
+  shipped:    { label: 'Dispatched',       color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', Icon: Truck },
+  delivered:  { label: 'Delivered',        color: '#15803d', bg: '#f0fdf4', border: '#86efac', Icon: CheckCircle },
+  cancelled:  { label: 'Cancelled',        color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', Icon: XCircle },
+  pending:    { label: 'Processing',       color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', Icon: Clock },
+};
+
+const getStatusConfig = (status: string) =>
+  STATUS_CONFIG[status] ?? { label: status, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', Icon: Clock };
 
 const OrderList: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchResult, setDispatchResult] = useState<{ trackingId: string } | null>(null);
+  const [dispatchError, setDispatchError] = useState('');
   const { user } = useSelector((state: any) => state.auth);
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => { fetchOrders(); }, [user?.role]);
 
   const fetchOrders = async () => {
-    try { const res = await orderApi.list(); setOrders(res.data ?? []); }
-    catch (err) { console.error('Failed to fetch orders', err); }
-    finally { setLoading(false); }
+    try {
+      if (user?.role === 'supplier') {
+        const res = await orderApi.supplierOrders();
+        setOrders(res.data ?? []);
+      } else {
+        const res = await orderApi.list();
+        setOrders(res.data ?? []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch orders', err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleDispatch = async () => {
+    if (!selectedOrder) return;
+    setDispatching(true);
+    setDispatchError('');
+    try {
+      const result = await orderApi.dispatch(selectedOrder._id);
+      setDispatchResult(result);
+      setOrders(prev => prev.map(o => o._id === selectedOrder._id ? { ...o, status: 'shipped', trackingId: result.trackingId } : o));
+      setSelectedOrder((prev: any) => prev ? { ...prev, status: 'shipped', trackingId: result.trackingId } : null);
+    } catch (err: any) {
+      setDispatchError(err?.response?.data?.message || 'Failed to dispatch order. Please try again.');
+    } finally {
+      setDispatching(false);
+    }
+  };
+
+  const closeModal = () => {
+    setSelectedOrder(null);
+    setDispatchResult(null);
+    setDispatchError('');
+  };
+
+  const isSupplier = user?.role === 'supplier';
 
   if (loading) {
     return (
@@ -24,8 +74,6 @@ const OrderList: React.FC = () => {
       </div>
     );
   }
-
-  const isSupplier = user?.role === 'supplier';
 
   if (orders.length === 0) {
     return (
@@ -38,53 +86,197 @@ const OrderList: React.FC = () => {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-extrabold text-[#0f172a] m-0">{isSupplier ? 'Received Orders' : 'My Orders'} ({orders.length})</h3>
-      </div>
-      <div className="grid grid-cols-1 gap-4">
-        {orders.map(order => (
-          <div key={order._id} className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-            <div className="p-5 flex items-start justify-between gap-4 max-sm:flex-col">
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-extrabold text-primary bg-[#fff7ed] px-2.5 py-1 rounded-full">{order.orderNumber}</span>
-                  <span className="text-xs text-[#94a3b8]">
-                    {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {order.items.map((item: any, idx: number) => (
-                    <div key={idx} className="flex items-center gap-2 text-sm text-[#475569]">
-                      <Package size={14} className="text-[#94a3b8] shrink-0" />
-                      <span>{item.name}</span>
-                      <span className="text-[#94a3b8]">x{item.quantity}</span>
+    <>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-extrabold text-[#0f172a] m-0">{isSupplier ? 'Received Orders' : 'My Orders'} ({orders.length})</h3>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {orders.map(order => {
+            const cfg = getStatusConfig(order.status);
+            const StatusIcon = cfg.Icon;
+            return (
+              <div key={order._id} className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+                <div className="p-5 flex items-start justify-between gap-4 max-sm:flex-col">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-extrabold text-primary bg-[#fff7ed] px-2.5 py-1 rounded-full">{order.orderNumber}</span>
+                      <span className="text-xs text-[#94a3b8]">
+                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
                     </div>
-                  ))}
+                    <div className="flex flex-col gap-1.5">
+                      {order.items.map((item: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm text-[#475569]">
+                          <Package size={14} className="text-[#94a3b8] shrink-0" />
+                          <span>{item.name}</span>
+                          <span className="text-[#94a3b8]">×{item.quantity} {item.unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs text-[#94a3b8] m-0 mb-1">Order Value</p>
+                    <p className="text-lg font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+                <div className="px-5 py-3 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-1">
+                    <div
+                      className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full w-fit"
+                      style={{ color: cfg.color, backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}
+                    >
+                      <StatusIcon size={11} />
+                      {cfg.label}
+                    </div>
+                    <span className="text-xs text-[#94a3b8] mt-0.5">
+                      {isSupplier
+                        ? `Buyer: ${order.buyerId?.name || 'Customer'}`
+                        : `Supplier: ${order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}`}
+                    </span>
+                  </div>
+                  {isSupplier && (
+                    <button
+                      onClick={() => { setSelectedOrder(order); setDispatchResult(null); setDispatchError(''); }}
+                      className="flex items-center gap-1.5 text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0 shrink-0"
+                    >
+                      Manage Order <ChevronRight size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-xs text-[#94a3b8] m-0 mb-1">Order Value</p>
-                <p className="text-lg font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString()}</p>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Manage Order Modal */}
+      {selectedOrder && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px]"
+          onClick={e => { if (e.target === e.currentTarget) closeModal(); }}
+        >
+          <div className="w-full sm:max-w-lg bg-white rounded-t-[20px] sm:rounded-[16px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#f1f5f9]">
+              <div>
+                <h3 className="text-base font-extrabold text-[#0f172a] m-0">Manage Order</h3>
+                <p className="text-xs text-[#94a3b8] m-0 mt-0.5">{selectedOrder.orderNumber}</p>
               </div>
-            </div>
-            <div className="px-5 py-3 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#a16207]">
-                  <Clock size={12} /> {isSupplier ? 'To be Processed' : 'Pending (Processing)'}
-                </div>
-                <span className="text-xs text-[#94a3b8]">
-                  {isSupplier ? `Buyer: ${order.buyerId?.name || 'Customer'}` : `Supplier: ${order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}`}
-                </span>
-              </div>
-              <button className="flex items-center gap-1.5 text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">
-                Manage Order <ChevronRight size={14} />
+              <button onClick={closeModal} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f1f5f9] transition-colors border-none bg-transparent cursor-pointer text-[#64748b]">
+                <X size={18} />
               </button>
             </div>
+
+            {/* Modal body */}
+            <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-4">
+              {/* Order date + buyer */}
+              <div className="flex items-center justify-between text-xs text-[#64748b]">
+                <span>Buyer: <strong className="text-[#0f172a]">{selectedOrder.buyerId?.name || 'Customer'}</strong></span>
+                <span>{new Date(selectedOrder.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              </div>
+
+              {/* Items */}
+              <div className="bg-[#f8fafc] rounded-[10px] border border-[#eef2f6] divide-y divide-[#f1f5f9]">
+                {selectedOrder.items.map((item: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Package size={14} className="text-[#94a3b8]" />
+                      <span className="text-sm text-[#1e293b] font-medium">{item.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-[#94a3b8]">×{item.quantity} {item.unit}</span>
+                      <span className="ml-3 text-sm font-bold text-[#0f172a]">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between px-4 py-3 bg-[#fff7ed]">
+                  <span className="text-sm font-bold text-[#0f172a]">Total</span>
+                  <span className="text-base font-extrabold text-primary">₹{selectedOrder.totalAmount.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              {/* Current status */}
+              {(() => {
+                const cfg = getStatusConfig(selectedOrder.status);
+                const StatusIcon = cfg.Icon;
+                return (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#94a3b8] font-medium">Status:</span>
+                    <span
+                      className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full"
+                      style={{ color: cfg.color, backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}
+                    >
+                      <StatusIcon size={11} />
+                      {cfg.label}
+                    </span>
+                  </div>
+                );
+              })()}
+
+              {/* Dispatch success state */}
+              {dispatchResult && (
+                <div className="bg-[#f0fdf4] border border-[#86efac] rounded-[10px] px-4 py-4 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2 text-[#15803d] font-bold text-sm">
+                    <CheckCircle size={16} />
+                    Order Dispatched Successfully!
+                  </div>
+                  <p className="text-xs text-[#166534] m-0">Tracking ID: <strong>{dispatchResult.trackingId}</strong></p>
+                  <p className="text-xs text-[#166534] m-0">Courier: AMJSTAR COURIER SERVICES</p>
+                  <p className="text-xs text-[#4ade80] m-0 mt-1">✓ Buyer notified via chat &amp; email</p>
+                </div>
+              )}
+
+              {/* Tracking info if already dispatched */}
+              {selectedOrder.status === 'shipped' && !dispatchResult && selectedOrder.trackingId && (
+                <div className="bg-[#eff6ff] border border-[#93c5fd] rounded-[10px] px-4 py-3">
+                  <p className="text-xs text-[#1d4ed8] font-bold m-0 mb-1">Dispatched</p>
+                  <p className="text-xs text-[#1e40af] m-0">Tracking ID: <strong>{selectedOrder.trackingId}</strong></p>
+                  <p className="text-xs text-[#1e40af] m-0">Courier: AMJSTAR COURIER SERVICES</p>
+                </div>
+              )}
+
+              {/* Error */}
+              {dispatchError && (
+                <div className="bg-[#fef2f2] border border-[#fca5a5] rounded-[10px] px-4 py-3 text-xs text-[#dc2626] font-medium">
+                  {dispatchError}
+                </div>
+              )}
+            </div>
+
+            {/* Modal footer */}
+            <div className="px-6 py-4 border-t border-[#f1f5f9] bg-[#fafafa]">
+              {selectedOrder.status !== 'shipped' && selectedOrder.status !== 'delivered' && selectedOrder.status !== 'cancelled' && !dispatchResult ? (
+                <button
+                  onClick={handleDispatch}
+                  disabled={dispatching}
+                  className="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-[10px] text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed border-none cursor-pointer"
+                >
+                  {dispatching ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Dispatching...
+                    </>
+                  ) : (
+                    <>
+                      <Truck size={16} />
+                      Ready to Dispatch
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={closeModal}
+                  className="w-full py-3 rounded-[10px] text-sm font-bold text-[#64748b] bg-[#f1f5f9] border-none cursor-pointer hover:bg-[#e2e8f0] transition-colors"
+                >
+                  Close
+                </button>
+              )}
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 

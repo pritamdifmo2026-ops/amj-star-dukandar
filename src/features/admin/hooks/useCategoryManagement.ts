@@ -99,6 +99,8 @@ export const useCategoryManagement = () => {
     }
   };
 
+  const refetchCategories = () => queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] });
+
   return {
     categories,
     loading,
@@ -118,5 +120,6 @@ export const useCategoryManagement = () => {
     openModal,
     handleModalSubmit,
     handleDeleteSubcategory,
+    refetchCategories,
   };
 };

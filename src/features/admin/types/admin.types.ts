@@ -83,6 +83,13 @@ export interface AdminProduct {
   status?: 'PENDING' | 'APPROVED' | 'REJECTED';
   unit?: string;
   supplierId?: { businessName: string };
+  certificationDocs?: {
+    name: string;
+    documentUrl: string;
+    verified: boolean;
+    mandatory: boolean;
+    certificationTypeId?: string;
+  }[];
 }
 
 export interface AdminUser {
@@ -109,11 +116,26 @@ export interface Subcategory {
   name: string;
 }
 
+export interface RequiredCertification {
+  certificationTypeId?: string;
+  name: string;
+  mandatory: boolean;
+  description: string;
+}
+
 export interface Category {
   _id: string;
   name: string;
   image?: string;
   subcategories: Subcategory[];
+  requiredCertifications: RequiredCertification[];
+}
+
+export interface CertificationType {
+  _id: string;
+  name: string;
+  description: string;
+  isActive: boolean;
 }
 
 export interface Enquiry {

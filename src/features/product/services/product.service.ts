@@ -17,11 +17,20 @@ export interface ProductInput {
   specifications?: Record<string, string>;
   leadTime?: string;
   packagingType?: string;
+  packagingSize?: string;
+  packagingDimensions?: string;
+  packagingWeight?: string;
   countryOfOrigin?: string;
   certifications?: string[];
   gstIncluded?: boolean;
   gstRate?: number;
   status?: 'DRAFT' | 'PENDING';
+  certificationDocs?: {
+    name: string;
+    certificationTypeId?: string;
+    documentUrl: string;
+    mandatory: boolean;
+  }[];
 }
 
 export const productService = {
