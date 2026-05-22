@@ -7,5 +7,7 @@ export function useProducts(filters?: ProductFilters) {
   return useQuery({
     queryKey: [QUERY_KEYS.PRODUCTS, filters],
     queryFn: () => productApi.list(filters),
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 }

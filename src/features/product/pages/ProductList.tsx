@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Filter, SlidersHorizontal, X, ChevronDown, ShieldCheck } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, useNavigationType } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants/routes';
 import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
@@ -49,6 +49,8 @@ function filterCount(f: FilterState): number {
 const ProductList: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { key: locationKey } = useLocation();
+  const navType = useNavigationType();
   const category = searchParams.get('category') || undefined;
   const subcategory = searchParams.get('subcategory') || undefined;
   const searchQuery = searchParams.get('q') || undefined;
@@ -73,6 +75,28 @@ const ProductList: React.FC = () => {
 
   const { data, isLoading, isError, refetch } = useProducts(queryFilters);
   const products = data?.data || [];
+
+  const scrollKey = `scroll:products:${locationKey}`;
+
+  // Save scroll position when leaving this page
+  useEffect(() => {
+    return () => {
+      sessionStorage.setItem(scrollKey, String(window.scrollY));
+    };
+  }, [scrollKey]);
+
+  // Restore scroll position after data is available on back navigation
+  useEffect(() => {
+    if (navType === 'POP' && !isLoading) {
+      const saved = sessionStorage.getItem(scrollKey);
+      if (saved) {
+        requestAnimationFrame(() =>
+          window.scrollTo({ top: parseInt(saved, 10), behavior: 'instant' })
+        );
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   const applyFilters = useCallback(() => {
     setAppliedFilters({ ...filters });

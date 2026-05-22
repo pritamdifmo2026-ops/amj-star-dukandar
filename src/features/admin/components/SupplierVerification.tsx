@@ -8,6 +8,7 @@ import { useSupplierProducts } from '../hooks/useSupplierProducts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import adminService from '../services/admin.service';
 import { toast } from 'react-hot-toast';
+import { formatIndianNumber } from '@/shared/utils/formatNumber';
 
 import type { AdminSupplier } from '../types/admin.types';
 
@@ -281,9 +282,32 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
               <DetailItem label="Owner Name">{selectedSupplier.businessDetails?.ownerName || 'N/A'}</DetailItem>
               <DetailItem label="Contact Phone">{selectedSupplier.phone}</DetailItem>
               <DetailItem label="Email Address">{selectedSupplier.businessDetails?.email || selectedSupplier.userId?.email || 'N/A'}</DetailItem>
-              <DetailItem label="GST Number">{selectedSupplier.businessDetails?.gstin || 'N/A'}</DetailItem>
-              <DetailItem label="Established">{selectedSupplier.businessDetails?.yearOfEstablishment || 'N/A'}</DetailItem>
+              <DetailItem label="Year Established">{selectedSupplier.businessDetails?.yearOfEstablishment || 'N/A'}</DetailItem>
               <DetailItem label="Tier"><span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{selectedSupplier.tier}</span></DetailItem>
+              <DetailItem label="PAN Number">
+                <span className="font-mono">{selectedSupplier.businessDetails?.pan || 'N/A'}</span>
+              </DetailItem>
+              <DetailItem label="PAN Document">
+                {selectedSupplier.businessDetails?.panDocument ? (
+                  <a href={selectedSupplier.businessDetails.panDocument} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary font-bold no-underline hover:underline text-sm">
+                    <ExternalLink size={14} /> View PAN Doc
+                  </a>
+                ) : <span className="text-[#ef4444] text-sm font-semibold">Not uploaded</span>}
+              </DetailItem>
+              <DetailItem label="GSTIN">
+                <span className="font-mono">{selectedSupplier.businessDetails?.gstin || 'Not provided'}</span>
+              </DetailItem>
+              <DetailItem label="GSTIN Certificate">
+                {selectedSupplier.businessDetails?.gstinDocument ? (
+                  <a href={selectedSupplier.businessDetails.gstinDocument} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary font-bold no-underline hover:underline text-sm">
+                    <ExternalLink size={14} /> View GSTIN Doc
+                  </a>
+                ) : selectedSupplier.businessDetails?.gstin ? (
+                  <span className="text-[#ef4444] text-sm font-semibold">Not uploaded</span>
+                ) : (
+                  <span className="text-[#94a3b8] text-sm">N/A</span>
+                )}
+              </DetailItem>
             </div>
           </div>
           <div className="p-6 border-b border-[#f1f5f9]">
@@ -317,6 +341,40 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
               <span className="flex items-center gap-2 text-sm font-bold text-[#7c3aed] bg-[#f5f3ff] border border-[#ddd6fe] px-3 py-2 rounded-[8px] w-fit">
                 <ShieldCheck size={16} /> Registered as Woman-led Business
               </span>
+            </div>
+          )}
+          {(selectedSupplier.businessDetails?.annualTurnover || selectedSupplier.businessDetails?.monthlyProductionCapacity || selectedSupplier.businessDetails?.taxFilingMethod || selectedSupplier.businessDetails?.taxFilingDetails || selectedSupplier.businessDetails?.taxPaymentsCompliance) && (
+            <div className="p-6 border-b border-[#f1f5f9]">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Business Scale & Compliance</h3>
+              <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+                {selectedSupplier.businessDetails?.annualTurnover && (
+                  <DetailItem label="Annual Turnover (₹)">
+                    ₹{formatIndianNumber(selectedSupplier.businessDetails.annualTurnover)}
+                  </DetailItem>
+                )}
+                {selectedSupplier.businessDetails?.monthlyProductionCapacity && (
+                  <DetailItem label="Monthly Production Capacity">
+                    {formatIndianNumber(selectedSupplier.businessDetails.monthlyProductionCapacity)} units
+                  </DetailItem>
+                )}
+                {selectedSupplier.businessDetails?.taxFilingMethod && (
+                  <DetailItem label="Tax Filing Method">
+                    {selectedSupplier.businessDetails.taxFilingMethod}
+                  </DetailItem>
+                )}
+                {selectedSupplier.businessDetails?.taxPaymentsCompliance && (
+                  <DetailItem label="Tax Compliance Status">
+                    {selectedSupplier.businessDetails.taxPaymentsCompliance}
+                  </DetailItem>
+                )}
+                {selectedSupplier.businessDetails?.taxFilingDetails && (
+                  <DetailItem label="Tax Filing Document">
+                    <a href={selectedSupplier.businessDetails.taxFilingDetails} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary font-bold no-underline hover:underline text-sm">
+                      <ExternalLink size={16} /> View Document
+                    </a>
+                  </DetailItem>
+                )}
+              </div>
             </div>
           )}
           <CommissionRateEditor supplierId={selectedSupplier._id} currentRate={(selectedSupplier as any).commissionRate} />

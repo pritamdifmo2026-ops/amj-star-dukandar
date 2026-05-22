@@ -22,6 +22,7 @@ export interface AdminSupplier {
     ownerName?: string;
     email?: string;
     gstin?: string;
+    pan?: string;
     yearOfEstablishment?: string;
     address?: string;
     city?: string;
@@ -32,6 +33,13 @@ export interface AdminSupplier {
     fssaiLicenseNumber?: string;
     fssaiCertificate?: string;
     isWomenEntrepreneur?: boolean;
+    panDocument?: string;
+    gstinDocument?: string;
+    annualTurnover?: number;
+    monthlyProductionCapacity?: number;
+    taxFilingMethod?: string;
+    taxFilingDetails?: string;
+    taxPaymentsCompliance?: string;
   };
 }
 

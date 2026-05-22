@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
@@ -188,13 +189,15 @@ export const FloatingChat: React.FC = () => {
 
   useEffect(() => {
     if (!activeChatId) return;
-    const open = (data: any[]) => {
+    (async () => {
+      let data: any[] = conversations;
+      if (!conversations.find(c => c._id === activeChatId)) {
+        const fetched = await loadConversations();
+        if (fetched) data = fetched;
+      }
       const found = data.find(c => c._id === activeChatId);
       if (found) { setActiveConv(found); setPanel('chat'); setUiState('ACTIVE'); }
-    };
-    const existing = conversations.find(c => c._id === activeChatId);
-    if (existing) open(conversations);
-    else loadConversations().then(data => { if (data) open(data); });
+    })();
   }, [activeChatId]);
 
   const openConversation = (conv: any) => {
@@ -398,7 +401,8 @@ export const FloatingChat: React.FC = () => {
         {quote.counterOffer && (
           <div className="mx-3 mb-2 bg-blue-50 border border-blue-100 rounded-[6px] px-2 py-1.5 text-xs text-blue-700">
             <span className="font-bold block">Counter from Buyer</span>
-            <span>₹{quote.counterOffer.price}/unit{quote.counterOffer.note ? ` — ${quote.counterOffer.note}` : ''}</span>
+            <span>₹{quote.counterOffer.price.toLocaleString('en-IN')} total <span className="font-normal text-blue-400">(excl. GST &amp; shipping)</span></span>
+            {quote.counterOffer.note && <span className="block text-blue-500 mt-0.5">{quote.counterOffer.note}</span>}
           </div>
         )}
 
@@ -469,10 +473,15 @@ export const FloatingChat: React.FC = () => {
         {/* Counter form — only when pending */}
         {!isMine && !isSupplier && quote.status === 'pending' && showCounter && (
           <div className="px-3 pb-3 flex flex-col gap-1.5">
-            <div className="flex items-center border border-gray-200 rounded-[6px] focus-within:border-blue-400">
-              <span className="px-2 py-1.5 text-[11px] text-gray-400 border-r border-gray-200">₹</span>
-              <input autoFocus type="number" min="1" value={counterPrice} onChange={e => setCounterPrice(e.target.value)}
-                placeholder="Your price per unit" className="flex-1 border-none outline-none px-2 py-1.5 text-[11px] bg-transparent" />
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center border border-gray-200 rounded-[6px] focus-within:border-blue-400">
+                <span className="px-2 py-1.5 text-[11px] text-gray-400 border-r border-gray-200">₹</span>
+                <input autoFocus type="text" inputMode="numeric" pattern="[0-9]*" value={counterPrice}
+                  onChange={e => setCounterPrice(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter total amount"
+                  className="flex-1 border-none outline-none px-2 py-1.5 text-[11px] bg-transparent" />
+              </div>
+              <p className="text-[9px] text-gray-400 m-0">Excluding GST &amp; shipping charges</p>
             </div>
             <input type="text" value={counterNote} onChange={e => setCounterNote(e.target.value)}
               placeholder="Note (optional)" className="border border-gray-200 rounded-[6px] px-2 py-1.5 text-[11px] outline-none" />
@@ -623,7 +632,8 @@ export const FloatingChat: React.FC = () => {
               <>
                 {messages.map((msg, idx) => {
                   const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
-                  return msg.messageType === 'system' ? (
+                  if (msg.messageType === 'system') {
+                    return (
                       <div key={msg._id || idx} className="w-full self-center flex items-center gap-1.5 py-0.5">
                         <div className="flex-1 h-px bg-gray-200" />
                         <div className="bg-gray-50 border border-gray-100 rounded-[8px] px-3 py-2 text-center max-w-[260px]">
@@ -633,19 +643,25 @@ export const FloatingChat: React.FC = () => {
                         </div>
                         <div className="flex-1 h-px bg-gray-200" />
                       </div>
-                    ) : (
-                      <div key={msg._id || idx} className={`max-w-[80%] px-3 py-2 rounded-[8px] text-[0.9rem] leading-snug relative ${isMine ? 'self-end bg-primary text-white rounded-br-[2px]' : 'self-start bg-cream text-gray-800 rounded-bl-[4px] shadow-sm'}`}>
-                        {msg.messageType === 'quotation'
-                          ? <QuotationCard msg={msg} />
-                          : <div className="mb-0.5">{msg.text}</div>
-                        }
-                        {isMine && (
-                          <div className="flex justify-end text-[10px] opacity-70">
-                            {msg.isRead ? <CheckCheck size={12} className="text-sky-300" /> : <Check size={12} className="text-white/60" />}
-                          </div>
-                        )}
+                    );
+                  }
+                  if (msg.messageType === 'quotation') {
+                    return (
+                      <div key={msg._id || idx} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                        <QuotationCard msg={msg} />
                       </div>
                     );
+                  }
+                  return (
+                    <div key={msg._id || idx} className={`max-w-[80%] px-3 py-2 rounded-[8px] text-[0.9rem] leading-snug relative ${isMine ? 'self-end bg-primary text-white rounded-br-[2px]' : 'self-start bg-cream text-gray-800 rounded-bl-[4px] shadow-sm'}`}>
+                      <div className="mb-0.5">{msg.text}</div>
+                      {isMine && (
+                        <div className="flex justify-end text-[10px] opacity-70">
+                          {msg.isRead ? <CheckCheck size={12} className="text-sky-300" /> : <Check size={12} className="text-white/60" />}
+                        </div>
+                      )}
+                    </div>
+                  );
                 })}
                 <div ref={messagesEndRef} />
               </>

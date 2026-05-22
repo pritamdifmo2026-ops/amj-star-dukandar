@@ -7,7 +7,7 @@ import { ROUTES } from '@/shared/constants/routes';
 import supplierService from '../services/supplier.service';
 import SupplierOnboardingLayout from '../layout/SupplierOnboardingLayout';
 import Button from '@/shared/components/ui/Button';
-import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Star, Handshake, XCircle, Upload } from 'lucide-react';
+import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Star, Handshake, XCircle, Upload, Package } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 
 const INDIA_STATES: Record<string, string[]> = {
@@ -79,7 +79,10 @@ const Onboarding: React.FC = () => {
   const dispatch = useAppDispatch();
   const { profile } = useAppSelector(state => state.supplier);
   const user = useAppSelector(state => state.auth.user);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const fssaiFileRef = React.useRef<HTMLInputElement>(null);
+  const taxFileRef = React.useRef<HTMLInputElement>(null);
+  const panDocRef = React.useRef<HTMLInputElement>(null);
+  const gstinDocRef = React.useRef<HTMLInputElement>(null);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -113,6 +116,16 @@ const Onboarding: React.FC = () => {
   const [fssaiCertificate, setFssaiCertificate] = useState<File | null>(null);
   const [fssaiCertificateUrl, setFssaiCertificateUrl] = useState('');
   const [isWomenEntrepreneur, setIsWomenEntrepreneur] = useState(false);
+  const [annualTurnover, setAnnualTurnover] = useState('');
+  const [monthlyProductionCapacity, setMonthlyProductionCapacity] = useState('');
+  const [taxFilingMethod, setTaxFilingMethod] = useState('');
+  const [taxFilingDetails, setTaxFilingDetails] = useState<File | null>(null);
+  const [taxFilingDetailsUrl, setTaxFilingDetailsUrl] = useState('');
+  const [taxPaymentsCompliance, setTaxPaymentsCompliance] = useState('');
+  const [panDocument, setPanDocument] = useState<File | null>(null);
+  const [panDocumentUrl, setPanDocumentUrl] = useState('');
+  const [gstinDocument, setGstinDocument] = useState<File | null>(null);
+  const [gstinDocumentUrl, setGstinDocumentUrl] = useState('');
 
   useEffect(() => {
     if (user?.phone && !phone) setPhone(user.phone);
@@ -150,8 +163,15 @@ const Onboarding: React.FC = () => {
             if (bd.fssaiLicenseNumber) setFssaiLicenseNumber(bd.fssaiLicenseNumber);
             if (bd.fssaiCertificate) setFssaiCertificateUrl(bd.fssaiCertificate);
             if (bd.isWomenEntrepreneur) setIsWomenEntrepreneur(bd.isWomenEntrepreneur);
+            if (bd.annualTurnover) setAnnualTurnover(bd.annualTurnover.toString());
+            if (bd.monthlyProductionCapacity) setMonthlyProductionCapacity(bd.monthlyProductionCapacity.toString());
+            if (bd.taxFilingMethod) setTaxFilingMethod(bd.taxFilingMethod);
+            if (bd.taxFilingDetails) setTaxFilingDetailsUrl(bd.taxFilingDetails);
+            if (bd.taxPaymentsCompliance) setTaxPaymentsCompliance(bd.taxPaymentsCompliance);
+            if (bd.panDocument) setPanDocumentUrl(bd.panDocument);
+            if (bd.gstinDocument) setGstinDocumentUrl(bd.gstinDocument);
           }
-          if (data.supplier.onboardingStatus === OnboardingStatus.COMPLETED) setCurrentStep(5);
+          if (data.supplier.onboardingStatus === OnboardingStatus.COMPLETED) setCurrentStep(6);
           else if (data.supplier.businessDetails?.address || data.supplier.businessDetails?.gstin) setCurrentStep(3);
           else if (data.supplier.businessName) setCurrentStep(2);
           else setCurrentStep(1);
@@ -194,15 +214,19 @@ const Onboarding: React.FC = () => {
     if (!city) newErrs.city = "City is required";
     if (gstin.trim() && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)) newErrs.gstin = "Invalid GSTIN format (15 characters)";
     if (!pan.trim() || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) newErrs.pan = "Valid 10-character PAN is required (e.g. ABCDE1234F)";
+    if (!panDocument && !panDocumentUrl) newErrs.panDocument = "PAN card document upload is required";
+    if (gstin.trim() && !gstinDocument && !gstinDocumentUrl) newErrs.gstinDocument = "GSTIN certificate is required when GSTIN is provided";
     setErrors(newErrs);
     return Object.keys(newErrs).length === 0;
   };
 
   const validateProfileInfo = () => {
     const newErrs: Record<string, string> = {};
-    if (yearOfEstablishment.trim()) {
+    const currentYear = new Date().getFullYear();
+    if (!yearOfEstablishment.trim()) {
+      newErrs.yearOfEstablishment = "Year of establishment is required";
+    } else {
       const year = parseInt(yearOfEstablishment);
-      const currentYear = new Date().getFullYear();
       if (isNaN(year) || year < 1900 || year > currentYear) newErrs.yearOfEstablishment = `Enter a valid year between 1900 and ${currentYear}`;
     }
     if (isFoodSupplier) {
@@ -229,6 +253,24 @@ const Onboarding: React.FC = () => {
     return true;
   };
 
+  const validateBusinessScale = () => {
+    const newErrs: Record<string, string> = {};
+    if (!annualTurnover.trim()) newErrs.annualTurnover = "Annual turnover is required";
+    else if (isNaN(parseInt(annualTurnover)) || parseInt(annualTurnover) <= 0) newErrs.annualTurnover = "Enter a valid positive number";
+    
+    if (!monthlyProductionCapacity.trim()) newErrs.monthlyProductionCapacity = "Monthly production capacity is required";
+    else if (isNaN(parseInt(monthlyProductionCapacity)) || parseInt(monthlyProductionCapacity) <= 0) newErrs.monthlyProductionCapacity = "Enter a valid positive number";
+    
+    if (!taxFilingMethod.trim()) newErrs.taxFilingMethod = "Tax filing method is required";
+    
+    if (!taxPaymentsCompliance.trim()) newErrs.taxPaymentsCompliance = "Tax compliance information is required";
+    
+    if (!taxFilingDetails && !taxFilingDetailsUrl) newErrs.taxFilingDetails = "Tax filing document is required";
+    
+    setErrors(newErrs);
+    return Object.keys(newErrs).length === 0;
+  };
+
   const submitStep = async () => {
     setLoading(true);
     try {
@@ -239,7 +281,21 @@ const Onboarding: React.FC = () => {
         setCurrentStep(2);
       } else if (currentStep === 2) {
         if (!validateBusinessDetails()) return;
-        await supplierService.saveDraft({ ownerName, email, address, pinCode, state, city, gstin, pan });
+        let finalPanDocUrl = panDocumentUrl;
+        if (panDocument) {
+          const uploadRes = await supplierService.uploadDoc(panDocument);
+          finalPanDocUrl = uploadRes.url;
+          setPanDocumentUrl(finalPanDocUrl);
+          setPanDocument(null);
+        }
+        let finalGstinDocUrl = gstinDocumentUrl;
+        if (gstinDocument) {
+          const uploadRes = await supplierService.uploadDoc(gstinDocument);
+          finalGstinDocUrl = uploadRes.url;
+          setGstinDocumentUrl(finalGstinDocUrl);
+          setGstinDocument(null);
+        }
+        await supplierService.saveDraft({ ownerName, email, address, pinCode, state, city, gstin, pan, panDocument: finalPanDocUrl, gstinDocument: finalGstinDocUrl });
         setCurrentStep(3);
       } else if (currentStep === 3) {
         if (!validateProfileInfo()) return;
@@ -250,16 +306,41 @@ const Onboarding: React.FC = () => {
           setFssaiCertificateUrl(finalCertUrl);
           setFssaiCertificate(null);
         }
-        await supplierService.saveDraft({ ownerName, email, address, pinCode, state, city, gstin, pan, about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber, fssaiCertificate: finalCertUrl, isWomenEntrepreneur });
+        await supplierService.saveDraft({ ownerName, email, address, pinCode, state, city, gstin, pan, panDocument: panDocumentUrl, gstinDocument: gstinDocumentUrl, about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber, fssaiCertificate: finalCertUrl, isWomenEntrepreneur });
         setCurrentStep(4);
       } else if (currentStep === 4) {
+        if (!validateBusinessScale()) return;
+        let finalTaxDocUrl = taxFilingDetailsUrl;
+        if (taxFilingDetails) {
+          const uploadRes = await supplierService.uploadDoc(taxFilingDetails);
+          finalTaxDocUrl = uploadRes.url;
+          setTaxFilingDetailsUrl(finalTaxDocUrl);
+          setTaxFilingDetails(null);
+        }
+        await supplierService.saveDraft({
+          ownerName, email, address, pinCode, state, city, gstin, pan, panDocument: panDocumentUrl, gstinDocument: gstinDocumentUrl,
+          about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber,
+          fssaiCertificate: fssaiCertificateUrl, isWomenEntrepreneur,
+          annualTurnover: parseInt(annualTurnover),
+          monthlyProductionCapacity: parseInt(monthlyProductionCapacity),
+          taxFilingMethod, taxFilingDetails: finalTaxDocUrl, taxPaymentsCompliance
+        });
+        setCurrentStep(5);
+      } else if (currentStep === 5) {
         if (!validateProfileCompletion()) return;
         const tierData = await supplierService.selectTier(selectedTier);
         dispatch(setSupplierProfile(tierData.supplier));
-        const kycData = await supplierService.submitKYC({ ownerName, email, address, pinCode, state, city, gstin, pan, about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber, fssaiCertificate: fssaiCertificateUrl, isWomenEntrepreneur });
+        const kycData = await supplierService.submitKYC({
+          ownerName, email, address, pinCode, state, city, gstin, pan, panDocument: panDocumentUrl, gstinDocument: gstinDocumentUrl,
+          about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber,
+          fssaiCertificate: fssaiCertificateUrl, isWomenEntrepreneur,
+          annualTurnover: parseInt(annualTurnover),
+          monthlyProductionCapacity: parseInt(monthlyProductionCapacity),
+          taxFilingMethod, taxFilingDetails: taxFilingDetailsUrl, taxPaymentsCompliance
+        });
         dispatch(setSupplierProfile(kycData.supplier));
         if (user?.role === 'reseller') { navigate(ROUTES.RESELLER_DASHBOARD); return; }
-        setCurrentStep(5);
+        setCurrentStep(6);
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Something went wrong');
@@ -395,16 +476,55 @@ const Onboarding: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-                <div className="flex flex-col gap-1.5">
-                  <label className={labelCls}>PAN Number <span className="text-[#dc2626]">*</span></label>
-                  <input name="pan" className={inputCls(!!errors.pan)} value={pan}
-                    onChange={e => { setPan(e.target.value.toUpperCase()); setErrors(prev => ({ ...prev, pan: '' })); }}
-                    placeholder="ABCDE1234F" maxLength={10} />
-                  {errors.pan && <span className={errorTextCls}>{errors.pan}</span>}
-                </div>
-                <div />
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>PAN Number <span className="text-[#dc2626]">*</span></label>
+                <input name="pan" className={inputCls(!!errors.pan)} value={pan}
+                  onChange={e => { setPan(e.target.value.toUpperCase()); setErrors(prev => ({ ...prev, pan: '' })); }}
+                  placeholder="ABCDE1234F" maxLength={10} />
+                {errors.pan && <span className={errorTextCls}>{errors.pan}</span>}
               </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>PAN Card Document <span className="text-[#dc2626]">*</span></label>
+                <input type="file" ref={panDocRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={e => { setPanDocument(e.target.files?.[0] || null); setErrors(prev => ({ ...prev, panDocument: '' })); }} />
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button type="button" onClick={() => panDocRef.current?.click()}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-semibold text-[#475569] cursor-pointer hover:border-primary hover:text-primary transition-colors">
+                    <Upload size={16} /> {panDocument || panDocumentUrl ? 'Change File' : 'Upload PAN Document'}
+                  </button>
+                  {panDocument ? (
+                    <span className="text-sm text-[#059669] font-semibold">✓ {panDocument.name}</span>
+                  ) : panDocumentUrl ? (
+                    <a href={panDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[#059669] font-semibold hover:underline">✓ View uploaded doc</a>
+                  ) : (
+                    <span className="text-xs text-[#94a3b8]">PDF, JPG or PNG</span>
+                  )}
+                </div>
+                {errors.panDocument && <span className={errorTextCls}>{errors.panDocument}</span>}
+              </div>
+
+              {gstin.trim() && (
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls}>GSTIN Certificate <span className="text-[#dc2626]">*</span></label>
+                  <input type="file" ref={gstinDocRef} className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={e => { setGstinDocument(e.target.files?.[0] || null); setErrors(prev => ({ ...prev, gstinDocument: '' })); }} />
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <button type="button" onClick={() => gstinDocRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-semibold text-[#475569] cursor-pointer hover:border-primary hover:text-primary transition-colors">
+                      <Upload size={16} /> {gstinDocument || gstinDocumentUrl ? 'Change File' : 'Upload GSTIN Certificate'}
+                    </button>
+                    {gstinDocument ? (
+                      <span className="text-sm text-[#059669] font-semibold">✓ {gstinDocument.name}</span>
+                    ) : gstinDocumentUrl ? (
+                      <a href={gstinDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-[#059669] font-semibold hover:underline">✓ View uploaded doc</a>
+                    ) : (
+                      <span className="text-xs text-[#94a3b8]">PDF, JPG or PNG</span>
+                    )}
+                  </div>
+                  {errors.gstinDocument && <span className={errorTextCls}>{errors.gstinDocument}</span>}
+                </div>
+              )}
 
               <div className="flex gap-3 mt-2">
                 <button onClick={() => setCurrentStep(1)} className={outlineBtnCls}>Back</button>
@@ -444,9 +564,9 @@ const Onboarding: React.FC = () => {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className={labelCls}>Upload FSSAI Certificate <span className="text-[#dc2626]">*</span></label>
-                    <input type="file" ref={fileInputRef} accept=".pdf,.jpg,.jpeg,.png" onChange={e => { const file = e.target.files?.[0]; if (file) { setFssaiCertificate(file); setErrors(prev => ({ ...prev, fssaiCertificate: '' })); } }} className="hidden" />
+                    <input type="file" ref={fssaiFileRef} accept=".pdf,.jpg,.jpeg,.png" onChange={e => { const file = e.target.files?.[0]; if (file) { setFssaiCertificate(file); setErrors(prev => ({ ...prev, fssaiCertificate: '' })); } }} className="hidden" />
                     <div className="flex items-center gap-3 flex-wrap">
-                      <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-semibold text-[#475569] cursor-pointer hover:border-primary hover:text-primary transition-colors">
+                      <button type="button" onClick={() => fssaiFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-semibold text-[#475569] cursor-pointer hover:border-primary hover:text-primary transition-colors">
                         <Upload size={16} /> {fssaiCertificate || fssaiCertificateUrl ? 'Change File' : 'Choose File'}
                       </button>
                       {fssaiCertificate ? (
@@ -463,7 +583,7 @@ const Onboarding: React.FC = () => {
               )}
 
               <div className="flex flex-col gap-1.5">
-                <label className={labelCls}>Year of Establishment (Optional)</label>
+                <label className={labelCls}>Year of Establishment <span className="text-[#dc2626]">*</span></label>
                 <input name="yearOfEstablishment" type="number" className={inputCls(!!errors.yearOfEstablishment)} value={yearOfEstablishment}
                   onChange={e => { setYearOfEstablishment(e.target.value); setErrors(prev => ({ ...prev, yearOfEstablishment: '' })); }}
                   placeholder="e.g. 2010" />
@@ -483,7 +603,7 @@ const Onboarding: React.FC = () => {
               <div className="flex gap-3 mt-2">
                 <button onClick={() => setCurrentStep(2)} className={outlineBtnCls}>Back</button>
                 <button onClick={submitStep} disabled={loading} className={orangeBtnCls}>
-                  {loading ? 'Saving...' : 'Next: Select Plan'} <ArrowRight size={18} />
+                  {loading ? 'Saving...' : 'Next: Business Scale'} <ArrowRight size={18} />
                 </button>
               </div>
             </div>
@@ -491,6 +611,82 @@ const Onboarding: React.FC = () => {
         );
 
       case 4:
+        return (
+          <div className="w-full max-w-[580px] mx-auto px-4">
+            <div className="flex flex-col gap-5">
+              <StepHeader icon={<Building2 size={24} />} title="Business Scale & Tax Compliance" desc="Tell us about your production capacity and tax compliance details." />
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Annual Turnover (₹) <span className="text-[#dc2626]">*</span></label>
+                <div className="relative flex items-center">
+                  <Building2 size={18} className="absolute left-3 text-[#94a3b8] pointer-events-none" />
+                  <input name="annualTurnover" type="number" className={`${inputCls(!!errors.annualTurnover)} pl-10`} value={annualTurnover} 
+                    onChange={e => { setAnnualTurnover(e.target.value); setErrors(prev => ({ ...prev, annualTurnover: '' })); }}
+                    placeholder="e.g. 1000000" min="0" />
+                </div>
+                {errors.annualTurnover && <span className={errorTextCls}>{errors.annualTurnover}</span>}
+                <p className="text-xs text-[#64748b] mt-1 m-0">Format: Plain number (e.g. 1000000 for ₹10 lakhs)</p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Monthly Production Capacity (Units) <span className="text-[#dc2626]">*</span></label>
+                <div className="relative flex items-center">
+                  <Package size={18} className="absolute left-3 text-[#94a3b8] pointer-events-none" />
+                  <input name="monthlyProductionCapacity" type="number" className={`${inputCls(!!errors.monthlyProductionCapacity)} pl-10`} value={monthlyProductionCapacity}
+                    onChange={e => { setMonthlyProductionCapacity(e.target.value); setErrors(prev => ({ ...prev, monthlyProductionCapacity: '' })); }}
+                    placeholder="e.g. 5000" min="0" />
+                </div>
+                {errors.monthlyProductionCapacity && <span className={errorTextCls}>{errors.monthlyProductionCapacity}</span>}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Tax Filing Method <span className="text-[#dc2626]">*</span></label>
+                <select name="taxFilingMethod" className={inputCls(!!errors.taxFilingMethod)} value={taxFilingMethod}
+                  onChange={e => { setTaxFilingMethod(e.target.value); setErrors(prev => ({ ...prev, taxFilingMethod: '' })); }}>
+                  <option value="">Select Tax Filing Method</option>
+                  <option value="ITR - Individual">ITR - Individual</option>
+                  <option value="ITR - Business/Professional">ITR - Business/Professional</option>
+                  <option value="Corporate Tax">Corporate Tax</option>
+                  <option value="Quarterly GST">Quarterly GST</option>
+                  <option value="Monthly GST">Monthly GST</option>
+                  <option value="Not Applicable">Not Applicable</option>
+                </select>
+                {errors.taxFilingMethod && <span className={errorTextCls}>{errors.taxFilingMethod}</span>}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Tax Compliance Status <span className="text-[#dc2626]">*</span></label>
+                <textarea name="taxPaymentsCompliance" className={inputCls(!!errors.taxPaymentsCompliance)} value={taxPaymentsCompliance}
+                  onChange={e => { setTaxPaymentsCompliance(e.target.value); setErrors(prev => ({ ...prev, taxPaymentsCompliance: '' })); }}
+                  placeholder="e.g. All taxes up to date, filed annually, no pending liabilities" rows={3} />
+                {errors.taxPaymentsCompliance && <span className={errorTextCls}>{errors.taxPaymentsCompliance}</span>}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Tax Filing Document <span className="text-[#dc2626]">*</span></label>
+                <div className="flex items-center gap-3">
+                  <input type="file" ref={taxFileRef} className="hidden" onChange={e => { setTaxFilingDetails(e.target.files?.[0] || null); setErrors(prev => ({ ...prev, taxFilingDetails: '' })); }} accept=".pdf,.jpg,.jpeg,.png" />
+                  <button type="button" onClick={() => taxFileRef.current?.click()} className="flex items-center gap-2 px-4 py-2.5 border border-[#e2e8f0] bg-white text-[#475569] rounded-[8px] font-semibold text-sm hover:bg-[#f8fafc] cursor-pointer">
+                    <Upload size={16} /> {taxFilingDetails ? taxFilingDetails.name : 'Upload Document'}
+                  </button>
+                  {taxFilingDetailsUrl && <span className="text-xs text-[#059669] font-semibold">✓ Document uploaded</span>}
+                </div>
+                {errors.taxFilingDetails && <span className={errorTextCls}>{errors.taxFilingDetails}</span>}
+                <p className="text-xs text-[#64748b] m-0">Accepted formats: PDF, JPG, PNG (Max 5MB)</p>
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button onClick={() => setCurrentStep(3)} className={outlineBtnCls}>Back</button>
+                <button onClick={submitStep} disabled={loading} className={orangeBtnCls}>
+                  {loading ? 'Saving...' : 'Next: Select Plan'} <ArrowRight size={18} />
+                </button>
+              </div>
+              <SecureNote />
+            </div>
+          </div>
+        );
+
+      case 5:
         return (
           <div className="w-full max-w-[760px] mx-auto px-4">
             <div className="flex flex-col gap-5">
@@ -530,7 +726,7 @@ const Onboarding: React.FC = () => {
               </div>
 
               <div className="flex gap-3 mt-2">
-                <button onClick={() => setCurrentStep(3)} className={outlineBtnCls}>Back</button>
+                <button onClick={() => setCurrentStep(4)} className={outlineBtnCls}>Back</button>
                 <button onClick={submitStep} disabled={loading} className={orangeBtnCls}>
                   {loading ? 'Submitting...' : 'Complete Onboarding'} <Check size={18} />
                 </button>
@@ -539,7 +735,7 @@ const Onboarding: React.FC = () => {
           </div>
         );
 
-      case 5: {
+      case 6: {
         const isRejected = profile?.kycStatus === 'REJECTED';
         return (
           <>
@@ -601,10 +797,12 @@ const Onboarding: React.FC = () => {
     { n: 1, label: 'Basic Info', desc: 'Name & Email' },
     { n: 2, label: 'Business', desc: 'Address & GST' },
     { n: 3, label: 'Profile', desc: 'About' },
-    { n: 4, label: 'Plans', desc: 'Selling Tiers' }
+    { n: 4, label: 'Business Scale', desc: 'Turnover & Tax' },
+    { n: 5, label: 'Plans', desc: 'Selling Tiers' },
+    { n: 6, label: 'Complete', desc: 'Submission' }
   ];
 
-  if (currentStep === 5) {
+  if (currentStep === 6) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#f8fafc] py-10 px-4">
         <div className="bg-white rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-10 max-w-[540px] w-full flex flex-col items-center text-center">

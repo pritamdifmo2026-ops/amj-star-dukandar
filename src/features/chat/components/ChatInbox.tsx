@@ -573,7 +573,7 @@ const ChatInbox: React.FC = () => {
         {quote.counterOffer && (
           <div className="mx-4 mb-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] px-3 py-2 text-xs text-[#1d4ed8]">
             <span className="font-bold block mb-0.5">Counter Offer from Buyer</span>
-            <span>₹{quote.counterOffer.price}/unit{quote.counterOffer.quantity ? ` × ${quote.counterOffer.quantity}` : ''}</span>
+            <span>₹{quote.counterOffer.price.toLocaleString('en-IN')} total <span className="text-[#93c5fd] font-normal">(excl. GST &amp; shipping)</span></span>
             {quote.counterOffer.note && <span className="block text-[#3b82f6] mt-0.5">{quote.counterOffer.note}</span>}
           </div>
         )}
@@ -638,10 +638,21 @@ const ChatInbox: React.FC = () => {
 
         {!isMine && !isSupplier && quote.status === 'pending' && showCounter && (
           <div className="px-4 pb-3 flex flex-col gap-2">
-            <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary">
-              <span className="px-2 py-2 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
-              <input autoFocus type="number" min="1" value={counterPrice} onChange={e => setCounterPrice(e.target.value)}
-                placeholder="Your price per unit" className="flex-1 border-none outline-none px-2 py-2 text-xs bg-transparent" />
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary">
+                <span className="px-2 py-2 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
+                <input
+                  autoFocus
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={counterPrice}
+                  onChange={e => setCounterPrice(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Enter total amount"
+                  className="flex-1 border-none outline-none px-2 py-2 text-xs bg-transparent"
+                />
+              </div>
+              <p className="text-[10px] text-[#94a3b8] m-0">Excluding GST &amp; shipping charges</p>
             </div>
             <input type="text" value={counterNote} onChange={e => setCounterNote(e.target.value)}
               placeholder="Note (optional)" className="border border-[#e2e8f0] rounded-[6px] px-2 py-2 text-xs outline-none focus:border-primary" />

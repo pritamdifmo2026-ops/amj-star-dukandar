@@ -450,7 +450,18 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                 </div>
                 <div>
                   <label className={labelCls}>Lead Time</label>
-                  <input className={inputCls} type="text" value={formData.leadTime ?? ''} onChange={e => setFormData({ ...formData, leadTime: e.target.value })} placeholder="e.g. 7–10 days" />
+                  <div className="relative flex items-center">
+                    <input
+                      className={`${inputCls} pr-14 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+                      type="number"
+                      min="1"
+                      value={formData.leadTime ? (parseInt(formData.leadTime) || '') : ''}
+                      onChange={e => setFormData({ ...formData, leadTime: e.target.value ? `${e.target.value} Days` : '' })}
+                      placeholder="e.g. 7"
+                      onWheel={e => e.currentTarget.blur()}
+                    />
+                    <span className="absolute right-3 text-sm text-[#94a3b8] font-medium pointer-events-none select-none">Days</span>
+                  </div>
                 </div>
                 <div>
                   <label className={labelCls}>Packaging Type</label>

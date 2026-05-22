@@ -156,7 +156,7 @@ amj-star-dukandar/src/
 See [docs/doc1.md](docs/doc1.md) for full details with ✅/❌ completion status.
 
 **P0 (breaks core business):**
-- ❌ All Indian states missing from supplier onboarding dropdown (`Onboarding.tsx:18`)
+ (`Onboarding.tsx:18`)
 - ❌ Reseller step 3/4 validation mismatch — `monthlyVolume`/`reach` rendered step 3, validated step 4
 
 **P1 (compliance/trust):**

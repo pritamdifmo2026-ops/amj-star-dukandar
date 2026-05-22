@@ -75,8 +75,8 @@ const Footer: React.FC = () => (
             <ul className="list-none p-0 m-0 flex flex-col gap-3">
               {[
                 { Icon: Mail, text: 'support@amjstar.com' },
-                { Icon: Phone, text: '+91 1800 123 4567' },
-                { Icon: MapPin, text: '123 Business Hub, MG Road, New Delhi, India' },
+                { Icon: Phone, text: '+91 9034440673' },
+                { Icon: MapPin, text: 'Building No. 2216, Near Bhawana Clinic, New Ramesh Nagar, Panipat, Haryana, India. 132103' },
               ].map(({ Icon, text }) => (
                 <li key={text} className="flex items-start gap-2 text-[oklch(0.40_0.02_240)] text-[0.9rem] leading-[1.4]">
                   <Icon size={16} className="text-primary shrink-0 mt-0.5" />

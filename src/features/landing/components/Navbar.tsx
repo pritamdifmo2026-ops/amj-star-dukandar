@@ -102,7 +102,7 @@ const Navbar: React.FC = () => {
       <div className="hidden sm:block bg-cream border-b border-border py-0.5">
         <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
           <span className="text-[9px] text-body flex items-center gap-1.5">
-            <Phone size={10} /> Helpline: 1800-XXX-XXXX (Mon–Sat, 9am–6pm)
+            <Phone size={10} /> Helpline: +91 9034440673 (Mon–Sat, 9am–6pm)
           </span>
           <div className="flex items-center gap-3">
             {!isAuth && (
