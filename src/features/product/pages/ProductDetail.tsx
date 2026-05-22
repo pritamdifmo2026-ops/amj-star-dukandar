@@ -145,7 +145,7 @@ const ProductDetail: React.FC = () => {
   const packagingLabel: Record<string, string> = { bulk: 'Bulk', retail: 'Retail Pack', custom: 'Custom Packaging' };
 
   // Collect all specification rows for the details tab
-  const hasSpecs = product.countryOfOrigin || product.leadTime || product.packagingType ||
+  const hasSpecs = product.countryOfOrigin || product.leadTime || product.packagingType || product.packagingSize ||
     product.hsnCode || (product.specifications && Object.keys(product.specifications).length > 0);
   const hasCerts = product.certifications && product.certifications.length > 0;
 
@@ -346,8 +346,14 @@ const ProductDetail: React.FC = () => {
                           )}
                           {product.packagingType && (
                             <tr className="border-b border-border">
-                              <td className="py-3 px-5 font-semibold text-muted bg-cream">Packaging</td>
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream">Packaging Type</td>
                               <td className="py-3 px-5 text-heading">{packagingLabel[product.packagingType] || product.packagingType}</td>
+                            </tr>
+                          )}
+                          {product.packagingSize && (
+                            <tr className="border-b border-border">
+                              <td className="py-3 px-5 font-semibold text-muted bg-cream">Packaging Size</td>
+                              <td className="py-3 px-5 text-heading">{product.packagingSize}</td>
                             </tr>
                           )}
                           {product.hsnCode && (

@@ -30,6 +30,7 @@ const mapProduct = (item: any): Product => {
     keywords: item.keywords,
     leadTime: item.leadTime,
     packagingType: item.packagingType,
+    packagingDimensions: item.packagingDimensions,
     countryOfOrigin: item.countryOfOrigin,
     certifications: item.certifications,
     specifications: item.specifications,

@@ -17,6 +17,8 @@ export interface ProductInput {
   specifications?: Record<string, string>;
   leadTime?: string;
   packagingType?: string;
+  packagingSize?: string;
+  packagingDimensions?: string;
   countryOfOrigin?: string;
   certifications?: string[];
   gstIncluded?: boolean;

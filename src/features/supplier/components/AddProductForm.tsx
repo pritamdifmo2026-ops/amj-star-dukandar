@@ -24,6 +24,11 @@ const sectionCls = "bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[
 
 const CERTIFICATIONS = ['FSSAI', 'ISO 9001', 'BIS', 'Organic India', 'Halal', 'MSME Registered', 'GMP Certified', 'CE Mark', 'Export Quality'];
 
+const PACKAGING_SIZES: Record<string, string[]> = {
+  bulk: ['25 kg Bag', '50 kg Bag', '1 Ton Jumbo Bag', 'Custom Bulk'],
+  retail: ['100g Pack', '250g Pack', '500g Pack', '1kg Box', 'Custom Retail'],
+};
+
 const CATEGORY_SUGGESTIONS: Record<string, string[]> = {
   textile: ['Fabric Type', 'GSM', 'Width (cm)', 'Pattern', 'Color', 'Dye Type'],
   food: ['Shelf Life (months)', 'Ingredients', 'FSSAI License No.', 'Organic', 'Harvest Season'],
@@ -105,11 +110,14 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     keywords: [],
     leadTime: '',
     packagingType: 'bulk',
+    packagingSize: '25 kg Bag',
+    packagingDimensions: '',
     countryOfOrigin: 'India',
     certifications: [],
     gstIncluded: false,
     gstRate: 18,
   });
+  const [isCustomSizeSelected, setIsCustomSizeSelected] = useState(false);
   const [keywordInput, setKeywordInput] = useState('');
   const [messageModal, setMessageModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
     isOpen: false, title: '', message: '', type: 'info'
@@ -133,6 +141,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     if (!formData.stock || formData.stock <= 0) missing.push('Available Stock (must be greater than 0)');
     if (!formData.images || formData.images.length === 0) missing.push('At least 1 product image');
     if (formData.gstRate === undefined || formData.gstRate === null) missing.push('GST Rate');
+    if (!formData.packagingSize || !formData.packagingSize.trim()) missing.push('Packaging Size');
     return missing;
   };
 
@@ -144,7 +153,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
   };
 
   const handlePublish = async () => {
-    // For editing a published product, skip strict re-validation (it was already validated once)
     if (!isEditingPublished) {
       const missing = validateForPublish();
       if (missing.length > 0) {
@@ -232,12 +240,24 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             keywords: editingProduct.keywords || [],
             leadTime: editingProduct.leadTime || '',
             packagingType: editingProduct.packagingType || 'bulk',
+            packagingSize: editingProduct.packagingSize || '',
+            packagingDimensions: editingProduct.packagingDimensions || '',
             countryOfOrigin: editingProduct.countryOfOrigin || 'India',
             certifications: editingProduct.certifications || [],
             gstIncluded: editingProduct.gstIncluded ?? false,
             gstRate: editingProduct.gstRate ?? 18,
           });
           setSpecRows(specsToRows(editingProduct.specifications || {}));
+          
+          const pType = editingProduct.packagingType || 'bulk';
+          const pSize = editingProduct.packagingSize || '';
+          if (pType === 'bulk' || pType === 'retail') {
+            const standardSizes = PACKAGING_SIZES[pType] || [];
+            const isCustom = pSize !== '' && !standardSizes.slice(0, -1).includes(pSize);
+            setIsCustomSizeSelected(isCustom);
+          } else {
+            setIsCustomSizeSelected(false);
+          }
 
           if (editingProduct.categoryId) {
             const cat = data.categories.find((c: any) => c._id === editingProduct.categoryId);
@@ -271,6 +291,21 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     }
   };
 
+  const handlePackagingTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const type = e.target.value;
+    let defaultSize = '';
+    if (type === 'bulk') {
+      defaultSize = '25 kg Bag';
+    } else if (type === 'retail') {
+      defaultSize = '100g Pack';
+    }
+    setFormData(prev => ({
+      ...prev,
+      packagingType: type,
+      packagingSize: defaultSize,
+    }));
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -281,7 +316,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
   const handleCropComplete = async (croppedBlob: Blob) => {
     setShowCropper(false);
-    setSubmitting('publish'); // show loading on images too
+    setSubmitting('publish');
     try {
       const data = await uploadService.uploadImage(croppedBlob);
       setFormData(prev => ({ ...prev, images: [...(prev.images || []), data.url] }));
@@ -299,7 +334,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-[#eef2f6] px-8 py-4 flex justify-between items-center gap-4 max-md:px-4 max-md:flex-col max-md:gap-3">
         <div className="flex flex-col gap-1">
           <button onClick={handleDiscard} className="flex items-center gap-1.5 text-sm text-[#64748b] font-semibold bg-none border-none cursor-pointer p-0 hover:text-primary transition-colors">
@@ -313,7 +347,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="flex gap-2.5 items-center">
           <button
             onClick={handleDiscard}
@@ -323,7 +356,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             Discard
           </button>
 
-          {/* Save as Draft — shown for new products and draft products being edited */}
           {!isEditingPublished && (
             <button
               onClick={handleSaveDraft}
@@ -351,8 +383,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
       <div className="flex-1 max-w-[820px] mx-auto w-full px-8 py-8 max-md:px-4">
         <form onSubmit={e => e.preventDefault()} className="flex flex-col gap-0">
-
-          {/* General Information */}
           <div className={sectionCls}>
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">General Information</h3>
             <p className="text-sm text-[#64748b] mb-5 m-0">Core details shown on your product listing.</p>
@@ -407,7 +437,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             </div>
           </div>
 
-          {/* Pricing & Supply */}
           <div className={sectionCls}>
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Pricing &amp; Supply</h3>
             <p className="text-sm text-[#64748b] mb-5 m-0">Set your bulk pricing, unit and minimum order.</p>
@@ -453,8 +482,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                   <input className={inputCls} type="text" value={formData.leadTime ?? ''} onChange={e => setFormData({ ...formData, leadTime: e.target.value })} placeholder="e.g. 7–10 days" />
                 </div>
                 <div>
-                  <label className={labelCls}>Packaging Type</label>
-                  <select className={inputCls} value={formData.packagingType ?? 'bulk'} onChange={e => setFormData({ ...formData, packagingType: e.target.value })}>
+                  <label className={labelCls}>Packaging</label>
+                  <select className={inputCls} value={formData.packagingType ?? 'bulk'} onChange={handlePackagingTypeChange}>
                     <option value="bulk">Bulk</option>
                     <option value="retail">Retail Pack</option>
                     <option value="custom">Custom Packaging</option>
@@ -464,12 +493,72 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
               <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
                 <div>
+                  <label className={labelCls}>Packaging Size <span className="text-[#dc2626]">*</span></label>
+                  {(() => {
+                    const currentType = formData.packagingType || 'bulk';
+                    if (currentType === 'custom') {
+                      return (
+                        <input
+                          className={inputCls}
+                          type="text"
+                          value={formData.packagingSize ?? ''}
+                          onChange={e => setFormData({ ...formData, packagingSize: e.target.value })}
+                          placeholder="e.g. 50kg Drum, 10L Can"
+                        />
+                      );
+                    }
+
+                    const options = PACKAGING_SIZES[currentType] || [];
+                    const dropdownValue = isCustomSizeSelected ? options[options.length - 1] : (formData.packagingSize || options[0] || '');
+
+                    return (
+                      <div className="flex flex-col gap-2">
+                        <select
+                          className={inputCls}
+                          value={dropdownValue}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (val === 'Custom Bulk' || val === 'Custom Retail') {
+                              setIsCustomSizeSelected(true);
+                              setFormData({ ...formData, packagingSize: '' });
+                            } else {
+                              setIsCustomSizeSelected(false);
+                              setFormData({ ...formData, packagingSize: val });
+                            }
+                          }}
+                        >
+                          {options.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        {isCustomSizeSelected && (
+                          <input
+                            className={inputCls}
+                            type="text"
+                            value={formData.packagingSize ?? ''}
+                            onChange={e => setFormData({ ...formData, packagingSize: e.target.value })}
+                            placeholder={`Enter custom ${currentType === 'bulk' ? 'bulk' : 'retail'} size (e.g. 15 kg Box)`}
+                            autoFocus
+                          />
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div>
                   <label className={labelCls}>Country of Origin</label>
                   <input className={inputCls} type="text" value={formData.countryOfOrigin ?? 'India'} onChange={e => setFormData({ ...formData, countryOfOrigin: e.target.value })} placeholder="India" />
                 </div>
               </div>
 
-              {/* GST Information */}
+              <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                <div>
+                  <label className={labelCls}>Packaging Dimensions</label>
+                  <input className={inputCls} type="text" value={formData.packagingDimensions ?? ''} onChange={e => setFormData({ ...formData, packagingDimensions: e.target.value })} placeholder="e.g. 30x20x15 cm" />
+                </div>
+                <div></div>
+              </div>
+
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider">GST Information</span>
