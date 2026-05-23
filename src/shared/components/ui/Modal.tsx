@@ -8,9 +8,10 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  widthClass?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, widthClass }) => {
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
@@ -19,7 +20,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
       onClick={onClose}
     >
       <div
-        className="bg-[oklch(0.99_0.01_80)] w-[90%] max-w-[450px] rounded-[6px] shadow-xl overflow-hidden animate-slide-up"
+        className={`bg-[oklch(0.99_0.01_80)] rounded-[6px] shadow-xl overflow-hidden animate-slide-up ${widthClass || 'w-[90%] max-w-[450px]'}`}
         onClick={e => e.stopPropagation()}
       >
         <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100">

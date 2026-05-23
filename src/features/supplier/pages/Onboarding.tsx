@@ -7,7 +7,7 @@ import { ROUTES } from '@/shared/constants/routes';
 import supplierService from '../services/supplier.service';
 import SupplierOnboardingLayout from '../layout/SupplierOnboardingLayout';
 import Button from '@/shared/components/ui/Button';
-import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Star, Handshake, XCircle, Upload, Package } from 'lucide-react';
+import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Handshake, XCircle, Upload, Package, Landmark } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 
 const INDIA_STATES: Record<string, string[]> = {
@@ -127,6 +127,13 @@ const Onboarding: React.FC = () => {
   const [gstinDocument, setGstinDocument] = useState<File | null>(null);
   const [gstinDocumentUrl, setGstinDocumentUrl] = useState('');
 
+  // Bank Details State
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [confirmAccountNumber, setConfirmAccountNumber] = useState('');
+  const [ifscCode, setIfscCode] = useState('');
+  const [bankName, setBankName] = useState('');
+
   useEffect(() => {
     if (user?.phone && !phone) setPhone(user.phone);
   }, [user, phone]);
@@ -171,10 +178,31 @@ const Onboarding: React.FC = () => {
             if (bd.panDocument) setPanDocumentUrl(bd.panDocument);
             if (bd.gstinDocument) setGstinDocumentUrl(bd.gstinDocument);
           }
-          if (data.supplier.onboardingStatus === OnboardingStatus.COMPLETED) setCurrentStep(6);
-          else if (data.supplier.businessDetails?.address || data.supplier.businessDetails?.gstin) setCurrentStep(3);
-          else if (data.supplier.businessName) setCurrentStep(2);
-          else setCurrentStep(1);
+          if (data.supplier.banks && data.supplier.banks.length > 0) {
+            const primaryBank = data.supplier.banks.find((b: any) => b.isPrimary) || data.supplier.banks[0];
+            if (primaryBank) {
+              setAccountHolderName(primaryBank.accountHolderName || '');
+              setAccountNumber(primaryBank.accountNumber || '');
+              setConfirmAccountNumber(primaryBank.accountNumber || '');
+              setIfscCode(primaryBank.ifscCode || '');
+              setBankName(primaryBank.bankName || '');
+            }
+          }
+          if (data.supplier.kycStatus === 'REJECTED' || (data.supplier.kycStatus === 'PENDING' && data.supplier.onboardingStatus === OnboardingStatus.COMPLETED)) {
+            setCurrentStep(7);
+          } else if (data.supplier.banks && data.supplier.banks.length > 0) {
+            setCurrentStep(6);
+          } else if (data.supplier.businessDetails?.annualTurnover || data.supplier.businessDetails?.monthlyProductionCapacity) {
+            setCurrentStep(5);
+          } else if (data.supplier.businessDetails?.about || data.supplier.businessDetails?.yearOfEstablishment) {
+            setCurrentStep(4);
+          } else if (data.supplier.businessDetails?.address || data.supplier.businessDetails?.gstin) {
+            setCurrentStep(3);
+          } else if (data.supplier.businessName) {
+            setCurrentStep(2);
+          } else {
+            setCurrentStep(1);
+          }
         }
       } catch (err) {
         console.log('No profile found, starting fresh');
@@ -193,7 +221,21 @@ const Onboarding: React.FC = () => {
     setErrors(prev => ({ ...prev, [e.target.name]: '' }));
   };
 
-  const handleReapply = () => setCurrentStep(1);
+  const handleReapply = async () => {
+    setLoading(true);
+    try {
+      await supplierService.reapply();
+      const data = await supplierService.getProfile();
+      if (data.supplier) {
+        dispatch(setSupplierProfile(data.supplier));
+      }
+      setCurrentStep(1);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to initiate reapply');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateBasicInfo = () => {
     const newErrs: Record<string, string> = {};
@@ -253,20 +295,66 @@ const Onboarding: React.FC = () => {
     return true;
   };
 
+  // ── Indian bank field validation helpers ───────────────────────────────────
+  const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+  const NAME_RE = /^[a-zA-Z\s.'-]{2,100}$/;
+
+  const bankFieldError = {
+    accountHolderName: (v: string) => {
+      if (!v.trim()) return 'Account holder name is required';
+      if (v.trim().length < 3) return 'Minimum 3 characters required';
+      if (!NAME_RE.test(v)) return 'Only letters, spaces and . \' - are allowed';
+      return '';
+    },
+    accountNumber: (v: string) => {
+      if (!v.trim()) return 'Account number is required';
+      if (!/^\d+$/.test(v)) return 'Only digits allowed (no spaces or letters)';
+      if (v.length < 9) return `Too short — must be 9–18 digits (${v.length}/18)`;
+      if (v.length > 18) return 'Too long — max 18 digits';
+      return '';
+    },
+    ifscCode: (v: string) => {
+      if (!v.trim()) return 'IFSC code is required';
+      if (v.length < 11) return `IFSC must be 11 characters — e.g. SBIN0001234 (${v.length}/11)`;
+      if (!IFSC_RE.test(v)) return 'Invalid format. Must be: 4 letters + 0 + 6 alphanumeric (e.g. SBIN0001234)';
+      return '';
+    },
+    bankName: (v: string) => {
+      if (!v.trim()) return 'Bank name is required';
+      if (v.trim().length < 3) return 'Minimum 3 characters required';
+      return '';
+    },
+  };
+
+  const validateBankDetails = () => {
+    const newErrs: Record<string, string> = {};
+    const e1 = bankFieldError.accountHolderName(accountHolderName); if (e1) newErrs.accountHolderName = e1;
+    const e2 = bankFieldError.accountNumber(accountNumber); if (e2) newErrs.accountNumber = e2;
+    const e3 = bankFieldError.ifscCode(ifscCode); if (e3) newErrs.ifscCode = e3;
+    const e4 = bankFieldError.bankName(bankName); if (e4) newErrs.bankName = e4;
+    if (!confirmAccountNumber.trim()) {
+      newErrs.confirmAccountNumber = 'Please confirm your account number';
+    } else if (confirmAccountNumber !== accountNumber) {
+      newErrs.confirmAccountNumber = 'Account numbers do not match';
+    }
+    setErrors(newErrs);
+    return Object.keys(newErrs).length === 0;
+  };
+
   const validateBusinessScale = () => {
     const newErrs: Record<string, string> = {};
     if (!annualTurnover.trim()) newErrs.annualTurnover = "Annual turnover is required";
     else if (isNaN(parseInt(annualTurnover)) || parseInt(annualTurnover) <= 0) newErrs.annualTurnover = "Enter a valid positive number";
-    
+
     if (!monthlyProductionCapacity.trim()) newErrs.monthlyProductionCapacity = "Monthly production capacity is required";
     else if (isNaN(parseInt(monthlyProductionCapacity)) || parseInt(monthlyProductionCapacity) <= 0) newErrs.monthlyProductionCapacity = "Enter a valid positive number";
-    
+
     if (!taxFilingMethod.trim()) newErrs.taxFilingMethod = "Tax filing method is required";
-    
+
     if (!taxPaymentsCompliance.trim()) newErrs.taxPaymentsCompliance = "Tax compliance information is required";
-    
+
     if (!taxFilingDetails && !taxFilingDetailsUrl) newErrs.taxFilingDetails = "Tax filing document is required";
-    
+
     setErrors(newErrs);
     return Object.keys(newErrs).length === 0;
   };
@@ -327,6 +415,10 @@ const Onboarding: React.FC = () => {
         });
         setCurrentStep(5);
       } else if (currentStep === 5) {
+        if (!validateBankDetails()) return;
+        await supplierService.addBank({ accountHolderName, accountNumber, ifscCode, bankName });
+        setCurrentStep(6);
+      } else if (currentStep === 6) {
         if (!validateProfileCompletion()) return;
         const tierData = await supplierService.selectTier(selectedTier);
         dispatch(setSupplierProfile(tierData.supplier));
@@ -340,7 +432,7 @@ const Onboarding: React.FC = () => {
         });
         dispatch(setSupplierProfile(kycData.supplier));
         if (user?.role === 'reseller') { navigate(ROUTES.RESELLER_DASHBOARD); return; }
-        setCurrentStep(6);
+        setCurrentStep(7);
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Something went wrong');
@@ -620,7 +712,7 @@ const Onboarding: React.FC = () => {
                 <label className={labelCls}>Annual Turnover (₹) <span className="text-[#dc2626]">*</span></label>
                 <div className="relative flex items-center">
                   <Building2 size={18} className="absolute left-3 text-[#94a3b8] pointer-events-none" />
-                  <input name="annualTurnover" type="number" className={`${inputCls(!!errors.annualTurnover)} pl-10`} value={annualTurnover} 
+                  <input name="annualTurnover" type="number" className={`${inputCls(!!errors.annualTurnover)} pl-10`} value={annualTurnover}
                     onChange={e => { setAnnualTurnover(e.target.value); setErrors(prev => ({ ...prev, annualTurnover: '' })); }}
                     placeholder="e.g. 1000000" min="0" />
                 </div>
@@ -688,10 +780,188 @@ const Onboarding: React.FC = () => {
 
       case 5:
         return (
-          <div className="w-full max-w-[760px] mx-auto px-4">
+          <div className="w-full max-w-[580px] mx-auto px-4">
             <div className="flex flex-col gap-5">
-              <StepHeader icon={<Star size={24} />} title="Choose your Selling Plan" desc="Select a plan that fits your business scale and growth goals." />
+              <StepHeader icon={<Landmark size={24} />} title="Bank Account Details" desc="Add your bank account for withdrawal of commissions." />
 
+              {/* Account Holder Name */}
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Account Holder Name <span className="text-[#dc2626]">*</span></label>
+                <div className="relative flex items-center">
+                  <User size={18} className="absolute left-3 text-[#94a3b8] pointer-events-none" />
+                  <input
+                    name="accountHolderName"
+                    className={`${inputCls(!!errors.accountHolderName)} pl-10 pr-9`}
+                    value={accountHolderName}
+                    onChange={e => {
+                      const val = e.target.value.replace(/^[\s]/, '');
+                      setAccountHolderName(val.replace(/\b\w/g, l => l.toUpperCase()));
+                      setErrors(prev => ({ ...prev, accountHolderName: bankFieldError.accountHolderName(val) }));
+                    }}
+                    onBlur={() => setErrors(prev => ({ ...prev, accountHolderName: bankFieldError.accountHolderName(accountHolderName) }))}
+                    placeholder="e.g. Rajesh Kumar"
+                  />
+                  {accountHolderName && !bankFieldError.accountHolderName(accountHolderName) && (
+                    <Check size={16} className="absolute right-3 text-[#059669] pointer-events-none" />
+                  )}
+                </div>
+                {errors.accountHolderName
+                  ? <span className={errorTextCls}>⚠ {errors.accountHolderName}</span>
+                  : <span className="text-xs text-[#94a3b8]">Full name as per bank records (letters only)</span>
+                }
+              </div>
+
+              {/* Account Number */}
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Account Number <span className="text-[#dc2626]">*</span></label>
+                <div className="relative flex items-center">
+                  <input
+                    name="accountNumber"
+                    className={`${inputCls(!!errors.accountNumber)} pr-9`}
+                    value={accountNumber}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 18) {
+                        setAccountNumber(val);
+                        setErrors(prev => ({ ...prev, accountNumber: bankFieldError.accountNumber(val) }));
+                      }
+                    }}
+                    onBlur={() => setErrors(prev => ({ ...prev, accountNumber: bankFieldError.accountNumber(accountNumber) }))}
+                    placeholder="9 to 18 digits"
+                    maxLength={18}
+                    inputMode="numeric"
+                  />
+                  {accountNumber && !bankFieldError.accountNumber(accountNumber) && (
+                    <Check size={16} className="absolute right-3 text-[#059669] pointer-events-none" />
+                  )}
+                </div>
+                {errors.accountNumber
+                  ? <span className={errorTextCls}>⚠ {errors.accountNumber}</span>
+                  : <span className="text-xs text-[#94a3b8]">9–18 digit account number (digits only, no spaces)</span>
+                }
+              </div>
+
+              {/* Confirm Account Number */}
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Confirm Account Number <span className="text-[#dc2626]">*</span></label>
+                <div className="relative flex items-center">
+                  <input
+                    name="confirmAccountNumber"
+                    className={`${inputCls(!!errors.confirmAccountNumber)} pr-9`}
+                    value={confirmAccountNumber}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setConfirmAccountNumber(val);
+                      setErrors(prev => ({
+                        ...prev,
+                        confirmAccountNumber: val !== accountNumber ? 'Account numbers do not match' : '',
+                      }));
+                    }}
+                    onBlur={() => {
+                      setErrors(prev => ({ ...prev, confirmAccountNumber: confirmAccountNumber !== accountNumber ? 'Account numbers do not match' : '' }));
+                    }}
+                    placeholder="Re-enter account number"
+                    maxLength={18}
+                    inputMode="numeric"
+                  />
+                  {confirmAccountNumber && confirmAccountNumber === accountNumber && (
+                    <Check size={16} className="absolute right-3 text-[#059669] pointer-events-none" />
+                  )}
+                </div>
+                {errors.confirmAccountNumber
+                  ? <span className={errorTextCls}>⚠ {errors.confirmAccountNumber}</span>
+                  : <span className="text-xs text-[#94a3b8]">Re-enter to confirm</span>
+                }
+              </div>
+
+              {/* IFSC Code */}
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>IFSC Code <span className="text-[#dc2626]">*</span></label>
+                <div className="relative flex items-center">
+                  <input
+                    name="ifscCode"
+                    className={`${inputCls(!!errors.ifscCode)} uppercase font-mono pr-9`}
+                    value={ifscCode}
+                    onChange={e => {
+                      const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                      if (val.length <= 11) {
+                        setIfscCode(val);
+                        setErrors(prev => ({ ...prev, ifscCode: bankFieldError.ifscCode(val) }));
+                      }
+                    }}
+                    onBlur={() => setErrors(prev => ({ ...prev, ifscCode: bankFieldError.ifscCode(ifscCode) }))}
+                    placeholder="e.g. SBIN0001234"
+                    maxLength={11}
+                  />
+                  {ifscCode && !bankFieldError.ifscCode(ifscCode) && (
+                    <Check size={16} className="absolute right-3 text-[#059669] pointer-events-none" />
+                  )}
+                </div>
+                {errors.ifscCode
+                  ? <span className={errorTextCls}>⚠ {errors.ifscCode}</span>
+                  : <span className="text-xs text-[#94a3b8]">11 chars: 4 letters + 0 + 6 alphanumeric (e.g. SBIN0001234) — {ifscCode.length}/11</span>
+                }
+              </div>
+
+              {/* Bank Name */}
+              <div className="flex flex-col gap-1.5">
+                <label className={labelCls}>Bank Name <span className="text-[#dc2626]">*</span></label>
+                <div className="relative flex items-center">
+                  <Landmark size={18} className="absolute left-3 text-[#94a3b8] pointer-events-none" />
+                  <input
+                    name="bankName"
+                    className={`${inputCls(!!errors.bankName)} pl-10 pr-9`}
+                    value={bankName}
+                    onChange={e => {
+                      const val = e.target.value.replace(/\b\w/g, l => l.toUpperCase());
+                      setBankName(val);
+                      setErrors(prev => ({ ...prev, bankName: bankFieldError.bankName(val) }));
+                    }}
+                    onBlur={() => setErrors(prev => ({ ...prev, bankName: bankFieldError.bankName(bankName) }))}
+                    placeholder="e.g. State Bank of India"
+                  />
+                  {bankName && !bankFieldError.bankName(bankName) && (
+                    <Check size={16} className="absolute right-3 text-[#059669] pointer-events-none" />
+                  )}
+                </div>
+                {errors.bankName
+                  ? <span className={errorTextCls}>⚠ {errors.bankName}</span>
+                  : <span className="text-xs text-[#94a3b8]">Full official bank name (e.g. HDFC Bank, Kotak Mahindra Bank)</span>
+                }
+              </div>
+
+              <div className="bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] p-3.5 text-xs text-[#7c2d12]">
+                <strong>Note:</strong> This becomes your primary bank account. You can add more banks later in <strong>Settings → Bank Accounts</strong>.
+              </div>
+
+              <div className="flex gap-3 mt-2">
+                <button onClick={() => setCurrentStep(4)} className={outlineBtnCls}>Back</button>
+                <button
+                  onClick={submitStep}
+                  disabled={
+                    loading ||
+                    !!bankFieldError.accountHolderName(accountHolderName) ||
+                    !!bankFieldError.accountNumber(accountNumber) ||
+                    !!bankFieldError.ifscCode(ifscCode) ||
+                    !!bankFieldError.bankName(bankName) ||
+                    !confirmAccountNumber ||
+                    confirmAccountNumber !== accountNumber
+                  }
+                  className={orangeBtnCls}
+                >
+                  {loading ? 'Saving...' : 'Save & Continue'} <ArrowRight size={18} />
+                </button>
+              </div>
+              <SecureNote />
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="w-full max-w-[580px] mx-auto px-4">
+            <div className="flex flex-col gap-5">
+              <StepHeader icon={<Check size={24} />} title="Select Subscription Plan" desc="Choose a plan that fits your business needs." />
               <div className="flex flex-col gap-3">
                 {[
                   { id: SupplierTier.FREE, label: 'Free Tier', desc: 'Basic visibility. List up to 5K products (group).', price: '₹0', features: ['Up to 5,000 Products', 'Basic Marketplace Visibility'] },
@@ -726,7 +996,7 @@ const Onboarding: React.FC = () => {
               </div>
 
               <div className="flex gap-3 mt-2">
-                <button onClick={() => setCurrentStep(4)} className={outlineBtnCls}>Back</button>
+                <button onClick={() => setCurrentStep(5)} className={outlineBtnCls}>Back</button>
                 <button onClick={submitStep} disabled={loading} className={orangeBtnCls}>
                   {loading ? 'Submitting...' : 'Complete Onboarding'} <Check size={18} />
                 </button>
@@ -735,46 +1005,46 @@ const Onboarding: React.FC = () => {
           </div>
         );
 
-      case 6: {
+      case 7: {
         const isRejected = profile?.kycStatus === 'REJECTED';
         return (
           <>
             <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${isRejected ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#ecfdf5] text-[#059669]'}`}>
               {isRejected ? <XCircle size={48} /> : <ShieldCheck size={48} />}
             </div>
-            <h1 className="text-2xl font-extrabold text-[#0f172a] text-center m-0 mb-4">
+            <h1 className="text-2.5xl font-extrabold text-[#0f172a] text-center m-0 mb-4">
               {isRejected ? 'Application Rejected' : 'Application Submitted!'}
             </h1>
 
             {!isRejected ? (
-              <p className="text-center text-[#475569] text-base max-w-[440px] mx-auto">
+              <p className="text-center text-[#475569] text-base max-w-[480px] mx-auto leading-relaxed">
                 Your application is now under review. As part of our high-trust B2B process,
                 <strong> you will receive a verification call within 24 hours </strong>
                 to confirm your details.
               </p>
             ) : (
-              <div className="bg-[#fef2f2] border border-[#fecaca] rounded-[8px] p-4 text-sm text-[#b91c1c] my-4">
-                <p className="font-bold m-0 mb-1">Reason for Rejection:</p>
-                <p className="m-0">{profile?.rejectionReason || 'Your application did not meet our initial requirements.'}</p>
+              <div className="w-full bg-[#fef2f2] border border-[#fecaca] rounded-[10px] p-5 text-sm text-[#b91c1c] my-4 text-left">
+                <p className="font-bold m-0 mb-2 text-xs uppercase tracking-wider text-[#991b1b]">Reason for Rejection:</p>
+                <p className="m-0 text-base font-semibold leading-relaxed">{profile?.rejectionReason || 'Your application did not meet our initial requirements.'}</p>
               </div>
             )}
 
-            <div className={`rounded-[10px] p-5 text-center my-4 ${isRejected ? 'bg-[#fef2f2] border border-[#fecaca]' : 'bg-[#f8fafc] border border-[#e2e8f0]'}`}>
-              <p className="m-0 font-semibold">Status: <strong>{profile?.kycStatus || 'PENDING'}</strong></p>
+            <div className={`w-full rounded-[10px] p-5 text-center my-4 ${isRejected ? 'bg-[#fef2f2] border border-[#fecaca]' : 'bg-[#f8fafc] border border-[#e2e8f0]'}`}>
+              <p className="m-0 font-semibold text-base text-[#1e293b]">Status: <strong className={isRejected ? 'text-[#b91c1c]' : 'text-[#059669]'}>{profile?.kycStatus || 'PENDING'}</strong></p>
               {!isRejected && <p className="text-sm text-[#64748b] m-0 mt-1">Next step: Formal Cold Call (within 24h)</p>}
             </div>
 
             {isRejected && (
-              <div className="text-center flex flex-col gap-2 my-4 text-sm text-[#475569]">
+              <div className="w-full text-center flex flex-col gap-3 my-4 text-sm text-[#475569]">
                 <p className="m-0">Need help? Contact our support team:</p>
-                <p className="m-0"><strong>Phone: +91 xxxxxxxx</strong></p>
-                <p className="m-0">Or update your details and try again.</p>
-                <Button onClick={handleReapply} variant="outline">Update &amp; Reapply</Button>
+                <p className="m-0 text-base"><strong>Phone: +91 xxxxxxxx</strong></p>
+                <p className="m-0 text-xs text-[#94a3b8]">Or update your details and try again.</p>
+                <Button onClick={handleReapply} className="w-full mt-2" variant="outline">Update &amp; Reapply</Button>
               </div>
             )}
 
             {!isRejected && (
-              <div className="flex items-center gap-4 bg-[#fff7ed] border border-[#fed7aa] rounded-[10px] p-4 my-4">
+              <div className="w-full flex items-center gap-4 bg-[#fff7ed] border border-[#fed7aa] rounded-[10px] p-4 my-4 text-left">
                 <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white shrink-0"><Handshake size={22} /></div>
                 <div className="flex flex-col gap-1 text-sm text-[#475569]">
                   <p className="font-bold m-0">Woman Entrepreneur?</p>
@@ -783,7 +1053,7 @@ const Onboarding: React.FC = () => {
               </div>
             )}
 
-            <Button onClick={() => navigate('/')} size="lg">Go to Homepage</Button>
+            <Button onClick={() => navigate('/')} className="w-full mt-4" size="lg">Go to Homepage</Button>
           </>
         );
       }
@@ -798,14 +1068,15 @@ const Onboarding: React.FC = () => {
     { n: 2, label: 'Business', desc: 'Address & GST' },
     { n: 3, label: 'Profile', desc: 'About' },
     { n: 4, label: 'Business Scale', desc: 'Turnover & Tax' },
-    { n: 5, label: 'Plans', desc: 'Selling Tiers' },
-    { n: 6, label: 'Complete', desc: 'Submission' }
+    { n: 5, label: 'Bank Details', desc: 'Payment Account' },
+    { n: 6, label: 'Plans', desc: 'Selling Tiers' },
+    { n: 7, label: 'Complete', desc: 'Submission' }
   ];
 
-  if (currentStep === 6) {
+  if (currentStep === 7) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#f8fafc] py-10 px-4">
-        <div className="bg-white rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-10 max-w-[540px] w-full flex flex-col items-center text-center">
+        <div className="bg-white rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.08)] p-10 max-w-[600px] w-full flex flex-col items-center text-center">
           {renderStepContent()}
         </div>
       </div>

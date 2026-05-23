@@ -22,7 +22,7 @@ const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-
 const labelCls = "block text-xs font-bold uppercase text-[#94a3b8] tracking-wider mb-1.5";
 const sectionCls = "bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] mb-5";
 
-type CertDoc = { name: string; certificationTypeId: string; documentUrl: string; mandatory: boolean; };
+type CertDoc = { name: string; certificationTypeId: string; documentUrl: string; mandatory: boolean; adminRequired?: boolean; };
 
 const PACKAGING_SIZES: Record<string, string[]> = {
   bulk: ['25 kg Bag', '50 kg Bag', '1 Ton Jumbo Bag', 'Custom Bulk'],
@@ -184,6 +184,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
   const [uploadingCert, setUploadingCert] = useState<string | null>(null);
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [isCustomSizeSelected, setIsCustomSizeSelected] = useState(false);
+  const [availableCertTypes, setAvailableCertTypes] = useState<any[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
   const [keywordInput, setKeywordInput] = useState('');
   const [messageModal, setMessageModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
     isOpen: false, title: '', message: '', type: 'info'
@@ -194,6 +196,11 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
   const isDraftProduct = editingProduct?.status === 'DRAFT';
   const isEditingPublished = !!editingProduct && !isDraftProduct;
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const validateForPublish = (): string[] => {
     const missing: string[] = [];
@@ -230,16 +237,18 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
   };
 
   const handlePublish = async () => {
+    const missingCerts = Object.values(certDocs).filter(d => d.mandatory && !d.documentUrl.trim());
     if (!isEditingPublished) {
       const missing = validateForPublish();
       if (missing.length > 0) {
         setPublishAttempted(true);
-        setMessageModal({
-          isOpen: true, type: 'error', title: 'Required Fields Missing',
-          message: `Please fill in the following before publishing:\n• ${missing.join('\n• ')}`
-        });
+        showToast('Please complete all required fields before publishing');
         return;
       }
+    } else if (missingCerts.length > 0) {
+      setPublishAttempted(true);
+      showToast('Please upload all required compliance documents');
+      return;
     }
     setSubmitting('publish');
     try {
@@ -251,8 +260,13 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
       }
       onSuccess();
       navigate('/supplier/dashboard?tab=overview');
-    } catch {
-      setMessageModal({ isOpen: true, type: 'error', title: 'Submission Failed', message: 'Could not publish product. Please try again.' });
+    } catch (err: any) {
+      if (err?.response?.status === 422) {
+        setPublishAttempted(true);
+        showToast(err.response.data?.message || 'Missing required compliance documents');
+      } else {
+        setMessageModal({ isOpen: true, type: 'error', title: 'Submission Failed', message: 'Could not publish product. Please try again.' });
+      }
     } finally {
       setSubmitting(null);
     }
@@ -291,7 +305,15 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
         certificationTypeId: rc.certificationTypeId || '',
         documentUrl: prev?.documentUrl || '',
         mandatory: rc.mandatory ?? true,
+        adminRequired: true,
       };
+    });
+    // Re-attach any supplier-added certs from existing that aren't admin-required
+    (existing || []).forEach((d: any) => {
+      const alreadyIn = Object.keys(docsMap).some(k => k.toLowerCase() === d.name?.toLowerCase());
+      if (!alreadyIn && d.documentUrl) {
+        docsMap[d.name] = { name: d.name, certificationTypeId: d.certificationTypeId || '', documentUrl: d.documentUrl, mandatory: true, adminRequired: false };
+      }
     });
     setCertDocs(docsMap);
   };
@@ -316,8 +338,13 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const data = await categoryService.getAll();
+        const [catData, certTypesData] = await Promise.all([
+          categoryService.getAll(),
+          categoryService.getCertTypes(),
+        ]);
+        const data = catData;
         setCategories(data.categories);
+        setAvailableCertTypes((certTypesData.data || []).filter((ct: any) => ct.isActive !== false));
 
         if (editingProduct) {
           const wStr: string = editingProduct.packagingWeight || '';
@@ -825,13 +852,40 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
           <div className={sectionCls}>
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Compliance Documents</h3>
             <p className="text-sm text-[#64748b] mb-4 m-0">
-              Upload certification documents required for this product's category.
+              Upload certification documents for this product. Products with any certifications go to admin review before going live.
             </p>
+
+            {/* Cert type picker — supplier can add certs beyond admin-required ones */}
+            {availableCertTypes.length > 0 && (() => {
+              const addable = availableCertTypes.filter(ct => !certDocs[ct.name]);
+              if (!addable.length) return null;
+              return (
+                <div className="mb-4">
+                  <p className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider mb-2">Add Certifications Your Product Has</p>
+                  <div className="flex flex-wrap gap-2">
+                    {addable.map(ct => (
+                      <button
+                        key={ct._id}
+                        type="button"
+                        onClick={() => setCertDocs(prev => ({
+                          ...prev,
+                          [ct.name]: { name: ct.name, certificationTypeId: ct._id, documentUrl: '', mandatory: true, adminRequired: false },
+                        }))}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#475569] border border-[#e2e8f0] rounded-full bg-white hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                      >
+                        <Plus size={11} /> {ct.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {Object.keys(certDocs).length === 0 ? (
               <div className="flex items-center gap-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-4 py-3">
                 <span className="text-sm text-[#94a3b8]">
                   {formData.categoryId
-                    ? 'No compliance documents required for this category.'
+                    ? 'No compliance documents required for this category. You can still add certifications above.'
                     : 'Select a category to see required compliance documents.'}
                 </span>
               </div>
@@ -840,42 +894,53 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                 {Object.values(certDocs).map(doc => {
                   const hasError = publishAttempted && doc.mandatory && !doc.documentUrl;
                   return (
-                  <div key={doc.name} className={`flex items-center gap-3 border rounded-[8px] px-4 py-3 transition-colors ${hasError ? 'border-[#fca5a5] bg-[#fff5f5]' : 'border-[#e2e8f0] bg-white'}`}>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-[#1e293b]">{doc.name}</span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${doc.mandatory ? 'bg-[#fef2f2] text-[#dc2626] border-[#fecaca]' : 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0]'}`}>
-                          {doc.mandatory ? 'Mandatory' : 'Optional'}
-                        </span>
+                    <div key={doc.name} className={`flex items-center gap-3 border rounded-[8px] px-4 py-3 transition-colors ${hasError ? 'border-[#fca5a5] bg-[#fff5f5]' : 'border-[#e2e8f0] bg-white'}`}>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-semibold text-[#1e293b]">{doc.name}</span>
+                          {doc.adminRequired ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-[#fef2f2] text-[#dc2626] border-[#fecaca]">Required</span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-[#eff6ff] text-[#2563eb] border-[#bfdbfe]">Added by you</span>
+                          )}
+                        </div>
+                        {doc.documentUrl ? (
+                          <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline truncate block">
+                            Document uploaded — view file
+                          </a>
+                        ) : hasError ? (
+                          <span className="text-xs text-[#dc2626] font-semibold">Required — please upload before publishing</span>
+                        ) : (
+                          <span className="text-xs text-[#94a3b8]">No document uploaded yet</span>
+                        )}
                       </div>
-                      {doc.documentUrl ? (
-                        <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline truncate block">
-                          Document uploaded — view file
-                        </a>
-                      ) : hasError ? (
-                        <span className="text-xs text-[#dc2626] font-semibold">This document is required to publish</span>
-                      ) : (
-                        <span className="text-xs text-[#94a3b8]">No document uploaded yet</span>
-                      )}
+                      <div className="shrink-0 flex items-center gap-2">
+                        {uploadingCert === doc.name ? (
+                          <span className="text-xs text-[#64748b] px-3 py-2 animate-pulse">Uploading...</span>
+                        ) : (
+                          <label className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-primary border border-primary rounded-[8px] cursor-pointer hover:bg-primary hover:text-white transition-colors">
+                            <input
+                              type="file"
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              hidden
+                              onChange={e => {
+                                if (e.target.files?.[0]) handleCertUpload(doc.name, e.target.files[0]);
+                              }}
+                            />
+                            {doc.documentUrl ? 'Replace' : 'Upload'}
+                          </label>
+                        )}
+                        {!doc.adminRequired && (
+                          <button
+                            type="button"
+                            onClick={() => setCertDocs(prev => { const next = { ...prev }; delete next[doc.name]; return next; })}
+                            className="w-8 h-8 flex items-center justify-center text-[#94a3b8] border border-[#e2e8f0] rounded-[8px] bg-white hover:text-[#dc2626] hover:border-[#fecaca] transition-colors cursor-pointer"
+                          >
+                            <X size={13} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="shrink-0">
-                      {uploadingCert === doc.name ? (
-                        <span className="text-xs text-[#64748b] px-3 py-2 animate-pulse">Uploading...</span>
-                      ) : (
-                        <label className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-primary border border-primary rounded-[8px] cursor-pointer hover:bg-primary hover:text-white transition-colors">
-                          <input
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            hidden
-                            onChange={e => {
-                              if (e.target.files?.[0]) handleCertUpload(doc.name, e.target.files[0]);
-                            }}
-                          />
-                          {doc.documentUrl ? 'Replace' : 'Upload'}
-                        </label>
-                      )}
-                    </div>
-                  </div>
                   );
                 })}
               </div>
@@ -991,6 +1056,14 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
         <Modal isOpen={true} onClose={() => setShowCropper(false)} title="Crop Product Image">
           <ImageCropper image={tempImage} onCropComplete={handleCropComplete} onCancel={() => setShowCropper(false)} />
         </Modal>
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#1e293b] text-white px-5 py-3 rounded-[10px] shadow-lg text-sm font-semibold whitespace-nowrap animate-[fadeInUp_0.2s_ease]">
+          <span className="w-5 h-5 rounded-full bg-[#dc2626] flex items-center justify-center text-white text-xs font-bold shrink-0">!</span>
+          {toast}
+        </div>
       )}
     </div>
   );

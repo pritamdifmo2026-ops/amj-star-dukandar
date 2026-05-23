@@ -41,6 +41,13 @@ export interface AdminSupplier {
     taxFilingDetails?: string;
     taxPaymentsCompliance?: string;
   };
+  banks?: {
+    accountHolderName: string;
+    accountNumber: string;
+    ifscCode: string;
+    bankName: string;
+    isPrimary: boolean;
+  }[];
 }
 
 export interface AdminReseller {

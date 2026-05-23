@@ -7,6 +7,11 @@ const supplierService = {
     return response.data;
   },
 
+  reapply: async () => {
+    const response = await apiClient.post('/supplier/reapply');
+    return response.data;
+  },
+
   onboard: async (data: { businessName: string; phone: string; ownerName: string; email: string }) => {
     const response = await apiClient.post('/supplier/onboard', data);
     return response.data;
@@ -68,6 +73,32 @@ const supplierService = {
 
   verifyPhoneChange: async (otp: string) => {
     const response = await apiClient.post('/supplier/verify-phone-change', { otp });
+    return response.data;
+  },
+
+  // Bank Management
+  addBank: async (data: { accountHolderName: string; accountNumber: string; ifscCode: string; bankName: string }) => {
+    const response = await apiClient.post('/supplier/banks', data);
+    return response.data;
+  },
+
+  getBanks: async () => {
+    const response = await apiClient.get('/supplier/banks');
+    return response.data;
+  },
+
+  editBank: async (bankId: string, data: { accountHolderName: string; accountNumber: string; ifscCode: string; bankName: string }) => {
+    const response = await apiClient.put(`/supplier/banks/${bankId}`, data);
+    return response.data;
+  },
+
+  deleteBank: async (bankId: string) => {
+    const response = await apiClient.delete(`/supplier/banks/${bankId}`);
+    return response.data;
+  },
+
+  setPrimaryBank: async (bankId: string) => {
+    const response = await apiClient.patch(`/supplier/banks/${bankId}/set-primary`);
     return response.data;
   }
 };

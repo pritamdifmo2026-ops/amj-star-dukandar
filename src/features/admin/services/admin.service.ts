@@ -146,8 +146,8 @@ const adminService = {
     return response.data.withdrawals;
   },
 
-  processWithdrawal: async (id: string, action: 'approve' | 'reject' | 'complete', adminNote?: string) => {
-    const response = await api.patch(`/admin/withdrawals/${id}/process`, { action, adminNote });
+  processWithdrawal: async (id: string, action: 'approve' | 'reject' | 'complete', adminNote?: string, transactionId?: string) => {
+    const response = await api.patch(`/admin/withdrawals/${id}/process`, { action, adminNote, transactionId });
     return response.data.withdrawal;
   },
 

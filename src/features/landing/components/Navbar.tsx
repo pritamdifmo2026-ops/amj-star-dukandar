@@ -123,7 +123,7 @@ const Navbar: React.FC = () => {
             <img src={logo} alt="AMJSTAR Logo" className="h-[38px] rounded-full object-contain" />
           </Link>
 
-          <div className="hidden lg:block flex-1 max-w-[380px] mx-3 sm:mx-6">
+          <div className="hidden lg:block flex-1 max-w-[620px] mx-3 sm:mx-6">
             <SearchBar categories={categories} />
           </div>
 

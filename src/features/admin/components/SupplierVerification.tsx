@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink, Percent } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink, Percent, Landmark } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import Pagination from '@/shared/components/ui/Pagination';
@@ -377,6 +377,48 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
               </div>
             </div>
           )}
+
+          {/* Bank Accounts Section */}
+          <div className="p-6 border-b border-[#f1f5f9] bg-[#f8fafc]/50">
+            <div className="flex items-center gap-2 mb-4 text-primary">
+              <Landmark size={20} />
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0">Bank Accounts</h3>
+            </div>
+            {selectedSupplier.banks && selectedSupplier.banks.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                {selectedSupplier.banks.map((bank, index) => (
+                  <div key={index} className="p-4 bg-white border border-[#eef2f6] rounded-[10px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col gap-2 relative overflow-hidden">
+                    {bank.isPrimary && (
+                      <span className="absolute top-2 right-2 text-[9px] bg-[#ecfdf5] text-[#059669] font-bold px-2 py-0.5 rounded-full border border-[#a7f3d0]">
+                        PRIMARY
+                      </span>
+                    )}
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Bank Name</span>
+                      <p className="text-sm font-semibold text-[#1e293b] m-0">{bank.bankName}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Account Holder</span>
+                      <p className="text-sm font-medium text-[#475569] m-0">{bank.accountHolderName}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Account Number</span>
+                        <p className="text-sm font-mono text-[#475569] m-0">{bank.accountNumber}</p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">IFSC Code</span>
+                        <p className="text-sm font-mono text-[#475569] m-0">{bank.ifscCode}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[#94a3b8] m-0">No bank accounts entered yet.</p>
+            )}
+          </div>
+
           <CommissionRateEditor supplierId={selectedSupplier._id} currentRate={(selectedSupplier as any).commissionRate} />
         </div>
       </div>

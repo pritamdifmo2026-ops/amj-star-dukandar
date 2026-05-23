@@ -173,6 +173,204 @@ See [docs/doc1.md](docs/doc1.md) for full details with ✅/❌ completion status
 
 ---
 
+---
+
+## Supplier Wallet Withdrawal Flow — Bank Details Management
+
+**Status:** ⏳ Pending
+
+### Overview
+Suppliers must register bank account details during onboarding and can manage multiple bank accounts in settings. Withdrawals use the **primary bank** by default or allow selection from saved accounts.
+
+### Requirements
+
+#### 1. Supplier Onboarding — Bank Details Step
+- **Where:** Onboarding.tsx → Add as **Step 5** (before final submission)
+- **Fields:**
+  - Account Holder Name (required)
+  - Account Number (required, 9-18 digits)
+  - IFSC Code (required, 11 chars, format: XXXX0XXXXXX)
+  - Bank Name (required)
+- **Behavior:**
+  - This bank becomes the **primary bank** after onboarding completes
+  - Validation before step submission
+  - Cannot proceed to next step without valid bank details
+
+#### 2. Supplier Settings — Bank Account Management
+- **Location:** `/supplier/dashboard?tab=settings`
+- **New Section:** "Bank Accounts" card (after "Basic Information" and "Contact Details")
+- **Features:**
+
+  **Display Primary Bank:**
+  - Show current primary bank with ✓ badge
+  - Bank name, masked account number (show last 4: ••••1234), IFSC
+
+  **Add New Bank:**
+  - Button: "+ Add Bank Account"
+  - Modal/Inline form with same fields as onboarding
+  - After submit → appears in list
+  - Success toast
+
+  **Bank List:**
+  - Card per bank showing:
+    - Bank name, account holder name
+    - Masked account number (last 4 digits)
+    - IFSC code
+    - **Primary** badge on current primary
+    - Edit & Delete buttons
+  - Editable fields: account holder name, account number, IFSC, bank name
+
+  **Set as Primary:**
+  - Radio button or "Set as Primary" button per bank
+  - Update on click
+  - Success toast: "Primary bank updated"
+
+  **Delete Bank:**
+  - Delete button per bank
+  - **Cannot delete primary bank** → show warning tooltip
+  - Confirm dialog before deletion
+  - Success/error toast
+
+  **Edit Bank:**
+  - Edit button → open modal with current details
+  - Update on submit
+  - Success toast
+
+#### 3. Withdrawal Modal Update
+- **Current behavior:** Suppliers enter bank details inline during withdrawal request
+- **New behavior:**
+  - Primary bank auto-filled and selected by default
+  - Dropdown to select from saved banks
+  - If no saved banks → fall back to inline entry (for backward compatibility)
+  - Show message: "Using saved primary bank"
+
+#### 4. Validation Rules
+- IFSC code: 11 characters, format `XXXX0XXXXXX` (4 alpha, 0, 6 alphanumeric)
+- Account number: 9-18 digits
+- Account holder name: 3-50 characters, alphanumeric + spaces
+- Bank name: 3-50 characters
+- Cannot have duplicate account numbers
+
+### Database Schema — Supplier Model
+
+```typescript
+// Add to Supplier model
+banks: [{
+  _id: ObjectId,                  // unique per bank
+  accountHolderName: string,      // 3-50 chars
+  accountNumber: string,          // 9-18 digits
+  ifscCode: string,              // 11 chars: XXXX0XXXXXX
+  bankName: string,              // 3-50 chars
+  isPrimary: boolean,
+  createdAt: Date,
+  updatedAt: Date,
+}],
+primaryBankId: ObjectId | null   // ref to banks[i]._id
+```
+
+### Backend API Endpoints
+
+**Bank Management (Supplier only, auth required):**
+```
+GET    /supplier/banks              # List all banks for supplier
+POST   /supplier/banks              # Add new bank
+       Body: { accountHolderName, accountNumber, ifscCode, bankName }
+PUT    /supplier/banks/:id          # Edit bank details
+       Body: { accountHolderName, accountNumber, ifscCode, bankName }
+DELETE /supplier/banks/:id          # Delete bank (cannot delete primary)
+PATCH  /supplier/banks/:id/set-primary  # Set as primary
+```
+
+**Wallet Withdrawal Update:**
+```
+POST   /wallet/withdraw             # Updated
+       Body: { amount, bankId?, bankDetails? }
+       # If bankId provided → validate it's primary or owned by supplier
+       # If bankDetails provided → use inline (backward compat)
+       # If neither → use primary bank
+```
+
+### Frontend Files to Modify
+
+1. **Onboarding.tsx**
+   - Add Step 5 for bank details
+   - Include form with validation
+   - Store in Redux or local state
+
+2. **SupplierSettings.tsx**
+   - Add "Bank Accounts" section
+   - Implement add/edit/delete/set-primary flows
+   - Use React Query for mutations
+
+3. **SupplierWallet.tsx**
+   - Update withdrawal modal
+   - Auto-populate primary bank
+   - Show dropdown of saved banks
+
+4. **wallet.api.ts**
+   - Add methods:
+     - `getBanks()` → GET /supplier/banks
+     - `addBank(details)` → POST /supplier/banks
+     - `editBank(id, details)` → PUT /supplier/banks/:id
+     - `deleteBank(id)` → DELETE /supplier/banks/:id
+     - `setPrimaryBank(id)` → PATCH /supplier/banks/:id/set-primary
+
+### Frontend Components Structure
+
+**SupplierSettings.tsx:**
+```
+<SupplierSettings>
+  <!-- Existing sections -->
+  <div className={cardCls}>
+    <h3>Bank Accounts</h3>
+    <PrimaryBankDisplay />
+    <BanksList />
+    <AddBankButton />
+  </div>
+</SupplierSettings>
+```
+
+**Sub-components:**
+- `BanksList.tsx` → List with edit/delete/set-primary actions
+- `AddBankForm.tsx` → Modal form for add/edit
+- `BankDetailsFields.tsx` → Reusable form fields
+
+### Implementation Checklist
+
+**Backend:**
+- [ ] Update Supplier model → add `banks[]` array, `primaryBankId`
+- [ ] Create bank validation utilities (IFSC format, account length)
+- [ ] Add endpoints in `supplier.routes.ts`
+- [ ] Implement bank service methods
+- [ ] Update `wallet.service.ts` → use primary bank on withdrawal
+- [ ] Add error handling for primary bank deletion attempt
+
+**Frontend:**
+- [ ] Add bank step to Onboarding.tsx (Step 5)
+- [ ] Create bank management components
+- [ ] Add bank API service methods to wallet.api.ts
+- [ ] Update SupplierSettings.tsx with bank section
+- [ ] Update SupplierWallet.tsx withdrawal modal
+- [ ] Add IFSC/account validation helpers
+
+**Testing:**
+- [ ] Onboarding completes with bank details
+- [ ] Can add multiple banks in settings
+- [ ] Cannot delete primary bank
+- [ ] Set as primary updates correctly
+- [ ] Withdrawal uses primary bank by default
+- [ ] Withdrawal modal shows saved banks
+
+### Notes
+- Ensure mobile responsive design for bank list
+- Add loading states for all mutations
+- Clear form after successful add/edit
+- Confirm dialogs for destructive actions (delete)
+- Toast notifications for all operations
+- Consider bank data encryption at rest for security
+
+---
+
 ## Environment
 
 `.env` files must be configured in both `amj-star-dukandar/` and `amjstar-backend/` for local development. Never commit `.env` files.
