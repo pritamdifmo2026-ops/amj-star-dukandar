@@ -144,10 +144,10 @@ const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({ categories, o
 
   const handleFiltersClick = () => {
     const q = query.trim();
-    const url = q 
-      ? `${ROUTES.PRODUCT_LIST}?q=${encodeURIComponent(q)}`
-      : ROUTES.PRODUCT_LIST;
-    navigate(url);
+    const params = new URLSearchParams();
+    if (q) params.append('q', q);
+    params.append('showFilters', 'true');
+    navigate(`${ROUTES.PRODUCT_LIST}?${params.toString()}`);
     onClose();
   };
 

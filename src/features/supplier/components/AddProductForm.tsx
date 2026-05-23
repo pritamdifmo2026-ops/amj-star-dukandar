@@ -24,6 +24,11 @@ const sectionCls = "bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[
 
 type CertDoc = { name: string; certificationTypeId: string; documentUrl: string; mandatory: boolean; };
 
+const PACKAGING_SIZES: Record<string, string[]> = {
+  bulk: ['25 kg Bag', '50 kg Bag', '1 Ton Jumbo Bag', 'Custom Bulk'],
+  retail: ['100g Pack', '250g Pack', '500g Pack', '1kg Box', 'Custom Retail'],
+};
+
 const CATEGORY_SUGGESTIONS: Record<string, string[]> = {
   textile: ['Fabric Type', 'GSM', 'Width (cm)', 'Pattern', 'Color', 'Dye Type'],
   food: ['Shelf Life (months)', 'Ingredients', 'FSSAI License No.', 'Organic', 'Harvest Season'],
@@ -177,6 +182,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
   const [packagingWeightUnit, setPackagingWeightUnit] = useState('kg');
   const [certDocs, setCertDocs] = useState<Record<string, CertDoc>>({});
   const [uploadingCert, setUploadingCert] = useState<string | null>(null);
+  const [publishAttempted, setPublishAttempted] = useState(false);
+  const [isCustomSizeSelected, setIsCustomSizeSelected] = useState(false);
   const [keywordInput, setKeywordInput] = useState('');
   const [messageModal, setMessageModal] = useState<{ isOpen: boolean; title: string; message: string; type: 'success' | 'error' | 'info' }>({
     isOpen: false, title: '', message: '', type: 'info'
@@ -223,10 +230,10 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
   };
 
   const handlePublish = async () => {
-    // For editing a published product, skip strict re-validation (it was already validated once)
     if (!isEditingPublished) {
       const missing = validateForPublish();
       if (missing.length > 0) {
+        setPublishAttempted(true);
         setMessageModal({
           isOpen: true, type: 'error', title: 'Required Fields Missing',
           message: `Please fill in the following before publishing:\n• ${missing.join('\n• ')}`
@@ -341,6 +348,16 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             gstRate: editingProduct.gstRate ?? 18,
           });
           setSpecRows(specsToRows(editingProduct.specifications || {}));
+          
+          const pType = editingProduct.packagingType || 'bulk';
+          const pSize = editingProduct.packagingSize || '';
+          if (pType === 'bulk' || pType === 'retail') {
+            const standardSizes = PACKAGING_SIZES[pType] || [];
+            const isCustom = pSize !== '' && !standardSizes.slice(0, -1).includes(pSize);
+            setIsCustomSizeSelected(isCustom);
+          } else {
+            setIsCustomSizeSelected(false);
+          }
 
           const catForEdit = editingProduct.categoryId
             ? data.categories.find((c: any) => c._id === editingProduct.categoryId)
@@ -379,6 +396,21 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     }
   };
 
+  const handlePackagingTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const type = e.target.value;
+    let defaultSize = '';
+    if (type === 'bulk') {
+      defaultSize = '25 kg Bag';
+    } else if (type === 'retail') {
+      defaultSize = '100g Pack';
+    }
+    setFormData(prev => ({
+      ...prev,
+      packagingType: type,
+      packagingSize: defaultSize,
+    }));
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
@@ -389,7 +421,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
   const handleCropComplete = async (croppedBlob: Blob) => {
     setShowCropper(false);
-    setSubmitting('publish'); // show loading on images too
+    setSubmitting('publish');
     try {
       const data = await uploadService.uploadImage(croppedBlob);
       setFormData(prev => ({ ...prev, images: [...(prev.images || []), data.url] }));
@@ -407,7 +439,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc]">
-      {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-[#eef2f6] px-8 py-4 flex justify-between items-center gap-4 max-md:px-4 max-md:flex-col max-md:gap-3">
         <div className="flex flex-col gap-1">
           <button onClick={handleDiscard} className="flex items-center gap-1.5 text-sm text-[#64748b] font-semibold bg-none border-none cursor-pointer p-0 hover:text-primary transition-colors">
@@ -421,7 +452,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="flex gap-2.5 items-center">
           <button
             onClick={handleDiscard}
@@ -431,7 +461,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             Discard
           </button>
 
-          {/* Save as Draft — shown for new products and draft products being edited */}
           {!isEditingPublished && (
             <button
               onClick={handleSaveDraft}
@@ -459,8 +488,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
       <div className="flex-1 max-w-[820px] mx-auto w-full px-8 py-8 max-md:px-4">
         <form onSubmit={e => e.preventDefault()} className="flex flex-col gap-0">
-
-          {/* General Information */}
           <div className={sectionCls}>
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">General Information</h3>
             <p className="text-sm text-[#64748b] mb-5 m-0">Core details shown on your product listing.</p>
@@ -526,7 +553,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             </div>
           </div>
 
-          {/* Pricing & Supply */}
           <div className={sectionCls}>
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Pricing &amp; Supply</h3>
             <p className="text-sm text-[#64748b] mb-5 m-0">Set your bulk pricing, unit and minimum order.</p>
@@ -584,7 +610,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                 </div>
                 <div>
                   <label className={labelCls}>Packaging Type <span className="text-[#dc2626]">*</span></label>
-                  <select className={inputCls} value={formData.packagingType ?? 'bulk'} onChange={e => setFormData({ ...formData, packagingType: e.target.value })}>
+                  <select className={inputCls} value={formData.packagingType ?? 'bulk'} onChange={handlePackagingTypeChange}>
                     <option value="bulk">Bulk</option>
                     <option value="retail">Retail Pack</option>
                     <option value="custom">Custom Packaging</option>
@@ -627,13 +653,52 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                 </div>
                 <div>
                   <label className={labelCls}>Package Size <span className="text-[#dc2626]">*</span></label>
-                  <input
-                    className={inputCls}
-                    type="text"
-                    value={formData.packagingSize ?? ''}
-                    onChange={e => setFormData({ ...formData, packagingSize: e.target.value })}
-                    placeholder="e.g. 1 kg, 500 ml, 50 pcs"
-                  />
+                  {(() => {
+                    const currentType = formData.packagingType || 'bulk';
+                    if (currentType === 'custom') {
+                      return (
+                        <input
+                          className={inputCls}
+                          type="text"
+                          value={formData.packagingSize ?? ''}
+                          onChange={e => setFormData({ ...formData, packagingSize: e.target.value })}
+                          placeholder="e.g. 50kg Drum, 10L Can"
+                        />
+                      );
+                    }
+                    const options = PACKAGING_SIZES[currentType] || [];
+                    const dropdownValue = isCustomSizeSelected ? options[options.length - 1] : (formData.packagingSize || options[0] || '');
+                    return (
+                      <div className="flex flex-col gap-2">
+                        <select
+                          className={inputCls}
+                          value={dropdownValue}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (val === 'Custom Bulk' || val === 'Custom Retail') {
+                              setIsCustomSizeSelected(true);
+                              setFormData({ ...formData, packagingSize: '' });
+                            } else {
+                              setIsCustomSizeSelected(false);
+                              setFormData({ ...formData, packagingSize: val });
+                            }
+                          }}
+                        >
+                          {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                        {isCustomSizeSelected && (
+                          <input
+                            className={inputCls}
+                            type="text"
+                            value={formData.packagingSize ?? ''}
+                            onChange={e => setFormData({ ...formData, packagingSize: e.target.value })}
+                            placeholder={`Enter custom ${currentType === 'bulk' ? 'bulk' : 'retail'} size (e.g. 15 kg Box)`}
+                            autoFocus
+                          />
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div>
                   <label className={labelCls}>Package Dimensions <span className="text-[#dc2626]">*</span></label>
@@ -653,9 +718,9 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                   <label className={labelCls}>Country of Origin</label>
                   <input className={inputCls} type="text" value={formData.countryOfOrigin ?? 'India'} onChange={e => setFormData({ ...formData, countryOfOrigin: e.target.value })} placeholder="India" />
                 </div>
+                <div />
               </div>
 
-              {/* GST Information */}
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider">GST Information</span>
@@ -772,8 +837,10 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {Object.values(certDocs).map(doc => (
-                  <div key={doc.name} className="flex items-center gap-3 border border-[#e2e8f0] rounded-[8px] px-4 py-3 bg-white">
+                {Object.values(certDocs).map(doc => {
+                  const hasError = publishAttempted && doc.mandatory && !doc.documentUrl;
+                  return (
+                  <div key={doc.name} className={`flex items-center gap-3 border rounded-[8px] px-4 py-3 transition-colors ${hasError ? 'border-[#fca5a5] bg-[#fff5f5]' : 'border-[#e2e8f0] bg-white'}`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-semibold text-[#1e293b]">{doc.name}</span>
@@ -785,6 +852,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                         <a href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline truncate block">
                           Document uploaded — view file
                         </a>
+                      ) : hasError ? (
+                        <span className="text-xs text-[#dc2626] font-semibold">This document is required to publish</span>
                       ) : (
                         <span className="text-xs text-[#94a3b8]">No document uploaded yet</span>
                       )}
@@ -807,7 +876,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

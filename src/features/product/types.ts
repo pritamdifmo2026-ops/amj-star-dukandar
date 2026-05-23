@@ -22,7 +22,9 @@ export interface Product {
   keywords?: string[];
   leadTime?: string;
   packagingType?: string;
+  packagingSize?: string;
   countryOfOrigin?: string;
+  packagingDimensions?: string;
   certifications?: string[];
   specifications?: Record<string, string>;
   supplierCity?: string;
@@ -72,4 +74,7 @@ export interface CreateProductPayload {
   subcategoryId?: string;
   gstRate: number;
   images: string[];
+  packagingType?: string;
+  packagingSize?: string;
+  packagingDimensions?: string;
 }
