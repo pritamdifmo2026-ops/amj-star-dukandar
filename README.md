@@ -1,8 +1,8 @@
-# AMJSTAR Dukandar Frontend 🌟
+# AMJSTAR Dukandar Frontend 
 
 Welcome to the **AMJSTAR Dukandar Frontend** repository! This is the client-side application for the AMJSTAR B2B E-commerce platform, enabling seamless interactions between Suppliers, Resellers, and Administrators.
 
-## 🚀 Features
+##  Features
 
 - **Multi-Role Authentication**: Dedicated portals for Suppliers, Resellers, and Admin with robust Role-Based Access Control (RBAC).
 - **Supplier Dashboard**: Comprehensive product catalog management, order processing, inventory tracking, and analytics.
@@ -21,7 +21,7 @@ Welcome to the **AMJSTAR Dukandar Frontend** repository! This is the client-side
 - **Icons**: Lucide React
 - **API Calls**: Axios with automated interceptors
 
-## 📦 Getting Started
+##  Getting Started
 
 ### Prerequisites
 - Node.js (v18 or higher recommended)
@@ -44,7 +44,7 @@ Welcome to the **AMJSTAR Dukandar Frontend** repository! This is the client-side
    npm run build
    ```
 
-## 🏗️ Project Structure
+##  Project Structure
 
 - `src/api` - Axios configurations and interceptors
 - `src/app` - Main application routing and core layouts
@@ -53,7 +53,7 @@ Welcome to the **AMJSTAR Dukandar Frontend** repository! This is the client-side
 - `src/shared` - Reusable UI components, hooks, utils, and constants
 - `src/store` - Redux Toolkit global store configuration
 
-## 🌟 Reseller Onboarding Flow
+##  Reseller Onboarding Flow
 
 1. **Basic Setup**: Contact info & location.
 2. **Profile**: Store name & identity.
@@ -63,11 +63,12 @@ Welcome to the **AMJSTAR Dukandar Frontend** repository! This is the client-side
 6. **Verification**: Agreements & ID Proof.
 7. **Plan Selection**: Free starter tier or premium upgrades.
 
-## 🤝 Contribution Guidelines
+##  Contribution Guidelines
 
 - Follow the established feature-based architecture.
 - Ensure all new components are strictly typed with TypeScript.
 - Use `Tailwind CSS` for utility classes and refer to `index.css` for core design tokens.
 
 ---
-*Built with ❤️ for the AMJSTAR Ecosystem*
+*Built by Anushka & Soni* 
+*Difmo*
