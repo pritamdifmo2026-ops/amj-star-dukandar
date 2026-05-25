@@ -12,6 +12,11 @@ const supplierService = {
     return response.data;
   },
 
+  toggleOwnShipping: async () => {
+    const response = await apiClient.patch('/supplier/own-shipping');
+    return response.data;
+  },
+
   onboard: async (data: { businessName: string; phone: string; ownerName: string; email: string }) => {
     const response = await apiClient.post('/supplier/onboard', data);
     return response.data;

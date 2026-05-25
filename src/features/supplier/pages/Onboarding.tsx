@@ -126,6 +126,7 @@ const Onboarding: React.FC = () => {
   const [panDocumentUrl, setPanDocumentUrl] = useState('');
   const [gstinDocument, setGstinDocument] = useState<File | null>(null);
   const [gstinDocumentUrl, setGstinDocumentUrl] = useState('');
+  const [commissionRate, setCommissionRate] = useState('');
 
   // Bank Details State
   const [accountHolderName, setAccountHolderName] = useState('');
@@ -178,6 +179,7 @@ const Onboarding: React.FC = () => {
             if (bd.panDocument) setPanDocumentUrl(bd.panDocument);
             if (bd.gstinDocument) setGstinDocumentUrl(bd.gstinDocument);
           }
+          if (data.supplier.commissionRate) setCommissionRate(data.supplier.commissionRate.toString());
           if (data.supplier.banks && data.supplier.banks.length > 0) {
             const primaryBank = data.supplier.banks.find((b: any) => b.isPrimary) || data.supplier.banks[0];
             if (primaryBank) {
@@ -428,7 +430,8 @@ const Onboarding: React.FC = () => {
           fssaiCertificate: fssaiCertificateUrl, isWomenEntrepreneur,
           annualTurnover: parseInt(annualTurnover),
           monthlyProductionCapacity: parseInt(monthlyProductionCapacity),
-          taxFilingMethod, taxFilingDetails: taxFilingDetailsUrl, taxPaymentsCompliance
+          taxFilingMethod, taxFilingDetails: taxFilingDetailsUrl, taxPaymentsCompliance,
+          commissionRate: commissionRate ? parseFloat(commissionRate) : undefined
         });
         dispatch(setSupplierProfile(kycData.supplier));
         if (user?.role === 'reseller') { navigate(ROUTES.RESELLER_DASHBOARD); return; }
@@ -995,9 +998,42 @@ const Onboarding: React.FC = () => {
                 ))}
               </div>
 
-              <div className="flex gap-3 mt-2">
+              <div className="flex flex-col gap-1.5 mt-2">
+                <label className={labelCls}>Suggested Commission Rate (%) <span className="text-xs text-[#94a3b8] font-normal normal-case">(per mature deal)</span></label>
+                <div className="relative flex items-center">
+                  <input
+                    name="commissionRate"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    className={`${inputCls(false)} pr-9`}
+                    value={commissionRate}
+                    onChange={e => setCommissionRate(e.target.value)}
+                    placeholder="e.g. 1.5"
+                  />
+                  {commissionRate && (
+                    <span className="absolute right-3 text-[#94a3b8] pointer-events-none">%</span>
+                  )}
+                </div>
+                {commissionRate && parseFloat(commissionRate) > 0 && parseFloat(commissionRate) <= 2 && (
+                  <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] p-3 text-xs text-[#059669] mt-1 font-semibold leading-relaxed">
+                    Offering a competitive commission (e.g., 2%+) significantly boosts your product ranking and visibility across the AMJSTAR platform!
+                  </div>
+                )}
+                {commissionRate && parseFloat(commissionRate) > 2 && (
+                   <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] p-3 text-xs text-[#059669] mt-1 font-semibold leading-relaxed">
+                    Excellent! This highly competitive commission rate will maximize your product ranking and visibility across the AMJSTAR platform!
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-4">
                 <button onClick={() => setCurrentStep(5)} className={outlineBtnCls}>Back</button>
-                <button onClick={submitStep} disabled={loading} className={orangeBtnCls}>
+                <button 
+                  onClick={submitStep} 
+                  disabled={loading || !commissionRate || isNaN(parseFloat(commissionRate)) || parseFloat(commissionRate) <= 0} 
+                  className={orangeBtnCls}
+                >
                   {loading ? 'Submitting...' : 'Complete Onboarding'} <Check size={18} />
                 </button>
               </div>

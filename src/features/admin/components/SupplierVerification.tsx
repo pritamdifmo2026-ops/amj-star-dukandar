@@ -208,6 +208,9 @@ const CommissionRateEditor: React.FC<{ supplierId: string; currentRate: number |
   return (
     <div className="p-6 border-t border-[#f1f5f9]">
       <div className="flex items-center gap-2 mb-4 text-[#7c3aed]"><Percent size={18} /><h3 className="text-base font-extrabold text-[#0f172a] m-0">Commission Rate</h3></div>
+      <p className="text-xs text-[#64748b] mb-4 m-0 leading-relaxed max-w-2xl">
+        <strong className="text-[#475569]">Suggested by supplier.</strong> You can negotiate and adjust this rate with the supplier before final approval. 
+      </p>
       <div className="flex items-center gap-3 max-w-xs">
         <div className="flex-1 flex items-center gap-2 border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 focus-within:border-primary">
           <input

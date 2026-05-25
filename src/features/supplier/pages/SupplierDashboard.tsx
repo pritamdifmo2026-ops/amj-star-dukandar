@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 
 import ProductTable from '../components/ProductTable';
-import PlaceholderView from '../components/PlaceholderView';
 import AddProductForm from '../components/AddProductForm';
 import SupplierPartnerships from '../components/SupplierPartnerships';
 import SupplierOverview from '../components/SupplierOverview';
@@ -25,6 +24,7 @@ import SupplierReports from '../components/SupplierReports';
 import SupplierStoreFront from '../components/SupplierStoreFront';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import SupplierQuotations from '../components/SupplierQuotations';
+import SupplierLogistics from '../components/SupplierLogistics';
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import OrderList from '../../buyer/components/OrderList';
@@ -333,7 +333,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'store' && profile?._id && <SupplierStoreFront supplierId={profile._id} />}
         {activeView === 'wallet' && <SupplierWallet />}
         {activeView === 'reports' && <SupplierReports />}
-        {activeView === 'logistics' && <PlaceholderView title="Logistics Tracking" icon={Truck} description="Manage your shipments and track delivery status for all your bulk orders." />}
+        {activeView === 'logistics' && <SupplierLogistics />}
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}
         {(activeView === 'add-product' || activeView === 'edit-product') && (

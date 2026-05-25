@@ -31,6 +31,7 @@ interface SupplierProfile {
   onboardingStatus: OnboardingStatus;
   isActive: boolean;
   rejectionReason?: string;
+  usesOwnShipping?: boolean;
 }
 
 interface SupplierState {
