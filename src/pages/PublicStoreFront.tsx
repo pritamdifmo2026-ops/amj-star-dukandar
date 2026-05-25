@@ -143,7 +143,7 @@ const StorefrontProductCard: React.FC<{ product: any }> = ({ product }) => {
       className="flex flex-col bg-white rounded-[12px] border border-[#eef2f6] overflow-hidden no-underline transition-all duration-300 h-full hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:border-[#e65c00]/30 group"
     >
       {/* image */}
-      <div className="relative aspect-square bg-[#f8fafc] overflow-hidden">
+      <div className="relative aspect-[4/3] sm:aspect-square bg-[#f8fafc] overflow-hidden">
         {product.imageUrl ? (
           <img
             src={product.imageUrl}
@@ -164,21 +164,21 @@ const StorefrontProductCard: React.FC<{ product: any }> = ({ product }) => {
       </div>
 
       {/* info */}
-      <div className="p-3 flex-1 flex flex-col">
-        <h3 className="text-xs font-semibold text-[#0f172a] m-0 line-clamp-2 leading-[1.45] flex-1 mb-2">
+      <div className="p-2.5 sm:p-3 flex-1 flex flex-col">
+        <h3 className="text-[11px] sm:text-xs font-semibold text-[#0f172a] m-0 line-clamp-2 leading-[1.45] flex-1 mb-2">
           {product.name}
         </h3>
         <div className="flex items-baseline justify-between mb-3">
-          <span className="text-sm font-extrabold text-[#0f172a]">
+          <span className="text-xs sm:text-sm font-extrabold text-[#0f172a]">
             ₹{(product.price || product.basePrice || 0).toLocaleString('en-IN')}
           </span>
-          <span className="text-[10px] text-[#94a3b8] font-medium">
+          <span className="text-[9px] sm:text-[10px] text-[#94a3b8] font-medium">
             MOQ: {product.minOrderQty || product.moq} {product.unit}
           </span>
         </div>
         <button
           onClick={handleEnquire}
-          className="w-full text-xs font-bold py-2 rounded-[8px] bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa] hover:bg-[#e65c00] hover:text-white transition-all cursor-pointer"
+          className="w-full text-[11px] sm:text-xs font-bold py-1.5 sm:py-2 rounded-[8px] bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa] hover:bg-[#e65c00] hover:text-white transition-all cursor-pointer"
         >
           Enquire Now
         </button>
@@ -189,7 +189,7 @@ const StorefrontProductCard: React.FC<{ product: any }> = ({ product }) => {
 
 /* ─── tiny helpers ──────────────────────────────────────────────────── */
 const StatPill: React.FC<{ icon: React.ReactNode; label: string; value: string }> = ({ icon, label, value }) => (
-  <div className="flex items-center gap-3 bg-white rounded-[10px] border border-[#eef2f6] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] min-w-[150px] flex-1">
+  <div className="flex items-center gap-3 bg-white rounded-[10px] border border-[#eef2f6] px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] min-w-[150px] max-sm:min-w-[calc(50%-0.375rem)] flex-1">
     <div className="w-9 h-9 rounded-[8px] bg-[#fff7ed] text-[#d97706] flex items-center justify-center shrink-0">{icon}</div>
     <div className="min-w-0">
       <p className="text-[11px] font-semibold text-[#94a3b8] uppercase tracking-wide leading-none mb-0.5">{label}</p>
@@ -200,7 +200,7 @@ const StatPill: React.FC<{ icon: React.ReactNode; label: string; value: string }
 
 const InfoRow: React.FC<{ icon: React.ReactNode; text: string; href?: string }> = ({ icon, text, href }) => {
   const content = (
-    <div className="flex items-center gap-2.5 text-sm text-[#475569]">
+    <div className="flex items-center gap-2.5 text-sm text-[#475569] min-w-0">
       <span className="text-[#94a3b8] shrink-0">{icon}</span>
       <span className="leading-snug truncate">{text}</span>
       {href && <ArrowUpRight size={13} className="text-[#94a3b8] shrink-0 ml-auto" />}
@@ -303,7 +303,7 @@ const PublicStoreFront: React.FC = () => {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9]">
+    <div className="min-h-screen bg-[#f1f5f9] overflow-x-hidden">
 
       {/* Share Modal */}
       {showShareModal && (
@@ -315,7 +315,7 @@ const PublicStoreFront: React.FC = () => {
       )}
 
       {/* ── Banner ──────────────────────────────────────────────── */}
-      <div className="relative h-[200px] md:h-[240px] overflow-hidden">
+      <div className="relative h-[170px] sm:h-[200px] md:h-[240px] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#e65c00]" />
         <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(230,92,0,0.35) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,160,50,0.2) 0%, transparent 55%)' }} />
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
@@ -325,25 +325,25 @@ const PublicStoreFront: React.FC = () => {
         </div>
         <button
           onClick={() => setShowShareModal(true)}
-          className="absolute top-4 right-4 lg:right-8 flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer"
+          className="absolute top-4 right-4 lg:right-8 flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer max-[360px]:px-2"
         >
           <Share2 size={13} /> Share Store
         </button>
       </div>
 
       {/* ── Content ─────────────────────────────────────────────── */}
-      <div className="max-w-[1280px] mx-auto px-4 lg:px-8">
+      <div className="max-w-[1280px] mx-auto px-3 sm:px-4 lg:px-8">
 
         {/* Identity Card */}
         <div className="bg-white rounded-[16px] border border-[#eef2f6] shadow-[0_2px_12px_rgba(0,0,0,0.06)] -mt-16 mb-5 relative z-10 overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-[#e65c00] to-[#f59e0b] w-full" />
-          <div className="p-5 md:p-6 flex flex-col sm:flex-row gap-5 items-start">
-            <div className="w-[80px] h-[80px] md:w-[96px] md:h-[96px] rounded-[14px] bg-gradient-to-br from-[#fff7ed] to-[#fef3c7] border-2 border-[#fed7aa] flex items-center justify-center text-2xl md:text-3xl font-black text-[#d97706] shrink-0 shadow-sm select-none">
+          <div className="p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row gap-4 sm:gap-5 items-start">
+            <div className="w-[72px] h-[72px] md:w-[96px] md:h-[96px] rounded-[14px] bg-gradient-to-br from-[#fff7ed] to-[#fef3c7] border-2 border-[#fed7aa] flex items-center justify-center text-2xl md:text-3xl font-black text-[#d97706] shrink-0 shadow-sm select-none">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                <h1 className="text-xl md:text-2xl font-extrabold text-[#0f172a] m-0 leading-tight">{businessName}</h1>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-[#0f172a] m-0 leading-tight break-words">{businessName}</h1>
                 {verifiedByAdmin && (
                   <span className="inline-flex items-center gap-1 bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0] text-[11px] font-bold px-2 py-0.5 rounded-full">
                     <ShieldCheck size={11} /> Verified Supplier
@@ -367,16 +367,16 @@ const PublicStoreFront: React.FC = () => {
                 </p>
               )}
             </div>
-            <div className="sm:self-center flex gap-2 shrink-0 flex-wrap">
+            <div className="sm:self-center flex gap-2 shrink-0 flex-wrap w-full sm:w-auto">
               <button
                 onClick={() => setShowShareModal(true)}
-                className="flex items-center gap-1.5 bg-[#f1f5f9] text-[#475569] text-sm font-bold px-3 py-2.5 rounded-[10px] hover:bg-[#e2e8f0] transition-colors border-none cursor-pointer"
+                className="flex items-center justify-center gap-1.5 bg-[#f1f5f9] text-[#475569] text-sm font-bold px-3 py-2.5 rounded-[10px] hover:bg-[#e2e8f0] transition-colors border-none cursor-pointer max-sm:w-11"
               >
                 <Share2 size={14} />
               </button>
               <a
                 href={businessDetails?.email ? `mailto:${businessDetails.email}` : '#'}
-                className="flex items-center gap-2 bg-[#e65c00] hover:bg-[#c2410c] text-white text-sm font-bold px-4 py-2.5 rounded-[10px] transition-colors no-underline"
+                className="flex items-center justify-center gap-2 bg-[#e65c00] hover:bg-[#c2410c] text-white text-sm font-bold px-4 py-2.5 rounded-[10px] transition-colors no-underline flex-1 sm:flex-none"
               >
                 <MessageCircle size={15} /> Contact Supplier
               </a>
@@ -397,12 +397,12 @@ const PublicStoreFront: React.FC = () => {
         </div>
 
         {/* Two-column */}
-        <div className="grid lg:grid-cols-[1fr_288px] gap-6 pb-16">
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_288px] gap-6 pb-16 min-w-0">
 
           {/* LEFT — Catalog */}
-          <div>
+          <div className="min-w-0">
             {/* header row */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-base font-extrabold text-[#0f172a] m-0 flex items-center gap-2">
                 Product Catalog
                 <span className="text-xs font-bold text-[#64748b] bg-[#f1f5f9] border border-[#e2e8f0] px-2 py-0.5 rounded-full">
@@ -424,7 +424,7 @@ const PublicStoreFront: React.FC = () => {
 
             {/* Category tabs */}
             {categories.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-3 mb-5" style={{ scrollbarWidth: 'none' }}>
+              <div className="flex gap-2 overflow-x-auto max-w-full pb-3 mb-5" style={{ scrollbarWidth: 'none' }}>
                 {categories.map(cat => (
                   <button
                     key={cat}
@@ -440,7 +440,7 @@ const PublicStoreFront: React.FC = () => {
             {/* Products */}
             {filteredProducts.length > 0 ? (
               viewMode === 'grid' ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
                   {filteredProducts.map((product: any) => (
                     <StorefrontProductCard key={product.id || product._id} product={product} />
                   ))}
@@ -451,9 +451,9 @@ const PublicStoreFront: React.FC = () => {
                     <Link
                       key={product.id || product._id}
                       to={`/products/${product.id || product._id}`}
-                      className="bg-white rounded-[12px] border border-[#eef2f6] p-4 flex items-center gap-4 no-underline hover:border-[#e65c00]/30 hover:shadow-[0_2px_12px_rgba(230,92,0,0.08)] transition-all"
+                      className="bg-white rounded-[12px] border border-[#eef2f6] p-3 sm:p-4 flex items-center gap-3 sm:gap-4 no-underline hover:border-[#e65c00]/30 hover:shadow-[0_2px_12px_rgba(230,92,0,0.08)] transition-all"
                     >
-                      <div className="w-16 h-16 rounded-[8px] overflow-hidden bg-[#f1f5f9] shrink-0">
+                      <div className="w-16 h-16 max-[520px]:w-14 max-[520px]:h-14 rounded-[8px] overflow-hidden bg-[#f1f5f9] shrink-0">
                         {product.imageUrl ? (
                           <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
@@ -474,7 +474,7 @@ const PublicStoreFront: React.FC = () => {
                 </div>
               )
             ) : (
-              <div className="bg-white rounded-[14px] border border-[#eef2f6] p-16 text-center">
+              <div className="bg-white rounded-[14px] border border-[#eef2f6] p-8 sm:p-16 text-center">
                 <div className="w-16 h-16 rounded-full bg-[#f1f5f9] flex items-center justify-center mx-auto mb-4">
                   <Package size={28} className="text-[#94a3b8]" />
                 </div>
@@ -499,7 +499,7 @@ const PublicStoreFront: React.FC = () => {
               </button>
 
               {isAboutOpen && (
-                <div className="border-t border-[#f1f5f9] px-6 py-5">
+                <div className="border-t border-[#f1f5f9] px-4 sm:px-6 py-5">
                   <div className="grid md:grid-cols-2 gap-8">
                     <div>
                       <h3 className="text-xs font-extrabold text-[#94a3b8] uppercase tracking-widest mb-3">Business Overview</h3>
@@ -531,7 +531,7 @@ const PublicStoreFront: React.FC = () => {
                           <div className="flex justify-between text-sm"><span className="text-[#64748b]">Monthly Production</span><span className="font-bold text-[#0f172a]">{Number(businessDetails.monthlyProductionCapacity).toLocaleString()} units</span></div>
                         )}
                         {businessDetails?.gstin && (
-                          <div className="flex justify-between text-sm"><span className="text-[#64748b]">GSTIN</span><span className="font-mono text-xs font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded">{businessDetails.gstin}</span></div>
+                          <div className="flex justify-between gap-3 text-sm max-sm:flex-col max-sm:gap-1"><span className="text-[#64748b]">GSTIN</span><span className="font-mono text-xs font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded break-all">{businessDetails.gstin}</span></div>
                         )}
                         {businessDetails?.fssaiLicenseNumber && (
                           <div className="flex justify-between text-sm"><span className="text-[#64748b]">FSSAI License</span><span className="font-bold text-[#0f172a]">{businessDetails.fssaiLicenseNumber}</span></div>

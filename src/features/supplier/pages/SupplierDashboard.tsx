@@ -185,7 +185,7 @@ const SupplierDashboard: React.FC = () => {
   }, [isMobile]);
 
   const supplierMenu: MenuItem[] = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inventory', label: 'My Products', icon: Package },
     { id: 'orders', label: 'Orders', icon: ShoppingBag },
     { id: 'partnerships', label: 'Reseller Partnerships', icon: Handshake },

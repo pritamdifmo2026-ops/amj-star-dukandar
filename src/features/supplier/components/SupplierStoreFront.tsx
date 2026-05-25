@@ -26,19 +26,19 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
   };
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-6">
-      <div className="bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] max-lg:p-5">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-[#fff7ed] text-[#d97706] rounded-[10px] flex items-center justify-center">
+    <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
+      <div className="bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] max-lg:p-5 max-sm:p-4">
+        <div className="flex items-center gap-3 mb-4 max-sm:items-start">
+          <div className="w-12 h-12 max-sm:w-10 max-sm:h-10 bg-[#fff7ed] text-[#d97706] rounded-[10px] flex items-center justify-center shrink-0">
             <Store size={24} />
           </div>
-          <div>
-            <h2 className="text-[1.25rem] text-[#1e293b] m-0 font-extrabold">Your Public Storefront</h2>
+          <div className="min-w-0">
+            <h2 className="text-[1.25rem] max-sm:text-base text-[#1e293b] m-0 font-extrabold leading-tight">Your Public Storefront</h2>
             <p className="text-sm text-[#64748b] mt-1 m-0">Share your store link with customers, on Instagram, Twitter, or anywhere.</p>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col md:flex-row gap-4 items-center">
+        <div className="mt-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
           <div className="flex-1 w-full flex items-center gap-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-4 py-3">
             <span className="text-[#0f172a] font-medium text-sm truncate flex-1">{storeLink}</span>
             <button 
@@ -55,9 +55,9 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
         </div>
       </div>
 
-      <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-6 text-center">
-        <Store size={48} className="text-[#94a3b8] mx-auto mb-4 opacity-50" />
-        <h3 className="text-lg font-bold text-[#1e293b] mb-2">Build Trust with Buyers</h3>
+      <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-6 max-sm:p-4 text-center">
+        <Store size={48} className="text-[#94a3b8] mx-auto mb-4 opacity-50 max-sm:w-10 max-sm:h-10" />
+        <h3 className="text-lg max-sm:text-base font-bold text-[#1e293b] mb-2">Build Trust with Buyers</h3>
         <p className="text-sm text-[#64748b] max-w-lg mx-auto leading-relaxed">
           Your public storefront displays all your approved products automatically. Buyers can view your complete catalog, learn about your business, and trust your verified profile.
         </p>
