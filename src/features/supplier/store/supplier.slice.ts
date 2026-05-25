@@ -23,6 +23,7 @@ export const OnboardingStatus = {
 export type OnboardingStatus = (typeof OnboardingStatus)[keyof typeof OnboardingStatus];
 
 interface SupplierProfile {
+  _id?: string;
   businessName: string;
   phone: string;
   tier: SupplierTier;

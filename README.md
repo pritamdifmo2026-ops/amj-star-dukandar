@@ -1,167 +1,73 @@
-# React + TypeScript + Vite
+# AMJSTAR Dukandar Frontend 🌟
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Welcome to the **AMJSTAR Dukandar Frontend** repository! This is the client-side application for the AMJSTAR B2B E-commerce platform, enabling seamless interactions between Suppliers, Resellers, and Administrators.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Multi-Role Authentication**: Dedicated portals for Suppliers, Resellers, and Admin with robust Role-Based Access Control (RBAC).
+- **Supplier Dashboard**: Comprehensive product catalog management, order processing, inventory tracking, and analytics.
+- **Reseller Dashboard**: Streamlined product curation, customized public storefronts, and simplified order tracking.
+- **Premium Storefronts**: Publicly shareable, SEO-optimized, beautifully designed storefronts for both Suppliers and Resellers.
+- **Real-Time Capabilities**: Integrated real-time chat, notifications, and live product status updates.
+- **Modern Tech Stack**: Built with React, TypeScript, Vite, Tailwind CSS, and Redux Toolkit.
 
-## React Compiler
+## 🛠️ Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite (Lightning fast HMR)
+- **State Management**: Redux Toolkit & React Query (Server state)
+- **Styling**: Tailwind CSS & Vanilla CSS (Custom Design System)
+- **Routing**: React Router v6
+- **Icons**: Lucide React
+- **API Calls**: Axios with automated interceptors
 
-## Expanding the ESLint configuration
+## 📦 Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
+- Node.js (v18 or higher recommended)
+- npm or yarn or pnpm
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+3. Build for production:
+   ```bash
+   npm run build
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🏗️ Project Structure
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- `src/api` - Axios configurations and interceptors
+- `src/app` - Main application routing and core layouts
+- `src/features` - Feature-based module architecture (Auth, Admin, Supplier, Reseller, Product, Chat)
+- `src/pages` - Standalone pages (Public Storefronts, Landing)
+- `src/shared` - Reusable UI components, hooks, utils, and constants
+- `src/store` - Redux Toolkit global store configuration
 
-# Reseller Onboarding Documentation
+## 🌟 Reseller Onboarding Flow
 
-## STEP 1: Basic Account Setup
-Fields:
-- Full Name
-- Phone Number (OTP verify)
-- Email
-- Password
-- City
-- State
-- Country
+1. **Basic Setup**: Contact info & location.
+2. **Profile**: Store name & identity.
+3. **Selling Channels**: WhatsApp, Instagram, Offline, etc.
+4. **Experience**: Past selling history.
+5. **Payment Setup**: Bank account & optional GST.
+6. **Verification**: Agreements & ID Proof.
+7. **Plan Selection**: Free starter tier or premium upgrades.
 
-## STEP 2: Reseller Profile (Storefront Identity)
-Fields:
-- Store Name (required)
-- Profile Type:
-  - Individual Reseller
-  - Business Reseller
-- Profile Description (short bio)
-- Profile Image / Logo
+## 🤝 Contribution Guidelines
 
-## STEP 3: Selling Channels
-Fields:
-- Where do you sell? (multi-select)
-  - WhatsApp
-  - Instagram
-  - Facebook
-  - Offline network
-  - Amazon / Flipkart / Meesho
-  - Personal Website
-  - Others (specify)
-- Add Links (dynamic based on selection)
-  - Instagram link
-  - Website link
-  - Others (add links)
-- Primary Selling Method:
-  - Direct to customers
-  - To retailers/shopkeepers
-  - Both
-- Monthly Sales Volume:
-  - 0–50 orders
-  - 50–200
-  - 200–500
-  - 500+
-- Selling Reach:
-  - Local
-  - State
-  - Pan India
-  - International
+- Follow the established feature-based architecture.
+- Ensure all new components are strictly typed with TypeScript.
+- Use `Tailwind CSS` for utility classes and refer to `index.css` for core design tokens.
 
-## STEP 4: Experience & Credibility
-Fields:
-- Experience:
-  - Beginner
-  - 1–2 years
-  - 3+ years
-- Have you sold products before? (Yes/No)
-
-## STEP 5: Payment Setup
-Fields:
-- Account Holder Name
-- Bank Account Number
-- IFSC Code
-- Bank Name
-Optional:
-- PAN Number
-- GST (if business i.e. optional)
-
-## STEP 6: Verification
-Fields:
-- ID Proof (optional upload)
-- Agreement checkbox:
-  - Accept Terms
-  - Accept Commission Policy
-  - Accept Payment Terms (RTGS)
-
-## STEP 7: Plan Selection
-UI Content:
-- Starter (Free) → 200 product adds
-- Basic → ₹999 → 999 adds
-- Standard → ₹1,000 → 1,000 adds
-- Premium → ₹5,000 → 5,000 adds + benefits
-Fields:
-- Select Plan (default = Free)
-- Upgrade CTA
-
-## Onboarding Behavior
-- Auto-save after each step
-- Resume onboarding
-- Step tracking
-
-# amj-star-dukandar
-# amj-star-dukandar
+---
+*Built with ❤️ for the AMJSTAR Ecosystem*

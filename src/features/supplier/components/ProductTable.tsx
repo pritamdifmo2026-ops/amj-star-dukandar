@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Edit2, Trash2 } from 'lucide-react';
+import { Package, Edit2, Trash2, EyeOff, Info } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 
 const statusCls: Record<string, string> = {
@@ -14,9 +14,11 @@ interface ProductTableProps {
   onEdit: (product: any) => void;
   onDelete: (product: any) => void;
   onAdd: () => void;
+  onUnpublish: (product: any) => void;
+  onViewReason: (reason: string) => void;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason }) => {
   if (loading) return <p>Loading products...</p>;
 
   if (products.length === 0) {
@@ -64,6 +66,16 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
                   <button onClick={() => onEdit(product)} title="Edit" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
                     <Edit2 size={16} />
                   </button>
+                  {(product.status === 'APPROVED' || product.status === 'PENDING') && (
+                    <button onClick={() => onUnpublish(product)} title="Unpublish" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fff7ed] text-[#d97706] border border-[#ffedd5] cursor-pointer hover:bg-[#d97706] hover:text-white transition-all">
+                      <EyeOff size={16} />
+                    </button>
+                  )}
+                  {(product.status === 'REJECTED' && product.rejectionReason) && (
+                    <button onClick={() => onViewReason(product.rejectionReason)} title="View Reason" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
+                      <Info size={16} />
+                    </button>
+                  )}
                   <button onClick={() => onDelete(product)} title="Delete" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
                     <Trash2 size={16} />
                   </button>

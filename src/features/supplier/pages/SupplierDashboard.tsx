@@ -9,8 +9,8 @@ import { chatApi } from '@/features/chat/services/chat.api';
 import Button from '@/shared/components/ui/Button';
 import {
   LayoutDashboard, Package, Truck, LogOut, Trash2, FileText, MessageCircle,
-  Handshake, Menu, Edit, Image as ImageIcon, Layers, CheckCircle, Clock,
-  AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2
+  Handshake, Menu, Image as ImageIcon, Layers, CheckCircle, Clock,
+  AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store
 } from 'lucide-react';
 
 import ProductTable from '../components/ProductTable';
@@ -22,6 +22,7 @@ import SupplierInventory from '../components/SupplierInventory';
 import SupplierSettings from '../components/SupplierSettings';
 import SupplierWallet from '../components/SupplierWallet';
 import SupplierReports from '../components/SupplierReports';
+import SupplierStoreFront from '../components/SupplierStoreFront';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import SupplierQuotations from '../components/SupplierQuotations';
 import Modal from '@/shared/components/ui/Modal';
@@ -34,6 +35,8 @@ interface ProductGridProps {
   onEdit: (product: any) => void;
   onDelete: (product: any) => void;
   onAdd?: () => void;
+  onUnpublish: (product: any) => void;
+  onViewReason: (reason: string) => void;
 }
 
 const statusCls: Record<string, string> = {
@@ -43,7 +46,7 @@ const statusCls: Record<string, string> = {
   rejected: 'bg-[#fef2f2] text-[#dc2626]',
 };
 
-const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, onDelete, onAdd }) => {
+const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason }) => {
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
@@ -96,10 +99,20 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
                 {product.status || 'PENDING'}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => onEdit(product)} aria-label="Edit" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer transition-all hover:bg-primary hover:text-white">
-                  <Edit size={16} />
+                <button onClick={() => onEdit(product)} className="flex-1 py-2 text-[0.8rem] font-bold bg-[#f1f5f9] text-primary rounded-[8px] cursor-pointer hover:bg-primary hover:text-white transition-all">
+                  Edit
                 </button>
-                <button onClick={() => onDelete(product)} aria-label="Delete" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2] cursor-pointer transition-all hover:bg-[#dc2626] hover:text-white">
+                {(product.status === 'APPROVED' || product.status === 'PENDING') && (
+                  <button onClick={() => onUnpublish(product)} className="flex-1 py-2 text-[0.8rem] font-bold bg-[#fff7ed] text-[#d97706] rounded-[8px] cursor-pointer hover:bg-[#d97706] hover:text-white transition-all">
+                    Unpublish
+                  </button>
+                )}
+                {(product.status === 'REJECTED' && product.rejectionReason) && (
+                  <button onClick={() => onViewReason(product.rejectionReason)} className="flex-1 py-2 text-[0.8rem] font-bold bg-[#fef2f2] text-[#dc2626] rounded-[8px] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
+                    View Reason
+                  </button>
+                )}
+                <button onClick={() => onDelete(product)} className="w-[34px] flex items-center justify-center shrink-0 bg-[#fef2f2] text-[#dc2626] rounded-[8px] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -121,12 +134,21 @@ const SupplierDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [rejectionReasonModal, setRejectionReasonModal] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeView = (searchParams.get('tab') as any) || 'overview';
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 1024);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 1024);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any>(null);
+  const [showUnpublishModal, setShowUnpublishModal] = useState(false);
+  const [productToUnpublish, setProductToUnpublish] = useState<any>(null);
+  const [msgModal, setMsgModal] = useState<{ isOpen: boolean; type: 'success' | 'error'; title: string; message: string }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
   const [previousTab, setPreviousTab] = useState('overview');
 
   const { data: unreadEnquiries = 0 } = useQuery<number>({
@@ -169,6 +191,7 @@ const SupplierDashboard: React.FC = () => {
     { id: 'partnerships', label: 'Reseller Partnerships', icon: Handshake },
     { id: 'enquiry', label: 'Enquiry', icon: MessageCircle, badge: unreadEnquiries || undefined },
     { id: 'quotations', label: 'Quotations', icon: FileText },
+    { id: 'store', label: 'Front Store', icon: Store },
     { id: 'wallet', label: 'Wallet', icon: Wallet },
     { id: 'reports', label: 'Reports', icon: BarChart2 },
     { id: 'logistics', label: 'Logistics', icon: Truck },
@@ -202,7 +225,37 @@ const SupplierDashboard: React.FC = () => {
       await productService.deleteProduct(productToDelete.id || productToDelete._id);
       await fetchProducts();
       setShowDeleteModal(false); setProductToDelete(null);
-    } catch { alert('Failed to delete product'); }
+    } catch {
+      setShowDeleteModal(false); setProductToDelete(null);
+      setMsgModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Delete Failed',
+        message: 'Could not delete product. Please try again.'
+      });
+    }
+  };
+
+  const handleUnpublish = (product: any) => {
+    setProductToUnpublish(product);
+    setShowUnpublishModal(true);
+  };
+
+  const confirmUnpublish = async () => {
+    if (!productToUnpublish) return;
+    try {
+      await productService.updateProduct(productToUnpublish.id || productToUnpublish._id, { status: 'DRAFT' });
+      await fetchProducts();
+      setShowUnpublishModal(false); setProductToUnpublish(null);
+    } catch {
+      setShowUnpublishModal(false); setProductToUnpublish(null);
+      setMsgModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Unpublish Failed',
+        message: 'Could not unpublish product. Please try again.'
+      });
+    }
   };
 
   const handleLogout = () => setShowLogoutModal(true);
@@ -211,8 +264,8 @@ const SupplierDashboard: React.FC = () => {
   const handleFormSuccess = async () => { await fetchProducts(); setActiveView('inventory'); setEditingProduct(null); };
 
   const renderProductListing = (productList: any[]) => {
-    if (isMobile) return <ProductGrid products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} />;
-    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} />;
+    if (isMobile) return <ProductGrid products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} />;
+    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} />;
   };
 
   const modalContentCls = "text-center p-4";
@@ -254,6 +307,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'orders' && <div className="p-5"><OrderList /></div>}
         {activeView === 'quotations' && <SupplierQuotations onGoToWallet={() => setActiveView('wallet')} />}
         {activeView === 'enquiry' && <div className="h-screen max-lg:h-[calc(100vh-64px)] w-full"><ChatInbox /></div>}
+        {activeView === 'store' && profile?._id && <SupplierStoreFront supplierId={profile._id} />}
         {activeView === 'wallet' && <SupplierWallet />}
         {activeView === 'reports' && <SupplierReports />}
         {activeView === 'logistics' && <PlaceholderView title="Logistics Tracking" icon={Truck} description="Manage your shipments and track delivery status for all your bulk orders." />}
@@ -286,6 +340,64 @@ const SupplierDashboard: React.FC = () => {
           <div className="grid grid-cols-2 gap-4 mt-8">
             <Button variant="outline" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
             <Button onClick={confirmLogout} className="!bg-[#dc2626]">Sign Out</Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal isOpen={!!rejectionReasonModal} onClose={() => setRejectionReasonModal(null)} title="Reason for Rejection">
+        <div className={modalContentCls}>
+          <div className="w-16 h-16 bg-[#fef2f2] text-[#dc2626] rounded-full flex items-center justify-center mx-auto mb-6"><AlertCircle size={32} /></div>
+          <h3>Product Rejected</h3>
+          <p className="text-sm text-[#475569] mb-4 text-left">Your product was rejected for the following reason:</p>
+          <div className="p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] text-[#0f172a] text-sm whitespace-pre-wrap leading-relaxed text-left">
+            {rejectionReasonModal}
+          </div>
+          <div className="mt-8">
+            <Button onClick={() => setRejectionReasonModal(null)} className="w-full">Understood</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showUnpublishModal} onClose={() => setShowUnpublishModal(false)} title="Unpublish Product">
+        <div className={modalContentCls}>
+          <div className="w-16 h-16 bg-[#fff7ed] text-[#d97706] rounded-full flex items-center justify-center mx-auto mb-6"><AlertCircle size={32} /></div>
+          <h3>Unpublish this product?</h3>
+          {productToUnpublish?.status === 'APPROVED' ? (
+            <div className="mt-3 p-4 bg-[#fef2f2] border border-[#fecaca] rounded-[10px] text-left">
+              <p className="text-sm text-[#b91c1c] m-0 font-bold">
+                ⚠️ This product is already live!
+              </p>
+              <p className="text-xs text-[#dc2626] m-0 mt-2 leading-relaxed">
+                If you proceed, this product will no longer be displayed or available on the live website to buyers.
+              </p>
+              <p className="text-[11px] text-[#7f1d1d] m-0 mt-2 font-medium italic">
+                * This will not affect any ongoing enquiries or chats between you and buyers for this product.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-[#64748b]">
+              Are you sure you want to withdraw <strong>{productToUnpublish?.name}</strong> from review and move it back to your drafts?
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-4 mt-8">
+            <Button variant="outline" onClick={() => setShowUnpublishModal(false)}>Cancel</Button>
+            <Button onClick={confirmUnpublish} className="!bg-[#d97706] text-white">Confirm Unpublish</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={msgModal.isOpen} onClose={() => setMsgModal(prev => ({ ...prev, isOpen: false }))} title={msgModal.title}>
+        <div className={modalContentCls}>
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${
+            msgModal.type === 'error' ? 'bg-[#fef2f2] text-[#dc2626]' : 'bg-[#ecfdf5] text-[#059669]'
+          }`}>
+            {msgModal.type === 'error' ? <AlertCircle size={32} /> : <CheckCircle size={32} />}
+          </div>
+          <h3>{msgModal.title}</h3>
+          <p className="text-sm text-[#64748b] mt-2">{msgModal.message}</p>
+          <div className="mt-8">
+            <Button onClick={() => setMsgModal(prev => ({ ...prev, isOpen: false }))} className="w-full">
+              Close
+            </Button>
           </div>
         </div>
       </Modal>

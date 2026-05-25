@@ -18,6 +18,7 @@ export interface AdminSupplier {
   rejectionReason?: string;
   tier?: string;
   userId?: { name: string; email: string; phone: string };
+  autoLiveProducts?: boolean;
   businessDetails?: {
     ownerName?: string;
     email?: string;
@@ -82,14 +83,31 @@ export interface AdminReseller {
 }
 
 export interface AdminProduct {
-  _id: string;
+  _id?: string;
+  id?: string;
   name: string;
   basePrice: number;
   category: string;
+  subcategory?: string;
   images: string[];
   status?: 'PENDING' | 'APPROVED' | 'REJECTED';
   unit?: string;
-  supplierId?: { businessName: string };
+  moq?: number;
+  stock?: number;
+  brand?: string;
+  hsnCode?: string;
+  description?: string;
+  leadTime?: string;
+  packagingType?: string;
+  packagingSize?: string;
+  packagingDimensions?: string;
+  packagingWeight?: string;
+  countryOfOrigin?: string;
+  gstIncluded?: boolean;
+  gstRate?: number;
+  keywords?: string[];
+  specifications?: Record<string, string>;
+  supplierId?: { _id?: string; businessName: string; phone?: string };
   certificationDocs?: {
     name: string;
     documentUrl: string;
@@ -97,6 +115,7 @@ export interface AdminProduct {
     mandatory: boolean;
     certificationTypeId?: string;
   }[];
+  createdAt?: string;
 }
 
 export interface AdminUser {

@@ -108,32 +108,32 @@ const getCategoryKeywords = (categoryName: string, subcategoryName?: string): st
 };
 
 const VALUE_PLACEHOLDERS: [RegExp, string][] = [
-  [/gsm/i,                        'e.g. 120, 200, 350'],
+  [/gsm/i, 'e.g. 120, 200, 350'],
   [/width|length|height|depth|size|dimension/i, 'e.g. 58 cm, 72 inch'],
-  [/weight/i,                     'e.g. 250 g, 1 kg'],
-  [/color|colour/i,               'e.g. Navy Blue, Off-White'],
-  [/pattern/i,                    'e.g. Solid, Stripes, Checks'],
-  [/fabric\s*type|material/i,     'e.g. Cotton, Polyester, Silk'],
-  [/dye/i,                        'e.g. Reactive, Pigment, Vat'],
-  [/thread\s*count/i,             'e.g. 200, 300, 400 TC'],
-  [/composition|content/i,        'e.g. 60% Cotton 40% Polyester'],
-  [/origin|made\s*in/i,           'e.g. India, China, Bangladesh'],
-  [/brand|make/i,                 'e.g. Reliance, Own Brand'],
-  [/voltage|power/i,              'e.g. 220V, 440V 3-Phase'],
-  [/capacity/i,                   'e.g. 500 kg/hr, 10 tons/day'],
-  [/warranty/i,                   'e.g. 12 months, 2 years'],
-  [/automation/i,                 'e.g. Semi-Auto, Fully Automatic'],
-  [/purity/i,                     'e.g. 99.5%'],
-  [/shelf\s*life/i,               'e.g. 12 months, 18 months'],
-  [/ingredient/i,                 'e.g. Sugar, Salt, Maida'],
-  [/fssai/i,                      'e.g. 12345678901234'],
-  [/organic/i,                    'e.g. Yes, No, Certified'],
-  [/harvest|season/i,             'e.g. Kharif, Rabi, Oct–Dec'],
-  [/type/i,                       'e.g. Woven, Knitted, Non-woven'],
-  [/finish/i,                     'e.g. Matte, Glossy, Satin'],
-  [/count/i,                      'e.g. 40s, 60s, 80s'],
-  [/cas/i,                        'e.g. 7647-14-5'],
-  [/storage/i,                    'e.g. Cool & Dry, Below 25°C'],
+  [/weight/i, 'e.g. 250 g, 1 kg'],
+  [/color|colour/i, 'e.g. Navy Blue, Off-White'],
+  [/pattern/i, 'e.g. Solid, Stripes, Checks'],
+  [/fabric\s*type|material/i, 'e.g. Cotton, Polyester, Silk'],
+  [/dye/i, 'e.g. Reactive, Pigment, Vat'],
+  [/thread\s*count/i, 'e.g. 200, 300, 400 TC'],
+  [/composition|content/i, 'e.g. 60% Cotton 40% Polyester'],
+  [/origin|made\s*in/i, 'e.g. India, China, Bangladesh'],
+  [/brand|make/i, 'e.g. Reliance, Own Brand'],
+  [/voltage|power/i, 'e.g. 220V, 440V 3-Phase'],
+  [/capacity/i, 'e.g. 500 kg/hr, 10 tons/day'],
+  [/warranty/i, 'e.g. 12 months, 2 years'],
+  [/automation/i, 'e.g. Semi-Auto, Fully Automatic'],
+  [/purity/i, 'e.g. 99.5%'],
+  [/shelf\s*life/i, 'e.g. 12 months, 18 months'],
+  [/ingredient/i, 'e.g. Sugar, Salt, Maida'],
+  [/fssai/i, 'e.g. 12345678901234'],
+  [/organic/i, 'e.g. Yes, No, Certified'],
+  [/harvest|season/i, 'e.g. Kharif, Rabi, Oct–Dec'],
+  [/type/i, 'e.g. Woven, Knitted, Non-woven'],
+  [/finish/i, 'e.g. Matte, Glossy, Satin'],
+  [/count/i, 'e.g. 40s, 60s, 80s'],
+  [/cas/i, 'e.g. 7647-14-5'],
+  [/storage/i, 'e.g. Cool & Dry, Below 25°C'],
 ];
 
 const getValuePlaceholder = (key: string): string => {
@@ -375,7 +375,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             gstRate: editingProduct.gstRate ?? 18,
           });
           setSpecRows(specsToRows(editingProduct.specifications || {}));
-          
+
           const pType = editingProduct.packagingType || 'bulk';
           const pSize = editingProduct.packagingSize || '';
           if (pType === 'bulk' || pType === 'retail') {
@@ -522,18 +522,27 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             <div className="flex flex-col gap-4">
               <div>
                 <label className={labelCls}>Product Name <span className="text-[#dc2626]">*</span></label>
-                <input className={inputCls} type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Premium Cotton Fabric (Bulk)" />
+                <input className={`${inputCls} ${publishAttempted && !formData.name.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`} type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Premium Cotton Fabric (Bulk)" />
+                {publishAttempted && !formData.name.trim() && (
+                  <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                )}
               </div>
 
               <div>
                 <label className={labelCls}>Product Description <span className="text-[#dc2626]">*</span></label>
-                <textarea className={`${inputCls} resize-none`} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Describe product quality, usage, certifications, etc." rows={4} />
+                <textarea className={`${inputCls} resize-none ${publishAttempted && !formData.description.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Describe product quality, usage, certifications, etc." rows={4} />
+                {publishAttempted && !formData.description.trim() && (
+                  <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
                 <div>
                   <label className={labelCls}>HSN Code <span className="text-[#dc2626]">*</span></label>
-                  <input className={inputCls} type="text" value={formData.hsnCode} onChange={e => setFormData({ ...formData, hsnCode: e.target.value })} placeholder="e.g. 5208" />
+                  <input className={`${inputCls} ${publishAttempted && !formData.hsnCode.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`} type="text" value={formData.hsnCode} onChange={e => setFormData({ ...formData, hsnCode: e.target.value })} placeholder="e.g. 5208" />
+                  {publishAttempted && !formData.hsnCode.trim() && (
+                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Brand / Make</label>
@@ -550,17 +559,20 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                       <button type="button" className="text-xs text-primary underline cursor-pointer bg-transparent border-none" onClick={() => { setCategoriesError(false); window.location.reload(); }}>Retry</button>
                     </div>
                   ) : (
-                    <select className={inputCls} value={formData.categoryId || ''} onChange={handleCategoryChange}>
+                    <select className={`${inputCls} ${publishAttempted && !formData.categoryId && !formData.category ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`} value={formData.categoryId || ''} onChange={handleCategoryChange}>
                       <option value="" disabled>Select a category</option>
                       {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                     </select>
+                  )}
+                  {publishAttempted && !formData.categoryId && !formData.category && (
+                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
                   )}
                 </div>
                 {availableSubcategories.length > 0 && (
                   <div>
                     <label className={labelCls}>Subcategory <span className="text-[#dc2626]">*</span></label>
                     <select
-                      className={inputCls}
+                      className={`${inputCls} ${publishAttempted && !formData.subcategoryId ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`}
                       value={formData.subcategoryId || ''}
                       onChange={e => {
                         const subId = e.target.value;
@@ -574,6 +586,9 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                       <option value="" disabled>Select a subcategory</option>
                       {availableSubcategories.map(sub => <option key={sub._id} value={sub._id}>{sub.name}</option>)}
                     </select>
+                    {publishAttempted && !formData.subcategoryId && (
+                      <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -588,14 +603,20 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
               <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
                 <div>
                   <label className={labelCls}>Base Price (₹) <span className="text-[#dc2626]">*</span></label>
-                  <div className="flex items-center border border-[#e2e8f0] rounded-[8px] bg-white focus-within:border-primary transition-colors">
+                  <div className={`flex items-center border rounded-[8px] bg-white focus-within:border-primary transition-colors ${publishAttempted && (!formData.basePrice || formData.basePrice <= 0) ? "border-[#fca5a5] bg-[#fff5f5]" : "border-[#e2e8f0]"}`}>
                     <span className="px-3 py-2.5 text-sm text-[#94a3b8] font-bold border-r border-[#e2e8f0] bg-[#f8fafc] rounded-l-[8px] select-none">₹</span>
                     <input className="flex-1 border-none outline-none px-3 py-2.5 text-sm text-[#1e293b] bg-transparent rounded-r-[8px]" type="number" value={formData.basePrice || ''} onChange={e => setFormData({ ...formData, basePrice: Number(e.target.value) })} min="1" placeholder="0" />
                   </div>
+                  {publishAttempted && (!formData.basePrice || formData.basePrice <= 0) && (
+                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>MOQ <span className="text-[#dc2626]">*</span></label>
-                  <input className={inputCls} type="number" value={formData.moq || ''} onChange={e => setFormData({ ...formData, moq: Number(e.target.value) })} min="1" placeholder="1" />
+                  <input className={`${inputCls} ${publishAttempted && (!formData.moq || formData.moq < 1) ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`} type="number" value={formData.moq || ''} onChange={e => setFormData({ ...formData, moq: Number(e.target.value) })} min="1" placeholder="1" />
+                  {publishAttempted && (!formData.moq || formData.moq < 1) && (
+                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Unit <span className="text-[#dc2626]">*</span></label>
@@ -617,8 +638,12 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
               <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
                 <div>
                   <label className={labelCls}>Available Stock <span className="text-[#dc2626]">*</span></label>
-                  <input className={inputCls} type="number" value={formData.stock || ''} onChange={e => setFormData({ ...formData, stock: Number(e.target.value) })} min="1" placeholder="e.g. 500" />
-                  <p className="text-[11px] text-[#94a3b8] mt-1">Must be &gt; 0 to publish.</p>
+                  <input className={`${inputCls} ${publishAttempted && (!formData.stock || formData.stock <= 0) ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`} type="number" value={formData.stock || ''} onChange={e => setFormData({ ...formData, stock: Number(e.target.value) })} min="1" placeholder="e.g. 500" />
+                  {publishAttempted && (!formData.stock || formData.stock <= 0) ? (
+                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                  ) : (
+                    <p className="text-[11px] text-[#94a3b8] mt-1">Must be &gt; 0 to publish.</p>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Lead Time</label>
@@ -650,7 +675,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                   <label className={labelCls}>Package Weight <span className="text-[#dc2626]">*</span></label>
                   <div className="flex gap-2">
                     <input
-                      className={inputCls}
+                      className={`${inputCls} ${publishAttempted && !formData.packagingWeight?.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`}
                       type="text"
                       inputMode="decimal"
                       value={formData.packagingWeight ? formData.packagingWeight.replace(/\s*(g|kg|lbs|ton|mt)\s*$/i, '').trim() : ''}
@@ -677,6 +702,9 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                       <option value="mt">mt</option>
                     </select>
                   </div>
+                  {publishAttempted && !formData.packagingWeight?.trim() && (
+                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Package Size <span className="text-[#dc2626]">*</span></label>
@@ -685,7 +713,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                     if (currentType === 'custom') {
                       return (
                         <input
-                          className={inputCls}
+                          className={`${inputCls} ${publishAttempted && !formData.packagingSize?.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`}
                           type="text"
                           value={formData.packagingSize ?? ''}
                           onChange={e => setFormData({ ...formData, packagingSize: e.target.value })}
@@ -698,7 +726,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                     return (
                       <div className="flex flex-col gap-2">
                         <select
-                          className={inputCls}
+                          className={`${inputCls} ${publishAttempted && !formData.packagingSize?.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`}
                           value={dropdownValue}
                           onChange={e => {
                             const val = e.target.value;
@@ -715,7 +743,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                         </select>
                         {isCustomSizeSelected && (
                           <input
-                            className={inputCls}
+                            className={`${inputCls} ${publishAttempted && !formData.packagingSize?.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`}
                             type="text"
                             value={formData.packagingSize ?? ''}
                             onChange={e => setFormData({ ...formData, packagingSize: e.target.value })}
@@ -726,16 +754,22 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                       </div>
                     );
                   })()}
+                  {publishAttempted && !formData.packagingSize?.trim() && (
+                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Package Dimensions <span className="text-[#dc2626]">*</span></label>
                   <input
-                    className={inputCls}
+                    className={`${inputCls} ${publishAttempted && !formData.packagingDimensions?.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`}
                     type="text"
                     value={formData.packagingDimensions ?? ''}
                     onChange={e => setFormData({ ...formData, packagingDimensions: e.target.value })}
                     placeholder="e.g. 20×15×10 cm"
                   />
+                  {publishAttempted && !formData.packagingDimensions?.trim() && (
+                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
+                  )}
                 </div>
               </div>
               <p className="text-[11px] text-[#64748b] -mt-2">Packaging details are used for logistics and courier calculations.</p>
@@ -777,8 +811,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                           type="button"
                           onClick={() => setFormData({ ...formData, gstIncluded: val })}
                           className={`flex-1 px-3 py-2.5 rounded-[8px] text-xs font-bold border transition-all cursor-pointer text-left ${formData.gstIncluded === val
-                              ? 'bg-primary text-white border-primary'
-                              : 'bg-white text-[#475569] border-[#e2e8f0] hover:border-primary hover:text-primary'
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-white text-[#475569] border-[#e2e8f0] hover:border-primary hover:text-primary'
                             }`}
                         >
                           {label}
@@ -1010,7 +1044,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
           </div>
 
           {/* Product Images */}
-          <div className={sectionCls}>
+          <div className={`${sectionCls} ${publishAttempted && (!formData.images || formData.images.length === 0) ? "border-[#fca5a5] bg-[#fff5f5]" : ""}`}>
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">
               Product Images <span className="text-[#dc2626]">*</span>
             </h3>
@@ -1033,6 +1067,9 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                 </label>
               )}
             </div>
+            {publishAttempted && (!formData.images || formData.images.length === 0) && (
+              <span className="text-xs text-[#dc2626] font-semibold mt-3 block">At least 1 product image is required</span>
+            )}
           </div>
 
           {/* Required fields reminder */}

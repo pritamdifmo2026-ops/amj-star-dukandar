@@ -5,7 +5,8 @@ import Button from '@/shared/components/ui/Button';
 import resellerService from '../services/reseller.service';
 
 const PublicStorefront: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: routeSlug, idOrSlug } = useParams<{ slug?: string; idOrSlug?: string }>();
+  const slug = routeSlug || idOrSlug;
   const navigate = useNavigate();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

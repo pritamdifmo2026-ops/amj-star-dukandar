@@ -122,9 +122,9 @@ export const useAdminDashboard = (activeTab: string) => {
     }
   };
 
-  const handleVerifyProduct = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+  const handleVerifyProduct = async (id: string, status: 'APPROVED' | 'REJECTED', reason?: string) => {
     try {
-      await adminService.verifyProduct(id, status);
+      await adminService.verifyProduct(id, status, reason);
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
       showMessage('Success', `Product ${status.toLowerCase()} successfully`, 'success');
     } catch {

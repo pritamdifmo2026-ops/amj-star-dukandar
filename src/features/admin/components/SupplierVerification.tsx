@@ -152,8 +152,8 @@ const SupplierProducts: React.FC<{
                       <div className="flex items-center gap-2">
                         {p.status === 'PENDING' && (
                           <>
-                            <button onClick={() => setConfirmModal({ productId: p._id, name: p.name, action: 'APPROVED' })} className="w-7 h-7 rounded-full bg-[#ecfdf5] text-[#059669] flex items-center justify-center border-none cursor-pointer" title="Approve"><CheckCircle size={15} /></button>
-                            <button onClick={() => setConfirmModal({ productId: p._id, name: p.name, action: 'REJECTED' })} className="w-7 h-7 rounded-full bg-[#fef2f2] text-[#dc2626] flex items-center justify-center border-none cursor-pointer" title="Reject"><XCircle size={15} /></button>
+                            <button onClick={() => setConfirmModal({ productId: p._id!, name: p.name, action: 'APPROVED' })} className="w-7 h-7 rounded-full bg-[#ecfdf5] text-[#059669] flex items-center justify-center border-none cursor-pointer" title="Approve"><CheckCircle size={15} /></button>
+                            <button onClick={() => setConfirmModal({ productId: p._id!, name: p.name, action: 'REJECTED' })} className="w-7 h-7 rounded-full bg-[#fef2f2] text-[#dc2626] flex items-center justify-center border-none cursor-pointer" title="Reject"><XCircle size={15} /></button>
                           </>
                         )}
                         {p.status === 'APPROVED' && (
@@ -236,6 +236,55 @@ const CommissionRateEditor: React.FC<{ supplierId: string; currentRate: number |
   );
 };
 
+const TrustAutomationEditor: React.FC<{ supplierId: string; autoLiveActive: boolean }> = ({ supplierId, autoLiveActive }) => {
+  const qc = useQueryClient();
+  const [active, setActive] = useState(autoLiveActive);
+
+  const mutation = useMutation({
+    mutationFn: (newVal: boolean) => adminService.setAutoLiveProducts(supplierId, newVal),
+    onSuccess: (data) => {
+      toast.success(data.autoLiveProducts ? 'Auto Live Products enabled' : 'Auto Live Products disabled');
+      setActive(data.autoLiveProducts);
+      qc.invalidateQueries({ queryKey: ['admin', 'suppliers'] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update setting'),
+  });
+
+  const handleToggle = () => {
+    mutation.mutate(!active);
+  };
+
+  return (
+    <div className="p-6 border-t border-[#f1f5f9] bg-[#f8fafc]/30">
+      <div className="flex items-center gap-2 mb-4 text-primary">
+        <ShieldCheck size={18} />
+        <h3 className="text-base font-extrabold text-[#0f172a] m-0">Trust & Automation Settings</h3>
+      </div>
+      <div className="flex items-center justify-between p-4 bg-white border border-[#eef2f6] rounded-[10px] shadow-[0_1px_2px_rgba(0,0,0,0.01)] max-w-md">
+        <div>
+          <h4 className="text-sm font-bold text-[#1e293b] m-0">Auto Live Products</h4>
+          <p className="text-xs text-[#94a3b8] mt-1 m-0">
+            Allow this trusted supplier to publish products directly to the live marketplace without manual admin review.
+          </p>
+        </div>
+        <button
+          onClick={handleToggle}
+          disabled={mutation.isPending}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none border-none ${
+            active ? 'bg-primary' : 'bg-[#cbd5e1]'
+          } ${mutation.isPending ? 'opacity-60 cursor-not-allowed' : ''}`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              active ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, onVerify, onVerifyProduct }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'suppliers';
@@ -276,9 +325,26 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
 
         <div className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
           <div className="p-6 border-b border-[#f1f5f9]">
-            <div className="flex items-center gap-2 mb-4 text-primary"><ShieldCheck size={20} /><h3 className="text-base font-extrabold text-[#0f172a] m-0">Business Verification Profile</h3></div>
+            <div className="flex items-center gap-2 mb-4 text-primary">
+              <ShieldCheck size={20} />
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0">Business Verification Profile</h3>
+              {selectedSupplier.autoLiveProducts && (
+                <span className="ml-2 text-[10px] bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                  <ShieldCheck size={11} className="text-[#059669]" /> Trusted Supplier
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
-              <DetailItem label="Business Name">{selectedSupplier.businessName}</DetailItem>
+              <DetailItem label="Business Name">
+                <span className="flex items-center gap-2">
+                  {selectedSupplier.businessName}
+                  {selectedSupplier.autoLiveProducts && (
+                    <span className="text-[9px] bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0] font-bold px-2 py-0.2 rounded-full uppercase tracking-wider">
+                      Trusted
+                    </span>
+                  )}
+                </span>
+              </DetailItem>
               <DetailItem label="Owner Name">{selectedSupplier.businessDetails?.ownerName || 'N/A'}</DetailItem>
               <DetailItem label="Contact Phone">{selectedSupplier.phone}</DetailItem>
               <DetailItem label="Email Address">{selectedSupplier.businessDetails?.email || selectedSupplier.userId?.email || 'N/A'}</DetailItem>
@@ -420,6 +486,9 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
           </div>
 
           <CommissionRateEditor supplierId={selectedSupplier._id} currentRate={(selectedSupplier as any).commissionRate} />
+          {selectedSupplier.kycStatus === 'VERIFIED' && (
+            <TrustAutomationEditor supplierId={selectedSupplier._id} autoLiveActive={!!selectedSupplier.autoLiveProducts} />
+          )}
         </div>
       </div>
     );

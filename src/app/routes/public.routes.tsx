@@ -10,7 +10,7 @@ import ProductList from '@/features/product/pages/ProductList';
 import ProductDetail from '@/features/product/pages/ProductDetail';
 import AddProduct from '@/features/product/pages/AddProduct';
 import AdminLogin from '@/features/admin/pages/AdminLogin';
-import PublicStorefront from '@/features/reseller/pages/PublicStorefront';
+import StorefrontDispatcher from '@/pages/StorefrontDispatcher';
 import SupplierVerifyEmail from '@/features/supplier/pages/VerifyEmail';
 import Cart from '@/features/buyer/pages/Cart';
 import Checkout from '@/features/order/pages/Checkout';
@@ -95,8 +95,8 @@ export const publicRoutes: RouteObject[] = [
     element: <AdminLogin />,
   },
   {
-    path: '/store/:slug',
-    element: <PublicStorefront />,
+    path: '/store/:idOrSlug',
+    element: <StorefrontDispatcher />,
   },
   {
     path: '/verify-supplier-email',

@@ -45,8 +45,8 @@ const adminService = {
     return response.data.products;
   },
 
-  verifyProduct: async (id: string, status: 'APPROVED' | 'REJECTED'): Promise<AdminProduct> => {
-    const response = await api.patch(`/admin/products/${id}/verify`, { status });
+  verifyProduct: async (id: string, status: 'APPROVED' | 'REJECTED', reason?: string): Promise<AdminProduct> => {
+    const response = await api.patch(`/admin/products/${id}/verify`, { status, reason });
     return response.data.product;
   },
   
@@ -127,6 +127,11 @@ const adminService = {
 
   setCommissionRate: async (supplierId: string, commissionRate: number) => {
     const response = await api.patch(`/admin/suppliers/${supplierId}/commission-rate`, { commissionRate });
+    return response.data.supplier;
+  },
+
+  setAutoLiveProducts: async (supplierId: string, autoLiveProducts: boolean) => {
+    const response = await api.patch(`/admin/suppliers/${supplierId}/auto-live`, { autoLiveProducts });
     return response.data.supplier;
   },
 
