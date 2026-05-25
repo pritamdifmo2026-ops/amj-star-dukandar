@@ -24,13 +24,25 @@ const initialState: CartState = {
 };
 
 export const fetchCart = createAsyncThunk('cart/fetch', async () => {
-  const response = await cartApi.getCart();
-  return response.data.items;
+  try {
+    const response = await cartApi.getCart();
+    console.log('fetchCart response:', response.data);
+    return response.data.items || [];
+  } catch (error) {
+    console.error('fetchCart error:', error);
+    throw error;
+  }
 });
 
 export const addToCartAsync = createAsyncThunk('cart/add', async (item: CartItem) => {
-  const response = await cartApi.addToCart(item);
-  return response.data.items;
+  try {
+    const response = await cartApi.addToCart(item);
+    console.log('addToCart response:', response.data);
+    return response.data.items || [];
+  } catch (error) {
+    console.error('addToCart error:', error);
+    throw error;
+  }
 });
 
 export const updateQuantityAsync = createAsyncThunk(

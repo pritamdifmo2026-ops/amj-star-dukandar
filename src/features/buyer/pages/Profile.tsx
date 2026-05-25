@@ -23,6 +23,8 @@ import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
+const HELPLINE_NUMBER = '9034440673';
+const PAYMENT_HELPLINE_NUMBER = '9034440659';
 
 const Profile: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -301,6 +303,26 @@ const Profile: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-[#f1f5f9] max-lg:hidden">
+          <a
+            href={`tel:${HELPLINE_NUMBER}`}
+            className="flex items-center gap-3 px-3 py-2.5 mb-2 text-sm font-semibold text-[#0f172a] bg-[#fff7ed] rounded-[8px] no-underline hover:bg-[#ffedd5] transition-colors"
+          >
+            <Phone size={18} className="text-primary" />
+            <div className="min-w-0">
+              <span className="block text-[10px] uppercase tracking-wider text-[#94a3b8]">Helpline</span>
+              <span className="block">{HELPLINE_NUMBER}</span>
+            </div>
+          </a>
+          <a
+            href={`tel:${PAYMENT_HELPLINE_NUMBER}`}
+            className="flex items-center gap-3 px-3 py-2.5 mb-2 text-sm font-semibold text-[#0f172a] bg-[#f0fdf4] rounded-[8px] no-underline hover:bg-[#dcfce7] transition-colors"
+          >
+            <CreditCard size={18} className="text-[#16a34a]" />
+            <div className="min-w-0">
+              <span className="block text-[10px] uppercase tracking-wider text-[#94a3b8]">Payment Issues</span>
+              <span className="block">{PAYMENT_HELPLINE_NUMBER}</span>
+            </div>
+          </a>
           <div onClick={() => setShowLogoutModal(true)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
             <LogOut size={18} />
             <span>Sign Out</span>
@@ -530,6 +552,30 @@ const Profile: React.FC = () => {
             <div className="py-6 max-w-[560px]">
               <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Contact Us</h3>
               <p className="text-sm text-[#64748b] mb-6">Have a question or need help? Fill in the form and our team will reach out to you.</p>
+              <a
+                href={`tel:${HELPLINE_NUMBER}`}
+                className="flex items-center gap-3 bg-[#fff7ed] border border-[#fed7aa] rounded-[12px] px-4 py-3 mb-4 text-[#0f172a] no-underline hover:bg-[#ffedd5] transition-colors"
+              >
+                <span className="w-9 h-9 rounded-[8px] bg-white text-primary flex items-center justify-center shrink-0">
+                  <Phone size={18} />
+                </span>
+                <span>
+                  <span className="block text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider">Buyer Helpline</span>
+                  <span className="block text-sm font-extrabold">{HELPLINE_NUMBER}</span>
+                </span>
+              </a>
+              <a
+                href={`tel:${PAYMENT_HELPLINE_NUMBER}`}
+                className="flex items-center gap-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[12px] px-4 py-3 mb-4 text-[#0f172a] no-underline hover:bg-[#dcfce7] transition-colors"
+              >
+                <span className="w-9 h-9 rounded-[8px] bg-white text-[#16a34a] flex items-center justify-center shrink-0">
+                  <CreditCard size={18} />
+                </span>
+                <span>
+                  <span className="block text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider">For Payment Issues Queries</span>
+                  <span className="block text-sm font-extrabold">{PAYMENT_HELPLINE_NUMBER}</span>
+                </span>
+              </a>
               <div className="bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col gap-4">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Full Name *</label>

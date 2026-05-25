@@ -272,6 +272,29 @@ const SupplierDashboard: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-white overflow-x-hidden w-full relative max-lg:flex-col">
+
+      {/* ── Full-screen Enquiry overlay (hides sidebar completely) ── */}
+      {activeView === 'enquiry' && (
+        <div className="fixed inset-0 z-[1100] flex flex-col bg-white">
+          {/* Enquiry top bar */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-[#f1f5f9] shrink-0 bg-white">
+            <button
+              onClick={() => setActiveView('overview')}
+              aria-label="Back to dashboard"
+              className="bg-[#f8fafc] border border-[#e2e8f0] text-[#475569] w-10 h-10 rounded-[10px] flex items-center justify-center cursor-pointer hover:bg-[#f1f5f9] transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span className="font-extrabold text-base text-[#0f172a]">Enquiries</span>
+          </div>
+          {/* Chat fills remaining height */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ChatInbox />
+          </div>
+        </div>
+      )}
+
+      {/* ── Normal dashboard layout (non-enquiry views) ── */}
       <Sidebar
         title="Supplier Hub" logoSrc={logo}
         menu={supplierMenu}
@@ -293,7 +316,7 @@ const SupplierDashboard: React.FC = () => {
         <div className="fixed inset-0 bg-[rgba(15,23,42,0.4)] backdrop-blur-[4px] z-[999] animate-fade-in" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      <main className={`flex-1 transition-all duration-300 max-w-full overflow-x-hidden max-lg:ml-0 max-lg:p-4 max-lg:w-full ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'} ${activeView === 'enquiry' ? '!p-0' : 'p-10'}`}>
+      <main className={`flex-1 transition-all duration-300 max-w-full overflow-x-hidden max-lg:ml-0 max-lg:p-4 max-lg:w-full ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'} p-10`}>
         {error && (
           <div className="bg-[#fef2f2] border border-[#fecaca] p-4 rounded-[6px] flex items-center gap-3 text-[#b91c1c] text-[0.9rem] mb-6">
             <AlertCircle size={18} />
@@ -306,7 +329,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'inventory' && <SupplierInventory products={products} handleRefresh={() => fetchProducts(true)} onAddProduct={handleAddProduct} renderProductListing={renderProductListing} />}
         {activeView === 'orders' && <div className="p-5"><OrderList /></div>}
         {activeView === 'quotations' && <SupplierQuotations onGoToWallet={() => setActiveView('wallet')} />}
-        {activeView === 'enquiry' && <div className="h-screen max-lg:h-[calc(100vh-64px)] w-full"><ChatInbox /></div>}
+        {/* enquiry is rendered in the full-screen overlay above */}
         {activeView === 'store' && profile?._id && <SupplierStoreFront supplierId={profile._id} />}
         {activeView === 'wallet' && <SupplierWallet />}
         {activeView === 'reports' && <SupplierReports />}

@@ -19,7 +19,7 @@ interface SupplierVerificationProps {
 }
 
 const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9] max-md:hidden";
-const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155] max-md:flex max-md:justify-between max-md:items-center max-md:border-none max-md:py-2 max-md:px-0 text-right md:text-left";
+const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155] max-md:flex max-md:justify-between max-md:items-center max-md:border-none max-md:py-2 max-md:px-0 text-right md:text-left truncate max-w-xs";
 const trCls = "hover:bg-[#fafbfc] max-md:block max-md:p-4 max-md:border-b max-md:border-[#e2e8f0] last:border-none";
 
 const DetailItem = ({ label, children, span2 = false }: { label: string; children: React.ReactNode; span2?: boolean }) => (
@@ -292,47 +292,73 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
   const selectedSupplier = suppliers.find(s => s._id === supplierId);
   const pendingSuppliers = suppliers.filter(s => s.kycStatus === 'PENDING');
   const verifiedSuppliers = suppliers.filter(s => s.kycStatus === 'VERIFIED');
+  const statusParam = searchParams.get('status');
+  const initialView = statusParam === 'VERIFIED' ? 'VERIFIED' : 'PENDING';
+  const [viewMode, setViewMode] = useState<'PENDING' | 'VERIFIED'>(initialView);
+
+  // Update URL when viewMode changes
+  const updateViewMode = (mode: 'PENDING' | 'VERIFIED') => {
+    setViewMode(mode);
+    setSearchParams({ tab: 'suppliers', status: mode });
+  };
+
+  // Helper to navigate to supplier detail
+  const goToDetail = (id: string) => setSearchParams({ tab: 'supplier-detail', id });
 
   if (activeTab === 'supplier-products' && selectedSupplier) {
-    return <SupplierProducts supplierId={selectedSupplier._id} businessName={selectedSupplier.businessName} onBack={() => setSearchParams({ tab: 'supplier-detail', id: selectedSupplier._id })} onVerifyProduct={onVerifyProduct} />;
+    return (
+      <SupplierProducts
+        supplierId={selectedSupplier._id}
+        businessName={selectedSupplier.businessName}
+        onBack={() => setSearchParams({ tab: 'supplier-detail', id: selectedSupplier._id })}
+        onVerifyProduct={onVerifyProduct}
+      />
+    );
   }
 
   if (activeTab === 'supplier-detail' && selectedSupplier) {
     return (
       <div>
         <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-          <button onClick={() => setSearchParams({ tab: 'suppliers' })} className="flex items-center gap-1.5 text-sm font-semibold text-[#475569] bg-transparent border-none cursor-pointer hover:text-[#1e293b] p-0">
+          <button
+            onClick={() => setSearchParams({ tab: 'suppliers', status: viewMode })}
+            className="flex items-center gap-1.5 text-sm font-semibold text-[#475569] bg-transparent border-none cursor-pointer hover:text-[#1e293b] p-0"
+          >
             <ChevronLeft size={18} /> Back to List
           </button>
           <div className="flex items-center gap-2">
             {selectedSupplier.kycStatus === 'VERIFIED' && (
-              <button onClick={() => setSearchParams({ tab: 'supplier-products', id: selectedSupplier._id })} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#0369a1] bg-[#f0f9ff] border border-[#bae6fd] rounded-[8px] cursor-pointer hover:bg-[#e0f2fe]">
+              <button
+                onClick={() => setSearchParams({ tab: 'supplier-products', id: selectedSupplier._id })}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#0369a1] bg-[#f0f9ff] border border-[#bae6fd] rounded-[8px] cursor-pointer hover:bg-[#e0f2fe]"
+              >
                 <Package size={16} /> View Products
               </button>
             )}
             {selectedSupplier.kycStatus === 'PENDING' && (
               <>
-                <button onClick={() => onVerify(selectedSupplier._id, 'REJECTED')} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[8px] cursor-pointer hover:bg-[#fee2e2]">
+                <button
+                  onClick={() => onVerify(selectedSupplier._id, 'REJECTED')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[8px] cursor-pointer hover:bg-[#fee2e2]"
+                >
                   <XCircle size={16} /> Reject
                 </button>
-                <button onClick={() => onVerify(selectedSupplier._id, 'VERIFIED')} className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857]">
+                <button
+                  onClick={() => onVerify(selectedSupplier._id, 'VERIFIED')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857]"
+                >
                   <CheckCircle size={16} /> Verify Supplier
                 </button>
               </>
             )}
           </div>
         </div>
-
         <div className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
           <div className="p-6 border-b border-[#f1f5f9]">
             <div className="flex items-center gap-2 mb-4 text-primary">
               <ShieldCheck size={20} />
               <h3 className="text-base font-extrabold text-[#0f172a] m-0">Business Verification Profile</h3>
-              {selectedSupplier.autoLiveProducts && (
-                <span className="ml-2 text-[10px] bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                  <ShieldCheck size={11} className="text-[#059669]" /> Trusted Supplier
-                </span>
-              )}
+
             </div>
             <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
               <DetailItem label="Business Name">
@@ -349,7 +375,11 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
               <DetailItem label="Contact Phone">{selectedSupplier.phone}</DetailItem>
               <DetailItem label="Email Address">{selectedSupplier.businessDetails?.email || selectedSupplier.userId?.email || 'N/A'}</DetailItem>
               <DetailItem label="Year Established">{selectedSupplier.businessDetails?.yearOfEstablishment || 'N/A'}</DetailItem>
-              <DetailItem label="Tier"><span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{selectedSupplier.tier}</span></DetailItem>
+              <DetailItem label="Tier">
+                <span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">
+                  {selectedSupplier.tier}
+                </span>
+              </DetailItem>
               <DetailItem label="PAN Number">
                 <span className="font-mono">{selectedSupplier.businessDetails?.pan || 'N/A'}</span>
               </DetailItem>
@@ -358,7 +388,9 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
                   <a href={selectedSupplier.businessDetails.panDocument} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary font-bold no-underline hover:underline text-sm">
                     <ExternalLink size={14} /> View PAN Doc
                   </a>
-                ) : <span className="text-[#ef4444] text-sm font-semibold">Not uploaded</span>}
+                ) : (
+                  <span className="text-[#ef4444] text-sm font-semibold">Not uploaded</span>
+                )}
               </DetailItem>
               <DetailItem label="GSTIN">
                 <span className="font-mono">{selectedSupplier.businessDetails?.gstin || 'Not provided'}</span>
@@ -379,9 +411,7 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
           <div className="p-6 border-b border-[#f1f5f9]">
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Location & About</h3>
             <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
-              <DetailItem label="Full Address" span2>
-                {selectedSupplier.businessDetails?.address}, {selectedSupplier.businessDetails?.city}, {selectedSupplier.businessDetails?.state} - {selectedSupplier.businessDetails?.pinCode}
-              </DetailItem>
+              <DetailItem label="Full Address" span2>{selectedSupplier.businessDetails?.address}, {selectedSupplier.businessDetails?.city}, {selectedSupplier.businessDetails?.state} - {selectedSupplier.businessDetails?.pinCode}</DetailItem>
               <DetailItem label="About Company" span2>
                 <p className="text-sm text-[#475569] leading-relaxed m-0">{selectedSupplier.businessDetails?.about || 'No description provided'}</p>
               </DetailItem>
@@ -397,7 +427,9 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
                     <a href={selectedSupplier.businessDetails.fssaiCertificate} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-primary font-bold no-underline hover:underline text-sm">
                       <ShieldCheck size={16} /> View FSSAI Certificate
                     </a>
-                  ) : <p className="text-[#ef4444] text-sm m-0">Document not uploaded</p>}
+                  ) : (
+                    <p className="text-[#ef4444] text-sm m-0">Document not uploaded</p>
+                  )}
                 </DetailItem>
               </div>
             </div>
@@ -414,24 +446,16 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
               <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Business Scale & Compliance</h3>
               <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
                 {selectedSupplier.businessDetails?.annualTurnover && (
-                  <DetailItem label="Annual Turnover (₹)">
-                    ₹{formatIndianNumber(selectedSupplier.businessDetails.annualTurnover)}
-                  </DetailItem>
+                  <DetailItem label="Annual Turnover (₹)">₹{formatIndianNumber(selectedSupplier.businessDetails.annualTurnover)}</DetailItem>
                 )}
                 {selectedSupplier.businessDetails?.monthlyProductionCapacity && (
-                  <DetailItem label="Monthly Production Capacity">
-                    {formatIndianNumber(selectedSupplier.businessDetails.monthlyProductionCapacity)} units
-                  </DetailItem>
+                  <DetailItem label="Monthly Production Capacity">{formatIndianNumber(selectedSupplier.businessDetails.monthlyProductionCapacity)} units</DetailItem>
                 )}
                 {selectedSupplier.businessDetails?.taxFilingMethod && (
-                  <DetailItem label="Tax Filing Method">
-                    {selectedSupplier.businessDetails.taxFilingMethod}
-                  </DetailItem>
+                  <DetailItem label="Tax Filing Method">{selectedSupplier.businessDetails.taxFilingMethod}</DetailItem>
                 )}
                 {selectedSupplier.businessDetails?.taxPaymentsCompliance && (
-                  <DetailItem label="Tax Compliance Status">
-                    {selectedSupplier.businessDetails.taxPaymentsCompliance}
-                  </DetailItem>
+                  <DetailItem label="Tax Compliance Status">{selectedSupplier.businessDetails.taxPaymentsCompliance}</DetailItem>
                 )}
                 {selectedSupplier.businessDetails?.taxFilingDetails && (
                   <DetailItem label="Tax Filing Document">
@@ -443,8 +467,6 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
               </div>
             </div>
           )}
-
-          {/* Bank Accounts Section */}
           <div className="p-6 border-b border-[#f1f5f9] bg-[#f8fafc]/50">
             <div className="flex items-center gap-2 mb-4 text-primary">
               <Landmark size={20} />
@@ -455,27 +477,13 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
                 {selectedSupplier.banks.map((bank, index) => (
                   <div key={index} className="p-4 bg-white border border-[#eef2f6] rounded-[10px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col gap-2 relative overflow-hidden">
                     {bank.isPrimary && (
-                      <span className="absolute top-2 right-2 text-[9px] bg-[#ecfdf5] text-[#059669] font-bold px-2 py-0.5 rounded-full border border-[#a7f3d0]">
-                        PRIMARY
-                      </span>
+                      <span className="absolute top-2 right-2 text-[9px] bg-[#ecfdf5] text-[#059669] font-bold px-2 py-0.5 rounded-full border border-[#a7f3d0]">PRIMARY</span>
                     )}
-                    <div>
-                      <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Bank Name</span>
-                      <p className="text-sm font-semibold text-[#1e293b] m-0">{bank.bankName}</p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Account Holder</span>
-                      <p className="text-sm font-medium text-[#475569] m-0">{bank.accountHolderName}</p>
-                    </div>
+                    <div><span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Bank Name</span><p className="text-sm font-semibold text-[#1e293b] m-0">{bank.bankName}</p></div>
+                    <div><span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Account Holder</span><p className="text-sm font-medium text-[#475569] m-0">{bank.accountHolderName}</p></div>
                     <div className="grid grid-cols-2 gap-2 mt-1">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Account Number</span>
-                        <p className="text-sm font-mono text-[#475569] m-0">{bank.accountNumber}</p>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">IFSC Code</span>
-                        <p className="text-sm font-mono text-[#475569] m-0">{bank.ifscCode}</p>
-                      </div>
+                      <div><span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">Account Number</span><p className="text-sm font-mono text-[#475569] m-0">{bank.accountNumber}</p></div>
+                      <div><span className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block">IFSC Code</span><p className="text-sm font-mono text-[#475569] m-0">{bank.ifscCode}</p></div>
                     </div>
                   </div>
                 ))}
@@ -484,7 +492,6 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
               <p className="text-sm text-[#94a3b8] m-0">No bank accounts entered yet.</p>
             )}
           </div>
-
           <CommissionRateEditor supplierId={selectedSupplier._id} currentRate={(selectedSupplier as any).commissionRate} />
           {selectedSupplier.kycStatus === 'VERIFIED' && (
             <TrustAutomationEditor supplierId={selectedSupplier._id} autoLiveActive={!!selectedSupplier.autoLiveProducts} />
@@ -496,9 +503,23 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
 
   return (
     <div>
-      <SupplierTable title="Pending Suppliers" suppliers={pendingSuppliers} onVerify={onVerify} onView={id => setSearchParams({ tab: 'supplier-detail', id })} showActions />
-      <div className="my-8 border-t-2 border-[#e2e8f0]" />
-      <SupplierTable title="Approved Suppliers" suppliers={verifiedSuppliers} onVerify={onVerify} onView={id => setSearchParams({ tab: 'supplier-detail', id })} />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4">
+        <select
+          value={viewMode}
+          onChange={e => updateViewMode(e.target.value as 'PENDING' | 'VERIFIED')}
+          className="w-full sm:w-auto border border-[#e2e8f0] rounded-[8px] px-3 py-2 focus-within:border-primary"
+        >
+          <option value="PENDING">Pending Suppliers</option>
+          <option value="VERIFIED">Approved Suppliers</option>
+        </select>
+      </div>
+      <SupplierTable
+        title={viewMode === 'PENDING' ? 'Pending Suppliers' : 'Approved Suppliers'}
+        suppliers={viewMode === 'PENDING' ? pendingSuppliers : verifiedSuppliers}
+        onVerify={onVerify}
+        onView={goToDetail}
+        showActions={true}
+      />
     </div>
   );
 };
