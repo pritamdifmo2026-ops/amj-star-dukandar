@@ -98,3 +98,7 @@ button {
   display: flex;
   flex-direction: column;
 }
+
+/* Hide scrollbars globally for a sleek UI */
+*::-webkit-scrollbar { display: none; }
+* { -ms-overflow-style: none; scrollbar-width: none; }
