@@ -160,7 +160,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ categories }) => {
   };
 
   return (
-    <div className="relative flex-1 max-w-[380px] mx-3 sm:mx-6 max-md:max-w-full" ref={searchRef}>
+    <div className="relative flex-1 max-w-[560px] mx-3 sm:mx-6 max-md:max-w-full" ref={searchRef}>
       {/* Search form — no overflow-hidden so category panel is not clipped */}
       <form
         className="flex items-center bg-white border border-primary rounded-[8px] h-8 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.02)] focus-within:shadow-[0_0_0_2px_rgba(187,70,30,0.1)]"
@@ -168,10 +168,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ categories }) => {
       >
         {/* Category trigger */}
         <div
-          className="flex items-center gap-1 px-2 h-full border-r border-primary cursor-pointer text-[10px] text-body bg-[oklch(0.98_0.01_80)] whitespace-nowrap select-none min-w-[80px] hover:bg-[oklch(0.96_0.01_80)] max-md:hidden rounded-l-[7px]"
+          className="flex items-center gap-1.5 px-3 h-full border-r border-primary cursor-pointer text-[10px] text-body bg-[oklch(0.98_0.01_80)] whitespace-nowrap select-none min-w-[110px] hover:bg-[oklch(0.96_0.01_80)] max-md:hidden rounded-l-[7px]"
           onClick={() => { setCatMenuOpen(p => !p); setShowSuggestions(false); }}
         >
-          <span className="truncate max-w-[58px]">{selectedCat}</span>
+          <span className="truncate max-w-[84px]">{selectedCat}</span>
           <ChevronDown size={14} className={`shrink-0 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} />
         </div>
 
