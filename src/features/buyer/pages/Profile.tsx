@@ -5,7 +5,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   User, Package, MapPin, CreditCard, Settings, Bell, Heart,
   X, Mail, Phone, ShoppingBag,
-  LogOut, ChevronRight, Star, Clock, Check, MessageCircle
+  LogOut, ChevronRight, Star, Clock, Check, MessageCircle,
+  Plus, Trash2, Edit2, CheckCircle2, BookUser
 } from 'lucide-react';
 import { setCredentials, logout } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
@@ -21,15 +22,26 @@ import { orderApi } from '@/features/order/services/order.api';
 import Navbar from '@/features/landing/components/Navbar';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
+import { addressApi } from '@/features/buyer/services/address.api';
 
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
 const HELPLINE_NUMBER = '9034440673';
 const PAYMENT_HELPLINE_NUMBER = '9034440659';
+const emptyAddressForm = {
+  fullName: '',
+  phone: '',
+  pincode: '',
+  state: '',
+  city: '',
+  houseNo: '',
+  area: '',
+  isDefault: false,
+};
 
 const Profile: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const user = useAppSelector((state) => state.auth.user);
+  const user = useAppSelector((state) => state.auth.user) as any;
   const wishlistItems = useAppSelector((state) => state.wishlist.items);
   const dispatch = useAppDispatch();
 
@@ -46,8 +58,6 @@ const Profile: React.FC = () => {
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
-
-  const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [editAddrCity, setEditAddrCity] = useState(user?.address?.city || '');
   const [editAddrState, setEditAddrState] = useState(user?.address?.state || '');
   const [editAddrPincode, setEditAddrPincode] = useState(user?.address?.pincode || '');
@@ -67,6 +77,40 @@ const Profile: React.FC = () => {
   const { socket } = useSocket();
   const [totalUnread, setTotalUnread] = useState(0);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressSubmitting, setAddressSubmitting] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressForm, setAddressForm] = useState(emptyAddressForm);
+  const [addressErrors, setAddressErrors] = useState<Record<string, string>>({});
+
+  const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
+  const profileAddress = user?.address?.city ? {
+    _id: 'profile-address',
+    fullName: user?.name || 'Saved Address',
+    phone: user?.phone || '',
+    pincode: user.address.pincode,
+    state: user.address.state,
+    city: user.address.city,
+    houseNo: user.address.fullAddress || '',
+    area: '',
+    isDefault: addresses.length === 0,
+    isProfileAddress: true,
+  } : null;
+  const primaryAddress = defaultAddress || profileAddress;
+
+  const addressList = addresses.length > 0
+    ? addresses
+    : profileAddress
+      ? [profileAddress]
+      : [];
+
+  const formatAddressLine = (addr: any) => {
+    const firstLine = [addr.houseNo, addr.area].filter(Boolean).join(', ');
+    const secondLine = [addr.city, addr.state].filter(Boolean).join(', ');
+    return { firstLine, secondLine: [secondLine, addr.pincode].filter(Boolean).join(' - ') };
+  };
 
   const fetchUnreadCount = async () => {
     try {
@@ -105,6 +149,123 @@ const Profile: React.FC = () => {
   React.useEffect(() => {
     if (user) fetchOrderCount();
   }, [user]);
+
+  const fetchAddresses = async () => {
+    setAddressesLoading(true);
+    try {
+      const data = await addressApi.getAddresses();
+      setAddresses(data);
+    } catch (err) {
+      console.error('Failed to fetch addresses');
+    } finally {
+      setAddressesLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (user) fetchAddresses();
+  }, [user]);
+
+  const validateAddressForm = () => {
+    const nextErrors: Record<string, string> = {};
+    if (!addressForm.fullName.trim()) nextErrors.fullName = 'Full name is required';
+    if (!/^\d{10}$/.test(addressForm.phone)) nextErrors.phone = 'Enter a valid 10-digit phone number';
+    if (!/^\d{6}$/.test(addressForm.pincode)) nextErrors.pincode = 'Enter a valid 6-digit pincode';
+    if (!addressForm.state.trim()) nextErrors.state = 'State is required';
+    if (!addressForm.city.trim()) nextErrors.city = 'City is required';
+    if (!addressForm.houseNo.trim()) nextErrors.houseNo = 'House/building is required';
+    if (!addressForm.area.trim()) nextErrors.area = 'Area/street is required';
+    setAddressErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const updateAddressField = (field: string, value: string | boolean) => {
+    setAddressForm(prev => ({ ...prev, [field]: value }));
+    if (addressErrors[field]) {
+      setAddressErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const resetAddressForm = () => {
+    setShowAddressForm(false);
+    setEditingAddressId(null);
+    setAddressForm(emptyAddressForm);
+    setAddressErrors({});
+  };
+
+  const handleAddressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateAddressForm()) return;
+    setAddressSubmitting(true);
+    try {
+      if (editingAddressId) {
+        await addressApi.updateAddress(editingAddressId, addressForm);
+        toast.success('Address updated');
+      } else {
+        await addressApi.addAddress(addressForm);
+        toast.success('Address added');
+      }
+      await fetchAddresses();
+      resetAddressForm();
+    } catch (err) {
+      toast.error('Failed to save address');
+    } finally {
+      setAddressSubmitting(false);
+    }
+  };
+
+  const handleAddressEdit = (addr: any) => {
+    if (addr.isProfileAddress) {
+      toast('Use Add Another Address to save this in your address book.');
+      return;
+    }
+    setAddressForm({
+      fullName: addr.fullName || '',
+      phone: addr.phone || '',
+      pincode: addr.pincode || '',
+      state: addr.state || '',
+      city: addr.city || '',
+      houseNo: addr.houseNo || '',
+      area: addr.area || '',
+      isDefault: !!addr.isDefault,
+    });
+    setEditingAddressId(addr._id);
+    setShowAddressForm(true);
+    setAddressErrors({});
+  };
+
+  const handleSetPrimaryAddress = async (addr: any) => {
+    if (addr.isProfileAddress) {
+      toast('This is already shown as your primary profile address.');
+      return;
+    }
+    try {
+      await addressApi.setDefault(addr._id);
+      await fetchAddresses();
+      toast.success('Primary address updated');
+    } catch (err) {
+      toast.error('Failed to update primary address');
+    }
+  };
+
+  const handleAddressDelete = async (addr: any) => {
+    if (addr.isProfileAddress) {
+      toast('Profile address cannot be deleted here.');
+      return;
+    }
+    if (!window.confirm('Delete this address?')) return;
+    try {
+      await addressApi.deleteAddress(addr._id);
+      await fetchAddresses();
+      toast.success('Address deleted');
+    } catch (err) {
+      toast.error('Failed to delete address');
+    }
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -145,28 +306,6 @@ const Profile: React.FC = () => {
       } catch (err) {
         toast.error('Failed to update profile.');
       }
-    }
-  };
-
-  const handleSaveAddress = async () => {
-    if (!editAddrCity.trim() || !editAddrState.trim() || !/^\d{6}$/.test(editAddrPincode.trim())) {
-      toast.error('City, State and a valid 6-digit Pincode are required');
-      return;
-    }
-    try {
-      const response = await authService.updateProfile({
-        address: {
-          city: editAddrCity.trim(),
-          state: editAddrState.trim(),
-          pincode: editAddrPincode.trim(),
-          fullAddress: editAddrFull.trim() || undefined,
-        },
-      });
-      dispatch(setCredentials({ user: response.user }));
-      setIsEditingAddress(false);
-      toast.success('Address saved!');
-    } catch {
-      toast.error('Failed to save address');
     }
   };
 
@@ -277,55 +416,57 @@ const Profile: React.FC = () => {
           </button>
         </div>
 
-        <nav className="flex-1 py-2 max-lg:flex max-lg:overflow-x-auto max-lg:py-1 max-lg:px-4 max-lg:scrollbar-none max-lg:gap-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <div
-                key={item.id}
-                className={`flex items-center gap-3 px-5 py-3 cursor-pointer transition-all text-sm whitespace-nowrap max-lg:px-4 max-lg:py-2.5 max-lg:gap-1.5 max-lg:rounded-t-[8px] ${
-                  isActive 
-                    ? 'bg-[#fff7ed] text-primary font-bold border-r-2 border-primary max-lg:border-r-0 max-lg:border-b-2' 
-                    : 'text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] font-medium'
-                }`}
-                onClick={() => setActiveTab(item.id)}
-              >
-                <Icon size={18} className="shrink-0 max-lg:w-4 max-lg:h-4" />
-                <span className="flex-1">{item.label}</span>
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center ml-1">{item.badge}</span>
-                )}
-                <ChevronRight size={15} className="text-[#d1d5db] max-lg:hidden" />
-              </div>
-            );
-          })}
-        </nav>
+        <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-lg:flex-none max-lg:overflow-visible">
+          <nav className="py-2 max-lg:flex max-lg:overflow-x-auto max-lg:py-1 max-lg:px-4 max-lg:scrollbar-none max-lg:gap-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <div
+                  key={item.id}
+                  className={`flex items-center gap-3 px-5 py-3 cursor-pointer transition-all text-sm whitespace-nowrap max-lg:px-4 max-lg:py-2.5 max-lg:gap-1.5 max-lg:rounded-t-[8px] ${
+                    isActive 
+                      ? 'bg-[#fff7ed] text-primary font-bold border-r-2 border-primary max-lg:border-r-0 max-lg:border-b-2' 
+                      : 'text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] font-medium'
+                  }`}
+                  onClick={() => setActiveTab(item.id)}
+                >
+                  <Icon size={18} className="shrink-0 max-lg:w-4 max-lg:h-4" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center ml-1">{item.badge}</span>
+                  )}
+                  <ChevronRight size={15} className="text-[#d1d5db] max-lg:hidden" />
+                </div>
+              );
+            })}
+          </nav>
 
-        <div className="p-4 border-t border-[#f1f5f9] max-lg:hidden">
-          <a
-            href={`tel:${HELPLINE_NUMBER}`}
-            className="flex items-center gap-3 px-3 py-2.5 mb-2 text-sm font-semibold text-[#0f172a] bg-[#fff7ed] rounded-[8px] no-underline hover:bg-[#ffedd5] transition-colors"
-          >
-            <Phone size={18} className="text-primary" />
-            <div className="min-w-0">
-              <span className="block text-[10px] uppercase tracking-wider text-[#94a3b8]">Helpline</span>
-              <span className="block">{HELPLINE_NUMBER}</span>
+          <div className="p-4 border-t border-[#f1f5f9] max-lg:hidden">
+            <a
+              href={`tel:${HELPLINE_NUMBER}`}
+              className="flex items-center gap-3 px-3 py-2.5 mb-2 text-sm font-semibold text-[#0f172a] bg-[#fff7ed] rounded-[8px] no-underline hover:bg-[#ffedd5] transition-colors"
+            >
+              <Phone size={18} className="text-primary" />
+              <div className="min-w-0">
+                <span className="block text-[10px] uppercase tracking-wider text-[#94a3b8]">Helpline</span>
+                <span className="block">{HELPLINE_NUMBER}</span>
+              </div>
+            </a>
+            <a
+              href={`tel:${PAYMENT_HELPLINE_NUMBER}`}
+              className="flex items-center gap-3 px-3 py-2.5 mb-2 text-sm font-semibold text-[#0f172a] bg-[#f0fdf4] rounded-[8px] no-underline hover:bg-[#dcfce7] transition-colors"
+            >
+              <CreditCard size={18} className="text-[#16a34a]" />
+              <div className="min-w-0">
+                <span className="block text-[10px] uppercase tracking-wider text-[#94a3b8]">Payment Issues</span>
+                <span className="block">{PAYMENT_HELPLINE_NUMBER}</span>
+              </div>
+            </a>
+            <div onClick={() => setShowLogoutModal(true)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
+              <LogOut size={18} />
+              <span>Sign Out</span>
             </div>
-          </a>
-          <a
-            href={`tel:${PAYMENT_HELPLINE_NUMBER}`}
-            className="flex items-center gap-3 px-3 py-2.5 mb-2 text-sm font-semibold text-[#0f172a] bg-[#f0fdf4] rounded-[8px] no-underline hover:bg-[#dcfce7] transition-colors"
-          >
-            <CreditCard size={18} className="text-[#16a34a]" />
-            <div className="min-w-0">
-              <span className="block text-[10px] uppercase tracking-wider text-[#94a3b8]">Payment Issues</span>
-              <span className="block">{PAYMENT_HELPLINE_NUMBER}</span>
-            </div>
-          </a>
-          <div onClick={() => setShowLogoutModal(true)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
-            <LogOut size={18} />
-            <span>Sign Out</span>
           </div>
         </div>
       </aside>
@@ -468,25 +609,31 @@ const Profile: React.FC = () => {
               <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all">
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Default Delivery Address</h3>
-                  {!isEditingAddress ? (
-                    <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
-                      onClick={() => {
-                        setEditAddrCity(user?.address?.city || '');
-                        setEditAddrState(user?.address?.state || '');
-                        setEditAddrPincode(user?.address?.pincode || '');
-                        setEditAddrFull(user?.address?.fullAddress || '');
-                        setIsEditingAddress(true);
-                      }}>
-                      {user?.address?.city ? 'Edit' : 'Add Address'}
-                    </button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <button className="text-xs font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-1.5 cursor-pointer hover:bg-[#f1f5f9]" onClick={() => setIsEditingAddress(false)}>Cancel</button>
-                      <button className="text-xs font-bold text-white bg-primary rounded-[6px] px-3 py-1.5 border-none cursor-pointer hover:opacity-90" onClick={handleSaveAddress}>Save</button>
-                    </div>
-                  )}
+                  <button
+                    className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
+                    onClick={() => setActiveTab('addresses')}
+                  >
+                    Manage
+                  </button>
                 </div>
-                {!isEditingAddress ? (
+                {primaryAddress ? (
+                  <div className="flex items-start gap-3">
+                    <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
+                    <div className="text-sm text-[#475569]">
+                      <p className="m-0 text-[#0f172a] font-medium">{formatAddressLine(primaryAddress).firstLine || primaryAddress.fullName}</p>
+                      <p className="m-0">{formatAddressLine(primaryAddress).secondLine}</p>
+                      <span className="inline-flex mt-2 text-[10px] font-bold uppercase tracking-wider text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
+                        Primary Address
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
+                    <MapPin size={15} className="shrink-0" />
+                    <span>No address saved yet. Add one so suppliers can quote shipping accurately.</span>
+                  </div>
+                )}
+                {false && (
                   user?.address?.city ? (
                     <div className="flex items-start gap-3">
                       <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
@@ -501,7 +648,7 @@ const Profile: React.FC = () => {
                       <span>No address saved yet. Add one so suppliers can quote shipping accurately.</span>
                     </div>
                   )
-                ) : (
+                ) && (
                   <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -545,6 +692,159 @@ const Profile: React.FC = () => {
           {activeTab === 'orders' && (
             <div className="py-6">
               <OrderList />
+            </div>
+          )}
+
+          {activeTab === 'addresses' && (
+            <div className="py-6">
+              <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
+                <div>
+                  <h3 className="text-base font-extrabold text-[#0f172a] m-0">My Addresses</h3>
+                  <p className="text-sm text-[#64748b] m-0 mt-1">Choose the primary address shown on your account overview.</p>
+                </div>
+                {!showAddressForm && (
+                  <button
+                    className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => {
+                      setEditingAddressId(null);
+                      setAddressForm({
+                        ...emptyAddressForm,
+                        fullName: user?.name || '',
+                        phone: user?.phone || '',
+                        isDefault: addresses.length === 0,
+                      });
+                      setShowAddressForm(true);
+                    }}
+                  >
+                    <Plus size={16} /> Add Another Address
+                  </button>
+                )}
+              </div>
+
+              {showAddressForm && (
+                <form onSubmit={handleAddressSubmit} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-extrabold text-[#0f172a] m-0">{editingAddressId ? 'Edit Address' : 'Add Address'}</h4>
+                    <button type="button" onClick={resetAddressForm} className="bg-transparent border-none text-[#64748b] hover:text-[#0f172a] p-0">
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                    {[
+                      { field: 'fullName', label: 'Full Name', placeholder: 'Enter full name' },
+                      { field: 'phone', label: 'Phone Number', placeholder: '10-digit mobile number', numeric: true, maxLen: 10 },
+                      { field: 'pincode', label: 'Pincode', placeholder: '6-digit pincode', numeric: true, maxLen: 6 },
+                      { field: 'state', label: 'State', placeholder: 'State' },
+                      { field: 'city', label: 'City', placeholder: 'City' },
+                      { field: 'houseNo', label: 'House / Building', placeholder: 'House no. or building' },
+                    ].map(({ field, label, placeholder, numeric, maxLen }) => (
+                      <div key={field}>
+                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">{label}</label>
+                        <input
+                          value={(addressForm as any)[field]}
+                          placeholder={placeholder}
+                          maxLength={maxLen}
+                          onChange={e => updateAddressField(field, numeric ? e.target.value.replace(/\D/g, '') : e.target.value)}
+                          className={`${inputCls} ${addressErrors[field] ? 'border-[#dc2626] bg-[#fef2f2]' : ''}`}
+                        />
+                        {addressErrors[field] && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors[field]}</p>}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Area / Street / Sector</label>
+                    <textarea
+                      rows={3}
+                      value={addressForm.area}
+                      placeholder="Area details"
+                      onChange={e => updateAddressField('area', e.target.value)}
+                      className={`${inputCls} resize-y ${addressErrors.area ? 'border-[#dc2626] bg-[#fef2f2]' : ''}`}
+                    />
+                    {addressErrors.area && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.area}</p>}
+                  </div>
+
+                  <label className="flex items-center gap-2 text-sm text-[#475569] cursor-pointer my-4">
+                    <input
+                      type="checkbox"
+                      checked={addressForm.isDefault}
+                      onChange={e => updateAddressField('isDefault', e.target.checked)}
+                      className="accent-primary"
+                    />
+                    Make this my primary address
+                  </label>
+
+                  <button
+                    type="submit"
+                    disabled={addressSubmitting}
+                    className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  >
+                    {addressSubmitting ? 'Saving...' : 'Save Address'}
+                  </button>
+                </form>
+              )}
+
+              {addressesLoading ? (
+                <div className="flex items-center gap-2 text-sm text-[#64748b]">
+                  <Loader2 size={16} className="animate-spin text-primary" /> Loading addresses...
+                </div>
+              ) : addressList.length === 0 ? (
+                <div className="bg-white border border-[#eef2f6] rounded-[12px] p-10 flex flex-col items-center text-center gap-3">
+                  <BookUser size={36} className="text-[#94a3b8]" />
+                  <h4 className="text-base font-extrabold text-[#0f172a] m-0">No addresses found</h4>
+                  <p className="text-sm text-[#64748b] m-0">Add an address to use it as your primary delivery address.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 max-lg:grid-cols-1">
+                  {addressList.map(addr => {
+                    const lines = formatAddressLine(addr);
+                    const isPrimary = addr._id === primaryAddress?._id;
+                    return (
+                      <div
+                        key={addr._id}
+                        className={`bg-white rounded-[12px] p-5 ${isPrimary ? 'border-2 border-primary shadow-[0_0_0_4px_rgba(217,79,0,0.08)]' : 'border border-[#eef2f6]'}`}
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <h4 className="text-sm font-bold text-[#0f172a] m-0">{addr.fullName}</h4>
+                            {addr.phone && <p className="text-xs text-[#64748b] m-0 mt-0.5">{addr.phone}</p>}
+                          </div>
+                          {isPrimary && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
+                              <CheckCircle2 size={12} /> Primary
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-start gap-2 text-sm text-[#475569] mb-4">
+                          <MapPin size={15} className="text-primary shrink-0 mt-0.5" />
+                          <p className="m-0 leading-relaxed">
+                            {lines.firstLine && <>{lines.firstLine}<br /></>}
+                            {lines.secondLine}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-4 flex-wrap">
+                          {!isPrimary && !addr.isProfileAddress && (
+                            <button onClick={() => handleSetPrimaryAddress(addr)} className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">
+                              Set Primary
+                            </button>
+                          )}
+                          <button onClick={() => handleAddressEdit(addr)} className="flex items-center gap-1.5 text-xs font-bold text-[#475569] bg-transparent border-none cursor-pointer hover:text-primary p-0">
+                            <Edit2 size={13} /> Edit
+                          </button>
+                          {!addr.isProfileAddress && (
+                            <button onClick={() => handleAddressDelete(addr)} className="flex items-center gap-1.5 text-xs font-bold text-[#dc2626] bg-transparent border-none cursor-pointer hover:underline p-0">
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -629,7 +929,7 @@ const Profile: React.FC = () => {
             </div>
           )}
 
-          {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && activeTab !== 'contactus' && currentMenuItem && (
+          {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && activeTab !== 'addresses' && activeTab !== 'contactus' && currentMenuItem && (
             <div className="flex flex-col items-center gap-4 py-20 text-center text-[#94a3b8]">
               {CurrentIcon && <CurrentIcon size={52} strokeWidth={1.5} />}
               <h3 className="text-xl font-extrabold text-[#0f172a] m-0">{currentMenuItem.label}</h3>
