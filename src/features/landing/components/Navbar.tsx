@@ -49,7 +49,7 @@ const Navbar: React.FC = () => {
   const user = useAppSelector(s => s.auth.user);
   const isSupplier = user?.role === 'supplier';
   const isReseller = user?.role === 'reseller';
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const { profile: supplierProfile } = useAppSelector(s => s.supplier);
   const { profile: resellerProfile } = useAppSelector(s => s.reseller);
 

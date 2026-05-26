@@ -127,6 +127,16 @@ export interface AdminUser {
   isActive: boolean;
 }
 
+export interface SubAdmin {
+  _id: string;
+  email: string;
+  name?: string;
+  adminRoleLabel?: string;
+  permissions: string[];
+  isActive: boolean;
+  createdAt: string;
+}
+
 export interface Banner {
   _id: string;
   imageDesktop: string;

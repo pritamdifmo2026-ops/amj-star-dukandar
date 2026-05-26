@@ -16,6 +16,9 @@ interface AuthUser {
     state?: string;
     pincode?: string;
   };
+  permissions?: string[];
+  mustChangePassword?: boolean;
+  adminRoleLabel?: string;
 }
 
 interface AuthState {

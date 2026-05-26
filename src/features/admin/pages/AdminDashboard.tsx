@@ -22,8 +22,10 @@ import AdminPlatformSettings from '../components/AdminPlatformSettings';
 import AdminWithdrawals from '../components/AdminWithdrawals';
 import AdminEarnings from '../components/AdminEarnings';
 import AdminPages from '../components/AdminPages';
+import ControlAuthority from '../components/ControlAuthority';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
+import { Navigate } from 'react-router-dom';
 
 const tabLabel: Record<string, string> = {
   stats: 'Platform Overview',
@@ -41,6 +43,7 @@ const tabLabel: Record<string, string> = {
   'platform-settings': 'Platform Settings',
   withdrawals: 'Withdrawal Requests',
   pages: 'Manage Pages',
+  'control-authority': 'Control Authority',
 };
 
 const AdminDashboard: React.FC = () => {
@@ -73,6 +76,37 @@ const AdminDashboard: React.FC = () => {
     { id: 'pages', label: 'Manage Pages', icon: FileText },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
   ];
+
+  const hasPermission = (perm: string) => {
+    if (user?.role === 'superadmin') return true;
+    return user?.permissions?.includes(perm) || false;
+  };
+
+  const filteredMenu = adminMenu.filter(item => {
+    if (user?.role === 'superadmin') return true;
+    if (item.id === 'stats') return true;
+    if (item.id === 'suppliers') return hasPermission('supplier_verify');
+    if (item.id === 'resellers') return hasPermission('reseller_verify');
+    if (item.id === 'users') return hasPermission('user_management');
+    if (item.id === 'products') return hasPermission('product_queue');
+    if (item.id === 'categories') return hasPermission('category_management');
+    if (item.id === 'banners') return hasPermission('banner_management');
+    if (item.id === 'enquiry') return hasPermission('enquiry_management');
+    if (item.id === 'earnings') return hasPermission('earnings');
+    if (item.id === 'withdrawals') return hasPermission('withdrawals');
+    if (item.id === 'pages') return hasPermission('pages_management');
+    if (item.id === 'platform-settings') return hasPermission('platform_settings');
+    return false;
+  });
+
+  if (user?.role === 'superadmin') {
+    filteredMenu.push({ id: 'control-authority', label: 'Control Authority', icon: ShieldCheck });
+  }
+
+  // Redirect if mustChangePassword is true
+  if (user?.mustChangePassword) {
+    return <Navigate to="/admin/change-password" replace />;
+  }
 
   useEffect(() => {
     const handleResize = () => setIsSidebarOpen(window.innerWidth > 1024);
@@ -124,7 +158,7 @@ const AdminDashboard: React.FC = () => {
       <Sidebar
         title="AMJ Admin"
         logoSrc={logo}
-        menu={adminMenu}
+        menu={filteredMenu}
         activeTab={activeTab}
         onTabChange={id => { setActiveTab(id); if (window.innerWidth <= 1024) setIsSidebarOpen(false); }}
         onLogout={() => setShowLogoutModal(true)}
@@ -168,6 +202,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'pages' && <AdminPages />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}
             {activeTab === 'withdrawals' && <AdminWithdrawals />}
+            {activeTab === 'control-authority' && user?.role === 'superadmin' && <ControlAuthority />}
           </div>
         )}
       </main>

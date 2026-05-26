@@ -10,6 +10,7 @@ import SupplierDashboard from '@/features/supplier/pages/SupplierDashboard';
 import ResellerDashboard from '@/features/reseller/pages/ResellerDashboard';
 import ResellerOnboarding from '@/features/reseller/pages/ResellerOnboarding';
 import ResellerGuard from '@/features/reseller/components/ResellerGuard';
+import ForceChangePassword from '@/features/admin/pages/ForceChangePassword';
 
 export const protectedRoutes: RouteObject[] = [
   {
@@ -67,9 +68,17 @@ export const protectedRoutes: RouteObject[] = [
     ),
   },
   {
+    path: '/admin/change-password',
+    element: (
+      <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+        <ForceChangePassword />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: '/admin/dashboard',
     element: (
-      <ProtectedRoute allowedRoles={['admin']}>
+      <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
         <AdminDashboard />
       </ProtectedRoute>
     ),

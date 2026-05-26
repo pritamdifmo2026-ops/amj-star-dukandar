@@ -1,7 +1,7 @@
 import api from '@/api/client';
 import type {
   AdminStats, AdminSupplier, AdminReseller,
-  AdminProduct, AdminUser, Banner, Enquiry
+  AdminProduct, AdminUser, Banner, Enquiry, SubAdmin
 } from '../types/admin.types';
 
 const adminService = {
@@ -164,6 +164,30 @@ const adminService = {
       timeout: 120000,
     });
     return response.data.url;
+  },
+
+  // ─── Sub-Admin Management ────────────────────────────────────────────────
+  getSubAdmins: async (): Promise<SubAdmin[]> => {
+    const response = await api.get('/admin/sub-admins');
+    return response.data.subAdmins;
+  },
+
+  inviteSubAdmin: async (data: { email: string; adminRoleLabel: string; permissions: string[] }): Promise<SubAdmin> => {
+    const response = await api.post('/admin/sub-admins', data);
+    return response.data.subAdmin;
+  },
+
+  updateSubAdmin: async (id: string, data: { adminRoleLabel?: string; permissions?: string[]; isActive?: boolean }): Promise<SubAdmin> => {
+    const response = await api.patch(`/admin/sub-admins/${id}`, data);
+    return response.data.subAdmin;
+  },
+
+  deleteSubAdmin: async (id: string): Promise<void> => {
+    await api.delete(`/admin/sub-admins/${id}`);
+  },
+
+  changeAdminPassword: async (newPassword: string): Promise<void> => {
+    await api.post('/admin/change-password', { newPassword });
   }
 };
 
