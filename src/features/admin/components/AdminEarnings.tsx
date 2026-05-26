@@ -72,7 +72,7 @@ const AdminEarnings: React.FC = () => {
   return (
     <div className="animate-fade-in max-w-6xl mx-auto">
       <div className="mb-6">
-        <h2 className="text-2xl font-extrabold text-[#0f172a]">AMJStar Earnings</h2>
+        {/* <h2 className="text-2xl font-extrabold text-[#0f172a]">AMJStar Earnings</h2> */}
         <p className="text-[#64748b] text-sm mt-1">Commission collected from all suppliers. Edit rates directly from this table.</p>
       </div>
 
