@@ -19,6 +19,7 @@ const AVAILABLE_PERMISSIONS = [
   { id: 'withdrawals', label: 'Withdrawals' },
   { id: 'platform_settings', label: 'Platform Settings' },
   { id: 'pages_management', label: 'Pages Management' },
+  { id: 'requirement_management', label: 'Requirement Management' },
 ];
 
 const ControlAuthority: React.FC = () => {
@@ -120,10 +121,7 @@ const ControlAuthority: React.FC = () => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
       <div className="flex items-center justify-between p-6 border-b border-slate-100">
-        <div>
-          <h3 className="text-lg font-bold text-slate-800">Control Authority</h3>
-          <p className="text-sm text-slate-500">Manage sub-admins and their permissions</p>
-        </div>
+        <div />
         <Button onClick={() => openModal()} className="flex items-center gap-2">
           <Plus size={18} /> Add Sub-Admin
         </Button>

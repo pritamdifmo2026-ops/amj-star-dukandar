@@ -7,6 +7,7 @@ import {
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import BannerSlider from '../components/BannerSlider';
+import PostRequirementSection from '../components/PostRequirementSection';
 import Footer from '../components/Footer';
 import { ROUTES } from '@/shared/constants/routes';
 import { productApi } from '@/features/product/services/product.api';
@@ -269,6 +270,8 @@ const Landing: React.FC = () => {
             </div>
           </div>
         </section>
+
+        <PostRequirementSection />
       </main>
 
       <Footer />

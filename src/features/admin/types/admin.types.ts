@@ -12,7 +12,9 @@ export interface AdminStats {
 export interface AdminSupplier {
   _id: string;
   businessName: string;
+  name?: string;
   phone: string;
+  commissionRate?: number;
   kycStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
   verifiedByAdmin: boolean;
   rejectionReason?: string;

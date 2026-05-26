@@ -23,6 +23,7 @@ import AdminWithdrawals from '../components/AdminWithdrawals';
 import AdminEarnings from '../components/AdminEarnings';
 import AdminPages from '../components/AdminPages';
 import ControlAuthority from '../components/ControlAuthority';
+import RequirementManagement from '../components/RequirementManagement';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
 import { Navigate } from 'react-router-dom';
@@ -43,6 +44,7 @@ const tabLabel: Record<string, string> = {
   'platform-settings': 'Platform Settings',
   withdrawals: 'Withdrawal Requests',
   pages: 'Manage Pages',
+  'requirement-management': 'Requirement Management',
   'control-authority': 'Control Authority',
 };
 
@@ -71,6 +73,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'categories', label: 'Categories', icon: Tags },
     { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
+    { id: 'requirement-management', label: 'Requirements', icon: FileText },
     { id: 'earnings', label: 'AMJ Earnings', icon: TrendingUp },
     { id: 'withdrawals', label: 'Withdrawals', icon: Wallet },
     { id: 'pages', label: 'Manage Pages', icon: FileText },
@@ -92,6 +95,7 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'categories') return hasPermission('category_management');
     if (item.id === 'banners') return hasPermission('banner_management');
     if (item.id === 'enquiry') return hasPermission('enquiry_management');
+    if (item.id === 'requirement-management') return hasPermission('requirement_management');
     if (item.id === 'earnings') return hasPermission('earnings');
     if (item.id === 'withdrawals') return hasPermission('withdrawals');
     if (item.id === 'pages') return hasPermission('pages_management');
@@ -200,6 +204,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'enquiry' && <EnquiryManagement />}
             {activeTab === 'earnings' && <AdminEarnings />}
             {activeTab === 'pages' && <AdminPages />}
+            {activeTab === 'requirement-management' && <RequirementManagement />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}
             {activeTab === 'withdrawals' && <AdminWithdrawals />}
             {activeTab === 'control-authority' && user?.role === 'superadmin' && <ControlAuthority />}

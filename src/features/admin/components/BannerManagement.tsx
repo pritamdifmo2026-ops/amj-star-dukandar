@@ -19,8 +19,7 @@ const BannerManagement: React.FC = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-extrabold text-[#0f172a] m-0">Banner Management</h3>
+      <div className="flex justify-end items-center mb-6">
         <Button onClick={() => handleOpenModal()}>
           <Plus size={18} className="mr-2" /> Add New Banner
         </Button>
