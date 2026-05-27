@@ -36,8 +36,8 @@ const AdminLogin: React.FC = () => {
     setError('');
     try {
       const response = await authService.adminLogin(email, password);
-      dispatch(setCredentials(response));
-      navigate('/admin/dashboard');
+      dispatch(setCredentials({ user: response.user }));
+      navigate('/admin/dashboard', { replace: true });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
