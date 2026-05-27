@@ -39,6 +39,8 @@ const mapProduct = (item: any): Product => {
     supplierAbout: item.supplierId?.businessDetails?.about,
     supplierYearEst: item.supplierId?.businessDetails?.yearOfEstablishment,
     isGSTVerified: !!(item.supplierId?.businessDetails?.gstin),
+    supplierReturnPolicyType: item.supplierId?.businessDetails?.returnPolicyType,
+    supplierReturnPolicyCustomTerms: item.supplierId?.businessDetails?.returnPolicyCustomTerms,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     supplierDetails: item.supplierId && typeof item.supplierId === 'object' ? {

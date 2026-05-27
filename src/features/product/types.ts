@@ -32,6 +32,8 @@ export interface Product {
   supplierAbout?: string;
   supplierYearEst?: string;
   isGSTVerified?: boolean;
+  supplierReturnPolicyType?: string;
+  supplierReturnPolicyCustomTerms?: string;
   createdAt: string;
   updatedAt: string;
   supplierDetails?: {

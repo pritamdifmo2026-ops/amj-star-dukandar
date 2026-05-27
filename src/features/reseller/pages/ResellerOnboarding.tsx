@@ -743,7 +743,7 @@ const ResellerOnboarding: React.FC = () => {
             </div>
             <div className="flex flex-col gap-0.5 text-sm">
               <p className="font-bold text-[#0f172a] m-0">Need Help?</p>
-              <p className="text-[#64748b] m-0">Contact our support team at +91 xxxxxxxxxx for priority onboarding.</p>
+              <p className="text-[#64748b] m-0">Contact our support team at +91 9034440682 for priority onboarding.</p>
             </div>
           </div>
 
@@ -772,8 +772,8 @@ const ResellerOnboarding: React.FC = () => {
             Don't worry! You can update your details and re-submit your application for review.
           </p>
           <div className="mt-4 w-full">
-            <a href="tel:+91xxxxxxxxxx" className="flex items-center justify-center gap-2 text-sm text-primary font-bold no-underline hover:underline">
-              Contact Support: +91 xxxxxxxxxx
+            <a href="tel:+919034440682" className="flex items-center justify-center gap-2 text-sm text-primary font-bold no-underline hover:underline">
+              Contact Support: +91 9034440682
             </a>
           </div>
           <div className="flex gap-3 flex-wrap justify-center mt-6">

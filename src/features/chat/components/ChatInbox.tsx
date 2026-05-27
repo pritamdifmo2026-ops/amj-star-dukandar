@@ -71,12 +71,19 @@ const QuotePreviewCard = ({
     </div>
     <div className="px-4 py-3 flex flex-col gap-1.5">
       <div className="flex justify-between text-xs text-[#475569]">
-        <span>{form.itemName} × {form.quantity}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
-        <span className="font-semibold">₹{form.price.toLocaleString('en-IN')}</span>
+        <span className="font-medium">{form.itemName}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
+      </div>
+      <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+        <span>Unit Price</span>
+        <span>₹{form.price.toLocaleString('en-IN')}</span>
+      </div>
+      <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+        <span>Qty</span>
+        <span>{form.quantity}</span>
       </div>
       <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
-        <span>Amount</span>
-        <span className="font-semibold">₹{form.price.toLocaleString('en-IN')}</span>
+        <span>Total Price (before GST)</span>
+        <span className="font-semibold">₹{(form.price * form.quantity).toLocaleString('en-IN')}</span>
       </div>
       {form.gstType !== 'exempt' ? (
         form.gstType === 'IGST' ? (
@@ -184,10 +191,11 @@ const ChatInbox: React.FC = () => {
     };
   }, []);
 
+  const computedTotalPrice = quoteForm.price * quoteForm.quantity;
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
-    : Math.round(quoteForm.price * quoteForm.gstRate) / 100;
-  const computedGrandTotal = quoteForm.price + computedGstAmount + quoteForm.shipping;
+    : Math.round(computedTotalPrice * quoteForm.gstRate) / 100;
+  const computedGrandTotal = computedTotalPrice + computedGstAmount + quoteForm.shipping;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -279,11 +287,11 @@ const ChatInbox: React.FC = () => {
       items: [{
         name: quoteForm.itemName,
         quantity: quoteForm.quantity,
-        price: quoteForm.quantity > 0 ? quoteForm.price / quoteForm.quantity : quoteForm.price,
+        price: quoteForm.price,
         hsnCode: quoteForm.hsnCode || undefined,
       }],
-      taxableAmount: quoteForm.price,
-      totalAmount: quoteForm.price,
+      taxableAmount: computedTotalPrice,
+      totalAmount: computedTotalPrice,
       gstType: quoteForm.gstType,
       gstRate: quoteForm.gstType === 'exempt' ? 0 : quoteForm.gstRate,
       gstAmount: computedGstAmount,
@@ -455,7 +463,7 @@ const ChatInbox: React.FC = () => {
         itemName: quote.items?.[0]?.name || '',
         hsnCode: quote.items?.[0]?.hsnCode || '',
         quantity: quote.items?.[0]?.quantity || 1,
-        price: quote.taxableAmount ?? 0,
+        price: quote.items?.[0]?.price ?? 0,
         gstType: quote.gstType || 'CGST_SGST',
         gstRate: quote.gstRate ?? 18,
         shipping: quote.shippingCost ?? 0,
@@ -536,13 +544,26 @@ const ChatInbox: React.FC = () => {
 
         <div className="px-4 py-3 flex flex-col gap-1.5">
           {quote.items.map((item: any, i: number) => (
-            <div key={i} className="flex justify-between text-xs text-[#475569]">
-              <span>{item.name} × {item.quantity} {item.unit}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
-              <span className="font-semibold">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+            <div key={i} className="flex flex-col gap-0.5">
+              <div className="flex justify-between text-xs text-[#475569]">
+                <span className="font-medium">{item.name}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+                <span>Unit Price</span>
+                <span>₹{item.price.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+                <span>Qty</span>
+                <span>{item.quantity} {item.unit}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#475569] font-semibold">
+                <span>Total Price</span>
+                <span>₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+              </div>
             </div>
           ))}
           <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
-            <span>Amount</span>
+            <span>Amount (before GST)</span>
             <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN')}</span>
           </div>
           {quote.gstType && quote.gstType !== 'exempt' && gstAmt > 0 ? (
@@ -1002,7 +1023,7 @@ const ChatInbox: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Amount ₹ (before GST) <span className="text-red-500">*</span></label>
+                <label className={labelCls}>Per Unit Price ₹ <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -1014,8 +1035,13 @@ const ChatInbox: React.FC = () => {
                     if (quoteFormErrors.price) setQuoteFormErrors(prev => ({ ...prev, price: undefined }));
                   }}
                   className={inputCls + (quoteFormErrors.price ? ' border-red-400' : '')}
-                  placeholder="Enter total amount before GST"
+                  placeholder="Price per unit"
                 />
+                {quoteForm.price > 0 && quoteForm.quantity > 1 && (
+                  <p className="text-[11px] text-[#059669] font-semibold mt-1 m-0">
+                    Total: ₹{computedTotalPrice.toLocaleString('en-IN')} ({quoteForm.quantity} × ₹{quoteForm.price.toLocaleString('en-IN')})
+                  </p>
+                )}
                 {quoteFormErrors.price && <p className="text-[11px] text-red-500 mt-1 m-0">{quoteFormErrors.price}</p>}
               </div>
               <div>
@@ -1105,8 +1131,12 @@ const ChatInbox: React.FC = () => {
               </div>
               {/* Live breakdown */}
               <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-4 py-3 flex flex-col gap-1.5">
+                <div className="flex justify-between text-xs text-[#94a3b8]">
+                  <span>Unit Price × Qty</span>
+                  <span>₹{quoteForm.price.toLocaleString('en-IN')} × {quoteForm.quantity}</span>
+                </div>
                 <div className="flex justify-between text-xs text-[#475569]">
-                  <span>Amount</span><span className="font-semibold">₹{quoteForm.price.toLocaleString('en-IN')}</span>
+                  <span>Total Price (before GST)</span><span className="font-semibold">₹{computedTotalPrice.toLocaleString('en-IN')}</span>
                 </div>
                 {quoteForm.gstType !== 'exempt' ? (
                   quoteForm.gstType === 'IGST' ? (
@@ -1130,7 +1160,7 @@ const ChatInbox: React.FC = () => {
                 className="px-5 py-2 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90"
                 onClick={() => {
                   const errors: { price?: string; deliveryTimeline?: string } = {};
-                  if (!quoteForm.price || quoteForm.price <= 0) errors.price = 'Amount is required';
+                  if (!quoteForm.price || quoteForm.price <= 0) errors.price = 'Per unit price is required';
                   if (!quoteForm.deliveryTimeline.trim()) errors.deliveryTimeline = 'Delivery timeline is required';
                   if (Object.keys(errors).length > 0) { setQuoteFormErrors(errors); return; }
                   setQuoteFormErrors({});

@@ -127,6 +127,8 @@ const Onboarding: React.FC = () => {
   const [gstinDocument, setGstinDocument] = useState<File | null>(null);
   const [gstinDocumentUrl, setGstinDocumentUrl] = useState('');
   const [commissionRate, setCommissionRate] = useState('');
+  const [returnPolicyType, setReturnPolicyType] = useState('');
+  const [returnPolicyCustomTerms, setReturnPolicyCustomTerms] = useState('');
 
   // Bank Details State
   const [accountHolderName, setAccountHolderName] = useState('');
@@ -178,6 +180,8 @@ const Onboarding: React.FC = () => {
             if (bd.taxPaymentsCompliance) setTaxPaymentsCompliance(bd.taxPaymentsCompliance);
             if (bd.panDocument) setPanDocumentUrl(bd.panDocument);
             if (bd.gstinDocument) setGstinDocumentUrl(bd.gstinDocument);
+            if (bd.returnPolicyType) setReturnPolicyType(bd.returnPolicyType);
+            if (bd.returnPolicyCustomTerms) setReturnPolicyCustomTerms(bd.returnPolicyCustomTerms);
           }
           if (data.supplier.commissionRate) setCommissionRate(data.supplier.commissionRate.toString());
           if (data.supplier.banks && data.supplier.banks.length > 0) {
@@ -277,6 +281,8 @@ const Onboarding: React.FC = () => {
       if (!fssaiLicenseNumber.trim() || fssaiLicenseNumber.length !== 14) newErrs.fssaiLicenseNumber = "FSSAI License Number must be exactly 14 digits";
       if (!fssaiCertificate && !fssaiCertificateUrl) newErrs.fssaiCertificate = "FSSAI Certificate is required for food products";
     }
+    if (!returnPolicyType) newErrs.returnPolicyType = "Please select a return & refund policy";
+    if (returnPolicyType === 'custom' && !returnPolicyCustomTerms.trim()) newErrs.returnPolicyCustomTerms = "Please describe your custom return terms";
     setErrors(newErrs);
     return Object.keys(newErrs).length === 0;
   };
@@ -396,7 +402,7 @@ const Onboarding: React.FC = () => {
           setFssaiCertificateUrl(finalCertUrl);
           setFssaiCertificate(null);
         }
-        await supplierService.saveDraft({ ownerName, email, address, pinCode, state, city, gstin, pan, panDocument: panDocumentUrl, gstinDocument: gstinDocumentUrl, about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber, fssaiCertificate: finalCertUrl, isWomenEntrepreneur });
+        await supplierService.saveDraft({ ownerName, email, address, pinCode, state, city, gstin, pan, panDocument: panDocumentUrl, gstinDocument: gstinDocumentUrl, about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber, fssaiCertificate: finalCertUrl, isWomenEntrepreneur, returnPolicyType, returnPolicyCustomTerms });
         setCurrentStep(4);
       } else if (currentStep === 4) {
         if (!validateBusinessScale()) return;
@@ -410,7 +416,7 @@ const Onboarding: React.FC = () => {
         await supplierService.saveDraft({
           ownerName, email, address, pinCode, state, city, gstin, pan, panDocument: panDocumentUrl, gstinDocument: gstinDocumentUrl,
           about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber,
-          fssaiCertificate: fssaiCertificateUrl, isWomenEntrepreneur,
+          fssaiCertificate: fssaiCertificateUrl, isWomenEntrepreneur, returnPolicyType, returnPolicyCustomTerms,
           annualTurnover: parseInt(annualTurnover),
           monthlyProductionCapacity: parseInt(monthlyProductionCapacity),
           taxFilingMethod, taxFilingDetails: finalTaxDocUrl, taxPaymentsCompliance
@@ -427,7 +433,7 @@ const Onboarding: React.FC = () => {
         const kycData = await supplierService.submitKYC({
           ownerName, email, address, pinCode, state, city, gstin, pan, panDocument: panDocumentUrl, gstinDocument: gstinDocumentUrl,
           about, yearOfEstablishment, isFoodSupplier, fssaiLicenseNumber,
-          fssaiCertificate: fssaiCertificateUrl, isWomenEntrepreneur,
+          fssaiCertificate: fssaiCertificateUrl, isWomenEntrepreneur, returnPolicyType, returnPolicyCustomTerms,
           annualTurnover: parseInt(annualTurnover),
           monthlyProductionCapacity: parseInt(monthlyProductionCapacity),
           taxFilingMethod, taxFilingDetails: taxFilingDetailsUrl, taxPaymentsCompliance,
@@ -692,6 +698,49 @@ const Onboarding: React.FC = () => {
                 </label>
                 {isWomenEntrepreneur && (
                   <p className="text-xs text-[#c2410c] ml-6 m-0">Women-led businesses receive priority onboarding support and platform visibility benefits.</p>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className={labelCls}>Return & Refund Policy <span className="text-[#dc2626]">*</span></label>
+                <p className="text-xs text-[#64748b] -mt-1 mb-1">This will be visible to buyers on your product listings.</p>
+                <div className="flex flex-col gap-2">
+                  {[
+                    { value: 'return_available', label: 'Return Available', desc: 'You accept returns from buyers' },
+                    { value: 'no_return', label: 'No Return Policy', desc: 'All sales are final, no returns accepted' },
+                    { value: 'custom', label: 'Custom Return Terms', desc: 'Specify your own return conditions' },
+                  ].map(opt => (
+                    <label
+                      key={opt.value}
+                      className={`flex items-start gap-3 p-3 border rounded-[8px] cursor-pointer transition-colors ${returnPolicyType === opt.value ? 'border-primary bg-[#fff7ed]' : 'border-[#e2e8f0] hover:border-primary/50'}`}
+                    >
+                      <input
+                        type="radio"
+                        name="returnPolicyType"
+                        value={opt.value}
+                        checked={returnPolicyType === opt.value}
+                        onChange={() => { setReturnPolicyType(opt.value); setErrors(prev => ({ ...prev, returnPolicyType: '' })); }}
+                        className="mt-0.5 accent-primary"
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-[#1e293b] m-0">{opt.label}</p>
+                        <p className="text-xs text-[#64748b] m-0">{opt.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {errors.returnPolicyType && <span className={errorTextCls}>{errors.returnPolicyType}</span>}
+                {returnPolicyType === 'custom' && (
+                  <div className="mt-2">
+                    <textarea
+                      className={inputCls(!!errors.returnPolicyCustomTerms)}
+                      value={returnPolicyCustomTerms}
+                      onChange={e => { setReturnPolicyCustomTerms(e.target.value); setErrors(prev => ({ ...prev, returnPolicyCustomTerms: '' })); }}
+                      placeholder="e.g. Returns accepted within 7 days of delivery for defective items only. Contact us within 48 hours of receipt."
+                      rows={3}
+                    />
+                    {errors.returnPolicyCustomTerms && <span className={errorTextCls}>{errors.returnPolicyCustomTerms}</span>}
+                  </div>
                 )}
               </div>
 
@@ -1021,7 +1070,7 @@ const Onboarding: React.FC = () => {
                   </div>
                 )}
                 {commissionRate && parseFloat(commissionRate) > 2 && (
-                   <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] p-3 text-xs text-[#059669] mt-1 font-semibold leading-relaxed">
+                  <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] p-3 text-xs text-[#059669] mt-1 font-semibold leading-relaxed">
                     Excellent! This highly competitive commission rate will maximize your product ranking and visibility across the AMJSTAR platform!
                   </div>
                 )}
@@ -1029,9 +1078,9 @@ const Onboarding: React.FC = () => {
 
               <div className="flex gap-3 mt-4">
                 <button onClick={() => setCurrentStep(5)} className={outlineBtnCls}>Back</button>
-                <button 
-                  onClick={submitStep} 
-                  disabled={loading || !commissionRate || isNaN(parseFloat(commissionRate)) || parseFloat(commissionRate) <= 0} 
+                <button
+                  onClick={submitStep}
+                  disabled={loading || !commissionRate || isNaN(parseFloat(commissionRate)) || parseFloat(commissionRate) <= 0}
                   className={orangeBtnCls}
                 >
                   {loading ? 'Submitting...' : 'Complete Onboarding'} <Check size={18} />
@@ -1073,7 +1122,7 @@ const Onboarding: React.FC = () => {
             {isRejected && (
               <div className="w-full text-center flex flex-col gap-3 my-4 text-sm text-[#475569]">
                 <p className="m-0">Need help? Contact our support team:</p>
-                <p className="m-0 text-base"><strong>Phone: +91 xxxxxxxx</strong></p>
+                <p className="m-0 text-base"><strong>Phone: +91 9034440682</strong></p>
                 <p className="m-0 text-xs text-[#94a3b8]">Or update your details and try again.</p>
                 <Button onClick={handleReapply} className="w-full mt-2" variant="outline">Update &amp; Reapply</Button>
               </div>

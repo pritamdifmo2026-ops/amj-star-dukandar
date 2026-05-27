@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart,
-  CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck
+  CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck, RotateCcw
 } from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
@@ -148,6 +148,17 @@ const ProductDetail: React.FC = () => {
   const hasSpecs = product.countryOfOrigin || product.leadTime || product.packagingType || product.packagingSize ||
     product.hsnCode || (product.specifications && Object.keys(product.specifications).length > 0);
   const hasCerts = product.certifications && product.certifications.length > 0;
+
+  const returnPolicyLabel: Record<string, string> = {
+    return_available: 'Return Available',
+    no_return: 'No Return Policy',
+    custom: 'Custom Terms',
+  };
+  const returnPolicyColor: Record<string, string> = {
+    return_available: 'bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]',
+    no_return: 'bg-[#fef2f2] text-[#b91c1c] border-[#fecaca]',
+    custom: 'bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]',
+  };
 
   return (
     <div className={pageCls}>
@@ -396,6 +407,28 @@ const ProductDetail: React.FC = () => {
                     </div>
                   )}
                 </>
+              )}
+
+              {/* Return & Refund Policy */}
+              {product.supplierReturnPolicyType && (
+                <div className="mt-2">
+                  <h2 className="text-base font-bold text-heading mb-4 flex items-center gap-2">
+                    <RotateCcw size={16} /> Return & Refund Policy
+                  </h2>
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 border rounded-full text-xs font-semibold mb-3 ${returnPolicyColor[product.supplierReturnPolicyType] || 'bg-cream text-body border-border'}`}>
+                    <RotateCcw size={11} />
+                    {returnPolicyLabel[product.supplierReturnPolicyType] || product.supplierReturnPolicyType}
+                  </div>
+                  {product.supplierReturnPolicyType === 'return_available' && (
+                    <p className="text-sm text-body">This supplier accepts returns. Contact the supplier for specific return conditions and timelines.</p>
+                  )}
+                  {product.supplierReturnPolicyType === 'no_return' && (
+                    <p className="text-sm text-body">This supplier does not accept returns. All sales are final. Please review your order carefully before confirming.</p>
+                  )}
+                  {product.supplierReturnPolicyType === 'custom' && product.supplierReturnPolicyCustomTerms && (
+                    <p className="text-sm text-body leading-[1.7]">{product.supplierReturnPolicyCustomTerms}</p>
+                  )}
+                </div>
               )}
             </div>
           )}
