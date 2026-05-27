@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toast } from 'react-hot-toast';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import {
   User, Package, MapPin, CreditCard, Settings, Bell, Heart,
   X, Mail, Phone, ShoppingBag,
@@ -46,6 +46,10 @@ const Profile: React.FC = () => {
   const wishlistItems = useAppSelector((state) => state.wishlist.items);
   const dispatch = useAppDispatch();
 
+  if (user?.role === 'admin' || user?.role === 'superadmin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
   const activeTab = searchParams.get('tab') || 'overview';
   const setActiveTab = (tab: string) => setSearchParams({ tab });
 
@@ -59,16 +63,6 @@ const Profile: React.FC = () => {
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
-  const [editAddrCity, setEditAddrCity] = useState(user?.address?.city || '');
-  const [editAddrState, setEditAddrState] = useState(user?.address?.state || '');
-  const [editAddrPincode, setEditAddrPincode] = useState(user?.address?.pincode || '');
-  const [editAddrFull, setEditAddrFull] = useState(user?.address?.fullAddress || '');
-
-  const [isChangingPhone, setIsChangingPhone] = useState(false);
-  const [newPhone, setNewPhone] = useState('');
-  const [showOtpInput, setShowOtpInput] = useState(false);
-  const [phoneOtp, setPhoneOtp] = useState('');
-
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [enquiryForm, setEnquiryForm] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', message: '' });
   const [enquirySubmitting, setEnquirySubmitting] = useState(false);
@@ -322,11 +316,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  const handleSendPhoneOtp = () => {
-    if (newPhone.length >= 10) setShowOtpInput(true);
-    else toast.error('Please enter a valid 10-digit phone number');
-  };
-
   const handleEnquirySubmit = async () => {
     if (!enquiryForm.name.trim() || !enquiryForm.phone.trim() || !enquiryForm.message.trim()) {
       toast.error('Please fill in all required fields.');
@@ -341,24 +330,6 @@ const Profile: React.FC = () => {
       toast.error('Failed to submit. Please try again.');
     } finally {
       setEnquirySubmitting(false);
-    }
-  };
-
-  const handleVerifyPhoneOtp = async () => {
-    if (phoneOtp === '123456' && user) {
-      try {
-        const response = await authService.updateProfile({ phone: newPhone });
-        dispatch(setCredentials({ user: response.user }));
-        setIsChangingPhone(false);
-        setShowOtpInput(false);
-        setNewPhone('');
-        setPhoneOtp('');
-        toast.success('Phone number updated successfully!');
-      } catch (err) {
-        toast.error('Failed to update phone number.');
-      }
-    } else {
-      toast.error('Invalid OTP. Please use 123456 for testing.');
     }
   };
 
@@ -381,8 +352,6 @@ const Profile: React.FC = () => {
 
 
 
-  const currentMenuItem = menuItems.find(i => i.id === activeTab);
-  const CurrentIcon = currentMenuItem?.icon;
 
 
 
@@ -506,7 +475,7 @@ const Profile: React.FC = () => {
                         <span>{user?.phone || 'Not provided'}</span>
                         <button
                           className="text-[10px] font-bold text-white/40 bg-transparent border-none cursor-pointer hover:text-white p-0 transition-colors"
-                          onClick={() => setIsChangingPhone(true)}
+                          onClick={() => toast('Phone update coming soon.')}
                         >
                           Update
                         </button>
