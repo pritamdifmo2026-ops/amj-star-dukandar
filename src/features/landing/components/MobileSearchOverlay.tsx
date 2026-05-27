@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, X, Loader2, Filter, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Search, X, Loader2, Filter, ShieldCheck, Phone, MessageCircle } from 'lucide-react';
 import { productApi } from '@/features/product/services/product.api';
 import { ROUTES } from '@/shared/constants/routes';
 import type { Product } from '@/features/product/types';
@@ -293,13 +293,16 @@ const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({ categories, o
           </div>
         ) : (
           /* No results */
-          <div className="flex-1 flex flex-col items-center justify-center py-16 text-center px-4 max-w-[280px] mx-auto">
-            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3 text-red-500">
-              <X size={20} />
+          <div className="flex-1 flex flex-col items-center justify-center py-10 text-center px-4 max-w-[300px] mx-auto">
+            <div className="w-14 h-14 rounded-full bg-orange-50 flex items-center justify-center mb-3">
+              <Search size={22} className="text-primary" />
             </div>
-            <p className="text-xs font-extrabold m-0 text-heading">No products found for "{query}"</p>
-            {spellSuggestion ? (
-              <p className="text-[11px] text-body m-0 mt-3">
+            <p className="text-sm font-extrabold m-0 text-heading mb-1">No products found for &ldquo;{query}&rdquo;</p>
+            <p className="text-[11px] text-body m-0 mb-2">We couldn&apos;t find this in our catalogue right now.</p>
+            <p className="text-[11px] font-semibold text-body mb-5">Our team will contact you soon!</p>
+
+            {spellSuggestion && (
+              <p className="text-[11px] text-body mb-4">
                 Did you mean:{' '}
                 <button
                   type="button"
@@ -310,9 +313,27 @@ const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({ categories, o
                 </button>
                 ?
               </p>
-            ) : (
-              <span className="text-[10px] text-body mt-1">Try checking your spelling or use more general terms.</span>
             )}
+
+            <div className="flex flex-col gap-2.5 w-full">
+              <a
+                href="tel:+919034440673"
+                className="flex items-center justify-center gap-2 w-full py-2.5 bg-white border-2 border-primary text-primary rounded-[10px] font-bold text-xs hover:bg-primary hover:text-white transition-all no-underline"
+              >
+                <Phone size={14} />
+                +91 90344 40673
+              </a>
+              <a
+                href={`https://wa.me/919034440673?text=Hi%2C%20I%20was%20looking%20for%20%22${encodeURIComponent(query)}%22%20on%20AMJ%20Star%20Dukandar%20but%20couldn't%20find%20it.%20Can%20you%20help%3F`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#25D366] text-white rounded-[10px] font-bold text-xs hover:bg-[#1db954] transition-all no-underline"
+              >
+                <MessageCircle size={14} />
+                Chat on WhatsApp
+              </a>
+            </div>
+            <p className="text-[10px] text-muted mt-4">Helpline: Mon–Sat, 9am–6pm</p>
           </div>
         )}
       </div>

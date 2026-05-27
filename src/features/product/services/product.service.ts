@@ -2,6 +2,7 @@ import apiClient from '@/api/client';
 
 export interface ProductInput {
   name: string;
+  sku?: string;
   description: string;
   basePrice: number;
   moq: number;

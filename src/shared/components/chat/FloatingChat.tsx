@@ -343,7 +343,14 @@ export const FloatingChat: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center px-3 py-2 bg-gray-50 border-b border-gray-100">
           <span className="text-[12px] font-extrabold text-slate-800">Quotation</span>
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
+          <div className="flex items-center gap-1.5">
+            {quote.priceTag && (
+              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm bg-red-100 text-red-700 uppercase tracking-wide border border-red-200">
+                {quote.priceTag}
+              </span>
+            )}
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
+          </div>
         </div>
 
         {/* Items + Totals */}
@@ -653,7 +660,7 @@ export const FloatingChat: React.FC = () => {
                     );
                   }
                   return (
-                    <div key={msg._id || idx} className={`max-w-[80%] px-3 py-2 rounded-[8px] text-[0.9rem] leading-snug relative ${isMine ? 'self-end bg-primary text-white rounded-br-[2px]' : 'self-start bg-cream text-gray-800 rounded-bl-[4px] shadow-sm'}`}>
+                    <div key={msg._id || idx} className={`whitespace-pre-wrap leading-snug max-w-[80%] px-3 py-2 rounded-[8px] text-[0.9rem] relative ${isMine ? 'self-end bg-primary text-white rounded-br-[2px]' : 'self-start bg-cream text-gray-800 rounded-bl-[4px] shadow-sm'}`}>
                       <div className="mb-0.5">{msg.text}</div>
                       {isMine && (
                         <div className="flex justify-end text-[10px] opacity-70">

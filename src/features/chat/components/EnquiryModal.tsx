@@ -8,6 +8,7 @@ interface EnquiryModalProps {
   productName: string;
   basePrice: number;
   moq: number;
+  stock: number;
   unit: string;
   onSubmit: (enquiry: EnquiryPayload) => Promise<void>;
   onClose: () => void;
@@ -43,7 +44,7 @@ const chip = (active: boolean) =>
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors bg-white";
 
 const EnquiryModal: React.FC<EnquiryModalProps> = ({
-  productName, basePrice, moq, unit, onSubmit, onClose,
+  productName, basePrice, moq, stock, unit, onSubmit, onClose,
 }) => {
   const user = useSelector((state: any) => state.auth.user);
   const dispatch = useDispatch();
@@ -76,14 +77,14 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const qtyOptions = [moq, moq * 2, moq * 5].filter((v, i, a) => a.indexOf(v) === i);
+  const qtyOptions = [moq, moq * 2, moq * 5].filter((v, i, a) => a.indexOf(v) === i && v <= stock);
   const finalQty = useCustomQty ? Number(customQty) || moq : quantity;
   const finalPrice = priceMode === 'custom' ? Number(customPrice) || null : null;
 
   const newAddrValid = city.trim() !== '' && state.trim() !== '' && /^\d{6}$/.test(pincode.trim());
 
   const canProceed = () => {
-    if (step === 1) return useCustomQty ? Number(customQty) >= 1 : true;
+    if (step === 1) return (useCustomQty ? Number(customQty) >= 1 && Number(customQty) <= stock : quantity <= stock);
     if (step === 2) return priceMode !== 'custom' || Number(customPrice) > 0;
     if (step === 3) return addrMode === 'saved' || newAddrValid;
     return true;
@@ -178,7 +179,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
             <div className="flex flex-col gap-4">
               <div>
                 <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">How much do you need?</h3>
-                <p className="text-xs text-[#94a3b8] m-0">Minimum order: {moq} {unit}s</p>
+                <p className="text-xs text-[#94a3b8] m-0">Minimum order: {moq} {unit}s | Available: {stock} {unit}s</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {qtyOptions.map(q => (
@@ -188,13 +189,16 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                 ))}
                 <button onClick={() => setUseCustomQty(true)} className={chip(useCustomQty)}>Custom…</button>
               </div>
-              {useCustomQty && (
-                <div className="flex items-center border border-[#e2e8f0] rounded-[8px] bg-white focus-within:border-primary transition-colors">
-                  <input autoFocus type="number" min={1} value={customQty} onChange={e => setCustomQty(e.target.value)}
-                    placeholder={`Min ${moq}`} className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent" />
-                  <span className="px-3 text-sm text-[#94a3b8] font-semibold border-l border-[#e2e8f0]">{unit}s</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center border border-[#e2e8f0] rounded-[8px] bg-white focus-within:border-primary transition-colors">
+                    <input autoFocus type="number" min={1} max={stock} value={customQty} onChange={e => setCustomQty(e.target.value)}
+                      placeholder={`Min ${moq}, Max ${stock}`} className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent" />
+                    <span className="px-3 text-sm text-[#94a3b8] font-semibold border-l border-[#e2e8f0]">{unit}s</span>
+                  </div>
+                  {Number(customQty) > stock && (
+                    <p className="text-[10px] text-[#ef4444] m-0 font-medium">Quantity exceeds available stock ({stock} {unit}s).</p>
+                  )}
                 </div>
-              )}
             </div>
           )}
 

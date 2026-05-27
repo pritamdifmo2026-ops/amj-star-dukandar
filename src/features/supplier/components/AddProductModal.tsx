@@ -23,6 +23,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
   const [categories, setCategories] = useState<any[]>([]);
   const [formData, setFormData] = useState<ProductInput>({
     name: '',
+    sku: '',
     description: '',
     hsnCode: '',
     basePrice: 0,
@@ -43,6 +44,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
     if (editingProduct) {
       setFormData({
         name: editingProduct.name || '',
+        sku: editingProduct.sku || '',
         description: editingProduct.description || '',
         hsnCode: editingProduct.hsnCode || '',
         basePrice: editingProduct.basePrice || 0,
@@ -54,6 +56,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
     } else {
       setFormData({
         name: '',
+        sku: '',
         description: '',
         hsnCode: '',
         basePrice: 0,
@@ -167,13 +170,18 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ isOpen, onClose, onSu
             <input className={inputCls} type="text" value={formData.hsnCode} onChange={e => setFormData({ ...formData, hsnCode: e.target.value })} placeholder="e.g. 5208" required />
           </div>
           <div className="flex flex-col gap-1">
-            <label className={labelCls}>Category</label>
-            <select className={inputCls} value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+            <label className={labelCls}>SKU (Optional)</label>
+            <input className={inputCls} type="text" value={formData.sku || ''} onChange={e => setFormData({ ...formData, sku: e.target.value })} placeholder="Stock Keeping Unit" />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className={labelCls}>Category</label>
+          <select className={inputCls} value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
               {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
               {categories.length === 0 && <option value="">Loading categories...</option>}
             </select>
           </div>
-        </div>
 
         <div className="flex flex-col gap-1">
           <label className={labelCls}>Description</label>

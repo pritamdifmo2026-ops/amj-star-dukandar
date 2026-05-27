@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Filter, SlidersHorizontal, X, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Filter, SlidersHorizontal, X, ChevronDown, ShieldCheck, Phone, MessageCircle, SearchX } from 'lucide-react';
 import { useNavigate, useSearchParams, useLocation, useNavigationType } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants/routes';
 import { useProducts } from '../hooks/useProducts';
@@ -462,7 +462,39 @@ const ProductList: React.FC = () => {
                 ) : isError ? (
                   <ErrorState onRetry={() => refetch()} />
                 ) : products.length === 0 ? (
-                  <EmptyState title={searchQuery ? `No products found for "${searchQuery}"` : 'No products match your filters.'} />
+                  searchQuery ? (
+                    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                      <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-5">
+                        <SearchX size={36} className="text-primary" />
+                      </div>
+                      <h2 className="text-xl font-extrabold text-heading mb-2">No products found for &ldquo;{searchQuery}&rdquo;</h2>
+                      <p className="text-sm text-muted mb-1 max-w-[420px]">We couldn&apos;t find this product in our catalogue right now.</p>
+                      <p className="text-sm font-semibold text-body mb-8 max-w-[420px]">Our team will contact you soon and help you source it!</p>
+
+                      <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
+                        <a
+                          href="tel:+919034440673"
+                          className="flex items-center gap-2.5 px-5 py-3 bg-white border-2 border-primary text-primary rounded-[10px] font-bold text-sm hover:bg-primary hover:text-white transition-all no-underline"
+                        >
+                          <Phone size={17} />
+                          +91 90344 40673
+                        </a>
+                        <a
+                          href="https://wa.me/919034440673?text=Hi%2C%20I%20was%20looking%20for%20%22{encodeURIComponent(searchQuery)}%22%20on%20AMJ%20Star%20Dukandar%20but%20couldn't%20find%20it.%20Can%20you%20help%3F"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2.5 px-5 py-3 bg-[#25D366] text-white rounded-[10px] font-bold text-sm hover:bg-[#1db954] transition-all no-underline"
+                        >
+                          <MessageCircle size={17} />
+                          Chat on WhatsApp
+                        </a>
+                      </div>
+
+                      <p className="text-xs text-muted mt-6">Helpline available Mon–Sat, 9am–6pm</p>
+                    </div>
+                  ) : (
+                    <EmptyState title="No products match your filters." />
+                  )
                 ) : (
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6 max-sm:grid-cols-2 max-sm:gap-3">
                     {products.map((product: any) => (

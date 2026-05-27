@@ -153,6 +153,7 @@ const ChatInbox: React.FC = () => {
     deliveryTimeline: '',
     shippingNotes: '',
     terms: 'Standard delivery terms apply.',
+    priceTag: '' as '' | 'Best Price' | 'Last Price',
   });
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -290,6 +291,7 @@ const ChatInbox: React.FC = () => {
       deliveryTimeline: quoteForm.deliveryTimeline || undefined,
       shippingNotes: quoteForm.shippingNotes || undefined,
       terms: quoteForm.terms,
+      priceTag: quoteForm.priceTag || undefined,
     };
     try {
       const result = editingQuoteId
@@ -460,6 +462,7 @@ const ChatInbox: React.FC = () => {
         deliveryTimeline: quote.deliveryTimeline || '',
         shippingNotes: quote.shippingNotes || '',
         terms: quote.terms || 'Standard delivery terms apply.',
+        priceTag: quote.priceTag || '',
       });
       setEditingQuoteId(quote._id);
       setQuoteFormErrors({});
@@ -520,7 +523,14 @@ const ChatInbox: React.FC = () => {
       <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden min-w-[260px] max-w-[340px]">
         <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
           <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
+          <div className="flex items-center gap-1.5">
+            {quote.priceTag && (
+              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm bg-red-100 text-red-700 uppercase tracking-wide border border-red-200">
+                {quote.priceTag}
+              </span>
+            )}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
+          </div>
         </div>
 
 
@@ -869,7 +879,7 @@ const ChatInbox: React.FC = () => {
                         <div className="flex-1 h-px bg-[#e2e8f0]" />
                       </div>
                     ) : (
-                      <div className={`max-w-[70%] px-4 py-2.5 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
+                      <div className={`whitespace-pre-wrap leading-relaxed max-w-[75%] px-4 py-2.5 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
                         {msg.text}
                       </div>
                     )}
@@ -1080,6 +1090,18 @@ const ChatInbox: React.FC = () => {
               <div>
                 <label className={labelCls}>Terms & Conditions</label>
                 <textarea rows={2} value={quoteForm.terms} onChange={e => setQuoteForm({ ...quoteForm, terms: e.target.value })} className={inputCls + " resize-none"} />
+              </div>
+              <div>
+                <label className={labelCls}>Price Highlight (Optional)</label>
+                <div className="flex gap-2">
+                  {(['', 'Best Price', 'Last Price'] as const).map(t => (
+                    <button key={t || 'none'} type="button"
+                      className={`flex-1 py-2 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${quoteForm.priceTag === t ? 'bg-primary text-white border-primary' : 'bg-white text-[#475569] border-[#e2e8f0] hover:border-primary'}`}
+                      onClick={() => setQuoteForm({ ...quoteForm, priceTag: t })}>
+                      {t || 'None'}
+                    </button>
+                  ))}
+                </div>
               </div>
               {/* Live breakdown */}
               <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-4 py-3 flex flex-col gap-1.5">

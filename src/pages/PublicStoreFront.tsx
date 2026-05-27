@@ -180,7 +180,7 @@ const StorefrontProductCard: React.FC<{ product: any }> = ({ product }) => {
           onClick={handleEnquire}
           className="w-full text-[11px] sm:text-xs font-bold py-1.5 sm:py-2 rounded-[8px] bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa] hover:bg-[#e65c00] hover:text-white transition-all cursor-pointer"
         >
-          Enquire Now
+          For Bulk Purchase
         </button>
       </div>
     </Link>

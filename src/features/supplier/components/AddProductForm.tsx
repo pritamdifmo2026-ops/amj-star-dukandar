@@ -353,6 +353,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
           setFormData({
             name: editingProduct.name || '',
+            sku: editingProduct.sku || '',
             description: editingProduct.description || '',
             hsnCode: editingProduct.hsnCode || '',
             basePrice: editingProduct.basePrice || 0,
@@ -547,6 +548,10 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                 <div>
                   <label className={labelCls}>Brand / Make</label>
                   <input className={inputCls} type="text" value={formData.brand ?? ''} onChange={e => setFormData({ ...formData, brand: e.target.value })} placeholder="e.g. Reliance, own brand, etc." />
+                </div>
+                <div>
+                  <label className={labelCls}>SKU (Optional)</label>
+                  <input className={inputCls} type="text" value={formData.sku ?? ''} onChange={e => setFormData({ ...formData, sku: e.target.value })} placeholder="Stock Keeping Unit" />
                 </div>
               </div>
 

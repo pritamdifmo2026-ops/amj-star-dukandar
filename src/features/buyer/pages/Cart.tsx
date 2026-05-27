@@ -26,8 +26,9 @@ const Cart: React.FC = () => {
     if (user) dispatch(fetchCart());
   }, [dispatch, user]);
 
-  const handleUpdateQty = (productId: string, newQty: number) => {
-    if (newQty < 1) return;
+  const handleUpdateQty = (productId: string, newQty: number, moq: number = 1, stock?: number) => {
+    if (newQty < moq) return;
+    if (stock !== undefined && newQty > stock) return;
     dispatch(updateQuantityAsync({ productId, quantity: newQty }));
   };
 
@@ -131,15 +132,17 @@ const Cart: React.FC = () => {
                   <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 mt-3 pt-3 border-t border-[#f1f5f9] sm:mt-0 sm:pt-0 sm:border-t-0 shrink-0">
                     <div className="flex items-center border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white shadow-sm">
                       <button
-                        className="w-8 h-8 flex items-center justify-center text-[#475569] hover:bg-[#f8fafc] border-none cursor-pointer bg-white"
-                        onClick={() => handleUpdateQty(item.productId, item.quantity - 1)}
+                        className={`w-8 h-8 flex items-center justify-center border-none transition-colors ${item.quantity <= (item.moq || 1) ? 'text-[#cbd5e1] bg-[#f8fafc] cursor-not-allowed' : 'text-[#475569] hover:bg-[#f8fafc] cursor-pointer bg-white'}`}
+                        onClick={() => handleUpdateQty(item.productId, item.quantity - 1, item.moq)}
+                        disabled={item.quantity <= (item.moq || 1)}
                       >
                         <Minus size={14} />
                       </button>
                       <span className="w-10 text-center text-sm font-bold text-[#0f172a] border-x border-[#e2e8f0]">{item.quantity}</span>
                       <button
-                        className="w-8 h-8 flex items-center justify-center text-[#475569] hover:bg-[#f8fafc] border-none cursor-pointer bg-white"
-                        onClick={() => handleUpdateQty(item.productId, item.quantity + 1)}
+                        className={`w-8 h-8 flex items-center justify-center border-none transition-colors ${item.stock !== undefined && item.quantity >= item.stock ? 'text-[#cbd5e1] bg-[#f8fafc] cursor-not-allowed' : 'text-[#475569] hover:bg-[#f8fafc] cursor-pointer bg-white'}`}
+                        onClick={() => handleUpdateQty(item.productId, item.quantity + 1, item.moq, item.stock)}
+                        disabled={item.stock !== undefined && item.quantity >= item.stock}
                       >
                         <Plus size={14} />
                       </button>

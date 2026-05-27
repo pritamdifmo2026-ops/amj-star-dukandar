@@ -51,7 +51,10 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
                   ) : (
                     <div className="w-11 h-11 rounded-[10px] bg-[#f1f5f9]" />
                   )}
-                  <span>{product.name}</span>
+                  <div className="flex flex-col">
+                    <span>{product.name}</span>
+                    {product.sku && <span className="text-xs text-[#94a3b8]">SKU: {product.sku}</span>}
+                  </div>
                 </div>
               </td>
               <td className="px-4 py-5 border-b border-[#f8fafc] text-[0.95rem] text-[#334155]">₹{product.basePrice}</td>

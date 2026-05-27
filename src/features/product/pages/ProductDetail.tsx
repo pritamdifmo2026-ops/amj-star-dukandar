@@ -116,8 +116,7 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
     if (isAdmin) { setShowAdminModal(true); return; }
     if (isInCart) { navigate(ROUTES.CART); return; }
-    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
-    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage }));
+    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage, moq: product.minOrderQty, stock: product.stock }));
   };
 
   const handleBuyNow = () => {
@@ -133,7 +132,8 @@ const ProductDetail: React.FC = () => {
           quantity: product.minOrderQty,
           unit: product.unit,
           supplierId: product.supplierId,
-          imageUrl: currentImage
+          imageUrl: currentImage,
+          moq: product.minOrderQty
         }
       }
     });
@@ -251,6 +251,15 @@ const ProductDetail: React.FC = () => {
                     <span className="block text-xs text-muted">Min. Order</span>
                   </div>
                 </div>
+                <div className="flex items-center gap-2.5">
+                  <Package size={17} className={product.stock >= product.minOrderQty ? "text-[#10b981]" : "text-[#ef4444]"} />
+                  <div>
+                    <strong className={`block text-sm ${product.stock >= product.minOrderQty ? "text-[#10b981]" : "text-[#ef4444]"}`}>
+                      {product.stock > 0 ? `${product.stock} ${product.unit}s Available` : 'Out of Stock'}
+                    </strong>
+                    <span className="block text-xs text-muted">Current Stock</span>
+                  </div>
+                </div>
                 {product.leadTime && (
                   <div className="flex items-center gap-2.5">
                     <Truck size={17} className="text-muted" />
@@ -264,14 +273,14 @@ const ProductDetail: React.FC = () => {
 
               {/* Action buttons */}
               <div className="flex flex-col sm:flex-row gap-3 mb-8">
-                <Button size="lg" onClick={handleAddToCart} className="flex-1 h-[52px] whitespace-nowrap">
+                <Button size="lg" onClick={handleAddToCart} disabled={product.stock < product.minOrderQty} className="flex-1 h-[52px] whitespace-nowrap">
                   <ShoppingCart size={18} /> {isInCart ? 'Go to Cart' : 'Add to Cart'}
                 </Button>
-                <Button size="lg" variant="primary" onClick={handleBuyNow} className="flex-1 h-[52px] whitespace-nowrap">
+                <Button size="lg" variant="primary" onClick={handleBuyNow} disabled={product.stock < product.minOrderQty} className="flex-1 h-[52px] whitespace-nowrap">
                   <CreditCard size={18} /> Buy Now
                 </Button>
                 <Button variant="outline" size="lg" onClick={handleContactSupplier} disabled={contactingSupplier} className="flex-1 h-[52px]">
-                  <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'Enquire Now'}
+                  <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'For Bulk Purchase'}
                 </Button>
               </div>
 
@@ -452,7 +461,7 @@ const ProductDetail: React.FC = () => {
                 {/* CTA */}
                 <div className="mt-6 pt-6 border-t border-border">
                   <Button onClick={handleContactSupplier} disabled={contactingSupplier} className="w-full">
-                    <MessageCircle size={16} /> {contactingSupplier ? 'Opening…' : 'Enquire Now'}
+                    <MessageCircle size={16} /> {contactingSupplier ? 'Opening…' : 'For Bulk Purchase'}
                   </Button>
                 </div>
               </div>
@@ -474,6 +483,7 @@ const ProductDetail: React.FC = () => {
           productName={product.name}
           basePrice={product.price}
           moq={product.minOrderQty}
+          stock={product.stock}
           unit={product.unit}
           onSubmit={handleEnquirySubmit}
           onClose={() => setShowEnquiryModal(false)}

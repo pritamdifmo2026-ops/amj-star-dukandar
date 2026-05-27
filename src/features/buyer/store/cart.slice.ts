@@ -9,6 +9,8 @@ export interface CartItem {
   unit: string;
   supplierId: string;
   imageUrl?: string;
+  moq: number;
+  stock?: number;
 }
 
 interface CartState {

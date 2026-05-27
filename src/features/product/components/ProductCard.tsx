@@ -41,7 +41,7 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products`); return; }
     dispatch(addToCartAsync({
       productId: currentProductId, name: product.name, price: product.price,
-      quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: product.imageUrl,
+      quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: product.imageUrl, moq: product.minOrderQty,
     }));
   };
 
