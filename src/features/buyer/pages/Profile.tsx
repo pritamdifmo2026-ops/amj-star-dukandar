@@ -22,6 +22,7 @@ import { orderApi } from '@/features/order/services/order.api';
 import Navbar from '@/features/landing/components/Navbar';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
+import AccountOverviewSection from '../components/AccountOverviewSection';
 import { addressApi } from '@/features/buyer/services/address.api';
 
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
@@ -373,13 +374,24 @@ const Profile: React.FC = () => {
     { id: 'contactus', label: 'Contact Us', icon: MessageCircle },
   ];
 
+
+
+
+
+
+
+
   const currentMenuItem = menuItems.find(i => i.id === activeTab);
   const CurrentIcon = currentMenuItem?.icon;
+
+
+
+
 
   const AvatarContent = () => (
     <>
       {isUploadingAvatar ? (
-        <Loader2 className="animate-spin text-[#94a3b8]" size={28} />
+        <Loader2 className="animate-spin text-white/70" size={24} />
       ) : user?.avatar ? (
         <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
       ) : (
@@ -390,463 +402,405 @@ const Profile: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-    <Navbar />
-    <div className="flex flex-1 min-h-0 bg-[#f8fafc] max-lg:flex-col">
-      <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b">
-        <div className="flex items-center justify-between p-5 border-b border-[#f1f5f9] max-lg:py-3 max-lg:px-4">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 max-lg:w-9 max-lg:h-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 overflow-hidden">
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-base max-lg:text-sm font-extrabold">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
-              )}
+      <Navbar />
+      <div className="flex flex-1 min-h-0 bg-[#f8fafc] max-lg:flex-col">
+        <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b">
+          <div className="flex items-center justify-between p-5 border-b border-[#f1f5f9] max-lg:py-3 max-lg:px-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 max-lg:w-9 max-lg:h-9 rounded-full bg-primary text-white flex items-center justify-center shrink-0 overflow-hidden">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-base max-lg:text-sm font-extrabold">{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</span>
+                )}
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-[#0f172a] m-0">{user?.name?.split(' ')[0] || 'Guest'}</h4>
+                <p className="text-xs text-[#64748b] m-0 capitalize">{user?.role || 'Buyer'}</p>
+              </div>
             </div>
-            <div>
-              <h4 className="text-sm font-bold text-[#0f172a] m-0">{user?.name?.split(' ')[0] || 'Guest'}</h4>
-              <p className="text-xs text-[#64748b] m-0 capitalize">{user?.role || 'Buyer'}</p>
-            </div>
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="hidden max-lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#dc2626] bg-[#fef2f2] border-none rounded-[6px] cursor-pointer hover:bg-[#fee2e2] transition-colors"
+            >
+              <LogOut size={13} />
+              <span>Sign Out</span>
+            </button>
           </div>
-          <button 
-            onClick={() => setShowLogoutModal(true)}
-            className="hidden max-lg:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#dc2626] bg-[#fef2f2] border-none rounded-[6px] cursor-pointer hover:bg-[#fee2e2] transition-colors"
-          >
-            <LogOut size={13} />
-            <span>Sign Out</span>
-          </button>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-lg:flex-none max-lg:overflow-visible">
-          <nav className="py-2 max-lg:flex max-lg:overflow-x-auto max-lg:py-1 max-lg:px-4 max-lg:scrollbar-none max-lg:gap-1">
-            {menuItems.map((item) => {
+          <div className="flex-1 overflow-y-auto py-2 max-lg:flex max-lg:overflow-x-auto max-lg:py-0 max-lg:border-b max-lg:border-[#eef2f6] [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+            {menuItems.map(item => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
               return (
-                <div
+                <button
                   key={item.id}
-                  className={`flex items-center gap-3 px-5 py-3 cursor-pointer transition-all text-sm whitespace-nowrap max-lg:px-4 max-lg:py-2.5 max-lg:gap-1.5 max-lg:rounded-t-[8px] ${
-                    isActive 
-                      ? 'bg-[#fff7ed] text-primary font-bold border-r-2 border-primary max-lg:border-r-0 max-lg:border-b-2' 
-                      : 'text-[#475569] hover:bg-[#f8fafc] hover:text-[#0f172a] font-medium'
-                  }`}
                   onClick={() => setActiveTab(item.id)}
+                  className={`w-full max-lg:w-auto shrink-0 flex items-center justify-between max-lg:justify-center px-5 py-3 max-lg:py-3.5 max-lg:px-4 text-sm transition-colors border-none cursor-pointer ${activeTab === item.id ? 'bg-[#fef2f2] max-lg:bg-transparent text-primary font-bold border-r-4 max-lg:border-r-0 max-lg:border-b-2 border-primary' : 'bg-transparent text-[#475569] hover:bg-[#f8fafc] max-lg:hover:bg-transparent font-semibold'}`}
                 >
-                  <Icon size={18} className="shrink-0 max-lg:w-4 max-lg:h-4" />
-                  <span className="flex-1">{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center ml-1">{item.badge}</span>
+                  <div className="flex items-center gap-3 max-lg:gap-2">
+                    <Icon size={18} className={activeTab === item.id ? 'text-primary' : 'text-[#94a3b8]'} />
+                    <span className="whitespace-nowrap">{item.label}</span>
+                  </div>
+                  {item.badge ? (
+                    <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center max-lg:ml-2">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  ) : (
+                    <ChevronRight size={16} className={`max-lg:hidden ${activeTab === item.id ? 'text-primary' : 'text-[#cbd5e1]'}`} />
                   )}
-                  <ChevronRight size={15} className="text-[#d1d5db] max-lg:hidden" />
-                </div>
+                </button>
               );
             })}
-          </nav>
-
-          <div className="p-4 border-t border-[#f1f5f9] max-lg:hidden">
-            <a
-              href={`tel:${HELPLINE_NUMBER}`}
-              className="flex items-center gap-3 px-3 py-2.5 mb-2 text-sm font-semibold text-[#0f172a] bg-[#fff7ed] rounded-[8px] no-underline hover:bg-[#ffedd5] transition-colors"
-            >
-              <Phone size={18} className="text-primary" />
-              <div className="min-w-0">
-                <span className="block text-[10px] uppercase tracking-wider text-[#94a3b8]">Helpline</span>
-                <span className="block">{HELPLINE_NUMBER}</span>
-              </div>
-            </a>
-            <a
-              href={`tel:${PAYMENT_HELPLINE_NUMBER}`}
-              className="flex items-center gap-3 px-3 py-2.5 mb-2 text-sm font-semibold text-[#0f172a] bg-[#f0fdf4] rounded-[8px] no-underline hover:bg-[#dcfce7] transition-colors"
-            >
-              <CreditCard size={18} className="text-[#16a34a]" />
-              <div className="min-w-0">
-                <span className="block text-[10px] uppercase tracking-wider text-[#94a3b8]">Payment Issues</span>
-                <span className="block">{PAYMENT_HELPLINE_NUMBER}</span>
-              </div>
-            </a>
-            <div onClick={() => setShowLogoutModal(true)} className="flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-[#dc2626] cursor-pointer rounded-[8px] hover:bg-[#fef2f2] transition-colors">
-              <LogOut size={18} />
-              <span>Sign Out</span>
-            </div>
           </div>
-        </div>
-      </aside>
-
-      <main className={`flex-1 min-w-0 flex flex-col ${activeTab === 'messages' ? 'overflow-hidden' : 'overflow-auto'}`}>
-        {activeTab === 'overview' && (
-          <div className="relative bg-gradient-to-r from-[#9a2f0c] via-[#BC461E] to-[#c0622a] px-8 pt-8 pb-16 max-sm:px-5 max-sm:pt-7 max-sm:pb-14 shadow-md">
-            {/* Decorative blobs — contained, won't clip avatar */}
-            <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/5 blur-2xl pointer-events-none" />
-            <div className="absolute bottom-0 left-1/3 w-40 h-40 rounded-full bg-black/10 blur-2xl pointer-events-none" />
-
-            <div className="flex items-center gap-6 max-sm:gap-4 relative z-10">
-              {/* Avatar */}
-              <div className="relative shrink-0">
-                <div className="w-20 h-20 max-sm:w-16 max-sm:h-16 rounded-full bg-[#BC461E] text-white flex items-center justify-center overflow-hidden border-[3px] border-white/70 shadow-lg">
-                  <AvatarContent />
-                </div>
-                <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center cursor-pointer shadow border border-[#e2e8f0] hover:bg-[#f1f5f9] transition-colors">
-                  <Camera size={13} className="text-[#475569]" />
-                  <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
-                </label>
-              </div>
-
-              {/* User Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <h1 className="text-lg font-extrabold text-white m-0 truncate max-sm:text-base">{user?.name || 'Valued Partner'}</h1>
-                  {isEmailVerified && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-full shrink-0">
-                      <Check size={10} /> Verified
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 flex-wrap text-[11px] text-white/60 mb-3">
-                  <span className="capitalize font-semibold text-white/80">{user?.role || 'Buyer'} Account</span>
-                  <span>·</span>
-                  <span>Member since {memberSince}</span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 text-xs text-white/70">
-                    <Mail size={12} className="text-white/50 shrink-0" />
-                    <span className="truncate">{user?.email || 'Not provided'}</span>
-                    {!isEmailVerified && user?.email && (
-                      <button
-                        className="shrink-0 text-[10px] font-bold text-[#fbbf24] bg-transparent border border-[#fbbf24] rounded-full px-2 py-0.5 cursor-pointer hover:bg-[#fbbf24]/10"
-                        onClick={handleSendVerifyEmail}
-                        disabled={isSendingEmail}
-                      >
-                        {isSendingEmail ? 'Sending…' : 'Verify'}
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-white/70">
-                    <Phone size={12} className="text-white/50 shrink-0" />
-                    <span>{user?.phone || 'Not provided'}</span>
-                    <button
-                      className="text-[10px] font-bold text-white/40 bg-transparent border-none cursor-pointer hover:text-white p-0 transition-colors"
-                      onClick={() => setIsChangingPhone(true)}
-                    >
-                      Update
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Messages tab fills remaining height directly — no padding wrapper */}
-        {activeTab === 'messages' && (
-          <div className="flex-1 min-h-0">
-            <ChatInbox />
-          </div>
-        )}
-
-        <div className={`px-8 pt-5 max-sm:px-4 ${activeTab === 'messages' ? 'hidden' : ''}`}>
+        </aside>
+        <div className="flex-1 overflow-y-auto">
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-4 gap-3 mb-6 max-sm:grid-cols-2">
-              {[
-                { icon: <ShoppingBag size={20} />, value: orderCount, label: 'Orders' },
-                { icon: <Heart size={20} />, value: wishlistItems.length, label: 'Wishlist' },
-                { icon: <Star size={20} />, value: 0, label: 'Reviews' },
-                { icon: <Clock size={20} />, value: 0, label: 'Pending' },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-white border border-[#eef2f6] rounded-[14px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-3">
-                  <div className="w-9 h-9 bg-[#fff7ed] rounded-[8px] flex items-center justify-center text-primary shrink-0">{stat.icon}</div>
-                  <div>
-                    <div className="text-xl font-extrabold text-[#0f172a] leading-none">{stat.value}</div>
-                    <div className="text-[11px] text-[#94a3b8] mt-0.5">{stat.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            <>
+              <div className="relative bg-gradient-to-r from-[#9a2f0c] via-[#BC461E] to-[#c0622a] px-8 pt-8 pb-16 max-sm:px-5 max-sm:pt-7 max-sm:pb-14 shadow-md">
+                {/* Decorative blobs — contained, won't clip avatar */}
+                <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+                <div className="absolute bottom-0 left-1/3 w-40 h-40 rounded-full bg-black/10 blur-2xl pointer-events-none" />
 
-          {activeTab === 'overview' && (
-            <div className="grid grid-cols-2 gap-5 mb-8 max-lg:grid-cols-1">
-              <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Personal Information</h3>
-                  {!isEditingInfo ? (
-                    <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0" onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <button className="text-xs font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-1.5 cursor-pointer hover:bg-[#f1f5f9]" onClick={() => setIsEditingInfo(false)}>Cancel</button>
-                      <button className="text-xs font-bold text-white bg-primary rounded-[6px] px-3 py-1.5 border-none cursor-pointer hover:opacity-90" onClick={handleSaveInfo}>Save</button>
+                <div className="flex items-center gap-6 max-sm:gap-4 relative z-10">
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <div className="w-20 h-20 max-sm:w-16 max-sm:h-16 rounded-full bg-[#BC461E] text-white flex items-center justify-center overflow-hidden border-[3px] border-white/70 shadow-lg">
+                      <AvatarContent />
                     </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Full Name</label>
-                    {isEditingInfo ? (
-                      <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className={inputCls} />
-                    ) : (
-                      <p className="text-sm text-[#0f172a] font-medium m-0">{user?.name || 'Not provided'}</p>
-                    )}
+                    <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center cursor-pointer shadow border border-[#e2e8f0] hover:bg-[#f1f5f9] transition-colors">
+                      <Camera size={13} className="text-[#475569]" />
+                      <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
+                    </label>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Email</label>
-                    {isEditingInfo ? (
-                      <input
-                        type="email"
-                        value={editEmail}
-                        onChange={e => {
-                          let val = e.target.value.toLowerCase().replace(/[^a-z0-9@.]/g, '');
-                          val = val.replace(/[@.]{2,}/g, m => m[0]);
-                          if (val.startsWith('.') || val.startsWith('@')) val = val.slice(1);
-                          setEditEmail(val);
-                        }}
-                        className={inputCls}
-                      />
-                    ) : (
-                      <p className="text-sm text-[#0f172a] font-medium m-0">{user?.email || 'Not provided'}</p>
-                    )}
+
+                  {/* User Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <h1 className="text-lg font-extrabold text-white m-0 truncate max-sm:text-base">{user?.name || 'Valued Partner'}</h1>
+                      {isEmailVerified && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-[#10b981] bg-[#ecfdf5] px-2 py-0.5 rounded-full shrink-0">
+                          <Check size={10} /> Verified
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] font-medium text-white/80 mb-3 flex-wrap">
+                      <span>Buyer Account</span>
+                      <span className="w-1 h-1 rounded-full bg-white/50" />
+                      <span>Member since {memberSince}</span>
+                    </div>
+                    <div className="flex items-center gap-5 max-sm:gap-3 flex-wrap">
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        <Mail size={12} className="text-white/50 shrink-0" />
+                        <span className="truncate">{user?.email || 'Not provided'}</span>
+                        {!isEmailVerified && user?.email && (
+                          <button
+                            className="shrink-0 text-[10px] font-bold text-[#fbbf24] bg-transparent border border-[#fbbf24] rounded-full px-2 py-0.5 cursor-pointer hover:bg-[#fbbf24]/10"
+                            onClick={handleSendVerifyEmail}
+                            disabled={isSendingEmail}
+                          >
+                            {isSendingEmail ? 'Sending…' : 'Verify'}
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-white/70">
+                        <Phone size={12} className="text-white/50 shrink-0" />
+                        <span>{user?.phone || 'Not provided'}</span>
+                        <button
+                          className="text-[10px] font-bold text-white/40 bg-transparent border-none cursor-pointer hover:text-white p-0 transition-colors"
+                          onClick={() => setIsChangingPhone(true)}
+                        >
+                          Update
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all">
-                <div className="flex items-center justify-between mb-5">
-                  <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Default Delivery Address</h3>
-                  <button
-                    className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
-                    onClick={() => setActiveTab('addresses')}
-                  >
-                    Manage
-                  </button>
-                </div>
-                {primaryAddress ? (
-                  <div className="flex items-start gap-3">
-                    <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
-                    <div className="text-sm text-[#475569]">
-                      <p className="m-0 text-[#0f172a] font-medium">{formatAddressLine(primaryAddress).firstLine || primaryAddress.fullName}</p>
-                      <p className="m-0">{formatAddressLine(primaryAddress).secondLine}</p>
-                      <span className="inline-flex mt-2 text-[10px] font-bold uppercase tracking-wider text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
-                        Primary Address
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
-                    <MapPin size={15} className="shrink-0" />
-                    <span>No address saved yet. Add one so suppliers can quote shipping accurately.</span>
-                  </div>
-                )}
-                {false && (
-                  user?.address?.city ? (
-                    <div className="flex items-start gap-3">
-                      <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
-                      <div className="text-sm text-[#475569]">
-                        {user.address.fullAddress && <p className="m-0 text-[#0f172a] font-medium">{user.address.fullAddress}</p>}
-                        <p className="m-0">{[user.address.city, user.address.state].filter(Boolean).join(', ')} – {user.address.pincode}</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
-                      <MapPin size={15} className="shrink-0" />
-                      <span>No address saved yet. Add one so suppliers can quote shipping accurately.</span>
-                    </div>
-                  )
-                ) && (
-                  <div className="flex flex-col gap-3">
-                    <div className="grid grid-cols-2 gap-3">
+              <div className="px-8 max-sm:px-4 -mt-8 relative z-20">
+                <div className="grid grid-cols-4 gap-3 mb-6 max-sm:grid-cols-2">
+                  {[
+                    { icon: <ShoppingBag size={20} />, value: orderCount, label: 'Orders' },
+                    { icon: <Heart size={20} />, value: wishlistItems.length, label: 'Wishlist' },
+                    { icon: <Star size={20} />, value: 0, label: 'Reviews' },
+                    { icon: <Clock size={20} />, value: 0, label: 'Pending' },
+                  ].map((stat) => (
+                    <div key={stat.label} className="bg-white border border-[#eef2f6] rounded-[14px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-3">
+                      <div className="w-9 h-9 bg-[#fff7ed] rounded-[8px] flex items-center justify-center text-primary shrink-0">{stat.icon}</div>
                       <div>
-                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">City *</label>
-                        <input type="text" value={editAddrCity} onChange={e => setEditAddrCity(e.target.value)} className={inputCls} placeholder="e.g. Mumbai" />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">State *</label>
-                        <input type="text" value={editAddrState} onChange={e => setEditAddrState(e.target.value)} className={inputCls} placeholder="e.g. Maharashtra" />
+                        <div className="text-xl font-extrabold text-[#0f172a] leading-none">{stat.value}</div>
+                        <div className="text-[11px] text-[#94a3b8] mt-0.5">{stat.label}</div>
                       </div>
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Pincode *</label>
-                      <input type="text" value={editAddrPincode} onChange={e => setEditAddrPincode(e.target.value.replace(/\D/g, '').slice(0, 6))} className={inputCls} placeholder="6-digit pincode" maxLength={6} />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Full Address <span className="font-normal">(optional)</span></label>
-                      <textarea rows={2} value={editAddrFull} onChange={e => setEditAddrFull(e.target.value)} className={inputCls + ' resize-none'} placeholder="Street / Building / Area…" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'wishlist' && (
-            <div className="py-6">
-              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">My Wishlist ({wishlistItems.length})</h3>
-              {wishlistItems.length > 0 ? (
-                <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-2">
-                  {wishlistItems.map((item) => (
-                    <ProductCard key={item.id} product={item} variant="wishlist" />
                   ))}
                 </div>
-              ) : (
-                <p className="text-sm text-[#64748b]">Your wishlist is empty.</p>
-              )}
+              </div>
+
+              <div className="p-6 max-w-[1000px] mx-auto">
+                <div className="grid grid-cols-2 gap-5 mb-8 max-lg:grid-cols-1">
+                <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Personal Information</h3>
+                    {!isEditingInfo ? (
+                      <button className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0" onClick={() => setIsEditingInfo(true)}>Edit Profile</button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button className="text-xs font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] px-3 py-1.5 cursor-pointer hover:bg-[#f1f5f9] transition-colors" onClick={() => setIsEditingInfo(false)}>Cancel</button>
+                        <button className="text-xs font-bold text-white bg-primary border-none rounded-[6px] px-3 py-1.5 cursor-pointer hover:opacity-90 transition-opacity" onClick={handleSaveInfo}>Save</button>
+                      </div>
+                    )}
+                  </div>
+                  {!isEditingInfo ? (
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-[8px] bg-[#fff7ed] flex items-center justify-center shrink-0 mt-0.5 text-primary"><User size={15} /></div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider m-0">Full Name</p>
+                          <p className="text-sm text-[#0f172a] font-medium m-0 mt-0.5">{user?.name || 'Not provided'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-[8px] bg-[#fff7ed] flex items-center justify-center shrink-0 mt-0.5 text-primary"><Mail size={15} /></div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider m-0">Email Address</p>
+                          <p className="text-sm text-[#0f172a] font-medium m-0 mt-0.5">{user?.email || 'Not provided'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-[8px] bg-[#fff7ed] flex items-center justify-center shrink-0 mt-0.5 text-primary"><Phone size={15} /></div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider m-0">Phone Number</p>
+                          <p className="text-sm text-[#0f172a] font-medium m-0 mt-0.5">{user?.phone || 'Not provided'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Full Name</label>
+                        <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className={inputCls} placeholder="Enter full name" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Email Address</label>
+                        <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} className={inputCls} placeholder="Enter email" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all flex flex-col">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Default Delivery Address</h3>
+                    <button onClick={() => setActiveTab('addresses')} className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">Manage Addresses</button>
+                  </div>
+                  {primaryAddress ? (
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h4 className="text-sm font-bold text-[#0f172a] m-0 mb-1">{primaryAddress.fullName}</h4>
+                        {primaryAddress.phone && <p className="text-xs text-[#64748b] m-0 mb-3">{primaryAddress.phone}</p>}
+                        <div className="flex items-start gap-2 text-sm text-[#475569]">
+                          <MapPin size={15} className="text-primary shrink-0 mt-0.5" />
+                          <p className="m-0 leading-relaxed">
+                            {[primaryAddress.houseNo, primaryAddress.area].filter(Boolean).join(', ')}
+                            <br />
+                            {[primaryAddress.city, primaryAddress.state, primaryAddress.pincode].filter(Boolean).join(', ')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
+                      <MapPin size={24} className="text-[#94a3b8]" />
+                      <p className="text-sm text-[#64748b] m-0">No default address set.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <AccountOverviewSection />
             </div>
+            </>
           )}
 
           {activeTab === 'orders' && (
-            <div className="py-6">
+            <div className="p-6 max-w-[1000px] mx-auto">
               <OrderList />
             </div>
           )}
 
-          {activeTab === 'addresses' && (
-            <div className="py-6">
-              <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
-                <div>
-                  <h3 className="text-base font-extrabold text-[#0f172a] m-0">My Addresses</h3>
-                  <p className="text-sm text-[#64748b] m-0 mt-1">Choose the primary address shown on your account overview.</p>
-                </div>
-                {!showAddressForm && (
-                  <button
-                    className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => {
-                      setEditingAddressId(null);
-                      setAddressForm({
-                        ...emptyAddressForm,
-                        fullName: user?.name || '',
-                        phone: user?.phone || '',
-                        isDefault: addresses.length === 0,
-                      });
-                      setShowAddressForm(true);
-                    }}
-                  >
-                    <Plus size={16} /> Add Another Address
-                  </button>
-                )}
-              </div>
-
-              {showAddressForm && (
-                <form onSubmit={handleAddressSubmit} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-extrabold text-[#0f172a] m-0">{editingAddressId ? 'Edit Address' : 'Add Address'}</h4>
-                    <button type="button" onClick={resetAddressForm} className="bg-transparent border-none text-[#64748b] hover:text-[#0f172a] p-0">
-                      <X size={18} />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-                    {[
-                      { field: 'fullName', label: 'Full Name', placeholder: 'Enter full name' },
-                      { field: 'phone', label: 'Phone Number', placeholder: '10-digit mobile number', numeric: true, maxLen: 10 },
-                      { field: 'pincode', label: 'Pincode', placeholder: '6-digit pincode', numeric: true, maxLen: 6 },
-                      { field: 'state', label: 'State', placeholder: 'State' },
-                      { field: 'city', label: 'City', placeholder: 'City' },
-                      { field: 'houseNo', label: 'House / Building', placeholder: 'House no. or building' },
-                    ].map(({ field, label, placeholder, numeric, maxLen }) => (
-                      <div key={field}>
-                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">{label}</label>
-                        <input
-                          value={(addressForm as any)[field]}
-                          placeholder={placeholder}
-                          maxLength={maxLen}
-                          onChange={e => updateAddressField(field, numeric ? e.target.value.replace(/\D/g, '') : e.target.value)}
-                          className={`${inputCls} ${addressErrors[field] ? 'border-[#dc2626] bg-[#fef2f2]' : ''}`}
-                        />
-                        {addressErrors[field] && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors[field]}</p>}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Area / Street / Sector</label>
-                    <textarea
-                      rows={3}
-                      value={addressForm.area}
-                      placeholder="Area details"
-                      onChange={e => updateAddressField('area', e.target.value)}
-                      className={`${inputCls} resize-y ${addressErrors.area ? 'border-[#dc2626] bg-[#fef2f2]' : ''}`}
-                    />
-                    {addressErrors.area && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.area}</p>}
-                  </div>
-
-                  <label className="flex items-center gap-2 text-sm text-[#475569] cursor-pointer my-4">
-                    <input
-                      type="checkbox"
-                      checked={addressForm.isDefault}
-                      onChange={e => updateAddressField('isDefault', e.target.checked)}
-                      className="accent-primary"
-                    />
-                    Make this my primary address
-                  </label>
-
-                  <button
-                    type="submit"
-                    disabled={addressSubmitting}
-                    className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                  >
-                    {addressSubmitting ? 'Saving...' : 'Save Address'}
-                  </button>
-                </form>
-              )}
-
-              {addressesLoading ? (
-                <div className="flex items-center gap-2 text-sm text-[#64748b]">
-                  <Loader2 size={16} className="animate-spin text-primary" /> Loading addresses...
-                </div>
-              ) : addressList.length === 0 ? (
-                <div className="bg-white border border-[#eef2f6] rounded-[12px] p-10 flex flex-col items-center text-center gap-3">
-                  <BookUser size={36} className="text-[#94a3b8]" />
-                  <h4 className="text-base font-extrabold text-[#0f172a] m-0">No addresses found</h4>
-                  <p className="text-sm text-[#64748b] m-0">Add an address to use it as your primary delivery address.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4 max-lg:grid-cols-1">
-                  {addressList.map(addr => {
-                    const lines = formatAddressLine(addr);
-                    const isPrimary = addr._id === primaryAddress?._id;
-                    return (
-                      <div
-                        key={addr._id}
-                        className={`bg-white rounded-[12px] p-5 ${isPrimary ? 'border-2 border-primary shadow-[0_0_0_4px_rgba(217,79,0,0.08)]' : 'border border-[#eef2f6]'}`}
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <h4 className="text-sm font-bold text-[#0f172a] m-0">{addr.fullName}</h4>
-                            {addr.phone && <p className="text-xs text-[#64748b] m-0 mt-0.5">{addr.phone}</p>}
-                          </div>
-                          {isPrimary && (
-                            <span className="flex items-center gap-1 text-[10px] font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
-                              <CheckCircle2 size={12} /> Primary
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-start gap-2 text-sm text-[#475569] mb-4">
-                          <MapPin size={15} className="text-primary shrink-0 mt-0.5" />
-                          <p className="m-0 leading-relaxed">
-                            {lines.firstLine && <>{lines.firstLine}<br /></>}
-                            {lines.secondLine}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-4 flex-wrap">
-                          {!isPrimary && !addr.isProfileAddress && (
-                            <button onClick={() => handleSetPrimaryAddress(addr)} className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">
-                              Set Primary
-                            </button>
-                          )}
-                          <button onClick={() => handleAddressEdit(addr)} className="flex items-center gap-1.5 text-xs font-bold text-[#475569] bg-transparent border-none cursor-pointer hover:text-primary p-0">
-                            <Edit2 size={13} /> Edit
-                          </button>
-                          {!addr.isProfileAddress && (
-                            <button onClick={() => handleAddressDelete(addr)} className="flex items-center gap-1.5 text-xs font-bold text-[#dc2626] bg-transparent border-none cursor-pointer hover:underline p-0">
-                              <Trash2 size={13} /> Delete
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+          {activeTab === 'messages' && (
+            <div className="h-full">
+              <ChatInbox />
             </div>
           )}
+
+          {activeTab === 'wishlist' && (
+          <div className="py-6">
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">My Wishlist ({wishlistItems.length})</h3>
+            {wishlistItems.length > 0 ? (
+              <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-2">
+                {wishlistItems.map((item) => (
+                  <ProductCard key={item.id} product={item} variant="wishlist" />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-[#64748b]">Your wishlist is empty.</p>
+            )}
+          </div>
+        )}
+
+          {/* Phone UI placeholder */}
+          {activeTab === 'addresses' && (
+          <div className="py-6">
+            <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
+              <div>
+                <h3 className="text-base font-extrabold text-[#0f172a] m-0">My Addresses</h3>
+                <p className="text-sm text-[#64748b] m-0 mt-1">Choose the primary address shown on your account overview.</p>
+              </div>
+              {!showAddressForm && (
+                <button
+                  className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => {
+                    setEditingAddressId(null);
+                    setAddressForm({
+                      ...emptyAddressForm,
+                      fullName: user?.name || '',
+                      phone: user?.phone || '',
+                      isDefault: addresses.length === 0,
+                    });
+                    setShowAddressForm(true);
+                  }}
+                >
+                  <Plus size={16} /> Add Another Address
+                </button>
+              )}
+            </div>
+
+            {showAddressForm && (
+              <form onSubmit={handleAddressSubmit} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-extrabold text-[#0f172a] m-0">{editingAddressId ? 'Edit Address' : 'Add Address'}</h4>
+                  <button type="button" onClick={resetAddressForm} className="bg-transparent border-none text-[#64748b] hover:text-[#0f172a] p-0">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                  {[
+                    { field: 'fullName', label: 'Full Name', placeholder: 'Enter full name' },
+                    { field: 'phone', label: 'Phone Number', placeholder: '10-digit mobile number', numeric: true, maxLen: 10 },
+                    { field: 'pincode', label: 'Pincode', placeholder: '6-digit pincode', numeric: true, maxLen: 6 },
+                    { field: 'state', label: 'State', placeholder: 'State' },
+                    { field: 'city', label: 'City', placeholder: 'City' },
+                    { field: 'houseNo', label: 'House / Building', placeholder: 'House no. or building' },
+                  ].map(({ field, label, placeholder, numeric, maxLen }) => (
+                    <div key={field}>
+                      <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">{label}</label>
+                      <input
+                        value={(addressForm as any)[field]}
+                        placeholder={placeholder}
+                        maxLength={maxLen}
+                        onChange={e => updateAddressField(field, numeric ? e.target.value.replace(/\D/g, '') : e.target.value)}
+                        className={`${inputCls} ${addressErrors[field] ? 'border-[#dc2626] bg-[#fef2f2]' : ''}`}
+                      />
+                      {addressErrors[field] && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors[field]}</p>}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4">
+                  <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Area / Street / Sector</label>
+                  <textarea
+                    rows={3}
+                    value={addressForm.area}
+                    placeholder="Area details"
+                    onChange={e => updateAddressField('area', e.target.value)}
+                    className={`${inputCls} resize-y ${addressErrors.area ? 'border-[#dc2626] bg-[#fef2f2]' : ''}`}
+                  />
+                  {addressErrors.area && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.area}</p>}
+                </div>
+
+                <label className="flex items-center gap-2 text-sm text-[#475569] cursor-pointer my-4">
+                  <input
+                    type="checkbox"
+                    checked={addressForm.isDefault}
+                    onChange={e => updateAddressField('isDefault', e.target.checked)}
+                    className="accent-primary"
+                  />
+                  Make this my primary address
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={addressSubmitting}
+                  className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                >
+                  {addressSubmitting ? 'Saving...' : 'Save Address'}
+                </button>
+              </form>
+            )}
+
+            {addressesLoading ? (
+              <div className="flex items-center gap-2 text-sm text-[#64748b]">
+                <Loader2 size={16} className="animate-spin text-primary" /> Loading addresses...
+              </div>
+            ) : addressList.length === 0 ? (
+              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-10 flex flex-col items-center text-center gap-3">
+                <BookUser size={36} className="text-[#94a3b8]" />
+                <h4 className="text-base font-extrabold text-[#0f172a] m-0">No addresses found</h4>
+                <p className="text-sm text-[#64748b] m-0">Add an address to use it as your primary delivery address.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 max-lg:grid-cols-1">
+                {addressList.map(addr => {
+                  const lines = formatAddressLine(addr);
+                  const isPrimary = addr._id === primaryAddress?._id;
+                  return (
+                    <div
+                      key={addr._id}
+                      className={`bg-white rounded-[12px] p-5 ${isPrimary ? 'border-2 border-primary shadow-[0_0_0_4px_rgba(217,79,0,0.08)]' : 'border border-[#eef2f6]'}`}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                          <h4 className="text-sm font-bold text-[#0f172a] m-0">{addr.fullName}</h4>
+                          {addr.phone && <p className="text-xs text-[#64748b] m-0 mt-0.5">{addr.phone}</p>}
+                        </div>
+                        {isPrimary && (
+                          <span className="flex items-center gap-1 text-[10px] font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded-full">
+                            <CheckCircle2 size={12} /> Primary
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-start gap-2 text-sm text-[#475569] mb-4">
+                        <MapPin size={15} className="text-primary shrink-0 mt-0.5" />
+                        <p className="m-0 leading-relaxed">
+                          {lines.firstLine && <>{lines.firstLine}<br /></>}
+                          {lines.secondLine}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-4 flex-wrap">
+                        {!isPrimary && !addr.isProfileAddress && (
+                          <button onClick={() => handleSetPrimaryAddress(addr)} className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0">
+                            Set Primary
+                          </button>
+                        )}
+                        <button onClick={() => handleAddressEdit(addr)} className="flex items-center gap-1.5 text-xs font-bold text-[#475569] bg-transparent border-none cursor-pointer hover:text-primary p-0">
+                          <Edit2 size={13} /> Edit
+                        </button>
+                        {!addr.isProfileAddress && (
+                          <button onClick={() => handleAddressDelete(addr)} className="flex items-center gap-1.5 text-xs font-bold text-[#dc2626] bg-transparent border-none cursor-pointer hover:underline p-0">
+                            <Trash2 size={13} /> Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          )}
+
 
           {activeTab === 'contactus' && (
             <div className="py-6 max-w-[560px]">
@@ -916,87 +870,33 @@ const Profile: React.FC = () => {
                     rows={5}
                     className={inputCls + ' resize-y'}
                     placeholder="Describe your problem, question, or enquiry..."
-                  />
+                  ></textarea>
+                  <button
+                    type="button"
+                    onClick={handleEnquirySubmit}
+                    className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  >
+                    {enquirySubmitting ? 'Submitting...' : 'Submit Enquiry'}
+                  </button>
+                  <Modal
+                    isOpen={showLogoutModal}
+                    onClose={() => setShowLogoutModal(false)}
+                    title="Sign Out"
+                    footer={
+                      <>
+                        <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
+                        <Button variant="danger" onClick={handleLogout}>Sign Out</Button>
+                      </>
+                    }
+                  >
+                    Are you sure you want to sign out of your account?
+                  </Modal>
                 </div>
-                <button
-                  onClick={handleEnquirySubmit}
-                  disabled={enquirySubmitting}
-                  className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-opacity"
-                >
-                  {enquirySubmitting ? 'Submitting...' : 'Submit Enquiry'}
-                </button>
               </div>
             </div>
           )}
-
-          {activeTab !== 'overview' && activeTab !== 'wishlist' && activeTab !== 'messages' && activeTab !== 'orders' && activeTab !== 'addresses' && activeTab !== 'contactus' && currentMenuItem && (
-            <div className="flex flex-col items-center gap-4 py-20 text-center text-[#94a3b8]">
-              {CurrentIcon && <CurrentIcon size={52} strokeWidth={1.5} />}
-              <h3 className="text-xl font-extrabold text-[#0f172a] m-0">{currentMenuItem.label}</h3>
-              <p className="text-sm text-[#64748b] m-0 max-w-[400px]">This section is coming soon. We're working hard to bring you a great experience.</p>
-            </div>
-          )}
         </div>
-      </main>
-
-      {isChangingPhone && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-50 flex items-center justify-center px-4" onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }}>
-          <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-extrabold text-[#0f172a] m-0">{showOtpInput ? 'Verify OTP' : 'Change Phone Number'}</h3>
-              <button onClick={() => { setIsChangingPhone(false); setShowOtpInput(false); }} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f1f5f9] text-[#475569] border-none cursor-pointer bg-transparent">
-                <X size={18} />
-              </button>
-            </div>
-            {!showOtpInput ? (
-              <div>
-                <label className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">New Phone Number</label>
-                <input
-                  type="text"
-                  value={newPhone}
-                  onChange={e => setNewPhone(e.target.value.replace(/\D/g, ''))}
-                  className={inputCls + " mb-4"}
-                  placeholder="Enter 10-digit mobile number"
-                  maxLength={10}
-                />
-                <button onClick={handleSendPhoneOtp} className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90">
-                  Send OTP
-                </button>
-              </div>
-            ) : (
-              <div>
-                <label className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Enter OTP sent to {newPhone}</label>
-                <input
-                  type="text"
-                  value={phoneOtp}
-                  onChange={e => setPhoneOtp(e.target.value.replace(/\D/g, ''))}
-                  className={inputCls + " mb-4"}
-                  placeholder="Enter 123456"
-                  maxLength={6}
-                />
-                <button onClick={handleVerifyPhoneOtp} className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90">
-                  Verify & Update
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-
-    <Modal
-      isOpen={showLogoutModal}
-      onClose={() => setShowLogoutModal(false)}
-      title="Sign Out"
-      footer={
-        <>
-          <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
-          <Button variant="danger" onClick={handleLogout}>Sign Out</Button>
-        </>
-      }
-    >
-      Are you sure you want to sign out of your account?
-    </Modal>
+      </div>
     </div>
   );
 };
