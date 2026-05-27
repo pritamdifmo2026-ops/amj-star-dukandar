@@ -41,4 +41,8 @@ export const quotationApi = {
     const res = await apiClient.patch(`/quotations/${id}`, data);
     return res.data;
   },
+  cancelQuotation: async (id: string, reason: string) => {
+    const res = await apiClient.post(`/quotations/${id}/cancel`, { reason });
+    return res.data;
+  },
 };

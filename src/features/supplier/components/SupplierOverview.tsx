@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { ShieldCheck, Zap, RefreshCw, Plus, AlertTriangle, Wallet, Receipt, IndianRupee, ShoppingBag, PackageCheck } from 'lucide-react';
+import { ShieldCheck, Zap, Plus, AlertTriangle, Wallet, Receipt, IndianRupee, ShoppingBag, PackageCheck } from 'lucide-react';
+import NotificationBell from '@/features/notifications/components/NotificationBell';
 import Button from '@/shared/components/ui/Button';
 import SupplierStats from './SupplierStats';
 import { useQuery } from '@tanstack/react-query';
@@ -26,13 +27,13 @@ interface SupplierOverviewProps {
   profile: any;
   products: any[];
   isTrusted: boolean;
-  handleRefresh: () => void;
+  handleRefresh?: () => void;
   setActiveView: (view: string) => void;
   renderProductListing: (products: any[]) => React.ReactNode;
 }
 
 const SupplierOverview: React.FC<SupplierOverviewProps> = ({
-  profile, products, isTrusted, handleRefresh, setActiveView, renderProductListing
+  profile, products, isTrusted, setActiveView, renderProductListing
 }) => {
   const { data: walletData } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.getWallet });
   const { data: orderData, isLoading: ordersLoading } = useQuery({
@@ -153,10 +154,8 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
             </div>
           )}
         </div>
-        <div className="flex gap-3 max-sm:grid max-sm:grid-cols-2">
-          <Button variant="outline" onClick={handleRefresh} className="!bg-white !text-[#475569] !border-[#e2e8f0] hover:!bg-[#f8fafc]">
-            <RefreshCw size={18} /> Refresh
-          </Button>
+        <div className="flex items-center gap-3 max-sm:grid max-sm:grid-cols-2">
+          <NotificationBell />
           <Button onClick={() => setActiveView('add-product')}>
             <Plus size={20} /> Add New Product
           </Button>

@@ -59,7 +59,7 @@ const Cart: React.FC = () => {
           <ShoppingBag size={56} className="text-[#cbd5e1]" />
           <h2 className="text-xl font-extrabold text-[#0f172a] m-0">Your cart is empty</h2>
           <p className="text-sm text-[#64748b] m-0">Looks like you haven't added anything to your cart yet.</p>
-          <Link to={ROUTES.PRODUCT_LIST} className="mt-2 inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold text-xs rounded-[8px] no-underline hover:opacity-90 transition-opacity">
+          <Link to="/" className="mt-2 inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold text-xs rounded-[8px] no-underline hover:opacity-90 transition-opacity">
             Continue Shopping
           </Link>
         </div>

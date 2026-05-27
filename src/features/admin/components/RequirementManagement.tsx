@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Filter, X, CheckCircle2, RefreshCw, UserCheck, Inbox } from 'lucide-react';
+import { Search, Filter, X, CheckCircle2, RefreshCw, UserCheck, Inbox, Mail } from 'lucide-react';
 import api from '@/api/client';
 import toast from 'react-hot-toast';
 import Button from '@/shared/components/ui/Button';
 import adminService from '../services/admin.service';
+
+interface ComposeState {
+  to: string;
+  subject: string;
+  body: string;
+}
 
 interface Requirement {
   _id: string;
@@ -40,6 +46,7 @@ const RequirementManagement: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [selectedReqId, setSelectedReqId] = useState<string | null>(null);
   const [selectedSupplierToAssign, setSelectedSupplierToAssign] = useState('');
+  const [compose, setCompose] = useState<ComposeState | null>(null);
 
   // Fetch all suppliers for assignment
   const { data: allSuppliers = [] } = useQuery({
@@ -112,17 +119,8 @@ const RequirementManagement: React.FC = () => {
     onError: () => toast.error('Failed to assign supplier')
   });
 
-  const mailMutation = useMutation({
-    mutationFn: async ({ id, subject, body }: { id: string; subject: string; body: string }) => {
-      const res = await api.post(`/requirements/${id}/send-mail`, { subject, body });
-      return res.data;
-    },
-    onSuccess: () => toast.success('Email sent successfully to the buyer!'),
-    onError: () => toast.error('Failed to send email')
-  });
-
   // Derived filtered items based on client-side search
-  const filteredReqs = requirements.filter(r => 
+  const filteredReqs = requirements.filter(r =>
     r.reqId.toLowerCase().includes(search.toLowerCase()) ||
     r.productName.toLowerCase().includes(search.toLowerCase()) ||
     r.buyerCompany.toLowerCase().includes(search.toLowerCase())
@@ -177,9 +175,8 @@ const RequirementManagement: React.FC = () => {
           {TABS.map(tab => (
             <button
               key={tab}
-              className={`px-6 py-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
+              className={`px-6 py-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
               onClick={() => setActiveTab(tab)}
             >
               {tab}
@@ -191,15 +188,15 @@ const RequirementManagement: React.FC = () => {
         <div className="p-4 border-b border-slate-100 flex items-center gap-4 bg-slate-50 max-sm:flex-col">
           <div className="relative flex-1 max-sm:w-full">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search by product, buyer or ID..." 
+            <input
+              type="text"
+              placeholder="Search by product, buyer or ID..."
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:border-primary outline-none"
             />
           </div>
-          <select 
+          <select
             className="py-2 px-3 border border-slate-200 rounded-lg text-sm outline-none focus:border-primary max-sm:w-full"
             value={categoryFilter}
             onChange={e => setCategoryFilter(e.target.value)}
@@ -302,13 +299,13 @@ const RequirementManagement: React.FC = () => {
               <div className="grid grid-cols-[140px_1fr] gap-y-3 text-sm">
                 <span className="text-slate-500">Product Name</span>
                 <span className="font-semibold text-slate-800">{selectedReq.productName}</span>
-                
+
                 <span className="text-slate-500">Category</span>
                 <span className="font-medium text-slate-800">{selectedReq.category}</span>
-                
+
                 <span className="text-slate-500">Subcategory</span>
                 <span className="font-medium text-slate-800">{selectedReq.subcategory}</span>
-                
+
                 <span className="text-slate-500">Quantity</span>
                 <span className="font-medium text-slate-800">{selectedReq.quantity}</span>
               </div>
@@ -329,16 +326,16 @@ const RequirementManagement: React.FC = () => {
               <div className="grid grid-cols-[140px_1fr] gap-y-3 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
                 <span className="text-slate-500">Company Name</span>
                 <span className="font-semibold text-slate-800">{selectedReq.buyerCompany}</span>
-                
+
                 <span className="text-slate-500">Contact Person</span>
                 <span className="font-medium text-slate-800">{selectedReq.buyerName}</span>
-                
+
                 <span className="text-slate-500">Email</span>
                 <span className="font-medium text-blue-600">{selectedReq.buyerEmail}</span>
-                
+
                 <span className="text-slate-500">Phone</span>
                 <span className="font-medium text-slate-800">{selectedReq.buyerPhone}</span>
-                
+
                 <span className="text-slate-500">Location</span>
                 <span className="font-medium text-slate-800">{selectedReq.buyerLocation || 'N/A'}</span>
               </div>
@@ -348,12 +345,12 @@ const RequirementManagement: React.FC = () => {
           {/* Action Buttons */}
           <div className="p-6 border-t border-slate-100 bg-slate-50 flex flex-col gap-3 pb-8">
             <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Actions</h4>
-            
+
             <div className="flex flex-col gap-2 mb-2 p-3 bg-white rounded-lg border border-slate-200">
               <label className="text-xs font-semibold text-slate-600">Assign Supplier</label>
-              <div className="flex gap-2">
-                <select 
-                  className="flex-1 border border-slate-200 rounded text-sm px-2 py-1.5 outline-none focus:border-blue-500"
+              <div className="flex flex-col gap-2">
+                <select
+                  className="w-full border border-slate-200 rounded text-sm px-2 py-1.5 outline-none focus:border-blue-500"
                   value={selectedSupplierToAssign}
                   onChange={(e) => setSelectedSupplierToAssign(e.target.value)}
                 >
@@ -365,11 +362,11 @@ const RequirementManagement: React.FC = () => {
                   ))}
                 </select>
                 <button
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
+                  className="w-full py-2 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
                   onClick={() => assignMutation.mutate({ id: selectedReq._id, supplierId: selectedSupplierToAssign })}
                   disabled={!selectedSupplierToAssign || assignMutation.isPending}
                 >
-                  Assign
+                  {assignMutation.isPending ? 'Assigning...' : 'Assign Supplier'}
                 </button>
               </div>
               {selectedReq.assignedSupplierId && (
@@ -380,23 +377,23 @@ const RequirementManagement: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <button 
-                className="w-full flex justify-center items-center py-2.5 rounded-lg text-sm font-semibold transition-colors bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+              <button
+                className="w-full flex justify-center items-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-colors bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
                 onClick={() => {
-                  let body = `Hello ${selectedReq.buyerName},\n\nWe have reviewed your requirement (${selectedReq.reqId}) for ${selectedReq.productName}.`;
+                  const subject = `Regarding your Requirement ${selectedReq.reqId} — ${selectedReq.productName}`;
+                  let body = `Hello ${selectedReq.buyerName},\n\nThank you for submitting your requirement (${selectedReq.reqId}) for ${selectedReq.productName}`;
+                  if (selectedReq.quantity) body += ` (Qty: ${selectedReq.quantity})`;
+                  body += `.\n\n`;
                   if (selectedReq.assignedSupplierId) {
-                    body += `\n\nWe have matched you with a verified supplier: ${selectedReq.assignedSupplierId.businessName}.\nYou can check out their products here:\nhttp://localhost:5173/supplier/${selectedReq.assignedSupplierId._id}`;
+                    body += `We have matched you with a verified supplier: ${selectedReq.assignedSupplierId.businessName}.\n\n`;
                   }
-                  body += `\n\nPlease let us know if you have any questions.\n\nBest regards,\nAMJ Star Team`;
-                  
-                  const subject = `Regarding your AMJ Star Requirement ${selectedReq.reqId}`;
-                  mailMutation.mutate({ id: selectedReq._id, subject, body });
+                  body += `[Write your message here]\n\nBest regards,\nAMJSTAR Team`;
+                  setCompose({ to: selectedReq.buyerEmail, subject, body });
                 }}
-                disabled={mailMutation.isPending}
               >
-                {mailMutation.isPending ? 'Sending...' : 'Mail Buyer'}
+                <Mail size={15} /> Mail Buyer
               </button>
-              <button 
+              <button
                 className="w-full flex justify-center items-center py-2.5 rounded-lg text-sm font-semibold transition-colors bg-green-50 border border-green-200 text-green-700 hover:bg-green-100"
                 onClick={() => window.location.href = `tel:${selectedReq.buyerPhone}`}
               >
@@ -404,7 +401,7 @@ const RequirementManagement: React.FC = () => {
               </button>
             </div>
 
-            <button 
+            <button
               className="w-full flex justify-center items-center py-2.5 mt-2 rounded-lg text-sm font-semibold transition-colors border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => updateStatusMutation.mutate({ id: selectedReq._id, status: 'Closed' })}
               disabled={selectedReq.status === 'Closed' || updateStatusMutation.isPending}
@@ -413,6 +410,66 @@ const RequirementManagement: React.FC = () => {
             </button>
 
 
+          </div>
+        </div>
+      )}
+
+      {/* Compose Email Modal */}
+      {compose && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2"><Mail size={17} /> Compose Email</h3>
+              <button onClick={() => setCompose(null)} className="p-1.5 text-slate-400 hover:bg-slate-100 rounded-lg"><X size={18} /></button>
+            </div>
+            <div className="p-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">To</label>
+                <input
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  value={compose.to}
+                  onChange={e => setCompose(prev => prev ? { ...prev, to: e.target.value } : prev)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Subject</label>
+                <input
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  value={compose.subject}
+                  onChange={e => setCompose(prev => prev ? { ...prev, subject: e.target.value } : prev)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Body</label>
+                <textarea
+                  rows={10}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
+                  value={compose.body}
+                  onChange={e => setCompose(prev => prev ? { ...prev, body: e.target.value } : prev)}
+                />
+              </div>
+            </div>
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+                onClick={() => {
+                  const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(compose.to)}&su=${encodeURIComponent(compose.subject)}&body=${encodeURIComponent(compose.body)}`;
+                  window.open(url, '_blank');
+                  setCompose(null);
+                }}
+              >
+                Open in Gmail
+              </button>
+              <button
+                className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors"
+                onClick={() => {
+                  navigator.clipboard.writeText(`To: ${compose.to}\nSubject: ${compose.subject}\n\n${compose.body}`);
+                  toast.success('Email content copied!');
+                }}
+              >
+                Copy to Clipboard
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -12,6 +12,7 @@ import {
   Handshake, Menu, Image as ImageIcon, Layers, CheckCircle, Clock,
   AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store
 } from 'lucide-react';
+import NotificationBell from '@/features/notifications/components/NotificationBell';
 
 import ProductTable from '../components/ProductTable';
 import AddProductForm from '../components/AddProductForm';
@@ -309,7 +310,7 @@ const SupplierDashboard: React.FC = () => {
           <Menu size={20} />
         </button>
         <div className="font-extrabold text-base text-[#0f172a]">Supplier Hub</div>
-        <div className="w-10" />
+        <NotificationBell />
       </header>
 
       {isSidebarOpen && isMobile && (

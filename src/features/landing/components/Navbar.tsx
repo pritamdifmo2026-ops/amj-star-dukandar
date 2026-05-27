@@ -10,6 +10,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
 import { fetchCart } from '@/features/buyer/store/cart.slice';
 import { ROUTES } from '@/shared/constants/routes';
+import NotificationBell from '@/features/notifications/components/NotificationBell';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import MessageModal from '@/shared/components/ui/MessageModal';
@@ -176,6 +177,7 @@ const Navbar: React.FC = () => {
                 </Link>
               </div>
             )}
+            {isAuth && <NotificationBell />}
             {isAuth && !isSupplier && !isReseller && !isAdmin && (
               <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate(ROUTES.CART)}>
                 <ShoppingCart size={20} />

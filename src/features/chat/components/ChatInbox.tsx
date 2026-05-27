@@ -383,6 +383,9 @@ const ChatInbox: React.FC = () => {
     const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showCancelInput, setShowCancelInput] = useState(false);
+    const [cancelReason, setCancelReason] = useState('');
+    const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
     const fetchQuote = () => {
       if (msg.quotationId) {
@@ -435,6 +438,7 @@ const ChatInbox: React.FC = () => {
       rejected: { label: 'Declined', cls: 'bg-[#fef2f2] text-[#dc2626]' },
       expired: { label: 'Expired', cls: 'bg-[#f1f5f9] text-[#94a3b8]' },
       ordered: { label: 'Order Created', cls: 'bg-[#eff6ff] text-[#0369a1]' },
+      cancelled: { label: 'Cancelled ❌', cls: 'bg-[#fef2f2] text-[#dc2626]' },
     };
     const meta = statusMeta[quote.status] || { label: quote.status, cls: 'bg-[#f1f5f9] text-[#475569]' };
 
@@ -491,19 +495,62 @@ const ChatInbox: React.FC = () => {
       }
     };
 
+    const handleCancelEnquiry = async () => {
+      if (!cancelReason.trim()) return;
+      setCancelSubmitting(true);
+      try {
+        await quotationApi.cancelQuotation(quote._id, cancelReason.trim());
+        loadMessages();
+        setShowCancelInput(false);
+        toast.success('Enquiry cancelled.');
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Failed to cancel');
+      } finally { setCancelSubmitting(false); }
+    };
+
+    const canSupplierCancel = isSupplier && ['pending', 'held', 'counter_offered'].includes(quote.status);
+    const canBuyerCancel = !isSupplier && ['pending', 'counter_offered'].includes(quote.status);
+
     // Action buttons — rendered outside the card so faded wrapper never blocks them
     const actionButtons = canEdit && (
       <div className="min-w-[260px] max-w-[340px]">
-        {!showDeleteConfirm ? (
-          <div className="flex gap-2 mt-1.5">
+        {!showDeleteConfirm && !showCancelInput ? (
+          <div className="flex flex-col gap-1.5 mt-1.5">
+            <div className="flex gap-2">
+              <button
+                onClick={handleEdit}
+                className="flex-1 py-1.5 text-xs font-bold text-[#2563eb] bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] cursor-pointer hover:bg-[#dbeafe]"
+              >✏️ Edit</button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex-1 py-1.5 text-xs font-bold text-[#475569] bg-[#f1f5f9] border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#e2e8f0]"
+              >✕ Retract</button>
+            </div>
             <button
-              onClick={handleEdit}
-              className="flex-1 py-1.5 text-xs font-bold text-[#2563eb] bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] cursor-pointer hover:bg-[#dbeafe]"
-            >✏️ Edit</button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex-1 py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fee2e2]"
-            >✕ Retract</button>
+              onClick={() => setShowCancelInput(true)}
+              className="w-full py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fee2e2]"
+            >🚫 Cancel Enquiry</button>
+          </div>
+        ) : showCancelInput ? (
+          <div className="mt-1.5 flex flex-col gap-2">
+            <textarea
+              autoFocus
+              rows={2}
+              value={cancelReason}
+              onChange={e => setCancelReason(e.target.value)}
+              placeholder="Reason for cancellation (required)"
+              className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
+            />
+            <div className="flex gap-2">
+              <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
+                className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                Back
+              </button>
+              <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
+                className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
+                {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="mt-1.5 bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-3 py-2.5">
@@ -739,6 +786,90 @@ const ChatInbox: React.FC = () => {
 
         {quote.status === 'ordered' && (
           <div className="px-4 pb-3 text-xs font-bold text-[#059669]">Order Created ✅</div>
+        )}
+
+        {quote.status === 'cancelled' && (
+          <div className="mx-4 mb-3 bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-3 py-2.5">
+            <p className="text-xs font-bold text-[#dc2626] m-0 mb-1">
+              Cancelled by {quote.cancelledBy === 'supplier' ? 'Supplier' : 'Buyer'}
+            </p>
+            {quote.cancellationReason && (
+              <p className="text-[11px] text-[#7f1d1d] m-0 leading-relaxed">
+                Reason: {quote.cancellationReason}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Supplier cancel UI — for counter_offered state (edit/retract not shown there) */}
+        {canSupplierCancel && quote.status === 'counter_offered' && (
+          <div className="px-4 pb-3">
+            {!showCancelInput ? (
+              <button
+                onClick={() => setShowCancelInput(true)}
+                className="w-full py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fee2e2]"
+              >
+                🚫 Cancel Enquiry
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <textarea
+                  autoFocus
+                  rows={2}
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  placeholder="Reason for cancellation (required)"
+                  className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
+                    className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                    Back
+                  </button>
+                  <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
+                    className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
+                    {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Buyer cancel UI */}
+        {canBuyerCancel && !showCounter && !confirmAction && (
+          <div className="px-4 pb-3">
+            {!showCancelInput ? (
+              <button
+                onClick={() => setShowCancelInput(true)}
+                className="w-full py-1 text-[11px] font-semibold text-[#dc2626] bg-transparent border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fef2f2]"
+              >
+                🚫 Cancel Enquiry
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs font-bold text-[#dc2626] m-0">Cancel this enquiry?</p>
+                <textarea
+                  autoFocus
+                  rows={2}
+                  value={cancelReason}
+                  onChange={e => setCancelReason(e.target.value)}
+                  placeholder="Reason for cancellation (required)"
+                  className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
+                    className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                    Back
+                  </button>
+                  <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
+                    className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
+                    {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     );
