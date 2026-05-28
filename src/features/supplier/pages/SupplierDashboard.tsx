@@ -10,7 +10,8 @@ import Button from '@/shared/components/ui/Button';
 import {
   LayoutDashboard, Package, Truck, LogOut, Trash2, FileText, MessageCircle,
   Handshake, Menu, Image as ImageIcon, Layers, CheckCircle, Clock,
-  AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store
+  AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store,
+  AlertTriangle, WifiOff, Wifi
 } from 'lucide-react';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
 
@@ -30,6 +31,9 @@ import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import OrderList from '../../buyer/components/OrderList';
 
+const isLowStock = (p: any) =>
+  typeof p.stock === 'number' && typeof p.moq === 'number' && p.moq > 0 && p.stock <= p.moq * 1.5;
+
 interface ProductGridProps {
   products: any[];
   loading: boolean;
@@ -38,6 +42,7 @@ interface ProductGridProps {
   onAdd?: () => void;
   onUnpublish: (product: any) => void;
   onViewReason: (reason: string) => void;
+  onToggleLive: (product: any) => void;
 }
 
 const statusCls: Record<string, string> = {
@@ -47,7 +52,7 @@ const statusCls: Record<string, string> = {
   rejected: 'bg-[#fef2f2] text-[#dc2626]',
 };
 
-const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason }) => {
+const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason, onToggleLive }) => {
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
@@ -93,6 +98,16 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
                 <span className="font-extrabold text-[#0f172a] text-base">₹{product.basePrice?.toLocaleString()}</span>
                 <span className="text-[#64748b] flex items-center gap-1 text-xs font-semibold"><Layers size={14} /> MOQ: {product.moq}</span>
               </div>
+              {isLowStock(product) && (
+                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#b45309] bg-[#fffbeb] border border-[#fcd34d] px-2 py-0.5 rounded-full w-fit mt-0.5">
+                  <AlertTriangle size={10} /> Low Stock ({product.stock} left)
+                </span>
+              )}
+              {product.isDisabledBySeller && (
+                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#6b7280] bg-[#f3f4f6] border border-[#d1d5db] px-2 py-0.5 rounded-full w-fit">
+                  <WifiOff size={10} /> Offline
+                </span>
+              )}
             </div>
             <div className="flex flex-col items-end justify-between gap-2 shrink-0">
               <div className={`text-[0.65rem] font-extrabold px-2 py-1 rounded-[6px] uppercase whitespace-nowrap flex items-center gap-1 ${statusCls[status] || statusCls.pending}`}>
@@ -103,6 +118,15 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
                 <button onClick={() => onEdit(product)} className="flex-1 py-2 text-[0.8rem] font-bold bg-[#f1f5f9] text-primary rounded-[8px] cursor-pointer hover:bg-primary hover:text-white transition-all">
                   Edit
                 </button>
+                {product.status === 'APPROVED' && (
+                  <button
+                    onClick={() => onToggleLive(product)}
+                    title={product.isDisabledBySeller ? 'Go Live' : 'Take Offline'}
+                    className={`w-[34px] flex items-center justify-center shrink-0 rounded-[8px] cursor-pointer transition-all ${product.isDisabledBySeller ? 'bg-[#f0fdf4] text-[#16a34a] hover:bg-[#16a34a] hover:text-white' : 'bg-[#f1f5f9] text-[#6b7280] hover:bg-[#6b7280] hover:text-white'}`}
+                  >
+                    {product.isDisabledBySeller ? <Wifi size={16} /> : <WifiOff size={16} />}
+                  </button>
+                )}
                 {(product.status === 'APPROVED' || product.status === 'PENDING') && (
                   <button onClick={() => onUnpublish(product)} className="flex-1 py-2 text-[0.8rem] font-bold bg-[#fff7ed] text-[#d97706] rounded-[8px] cursor-pointer hover:bg-[#d97706] hover:text-white transition-all">
                     Unpublish
@@ -259,14 +283,23 @@ const SupplierDashboard: React.FC = () => {
     }
   };
 
+  const handleToggleLive = async (product: any) => {
+    try {
+      await productService.sellerToggleLive(product.id || product._id);
+      await fetchProducts(false);
+    } catch {
+      setMsgModal({ isOpen: true, type: 'error', title: 'Action Failed', message: 'Could not update product visibility. Please try again.' });
+    }
+  };
+
   const handleLogout = () => setShowLogoutModal(true);
   const confirmLogout = () => { dispatch(logout()); window.location.href = '/'; };
   const isTrusted = products.filter(p => p.status === 'APPROVED').length >= 4;
   const handleFormSuccess = async () => { await fetchProducts(); setActiveView('inventory'); setEditingProduct(null); };
 
   const renderProductListing = (productList: any[]) => {
-    if (isMobile) return <ProductGrid products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} />;
-    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} />;
+    if (isMobile) return <ProductGrid products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} onToggleLive={handleToggleLive} />;
+    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} onToggleLive={handleToggleLive} />;
   };
 
   const modalContentCls = "text-center p-4";

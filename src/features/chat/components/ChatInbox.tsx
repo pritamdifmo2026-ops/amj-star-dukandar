@@ -368,6 +368,12 @@ const ChatInbox: React.FC = () => {
     sendMessage(text, receiverId);
   };
 
+  const formatTimeline = (v: string) => {
+    if (!v) return v;
+    if (/day|week|month|hour/i.test(v)) return v;
+    return v.replace(/-/g, '–') + ' days';
+  };
+
   // ── Quotation card ────────────────────────────────────────────────────────
   const QuotationCard = ({ msg }: { msg: any }) => {
     const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
@@ -376,6 +382,7 @@ const ChatInbox: React.FC = () => {
     const [quoteNotFound, setQuoteNotFound] = useState(false);
     const [showCounter, setShowCounter] = useState(false);
     const [counterPrice, setCounterPrice] = useState('');
+    const [counterTimeline, setCounterTimeline] = useState('');
     const [counterNote, setCounterNote] = useState('');
     const [counterSubmitting, setCounterSubmitting] = useState(false);
     const [contactPhone, setContactPhone] = useState<string | null>(null);
@@ -449,15 +456,43 @@ const ChatInbox: React.FC = () => {
     const halfRate = (quote.gstRate ?? 0) / 2;
 
     const submitCounter = async () => {
-      if (!counterPrice || Number(counterPrice) <= 0) return;
+      if (!counterPrice && !counterTimeline.trim()) return;
       setCounterSubmitting(true);
       try {
-        await quotationApi.counterOffer(quote._id, { price: Number(counterPrice), note: counterNote.trim() || undefined });
+        await quotationApi.counterOffer(quote._id, {
+          price: counterPrice ? Number(counterPrice) : undefined,
+          deliveryTimeline: counterTimeline.trim() || undefined,
+          note: counterNote.trim() || undefined,
+        });
         loadMessages();
         setShowCounter(false);
+        setCounterPrice('');
+        setCounterTimeline('');
+        setCounterNote('');
       } catch (err: any) {
         toast.error(err.response?.data?.message || 'Failed to send counter');
       } finally { setCounterSubmitting(false); }
+    };
+
+    const handleRespondToCounter = () => {
+      setQuoteForm({
+        itemName: quote.items?.[0]?.name || '',
+        hsnCode: quote.items?.[0]?.hsnCode || '',
+        quantity: quote.items?.[0]?.quantity || 1,
+        price: quote.counterOffer?.price
+          ? Math.round(quote.counterOffer.price / (quote.items?.[0]?.quantity || 1))
+          : (quote.items?.[0]?.price ?? 0),
+        gstType: quote.gstType || 'CGST_SGST',
+        gstRate: quote.gstRate ?? 18,
+        shipping: quote.shippingCost ?? 0,
+        deliveryTimeline: quote.counterOffer?.deliveryTimeline || quote.deliveryTimeline || '',
+        shippingNotes: quote.shippingNotes || '',
+        terms: quote.terms || 'Standard delivery terms apply.',
+        priceTag: '' as '' | 'Best Price' | 'Last Price',
+      });
+      setEditingQuoteId(null);
+      setQuoteFormErrors({});
+      setIsQuoteModalOpen(true);
     };
 
     const canEdit = isSupplier && isMine && (quote.status === 'pending' || quote.status === 'held');
@@ -650,17 +685,44 @@ const ChatInbox: React.FC = () => {
 
         {quote.counterOffer && (
           <div className="mx-4 mb-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] px-3 py-2 text-xs text-[#1d4ed8]">
-            <span className="font-bold block mb-0.5">Counter Offer from Buyer</span>
-            <span>₹{quote.counterOffer.price.toLocaleString('en-IN')} total <span className="text-[#93c5fd] font-normal">(excl. GST &amp; shipping)</span></span>
-            {quote.counterOffer.note && <span className="block text-[#3b82f6] mt-0.5">{quote.counterOffer.note}</span>}
+            <span className="font-bold block mb-1.5">Counter Offer from Buyer</span>
+            {quote.counterOffer.price ? (
+              <div className="flex justify-between items-center mb-0.5">
+                <span className="text-[#3b82f6]">Requested Price</span>
+                <span className="font-bold">₹{quote.counterOffer.price.toLocaleString('en-IN')} <span className="text-[#93c5fd] font-normal">(excl. GST &amp; shipping)</span></span>
+              </div>
+            ) : null}
+            {quote.counterOffer.deliveryTimeline ? (
+              <div className="flex justify-between items-center mb-0.5">
+                <span className="text-[#3b82f6]">Requested Timeline</span>
+                <span className="font-bold">{formatTimeline(quote.counterOffer.deliveryTimeline)}</span>
+              </div>
+            ) : null}
+            {quote.counterOffer.note && (
+              <p className="text-[#3b82f6] mt-1 m-0 border-t border-[#bfdbfe] pt-1">{quote.counterOffer.note}</p>
+            )}
           </div>
         )}
 
         {!isSupplier && quote.status === 'counter_offered' && (
           <div className="px-4 pb-3">
-            <p className="text-[10px] text-[#2563eb] font-semibold m-0 text-center bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] py-2">
-              Counter sent — awaiting supplier's new quotation.
-            </p>
+            <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] px-3 py-2">
+              <p className="text-[10px] text-[#2563eb] font-bold m-0 mb-1 text-center">Counter sent — awaiting supplier's response</p>
+              <div className="flex flex-col gap-0.5">
+                {quote.counterOffer?.price ? (
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-[#3b82f6]">Your price request</span>
+                    <span className="font-bold text-[#1d4ed8]">₹{quote.counterOffer.price.toLocaleString('en-IN')}</span>
+                  </div>
+                ) : null}
+                {quote.counterOffer?.deliveryTimeline ? (
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-[#3b82f6]">Your timeline request</span>
+                    <span className="font-bold text-[#1d4ed8]">{formatTimeline(quote.counterOffer.deliveryTimeline)}</span>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
         )}
 
@@ -716,7 +778,10 @@ const ChatInbox: React.FC = () => {
 
         {!isMine && !isSupplier && quote.status === 'pending' && showCounter && (
           <div className="px-4 pb-3 flex flex-col gap-2">
-            <div className="flex flex-col gap-1">
+            <p className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Counter Offer</p>
+            {/* Price counter */}
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[10px] text-[#64748b] font-semibold">Counter Total Price (total, excl. GST &amp; shipping)</label>
               <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary">
                 <span className="px-2 py-2 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
                 <input
@@ -726,19 +791,44 @@ const ChatInbox: React.FC = () => {
                   pattern="[0-9]*"
                   value={counterPrice}
                   onChange={e => setCounterPrice(e.target.value.replace(/\D/g, ''))}
-                  placeholder="Enter total amount"
+                  placeholder="Leave blank to keep current"
                   className="flex-1 border-none outline-none px-2 py-2 text-xs bg-transparent"
                 />
               </div>
-              <p className="text-[10px] text-[#94a3b8] m-0">Excluding GST &amp; shipping charges</p>
             </div>
-            <input type="text" value={counterNote} onChange={e => setCounterNote(e.target.value)}
-              placeholder="Note (optional)" className="border border-[#e2e8f0] rounded-[6px] px-2 py-2 text-xs outline-none focus:border-primary" />
+            {/* Timeline counter */}
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[10px] text-[#64748b] font-semibold">Delivery Timeline Request <span className="font-normal text-[#94a3b8]">(enter days)</span></label>
+              <input
+                type="text"
+                value={counterTimeline}
+                onChange={e => setCounterTimeline(e.target.value)}
+                onBlur={e => {
+                  const raw = e.target.value.trim();
+                  if (raw) setCounterTimeline(formatTimeline(raw));
+                }}
+                placeholder="e.g. 3 or 7–10"
+                className="border border-[#e2e8f0] rounded-[6px] px-2 py-2 text-xs outline-none focus:border-primary"
+              />
+            </div>
+            {/* Note */}
+            <input
+              type="text"
+              value={counterNote}
+              onChange={e => setCounterNote(e.target.value)}
+              placeholder="Note (optional)"
+              className="border border-[#e2e8f0] rounded-[6px] px-2 py-2 text-xs outline-none focus:border-primary"
+            />
             <div className="flex gap-2">
-              <button onClick={() => setShowCounter(false)}
-                className="flex-1 py-2 text-xs font-bold text-[#64748b] bg-[#f8fafc] rounded-[6px] border border-[#e2e8f0] cursor-pointer">Cancel</button>
-              <button onClick={submitCounter} disabled={counterSubmitting || !counterPrice}
-                className="flex-1 py-2 text-xs font-bold text-white bg-[#2563eb] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
+              <button
+                onClick={() => { setShowCounter(false); setCounterPrice(''); setCounterTimeline(''); setCounterNote(''); }}
+                className="flex-1 py-2 text-xs font-bold text-[#64748b] bg-[#f8fafc] rounded-[6px] border border-[#e2e8f0] cursor-pointer"
+              >Cancel</button>
+              <button
+                onClick={submitCounter}
+                disabled={counterSubmitting || (!counterPrice && !counterTimeline.trim())}
+                className="flex-1 py-2 text-xs font-bold text-white bg-[#2563eb] rounded-[6px] border-none cursor-pointer disabled:opacity-50"
+              >
                 {counterSubmitting ? 'Sending…' : 'Send Counter'}
               </button>
             </div>
@@ -746,9 +836,33 @@ const ChatInbox: React.FC = () => {
         )}
 
         {isSupplier && quote.status === 'counter_offered' && (
-          <div className="px-4 pb-3">
-            <p className="text-[10px] text-[#2563eb] font-semibold m-0 text-center">
-              Buyer has countered. Use "Send Quotation" above to respond with a new quote.
+          <div className="px-4 pb-3 flex flex-col gap-2">
+            <div className="bg-[#fafafa] border border-[#e2e8f0] rounded-[8px] px-3 py-2.5">
+              <p className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0 mb-1.5">Buyer's Counter Request</p>
+              {quote.counterOffer?.price ? (
+                <div className="flex justify-between text-xs mb-0.5">
+                  <span className="text-[#64748b]">Price requested</span>
+                  <span className="font-bold text-[#0f172a]">₹{quote.counterOffer.price.toLocaleString('en-IN')}</span>
+                </div>
+              ) : null}
+              {quote.counterOffer?.deliveryTimeline ? (
+                <div className="flex justify-between text-xs mb-0.5">
+                  <span className="text-[#64748b]">Delivery Time Requested</span>
+                  <span className="font-bold text-[#0f172a]">{formatTimeline(quote.counterOffer.deliveryTimeline)}</span>
+                </div>
+              ) : null}
+              {quote.counterOffer?.note ? (
+                <p className="text-[11px] text-[#64748b] m-0 mt-1 border-t border-[#e2e8f0] pt-1">{quote.counterOffer.note}</p>
+              ) : null}
+            </div>
+            <button
+              onClick={handleRespondToCounter}
+              className="w-full py-2 text-xs font-bold text-white bg-primary rounded-[6px] border-none cursor-pointer hover:opacity-90"
+            >
+              ✏️ Respond with New Quote
+            </button>
+            <p className="text-[10px] text-[#94a3b8] text-center m-0">
+              You can mark it as <strong>Last Price</strong> to signal a final offer.
             </p>
           </div>
         )}
@@ -996,13 +1110,13 @@ const ChatInbox: React.FC = () => {
               <div className="flex-1">
                 <div className="text-sm font-bold text-[#0f172a]">{getOtherParticipant(activeConv)?.name || 'User'}</div>
                 <div className="text-xs text-[#94a3b8]">
-                {isTyping ? 'Typing…' : (() => {
-                  if (activeConv.productId?.name) return `Re: ${activeConv.productId.name}`;
-                  const qMsg = messages.find(m => m.messageType === 'quotation' && m.text);
-                  if (qMsg?.text) return `Re: ${qMsg.text.replace(/^Quotation sent:\s*/i, '')}`;
-                  return 'General Enquiry';
-                })()}
-              </div>
+                  {isTyping ? 'Typing…' : (() => {
+                    if (activeConv.productId?.name) return `Re: ${activeConv.productId.name}`;
+                    const qMsg = messages.find(m => m.messageType === 'quotation' && m.text);
+                    if (qMsg?.text) return `Re: ${qMsg.text.replace(/^Quotation sent:\s*/i, '')}`;
+                    return 'General Enquiry';
+                  })()}
+                </div>
               </div>
               {user?.role === 'supplier' && (
                 <button
@@ -1050,74 +1164,74 @@ const ChatInbox: React.FC = () => {
             </div>
 
             {messages.some(m => m.messageType === 'system') && (
-            <div className="border-t border-[#f1f5f9] bg-white px-4 py-2.5 shrink-0">
-              {customMsgOpen ? (
-                /* ── Custom message input ── */
-                <div className="flex flex-col gap-2">
-                  <textarea
-                    autoFocus
-                    rows={2}
-                    value={customMsgText}
-                    onChange={e => setCustomMsgText(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        const t = customMsgText.trim();
-                        if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
-                      }
-                    }}
-                    placeholder={user?.role === 'supplier' ? 'Type your reply…' : 'Type your question…'}
-                    className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#1e293b] outline-none focus:border-primary resize-none"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      onClick={() => { setCustomMsgOpen(false); setCustomMsgText(''); }}
-                      className="px-3 py-1.5 text-xs font-semibold text-[#64748b] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
-                      Cancel
-                    </button>
-                    <button
-                      disabled={!customMsgText.trim()}
-                      onClick={() => {
-                        const t = customMsgText.trim();
-                        if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
+              <div className="border-t border-[#f1f5f9] bg-white px-4 py-2.5 shrink-0">
+                {customMsgOpen ? (
+                  /* ── Custom message input ── */
+                  <div className="flex flex-col gap-2">
+                    <textarea
+                      autoFocus
+                      rows={2}
+                      value={customMsgText}
+                      onChange={e => setCustomMsgText(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          const t = customMsgText.trim();
+                          if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
+                        }
                       }}
-                      className="px-4 py-1.5 text-xs font-bold text-white bg-primary rounded-[6px] border-none cursor-pointer disabled:opacity-40">
-                      Send
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* ── Quick reply pills ── */
-                <>
-                  <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider m-0 mb-2">Quick Replies</p>
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {(user?.role === 'supplier' ? SUPPLIER_QR : BUYER_QR).map(qr => (
+                      placeholder={user?.role === 'supplier' ? 'Type your reply…' : 'Type your question…'}
+                      className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#1e293b] outline-none focus:border-primary resize-none"
+                    />
+                    <div className="flex gap-2 justify-end">
                       <button
-                        key={qr.label}
+                        onClick={() => { setCustomMsgOpen(false); setCustomMsgText(''); }}
+                        className="px-3 py-1.5 text-xs font-semibold text-[#64748b] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                        Cancel
+                      </button>
+                      <button
+                        disabled={!customMsgText.trim()}
                         onClick={() => {
-                          if (qr.label.startsWith('❓') || qr.label.startsWith('✏️')) {
-                            setCustomMsgOpen(true);
-                          } else {
-                            handleQuickReply(qr.text);
-                          }
+                          const t = customMsgText.trim();
+                          if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
                         }}
-                        className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-full cursor-pointer hover:border-primary hover:text-primary hover:bg-[#fff7ed] transition-colors whitespace-nowrap"
-                      >
-                        {qr.label}
+                        className="px-4 py-1.5 text-xs font-bold text-white bg-primary rounded-[6px] border-none cursor-pointer disabled:opacity-40">
+                        Send
                       </button>
-                    ))}
-                    {/* Supplier custom reply button */}
-                    {user?.role === 'supplier' && (
-                      <button
-                        onClick={() => setCustomMsgOpen(true)}
-                        className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-full cursor-pointer hover:bg-[#ffedd5] transition-colors whitespace-nowrap">
-                        ✏️ Write your reply
-                      </button>
-                    )}
+                    </div>
                   </div>
-                </>
-              )}
-            </div>
+                ) : (
+                  /* ── Quick reply pills ── */
+                  <>
+                    <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider m-0 mb-2">Quick Replies</p>
+                    <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      {(user?.role === 'supplier' ? SUPPLIER_QR : BUYER_QR).map(qr => (
+                        <button
+                          key={qr.label}
+                          onClick={() => {
+                            if (qr.label.startsWith('❓') || qr.label.startsWith('✏️')) {
+                              setCustomMsgOpen(true);
+                            } else {
+                              handleQuickReply(qr.text);
+                            }
+                          }}
+                          className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-full cursor-pointer hover:border-primary hover:text-primary hover:bg-[#fff7ed] transition-colors whitespace-nowrap"
+                        >
+                          {qr.label}
+                        </button>
+                      ))}
+                      {/* Supplier custom reply button */}
+                      {user?.role === 'supplier' && (
+                        <button
+                          onClick={() => setCustomMsgOpen(true)}
+                          className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-full cursor-pointer hover:bg-[#ffedd5] transition-colors whitespace-nowrap">
+                          ✏️ Write your reply
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </>
         )}

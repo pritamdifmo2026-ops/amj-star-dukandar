@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { orderApi } from '@/features/order/services/order.api';
-import { ShoppingBag, Package, X, Truck, CheckCircle, Clock, XCircle, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Package, X, Truck, CheckCircle, Clock, XCircle, ChevronRight, Download, Search } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; Icon: React.FC<any> }> = {
   paid:       { label: 'Pending Dispatch', color: '#a16207', bg: '#fefce8', border: '#fde047', Icon: Clock },
@@ -15,6 +16,18 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 const getStatusConfig = (status: string) =>
   STATUS_CONFIG[status] ?? { label: status, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', Icon: Clock };
 
+const PAGE_SIZE = 10;
+
+type StatusFilter = 'all' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+
+const SUPPLIER_FILTERS: { key: StatusFilter; label: string; statuses: string[] }[] = [
+  { key: 'all',        label: 'All',              statuses: [] },
+  { key: 'processing', label: 'Pending Dispatch',  statuses: ['paid', 'processing', 'pending'] },
+  { key: 'shipped',    label: 'Dispatched',         statuses: ['shipped'] },
+  { key: 'delivered',  label: 'Delivered',          statuses: ['delivered'] },
+  { key: 'cancelled',  label: 'Cancelled',          statuses: ['cancelled'] },
+];
+
 const OrderList: React.FC = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +35,11 @@ const OrderList: React.FC = () => {
   const [dispatching, setDispatching] = useState(false);
   const [dispatchResult, setDispatchResult] = useState<{ trackingId: string } | null>(null);
   const [dispatchError, setDispatchError] = useState('');
+  const [confirmingDeliveryId, setConfirmingDeliveryId] = useState<string | null>(null);
+  const [deliveryConfirming, setDeliveryConfirming] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const { user } = useSelector((state: any) => state.auth);
 
   useEffect(() => { fetchOrders(); }, [user?.role]);
@@ -64,7 +82,46 @@ const OrderList: React.FC = () => {
     setDispatchError('');
   };
 
+  const handleConfirmDelivery = async (orderId: string) => {
+    setDeliveryConfirming(true);
+    try {
+      await orderApi.confirmDelivery(orderId);
+      setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: 'delivered' } : o));
+      setConfirmingDeliveryId(null);
+      toast.success('Delivery confirmed! Thank you.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to confirm delivery');
+    } finally {
+      setDeliveryConfirming(false);
+    }
+  };
+
   const isSupplier = user?.role === 'supplier';
+
+  const filteredOrders = (() => {
+    let result = orders;
+    // Status filter (supplier only)
+    if (isSupplier && statusFilter !== 'all') {
+      const cfg = SUPPLIER_FILTERS.find(f => f.key === statusFilter);
+      if (cfg) result = result.filter(o => cfg.statuses.includes(o.status));
+    }
+    // Search filter
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(o => {
+        const buyerName = (o.snapshot?.buyerName || o.buyerId?.name || '').toLowerCase();
+        const buyerPhone = (o.snapshot?.buyerPhone || o.buyerId?.phone || '').toLowerCase();
+        const orderNum = (o.orderNumber || '').toLowerCase();
+        const itemNames = (o.items || []).map((i: any) => i.name.toLowerCase()).join(' ');
+        const amount = String(o.totalAmount || '');
+        return buyerName.includes(q) || buyerPhone.includes(q) || orderNum.includes(q) || itemNames.includes(q) || amount.includes(q);
+      });
+    }
+    return result;
+  })();
+
+  const totalPages = Math.ceil(filteredOrders.length / PAGE_SIZE);
+  const paginatedOrders = filteredOrders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   if (loading) {
     return (
@@ -85,14 +142,81 @@ const OrderList: React.FC = () => {
     );
   }
 
+
   return (
     <>
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-extrabold text-[#0f172a] m-0">{isSupplier ? 'Received Orders' : 'My Orders'} ({orders.length})</h3>
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h3 className="text-base font-extrabold text-[#0f172a] m-0 shrink-0">
+            {isSupplier ? 'Received Orders' : 'My Orders'}
+            <span className="ml-2 text-xs font-bold text-[#94a3b8] bg-[#f1f5f9] px-2 py-0.5 rounded-full">
+              {filteredOrders.length}
+            </span>
+          </h3>
+          <div className="flex items-center gap-2 border border-[#e2e8f0] rounded-[8px] px-3 py-2 bg-[#f8fafc] focus-within:border-primary focus-within:bg-white transition-colors min-w-[220px] max-w-[320px] flex-1">
+            <Search size={14} className="text-[#94a3b8] shrink-0" />
+            <input
+              className="border-none outline-none text-sm bg-transparent flex-1 text-[#1e293b] placeholder:text-[#94a3b8]"
+              placeholder={isSupplier ? 'Order ID, buyer, item, amount…' : 'Search orders…'}
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+            />
+            {search && (
+              <button onClick={() => { setSearch(''); setPage(1); }} className="text-[#94a3b8] hover:text-[#475569] bg-transparent border-none cursor-pointer p-0 leading-none">×</button>
+            )}
+          </div>
         </div>
+
+        {/* Status filter tabs — supplier only */}
+        {isSupplier && (
+          <div className="flex gap-1.5 mb-5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {SUPPLIER_FILTERS.map(f => {
+              const base = search.trim()
+                ? (() => {
+                    const q = search.trim().toLowerCase();
+                    return orders.filter(o => {
+                      const buyerName = (o.snapshot?.buyerName || o.buyerId?.name || '').toLowerCase();
+                      const buyerPhone = (o.snapshot?.buyerPhone || o.buyerId?.phone || '').toLowerCase();
+                      const orderNum = (o.orderNumber || '').toLowerCase();
+                      const itemNames = (o.items || []).map((i: any) => i.name.toLowerCase()).join(' ');
+                      const amount = String(o.totalAmount || '');
+                      return buyerName.includes(q) || buyerPhone.includes(q) || orderNum.includes(q) || itemNames.includes(q) || amount.includes(q);
+                    });
+                  })()
+                : orders;
+              const count = f.key === 'all' ? base.length : base.filter(o => f.statuses.includes(o.status)).length;
+              const isActive = statusFilter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => { setStatusFilter(f.key); setPage(1); }}
+                  className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-[8px] border transition-colors cursor-pointer ${
+                    isActive
+                      ? 'bg-primary text-white border-primary shadow-sm'
+                      : 'bg-white text-[#475569] border-[#e2e8f0] hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {f.label}
+                  <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-[#f1f5f9] text-[#64748b]'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Empty state for current filter */}
+        {paginatedOrders.length === 0 && (
+          <div className="flex flex-col items-center gap-3 py-14 text-[#64748b]">
+            <ShoppingBag size={48} strokeWidth={1} />
+            <p className="text-sm font-semibold m-0">No orders in this category.</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-4">
-          {orders.map(order => {
+          {paginatedOrders.map(order => {
             const cfg = getStatusConfig(order.status);
             const StatusIcon = cfg.Icon;
             
@@ -195,12 +319,23 @@ const OrderList: React.FC = () => {
                 {/* Footer Section */}
                 <div className="px-5 py-3.5 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2 text-xs text-[#64748b]">
-                    <span className="w-2 h-2 rounded-full bg-[#34d399] animate-pulse" />
-                    <span>
-                      {isSupplier
-                        ? <>Buyer: <strong className="text-[#475569]">{order.buyerId?.name || 'Customer'}</strong></>
-                        : <>Supplier: <strong className="text-[#475569]">{order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}</strong></>}
-                    </span>
+                    <span className="w-2 h-2 rounded-full bg-[#34d399] animate-pulse shrink-0" />
+                    {isSupplier ? (
+                      <div className="flex flex-col gap-0.5">
+                        <span>Buyer: <strong className="text-[#475569]">{order.snapshot?.buyerName || order.buyerId?.name || 'Customer'}</strong></span>
+                        {(order.snapshot?.buyerPhone || order.buyerId?.phone) && (
+                          <a
+                            href={`tel:${order.snapshot?.buyerPhone || order.buyerId?.phone}`}
+                            className="text-[#0369a1] font-semibold no-underline hover:underline"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            📞 {order.snapshot?.buyerPhone || order.buyerId?.phone}
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <span>Supplier: <strong className="text-[#475569]">{order.snapshot?.supplierBusinessName || order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}</strong></span>
+                    )}
                   </div>
 
                   {isSupplier && (
@@ -212,11 +347,79 @@ const OrderList: React.FC = () => {
                       <ChevronRight size={13} />
                     </button>
                   )}
+
+                  {!isSupplier && (
+                    <div className="flex items-center gap-2">
+                      {order.poNumber && (
+                        <a
+                          href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '')}/api/orders/${order._id}/po-download`}
+                          target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[#0369a1] bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] no-underline hover:bg-[#dbeafe] transition-colors"
+                        >
+                          <Download size={12} /> PO
+                        </a>
+                      )}
+                      {order.status === 'shipped' && confirmingDeliveryId !== order._id && (
+                        <button
+                          onClick={() => setConfirmingDeliveryId(order._id)}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-[#059669] rounded-[6px] border-none cursor-pointer hover:bg-[#047857]"
+                        >
+                          <CheckCircle size={12} /> Confirm Delivery
+                        </button>
+                      )}
+                      {order.status === 'shipped' && confirmingDeliveryId === order._id && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-[#64748b]">Received your order?</span>
+                          <button
+                            onClick={() => setConfirmingDeliveryId(null)}
+                            className="px-2.5 py-1.5 text-xs font-semibold text-[#64748b] bg-[#f1f5f9] border border-[#e2e8f0] rounded-[6px] cursor-pointer border-none"
+                          >No</button>
+                          <button
+                            onClick={() => handleConfirmDelivery(order._id)}
+                            disabled={deliveryConfirming}
+                            className="px-2.5 py-1.5 text-xs font-bold text-white bg-[#059669] rounded-[6px] border-none cursor-pointer disabled:opacity-50"
+                          >{deliveryConfirming ? 'Confirming…' : 'Yes, Delivered'}</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#f1f5f9]">
+            <p className="text-xs text-[#94a3b8] m-0">
+              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredOrders.length)} of {filteredOrders.length}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1.5 text-xs font-bold text-[#475569] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >← Prev</button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-8 h-8 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${
+                    p === page
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-[#475569] border-[#e2e8f0] hover:border-primary hover:text-primary'
+                  }`}
+                >{p}</button>
+              ))}
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1.5 text-xs font-bold text-[#475569] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >Next →</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Manage Order Modal */}
@@ -241,7 +444,7 @@ const OrderList: React.FC = () => {
             <div className="overflow-y-auto flex-1 px-6 py-5 flex flex-col gap-4">
               {/* Order date + buyer */}
               <div className="flex items-center justify-between text-xs text-[#64748b]">
-                <span>Buyer: <strong className="text-[#0f172a]">{selectedOrder.buyerId?.name || 'Customer'}</strong></span>
+                <span>Buyer: <strong className="text-[#0f172a]">{selectedOrder.snapshot?.buyerName || selectedOrder.buyerId?.name || 'Customer'}</strong></span>
                 <span>{new Date(selectedOrder.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
               </div>
 
@@ -249,21 +452,87 @@ const OrderList: React.FC = () => {
               <div className="bg-[#f8fafc] rounded-[10px] border border-[#eef2f6] divide-y divide-[#f1f5f9]">
                 {selectedOrder.items.map((item: any, idx: number) => (
                   <div key={idx} className="flex items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Package size={14} className="text-[#94a3b8]" />
-                      <span className="text-sm text-[#1e293b] font-medium">{item.name}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Package size={14} className="text-[#94a3b8] shrink-0" />
+                      <span className="text-sm text-[#1e293b] font-medium truncate">{item.name}</span>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xs text-[#94a3b8]">×{item.quantity} {item.unit}</span>
-                      <span className="ml-3 text-sm font-bold text-[#0f172a]">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                    <div className="text-right shrink-0 ml-3">
+                      <span className="text-xs text-[#94a3b8]">×{item.quantity} {item.unit || 'pcs'}</span>
+                      <span className="ml-2 text-sm font-bold text-[#0f172a]">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 ))}
+
+                {/* Cost breakdown from snapshot */}
+                {(() => {
+                  const snap = selectedOrder.snapshot || {};
+                  const taxable = snap.taxableAmount ?? selectedOrder.subtotal ?? 0;
+                  const gstAmt = snap.gstAmount ?? 0;
+                  const shipping = selectedOrder.shippingCost ?? 0;
+                  const gstType = snap.gstType;
+                  const gstRate = snap.gstRate ?? 0;
+                  const halfRate = gstRate / 2;
+                  const showGst = gstType && gstType !== 'exempt' && gstAmt > 0;
+                  return (
+                    <>
+                      <div className="flex items-center justify-between px-4 py-2 text-xs text-[#64748b]">
+                        <span>Taxable Amount</span>
+                        <span className="font-medium text-[#0f172a]">₹{taxable.toLocaleString('en-IN')}</span>
+                      </div>
+                      {showGst && gstType === 'IGST' && (
+                        <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                          <span>IGST @ {gstRate}%</span>
+                          <span className="font-medium">₹{gstAmt.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
+                      {showGst && gstType === 'CGST_SGST' && (
+                        <>
+                          <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                            <span>CGST @ {halfRate}%</span>
+                            <span className="font-medium">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                          </div>
+                          <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                            <span>SGST @ {halfRate}%</span>
+                            <span className="font-medium">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                          </div>
+                        </>
+                      )}
+                      {!showGst && (
+                        <div className="flex items-center justify-between px-4 py-2 text-xs text-[#94a3b8]">
+                          <span>GST</span><span>Exempt / Nil</span>
+                        </div>
+                      )}
+                      {shipping > 0 && (
+                        <div className="flex items-center justify-between px-4 py-2 text-xs text-[#64748b]">
+                          <span>Shipping</span>
+                          <span className="font-medium text-[#0f172a]">₹{shipping.toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+
                 <div className="flex items-center justify-between px-4 py-3 bg-[#fff7ed]">
-                  <span className="text-sm font-bold text-[#0f172a]">Total</span>
+                  <span className="text-sm font-bold text-[#0f172a]">Grand Total</span>
                   <span className="text-base font-extrabold text-primary">₹{selectedOrder.totalAmount.toLocaleString('en-IN')}</span>
                 </div>
               </div>
+
+              {/* Delivery timeline & shipping notes from snapshot */}
+              {(selectedOrder.snapshot?.deliveryTimeline || selectedOrder.snapshot?.shippingNotes) && (
+                <div className="bg-[#f8fafc] rounded-[8px] border border-[#eef2f6] px-4 py-3 flex flex-col gap-1">
+                  {selectedOrder.snapshot?.deliveryTimeline && (
+                    <p className="text-xs text-[#64748b] m-0">
+                      Delivery: <strong className="text-[#0f172a]">{selectedOrder.snapshot.deliveryTimeline}</strong>
+                    </p>
+                  )}
+                  {selectedOrder.snapshot?.shippingNotes && (
+                    <p className="text-xs text-[#64748b] m-0">
+                      Notes: <span className="text-[#475569]">{selectedOrder.snapshot.shippingNotes}</span>
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Current status */}
               {(() => {

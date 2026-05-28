@@ -15,6 +15,7 @@ export const ENDPOINTS = {
     UPDATE: (id: string | number) => `/products/${id}`,
     DELETE: (id: string | number) => `/products/${id}`,
     SUGGESTIONS: '/products/suggestions',
+    SELLER_TOGGLE: (id: string | number) => `/products/${id}/seller-toggle`,
   },
 
   // Orders
@@ -25,6 +26,8 @@ export const ENDPOINTS = {
     CREATE: '/orders',
     UPDATE_STATUS: (id: string | number) => `/orders/${id}/status`,
     DISPATCH: (id: string | number) => `/orders/${id}/dispatch`,
+    CONFIRM_DELIVERY: (id: string | number) => `/orders/${id}/confirm-delivery`,
+    PO_DOWNLOAD: (id: string | number) => `/orders/${id}/po-download`,
   },
 
   // Cart

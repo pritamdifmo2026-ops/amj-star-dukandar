@@ -38,7 +38,10 @@ const PostRequirementSection: React.FC = () => {
 
   // Quick bar state
   const [quickProduct, setQuickProduct] = useState('');
-  const [quickPhone, setQuickPhone] = useState(user?.phone || '');
+  const [quickPhone, setQuickPhone] = useState(() => {
+    const p = String(user?.phone || '').replace(/\D/g, '');
+    return /^[6-9]\d{9}$/.test(p) ? p : '';
+  });
 
   // Full form state
   const [formData, setFormData] = useState({

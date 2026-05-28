@@ -66,7 +66,12 @@ export const productService = {
   deleteProduct: async (id: string) => {
     const response = await apiClient.delete(`/products/${id}`);
     return response.data;
-  }
+  },
+
+  sellerToggleLive: async (id: string) => {
+    const response = await apiClient.patch(`/products/${id}/seller-toggle`);
+    return response.data;
+  },
 };
 
 export default productService;

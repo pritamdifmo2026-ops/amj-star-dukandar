@@ -241,7 +241,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
             <h3 className="text-base font-bold text-[#1e293b] m-0">Verification &amp; Legal</h3>
             <span className={`ml-auto text-xs font-bold px-2.5 py-1 rounded-full ${profile?.kycStatus === 'VERIFIED' ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#fff7ed] text-[#c2410c]'}`}>{profile?.kycStatus || 'PENDING'}</span>
           </div>
-          <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-2 mb-6">
+          <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-2 mb-5">
             {[
               { label: 'GSTIN Number', val: profile?.businessDetails?.gstin },
               { label: 'Tier', val: profile?.tier || 'FREE' },
@@ -255,9 +255,37 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               </div>
             ))}
           </div>
+
+          {/* Commission Rate highlight */}
+          <div className="mb-5 bg-[#f0fdf4] border border-[#86efac] rounded-[10px] px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#15803d] m-0 mb-1">Your Commission Rate</p>
+              {profile?.commissionRate != null ? (
+                <>
+                  <p className="text-2xl font-extrabold text-[#15803d] m-0">{profile.commissionRate}%</p>
+                  <p className="text-xs text-[#166534] mt-1 m-0">
+                    AMJSTAR retains <strong>{profile.commissionRate}%</strong> of the deal value on every confirmed order. The rest is your earnings.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-bold text-[#64748b] m-0">Not set yet</p>
+                  <p className="text-xs text-[#94a3b8] mt-1 m-0">Contact AMJSTAR to configure your commission rate before sending quotations.</p>
+                </>
+              )}
+            </div>
+            {profile?.commissionRate != null && (
+              <div className="text-center bg-white border border-[#86efac] rounded-[8px] px-4 py-3 shrink-0">
+                <p className="text-[10px] font-bold text-[#64748b] uppercase tracking-wide m-0 mb-1">Example on ₹1,00,000 deal</p>
+                <p className="text-sm font-extrabold text-[#dc2626] m-0">−₹{(1000 * profile.commissionRate).toLocaleString('en-IN')} AMJ fee</p>
+                <p className="text-sm font-extrabold text-[#15803d] m-0">₹{(1000 * (100 - profile.commissionRate)).toLocaleString('en-IN')} your earning</p>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-start gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] px-4 py-3 text-[#c2410c] text-sm mb-5">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <p className="m-0">Legal and Tier details are managed by AMJSTAR Team. To set your commission rate or request changes, call us directly.</p>
+            <p className="m-0">Legal, Tier, and Commission details are managed by AMJSTAR Team. To request changes, call us directly.</p>
           </div>
           {contactHref ? (
             <a

@@ -33,4 +33,8 @@ export const orderApi = {
     const res = await apiClient.patch(ENDPOINTS.ORDERS.DISPATCH(id));
     return res.data.data;
   },
+
+  confirmDelivery: async (id: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.CONFIRM_DELIVERY(id));
+  },
 };

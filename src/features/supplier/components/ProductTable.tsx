@@ -1,6 +1,9 @@
 import React from 'react';
-import { Package, Edit2, Trash2, EyeOff, Info } from 'lucide-react';
+import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
+
+const isLowStock = (p: any) =>
+  typeof p.stock === 'number' && typeof p.moq === 'number' && p.moq > 0 && p.stock <= p.moq * 1.5;
 
 const statusCls: Record<string, string> = {
   approved: 'bg-[#ecfdf5] text-[#059669]',
@@ -16,9 +19,10 @@ interface ProductTableProps {
   onAdd: () => void;
   onUnpublish: (product: any) => void;
   onViewReason: (reason: string) => void;
+  onToggleLive: (product: any) => void;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason, onToggleLive }) => {
   if (loading) return <p>Loading products...</p>;
 
   if (products.length === 0) {
@@ -51,9 +55,19 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
                   ) : (
                     <div className="w-11 h-11 rounded-[10px] bg-[#f1f5f9]" />
                   )}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-1">
                     <span>{product.name}</span>
                     {product.sku && <span className="text-xs text-[#94a3b8]">SKU: {product.sku}</span>}
+                    {isLowStock(product) && (
+                      <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#b45309] bg-[#fffbeb] border border-[#fcd34d] px-2 py-0.5 rounded-full w-fit">
+                        <AlertTriangle size={10} /> Low Stock ({product.stock} left)
+                      </span>
+                    )}
+                    {product.isDisabledBySeller && (
+                      <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#6b7280] bg-[#f3f4f6] border border-[#d1d5db] px-2 py-0.5 rounded-full w-fit">
+                        <WifiOff size={10} /> Offline
+                      </span>
+                    )}
                   </div>
                 </div>
               </td>
@@ -65,10 +79,19 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
                 </span>
               </td>
               <td className="px-4 py-5 border-b border-[#f8fafc]">
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button onClick={() => onEdit(product)} title="Edit" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
                     <Edit2 size={16} />
                   </button>
+                  {product.status === 'APPROVED' && (
+                    <button
+                      onClick={() => onToggleLive(product)}
+                      title={product.isDisabledBySeller ? 'Go Live' : 'Take Offline'}
+                      className={`w-[34px] h-[34px] flex items-center justify-center rounded-[10px] border cursor-pointer transition-all ${product.isDisabledBySeller ? 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0] hover:bg-[#16a34a] hover:text-white' : 'bg-[#f1f5f9] text-[#6b7280] border-[#e2e8f0] hover:bg-[#6b7280] hover:text-white'}`}
+                    >
+                      {product.isDisabledBySeller ? <Wifi size={16} /> : <WifiOff size={16} />}
+                    </button>
+                  )}
                   {(product.status === 'APPROVED' || product.status === 'PENDING') && (
                     <button onClick={() => onUnpublish(product)} title="Unpublish" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fff7ed] text-[#d97706] border border-[#ffedd5] cursor-pointer hover:bg-[#d97706] hover:text-white transition-all">
                       <EyeOff size={16} />
