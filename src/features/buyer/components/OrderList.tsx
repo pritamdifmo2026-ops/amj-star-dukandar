@@ -95,52 +95,121 @@ const OrderList: React.FC = () => {
           {orders.map(order => {
             const cfg = getStatusConfig(order.status);
             const StatusIcon = cfg.Icon;
+            
+            // Extract product from populated quotationId -> conversationId -> productId
+            const product = order.quotationId?.conversationId?.productId;
+            const productImage = product?.images?.[0] || '';
+            const brand = product?.brand;
+            const category = product?.category;
+            const specs = product?.specifications || {};
+            
+            // Build attributes chips
+            const attributes: string[] = [];
+            if (brand) attributes.push(`Brand: ${brand}`);
+            if (category) attributes.push(`Category: ${category}`);
+            if (specs && typeof specs === 'object') {
+              Object.entries(specs).slice(0, 3).forEach(([k, v]) => {
+                if (typeof v === 'string') {
+                  attributes.push(`${k}: ${v}`);
+                }
+              });
+            }
+
             return (
-              <div key={order._id} className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
-                <div className="p-5 flex items-start justify-between gap-4 max-sm:flex-col">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs font-extrabold text-primary bg-[#fff7ed] px-2.5 py-1 rounded-full">{order.orderNumber}</span>
-                      <span className="text-xs text-[#94a3b8]">
-                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </span>
-                    </div>
+              <div key={order._id} className="bg-white border border-[#eef2f6] rounded-[16px] shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] transition-all overflow-hidden flex flex-col">
+                {/* Header Section */}
+                <div className="px-5 py-4 bg-[#fafbfc] border-b border-[#f1f5f9] flex items-center justify-between flex-wrap gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">Order ID</span>
+                    <span className="text-xs font-extrabold text-[#0f172a] bg-[#e2e8f0] px-2.5 py-1 rounded-full">{order.orderNumber}</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-[#94a3b8] font-medium">
+                    <span>Ordered: <strong className="text-[#475569]">{new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#cbd5e1] max-sm:hidden" />
+                    <span>Last Update: <strong className="text-[#475569]">{new Date(order.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</strong></span>
+                  </div>
+                </div>
+
+                {/* Main Content Body */}
+                <div className="p-5 flex gap-5 items-start max-sm:flex-col">
+                  {/* Left Side: Product Image */}
+                  <div className="w-[88px] h-[88px] rounded-[12px] overflow-hidden bg-[#f8fafc] border border-[#eef2f6] shrink-0 flex items-center justify-center shadow-inner max-sm:w-full max-sm:h-[120px]">
+                    {productImage ? (
+                      <img src={productImage} alt={order.items[0]?.name || 'Product'} className="w-full h-full object-cover transition-transform hover:scale-105" />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center gap-1 text-[#cbd5e1]">
+                        <Package size={28} strokeWidth={1.5} />
+                        <span className="text-[8px] font-bold uppercase tracking-wide text-[#94a3b8]">No Image</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Middle Section: Items and Attributes */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-3">
                     <div className="flex flex-col gap-1.5">
                       {order.items.map((item: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-[#475569]">
-                          <Package size={14} className="text-[#94a3b8] shrink-0" />
-                          <span>{item.name}</span>
-                          <span className="text-[#94a3b8]">×{item.quantity} {item.unit}</span>
+                        <div key={idx} className="flex flex-col gap-1">
+                          <h4 className="text-sm font-extrabold text-[#0f172a] m-0 line-clamp-2 hover:text-primary transition-colors">
+                            {item.name}
+                          </h4>
+                          <div className="flex items-center gap-2 text-xs font-semibold text-[#64748b]">
+                            <span>Price: ₹{item.price.toLocaleString('en-IN')}/{item.unit || 'pcs'}</span>
+                            <span className="text-[#cbd5e1]">•</span>
+                            <span>Qty: {item.quantity} {item.unit || 'pcs'}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
+
+                    {/* Attributes chips list */}
+                    {attributes.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {attributes.map((attr, idx) => (
+                          <span key={idx} className="text-[10px] font-bold text-[#475569] bg-[#f1f5f9] px-2 py-0.5 rounded-[6px] border border-[#e2e8f0]/40">
+                            {attr}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs text-[#94a3b8] m-0 mb-1">Order Value</p>
-                    <p className="text-lg font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN')}</p>
+
+                  {/* Right Side: Pricing and Status */}
+                  <div className="flex flex-col items-end justify-between self-stretch shrink-0 text-right min-h-[88px] max-sm:items-start max-sm:text-left max-sm:w-full max-sm:self-auto max-sm:min-h-0 max-sm:gap-4 max-sm:border-t max-sm:border-[#f1f5f9] max-sm:pt-4">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider m-0 mb-1">Total Amount</p>
+                      <p className="text-xl font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN')}</p>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1 max-sm:items-start">
+                      <div
+                        className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit"
+                        style={{ color: cfg.color, backgroundColor: cfg.bg, borderColor: cfg.border }}
+                      >
+                        <StatusIcon size={12} />
+                        {cfg.label}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="px-5 py-3 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-between gap-3">
-                  <div className="flex flex-col gap-1">
-                    <div
-                      className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full w-fit"
-                      style={{ color: cfg.color, backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}
-                    >
-                      <StatusIcon size={11} />
-                      {cfg.label}
-                    </div>
-                    <span className="text-xs text-[#94a3b8] mt-0.5">
+
+                {/* Footer Section */}
+                <div className="px-5 py-3.5 bg-[#f8fafc] border-t border-[#f1f5f9] flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 text-xs text-[#64748b]">
+                    <span className="w-2 h-2 rounded-full bg-[#34d399] animate-pulse" />
+                    <span>
                       {isSupplier
-                        ? `Buyer: ${order.buyerId?.name || 'Customer'}`
-                        : `Supplier: ${order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}`}
+                        ? <>Buyer: <strong className="text-[#475569]">{order.buyerId?.name || 'Customer'}</strong></>
+                        : <>Supplier: <strong className="text-[#475569]">{order.supplierId?.companyName || order.supplierId?.name || 'Unknown'}</strong></>}
                     </span>
                   </div>
+
                   {isSupplier && (
                     <button
                       onClick={() => { setSelectedOrder(order); setDispatchResult(null); setDispatchError(''); }}
-                      className="flex items-center gap-1.5 text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0 shrink-0"
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-primary rounded-[6px] hover:opacity-90 transition-opacity border-none cursor-pointer"
                     >
-                      Manage Order <ChevronRight size={14} />
+                      <span>Manage Order</span>
+                      <ChevronRight size={13} />
                     </button>
                   )}
                 </div>

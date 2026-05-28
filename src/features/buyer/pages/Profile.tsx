@@ -6,7 +6,7 @@ import {
   User, Package, MapPin, CreditCard, Settings, Bell, Heart,
   X, Mail, Phone, ShoppingBag,
   LogOut, ChevronRight, Star, Clock, Check, MessageCircle,
-  Plus, Trash2, Edit2, CheckCircle2, BookUser
+  Plus, Trash2, Edit2, CheckCircle2, BookUser, ClipboardList
 } from 'lucide-react';
 import { setCredentials, logout } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
@@ -24,8 +24,13 @@ import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import AccountOverviewSection from '../components/AccountOverviewSection';
 import { addressApi } from '@/features/buyer/services/address.api';
+import MyRequirementsList from '../components/MyRequirementsList';
+import { buyerProfileApi } from '@/features/buyer/services/buyer-profile.api';
+
 
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
+
+
 const HELPLINE_NUMBER = '9034440673';
 const PAYMENT_HELPLINE_NUMBER = '9034440659';
 const emptyAddressForm = {
@@ -67,6 +72,7 @@ const Profile: React.FC = () => {
   const [enquiryForm, setEnquiryForm] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', message: '' });
   const [enquirySubmitting, setEnquirySubmitting] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
+  const [requirementsCount, setRequirementsCount] = useState(0);
   const memberSince = 'January 2024';
   const isEmailVerified = user?.isEmailVerified || false;
   const { socket } = useSocket();
@@ -141,8 +147,20 @@ const Profile: React.FC = () => {
     }
   };
 
+  const fetchRequirementsCount = async () => {
+    try {
+      const list = await buyerProfileApi.getMyRequirements();
+      setRequirementsCount(list.length);
+    } catch (err) {
+      console.error('Failed to fetch requirements count');
+    }
+  };
+
   React.useEffect(() => {
-    if (user) fetchOrderCount();
+    if (user) {
+      fetchOrderCount();
+      fetchRequirementsCount();
+    }
   }, [user]);
 
   const fetchAddresses = async () => {
@@ -184,6 +202,8 @@ const Profile: React.FC = () => {
       });
     }
   };
+
+
 
   const resetAddressForm = () => {
     setShowAddressForm(false);
@@ -335,6 +355,7 @@ const Profile: React.FC = () => {
 
   const menuItems = [
     { id: 'overview', label: 'Account Overview', icon: User },
+    { id: 'requirements', label: 'My Requirements', icon: ClipboardList, badge: requirementsCount },
     { id: 'orders', label: 'My Orders', icon: Package, badge: orderCount },
     { id: 'messages', label: 'Enquiries', icon: MessageCircle, badge: totalUnread },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistItems.length },
@@ -587,6 +608,12 @@ const Profile: React.FC = () => {
               <AccountOverviewSection />
             </div>
             </>
+          )}
+
+          {activeTab === 'requirements' && (
+            <div className="p-6 max-w-[1000px] mx-auto">
+              <MyRequirementsList />
+            </div>
           )}
 
           {activeTab === 'orders' && (

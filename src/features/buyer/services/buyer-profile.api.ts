@@ -24,6 +24,30 @@ export interface AccountOverviewResponse {
   requirement: RequirementData | null;
 }
 
+export interface PostedRequirement {
+  _id: string;
+  reqId: string;
+  productName: string;
+  category: string;
+  subcategory: string;
+  quantity: string;
+  notes?: string;
+  buyerName: string;
+  buyerCompany: string;
+  buyerEmail: string;
+  buyerPhone: string;
+  buyerLocation?: string;
+  status: 'New' | 'In Progress' | 'Follow Up' | 'Converted' | 'Closed';
+  assignedSupplierId?: {
+    _id: string;
+    name: string;
+    email: string;
+    businessName?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const buyerProfileApi = {
   getAccountOverview: async (): Promise<AccountOverviewResponse> => {
     const response = await apiClient.get('/buyer/account-overview');
@@ -39,4 +63,10 @@ export const buyerProfileApi = {
     const response = await apiClient.put('/buyer/requirement', data);
     return response.data;
   },
+
+  getMyRequirements: async (): Promise<PostedRequirement[]> => {
+    const response = await apiClient.get('/requirements/my');
+    return response.data.requirements;
+  },
 };
+

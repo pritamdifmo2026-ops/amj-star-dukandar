@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { X, ChevronRight, ChevronLeft, Send, MapPin, Check } from 'lucide-react';
 import { setCredentials } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
+import { indiaStates, stateCityMap } from '@/utils/indiaAddressData';
 
 interface EnquiryModalProps {
   productName: string;
@@ -82,6 +83,11 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
   const finalPrice = priceMode === 'custom' ? Number(customPrice) || null : null;
 
   const newAddrValid = city.trim() !== '' && state.trim() !== '' && /^\d{6}$/.test(pincode.trim());
+
+  const handleStateChange = (selectedState: string) => {
+    setState(selectedState);
+    setCity('');
+  };
 
   const canProceed = () => {
     if (step === 1) return (useCustomQty ? Number(customQty) >= 1 && Number(customQty) <= stock : quantity <= stock);
@@ -322,14 +328,31 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="flex flex-col gap-1">
-                        <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">City *</label>
-                        <input type="text" value={city} onChange={e => setCity(e.target.value)}
-                          placeholder="e.g. Mumbai" className={inputCls} />
+                        <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">State *</label>
+                        <select
+                          value={state}
+                          onChange={e => handleStateChange(e.target.value)}
+                          className={inputCls}
+                        >
+                          <option value="">Select State</option>
+                          {indiaStates.map(st => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
+                        </select>
                       </div>
                       <div className="flex flex-col gap-1">
-                        <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">State *</label>
-                        <input type="text" value={state} onChange={e => setState(e.target.value)}
-                          placeholder="e.g. Maharashtra" className={inputCls} />
+                        <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">City *</label>
+                        <select
+                          value={city}
+                          onChange={e => setCity(e.target.value)}
+                          disabled={!state}
+                          className={`${inputCls} disabled:opacity-60 disabled:cursor-not-allowed`}
+                        >
+                          <option value="">Select City</option>
+                          {state && stateCityMap[state]?.map(ct => (
+                            <option key={ct} value={ct}>{ct}</option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
