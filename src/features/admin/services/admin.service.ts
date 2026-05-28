@@ -188,6 +188,36 @@ const adminService = {
 
   changeAdminPassword: async (newPassword: string): Promise<void> => {
     await api.post('/admin/change-password', { newPassword });
+  },
+
+  // ─── Dedicated Ticket System ──────────────────────────────────────────────
+  submitTicket: async (data: {
+    buyerName: string;
+    buyerEmail?: string;
+    phone: string;
+    subject: string;
+    issueType: string;
+    message: string;
+    priority?: string;
+    attachmentUrl?: string;
+  }) => {
+    const response = await api.post('/tickets/create', data);
+    return response.data.ticket;
+  },
+
+  getTickets: async (): Promise<any[]> => {
+    const response = await api.get('/tickets');
+    return response.data.tickets;
+  },
+
+  replyToTicket: async (id: string, message: string, sendEmail: boolean = false, subject?: string): Promise<any> => {
+    const response = await api.post(`/tickets/${id}/reply`, { message, sendEmail, subject });
+    return response.data; // returns { success, ticket, emailSent, emailError }
+  },
+
+  updateTicketStatus: async (id: string, status: string): Promise<any> => {
+    const response = await api.patch(`/tickets/${id}/status`, { status });
+    return response.data.ticket;
   }
 };
 
