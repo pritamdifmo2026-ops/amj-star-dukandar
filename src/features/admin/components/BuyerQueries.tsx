@@ -147,8 +147,7 @@ const BuyerQueries: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-lg font-extrabold text-[#0f172a] m-0">Buyer Queries</h3>
+      <div className="flex justify-end items-center mb-2">
         <button
           onClick={() => fetchTickets(true)}
           className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-[6px] border-none cursor-pointer transition-colors"

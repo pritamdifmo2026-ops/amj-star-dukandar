@@ -388,7 +388,7 @@ const AccountOverviewSection: React.FC = () => {
       {/* ══════════════════════════════════════════════════
           CARD 2 — Enter Your Requirement
       ══════════════════════════════════════════════════ */}
-      <div className="bg-white border border-[#eef2f6] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-all overflow-hidden">
+      <div id="buyer-requirement-section" className="bg-white border border-[#eef2f6] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] transition-all overflow-hidden">
 
         {/* Card header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#f1f5f9] bg-gradient-to-r from-[#f0fdf4] to-white">

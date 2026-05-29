@@ -3,11 +3,13 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import {
-  User, Package, MapPin, CreditCard, Settings, Bell, Heart,
+  User, Package, MapPin, CreditCard, Bell, Heart,
   X, Mail, Phone, ShoppingBag,
   LogOut, ChevronRight, Star, Clock, Check, MessageCircle,
-  Plus, Trash2, Edit2, CheckCircle2, BookUser, ClipboardList
+  Plus, Trash2, Edit2, CheckCircle2, BookUser, ClipboardList,
+  CheckCheck, Truck, Tag
 } from 'lucide-react';
+import { notificationApi, type INotification } from '@/features/notifications/notificationApi';
 import { setCredentials, logout } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import ProductCard from '@/features/product/components/ProductCard';
@@ -79,6 +81,10 @@ const Profile: React.FC = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(false);
+  const [notifications, setNotifications] = useState<INotification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notifPage, setNotifPage] = useState(1);
+  const NOTIF_PAGE_SIZE = 15;
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addressSubmitting, setAddressSubmitting] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -177,6 +183,48 @@ const Profile: React.FC = () => {
   React.useEffect(() => {
     if (user) fetchAddresses();
   }, [user]);
+
+  const fetchNotifications = async () => {
+    setNotificationsLoading(true);
+    try {
+      const data = await notificationApi.getAll();
+      setNotifications(data);
+    } catch (err) {
+      console.error('Failed to fetch notifications');
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'notifications' && user) {
+      setNotifPage(1);
+      fetchNotifications();
+    }
+  }, [activeTab, user]);
+
+  React.useEffect(() => {
+    if (activeTab === 'overview' && searchParams.get('scrollTo') === 'requirement') {
+      const timer = setTimeout(() => {
+        document.getElementById('buyer-requirement-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, searchParams]);
+
+  const handleMarkNotifRead = async (id: string) => {
+    try {
+      await notificationApi.markRead(id);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+    } catch {}
+  };
+
+  const handleMarkAllNotifRead = async () => {
+    try {
+      await notificationApi.markAllRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch {}
+  };
 
   // Redirect admin/superadmin users to admin dashboard (placed after all hooks)
   if (user?.role === 'admin' || user?.role === 'superadmin') {
@@ -366,7 +414,6 @@ const Profile: React.FC = () => {
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'payments', label: 'Payment Methods', icon: CreditCard },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'contactus', label: 'Contact Us', icon: MessageCircle },
   ];
 
@@ -529,7 +576,7 @@ const Profile: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-6 max-w-[1000px] mx-auto">
+              <div className="px-6 pt-6 pb-24 max-w-[1000px] mx-auto">
                 <div className="grid grid-cols-2 gap-5 mb-8 max-lg:grid-cols-1">
                 <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all">
                   <div className="flex items-center justify-between mb-5">
@@ -633,7 +680,7 @@ const Profile: React.FC = () => {
           )}
 
           {activeTab === 'wishlist' && (
-          <div className="py-6">
+          <div className="p-6 max-w-[1200px] mx-auto">
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">My Wishlist ({wishlistItems.length})</h3>
             {wishlistItems.length > 0 ? (
               <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-2">
@@ -802,6 +849,109 @@ const Profile: React.FC = () => {
           )}
 
 
+        {activeTab === 'notifications' && (
+          <div className="p-6 max-w-[800px] mx-auto">
+            <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+              <div>
+                <h3 className="text-base font-extrabold text-[#0f172a] m-0">Notifications</h3>
+                <p className="text-xs text-[#64748b] m-0 mt-0.5">All your activity alerts and updates</p>
+              </div>
+              {notifications.some(n => !n.isRead) && (
+                <button
+                  onClick={handleMarkAllNotifRead}
+                  className="flex items-center gap-1.5 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] px-3 py-1.5 cursor-pointer hover:bg-[#ffedd5] transition-colors"
+                >
+                  <CheckCheck size={14} /> Mark all as read
+                </button>
+              )}
+            </div>
+
+            {notificationsLoading ? (
+              <div className="flex items-center gap-2 text-sm text-[#64748b]">
+                <Loader2 size={16} className="animate-spin text-primary" /> Loading notifications...
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="bg-white border border-[#eef2f6] rounded-[12px] p-10 flex flex-col items-center text-center gap-3">
+                <Bell size={36} className="text-[#94a3b8]" />
+                <h4 className="text-base font-extrabold text-[#0f172a] m-0">No Notifications Yet</h4>
+                <p className="text-sm text-[#64748b] m-0">Activity alerts, order updates, and messages will appear here.</p>
+              </div>
+            ) : (() => {
+              const totalPages = Math.ceil(notifications.length / NOTIF_PAGE_SIZE);
+              const pageItems = notifications.slice((notifPage - 1) * NOTIF_PAGE_SIZE, notifPage * NOTIF_PAGE_SIZE);
+              return (
+                <>
+                  <div className="flex flex-col gap-2">
+                    {pageItems.map(notif => (
+                      <div
+                        key={notif._id}
+                        onClick={() => { if (!notif.isRead) handleMarkNotifRead(notif._id); }}
+                        className={`bg-white border rounded-[12px] p-4 cursor-pointer transition-all hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] ${notif.isRead ? 'border-[#eef2f6]' : 'border-primary/20 bg-[#fff7ed]/30'}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${notif.isRead ? 'bg-[#f1f5f9] text-[#94a3b8]' : 'bg-[#fff7ed] text-primary'}`}>
+                            {notif.type === 'message' ? <MessageCircle size={16} /> :
+                             notif.type === 'quotation' ? <Package size={16} /> :
+                             notif.type === 'order_status' ? <Truck size={16} /> :
+                             notif.type === 'counter_offer' ? <Tag size={16} /> :
+                             notif.type === 'inquiry' ? <ClipboardList size={16} /> :
+                             <Bell size={16} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 flex-wrap">
+                              <p className={`text-sm font-bold m-0 ${notif.isRead ? 'text-[#475569]' : 'text-[#0f172a]'}`}>{notif.title}</p>
+                              <span className="text-[10px] text-[#94a3b8] shrink-0">
+                                {new Date(notif.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-xs text-[#64748b] m-0 mt-0.5 leading-relaxed">{notif.body}</p>
+                          </div>
+                          {!notif.isRead && (
+                            <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-2" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-[#eef2f6]">
+                      <p className="text-xs text-[#64748b] m-0">
+                        Showing {(notifPage - 1) * NOTIF_PAGE_SIZE + 1}–{Math.min(notifPage * NOTIF_PAGE_SIZE, notifications.length)} of {notifications.length}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setNotifPage(p => p - 1)}
+                          disabled={notifPage === 1}
+                          className="px-3 py-1.5 text-xs font-semibold text-[#475569] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f8fafc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          ← Prev
+                        </button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                          <button
+                            key={p}
+                            onClick={() => setNotifPage(p)}
+                            className={`w-8 h-8 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${p === notifPage ? 'bg-primary text-white border-primary' : 'bg-white text-[#475569] border-[#e2e8f0] hover:bg-[#f8fafc]'}`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setNotifPage(p => p + 1)}
+                          disabled={notifPage === totalPages}
+                          className="px-3 py-1.5 text-xs font-semibold text-[#475569] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f8fafc] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        )}
+
         {activeTab === 'contactus' && (
           <div className="py-6 max-w-[1000px]">
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Contact & Raise Ticket</h3>
@@ -846,7 +996,7 @@ const Profile: React.FC = () => {
                     value={enquiryForm.message}
                     onChange={e => setEnquiryForm(prev => ({ ...prev, message: e.target.value }))}
                     rows={5}
-                    className={inputCls + ' resize-y'}
+                    className={inputCls() + ' resize-y'}
                     placeholder="Describe your problem, question, or enquiry..."
                   />
                 </div>

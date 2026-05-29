@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { X, ChevronRight, ChevronLeft, Send, MapPin, Check } from 'lucide-react';
 import { setCredentials } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
+import { addressApi } from '@/features/buyer/services/address.api';
 import { indiaStates, stateCityMap } from '@/utils/indiaAddressData';
 
 interface EnquiryModalProps {
@@ -103,11 +104,25 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
         ? { city: savedAddress.city, state: savedAddress.state, pincode: savedAddress.pincode, fullAddress: savedAddress.fullAddress }
         : { city: city.trim(), state: state.trim(), pincode: pincode.trim(), fullAddress: fullAddress.trim() || undefined };
 
-      // Optionally save new address to profile
+      // Optionally save new address to profile + address book
       if (addrMode === 'new' && saveToProfile && newAddrValid) {
         try {
           const response = await authService.updateProfile({ address: deliveryAddress });
           dispatch(setCredentials({ user: response.user }));
+        } catch {
+          // non-fatal
+        }
+        try {
+          await addressApi.addAddress({
+            fullName: (user as any)?.name || '',
+            phone: (user as any)?.phone || '',
+            pincode: pincode.trim(),
+            state: state.trim(),
+            city: city.trim(),
+            houseNo: fullAddress.trim(),
+            area: '',
+            isDefault: false,
+          });
         } catch {
           // non-fatal
         }

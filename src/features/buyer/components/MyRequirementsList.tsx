@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { buyerProfileApi } from '../services/buyer-profile.api';
 import type { PostedRequirement } from '../services/buyer-profile.api';
 import { ClipboardList, Clock, CheckCircle, XCircle, Mail, Building2, Package, Tag, Layers, FileText } from 'lucide-react';
@@ -15,6 +16,7 @@ const getStatusConfig = (status: string) =>
   STATUS_CONFIG[status] ?? { label: status, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', Icon: Clock };
 
 const MyRequirementsList: React.FC = () => {
+  const [, setSearchParams] = useSearchParams();
   const [requirements, setRequirements] = useState<PostedRequirement[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,7 +52,16 @@ const MyRequirementsList: React.FC = () => {
         </div>
         <h3 className="text-lg font-bold text-[#1e293b] m-0">No Requirements Found</h3>
         <p className="text-sm max-w-md m-0 leading-relaxed">
-          You haven't posted any requirements yet. To post a new requirement, please submit it using the <strong>Post Your Requirement</strong> form on our home page.
+          You haven't posted any requirements yet. To post a new requirement, please submit it using the{' '}
+          <button
+            onClick={() => {
+              setSearchParams({ tab: 'overview', scrollTo: 'requirement' });
+            }}
+            className="font-bold text-primary underline cursor-pointer bg-transparent border-none p-0"
+          >
+            Post Your Requirement
+          </button>{' '}
+          form on our home page.
         </p>
         <p className="text-xs text-[#94a3b8] mt-1 m-0">
           Need help? Contact our helpline at 9034440673.

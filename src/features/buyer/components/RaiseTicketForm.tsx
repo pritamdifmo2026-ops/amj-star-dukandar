@@ -24,6 +24,7 @@ const RaiseTicketForm: React.FC = () => {
   const [subject, setSubject] = useState('');
   const [issueType, setIssueType] = useState(issueTypes[0]);
   const [phone, setPhone] = useState(user?.phone || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [message, setMessage] = useState('');
   const [priority, setPriority] = useState(priorityOptions[0]);
 
@@ -64,6 +65,10 @@ const RaiseTicketForm: React.FC = () => {
       toast.error('Subject and Message are required');
       return;
     }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
     setSubmitting(true);
     try {
       let fileUrl: string | undefined;
@@ -81,7 +86,7 @@ const RaiseTicketForm: React.FC = () => {
 
       const payload = {
         buyerName: user?.name || 'Guest Buyer',
-        buyerEmail: user?.email,
+        buyerEmail: email.trim() || user?.email || undefined,
         phone: phone,
         subject: subject,
         issueType: issueType,
@@ -97,6 +102,7 @@ const RaiseTicketForm: React.FC = () => {
       setSubject('');
       setIssueType(issueTypes[0]);
       setPhone('');
+      setEmail(user?.email || '');
       setMessage('');
       setPriority(priorityOptions[0]);
       setFile(null);
@@ -143,6 +149,16 @@ const RaiseTicketForm: React.FC = () => {
           className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] focus:border-primary transition-colors"
           placeholder="10‑digit phone number"
           required
+        />
+      </div>
+      <div>
+        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Email <span className="font-normal normal-case text-[#94a3b8]">(for reply)</span></label>
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] focus:border-primary transition-colors"
+          placeholder="your@email.com"
         />
       </div>
       <div>
