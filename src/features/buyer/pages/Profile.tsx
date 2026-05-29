@@ -15,24 +15,25 @@ import ChatInbox from '@/features/chat/components/ChatInbox';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { chatApi } from '@/features/chat/services/chat.api';
 import adminService from '@/features/admin/services/admin.service';
-import { compressImage } from '@/shared/utils/compressImage';
+import RaiseTicketForm from '../components/RaiseTicketForm';
 import { Camera, Loader2 } from 'lucide-react';
 import OrderList from '../components/OrderList';
 import { orderApi } from '@/features/order/services/order.api';
+import { addressApi } from '@/features/buyer/services/address.api';
 import Navbar from '@/features/landing/components/Navbar';
 import Modal from '@/shared/components/ui/Modal';
+import AccountOverviewSection from '@/features/buyer/components/AccountOverviewSection';
+import MyRequirementsList from '@/features/buyer/components/MyRequirementsList';
 import Button from '@/shared/components/ui/Button';
-import AccountOverviewSection from '../components/AccountOverviewSection';
-import { addressApi } from '@/features/buyer/services/address.api';
-import MyRequirementsList from '../components/MyRequirementsList';
 import { buyerProfileApi } from '@/features/buyer/services/buyer-profile.api';
+import { compressImage } from '@/shared/utils/compressImage';
+
+// Local input styling utilities
+const inputCls = (hasError = false) =>
+  `w-full border ${hasError ? 'border-[#dc2626] bg-[#fef2f2]' : 'border-[#e2e8f0]'} rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors`;
 
 
-const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
 
-
-const HELPLINE_NUMBER = '9034440673';
-const PAYMENT_HELPLINE_NUMBER = '9034440659';
 const emptyAddressForm = {
   fullName: '',
   phone: '',
@@ -44,17 +45,15 @@ const emptyAddressForm = {
   isDefault: false,
 };
 
+
+
+
 const Profile: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user) as any;
   const wishlistItems = useAppSelector((state) => state.wishlist.items);
-  const dispatch = useAppDispatch();
-
-  if (user?.role === 'admin' || user?.role === 'superadmin') {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const activeTab = searchParams.get('tab') || 'overview';
   const setActiveTab = (tab: string) => setSearchParams({ tab });
 
@@ -178,6 +177,11 @@ const Profile: React.FC = () => {
   React.useEffect(() => {
     if (user) fetchAddresses();
   }, [user]);
+
+  // Redirect admin/superadmin users to admin dashboard (placed after all hooks)
+  if (user?.role === 'admin' || user?.role === 'superadmin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   const validateAddressForm = () => {
     const nextErrors: Record<string, string> = {};
@@ -567,11 +571,11 @@ const Profile: React.FC = () => {
                     <div className="flex flex-col gap-4">
                       <div>
                         <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Full Name</label>
-                        <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className={inputCls} placeholder="Enter full name" />
+                        <input type="text" value={editName} onChange={e => setEditName(e.target.value)} className={inputCls()} placeholder="Enter full name" />
                       </div>
                       <div>
                         <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Email Address</label>
-                        <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} className={inputCls} placeholder="Enter email" />
+                        <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} className={inputCls()} placeholder="Enter email" />
                       </div>
                     </div>
                   )}
@@ -798,34 +802,12 @@ const Profile: React.FC = () => {
           )}
 
 
-          {activeTab === 'contactus' && (
-            <div className="py-6 max-w-[560px]">
-              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Contact Us</h3>
-              <p className="text-sm text-[#64748b] mb-6">Have a question or need help? Fill in the form and our team will reach out to you.</p>
-              <a
-                href={`tel:${HELPLINE_NUMBER}`}
-                className="flex items-center gap-3 bg-[#fff7ed] border border-[#fed7aa] rounded-[12px] px-4 py-3 mb-4 text-[#0f172a] no-underline hover:bg-[#ffedd5] transition-colors"
-              >
-                <span className="w-9 h-9 rounded-[8px] bg-white text-primary flex items-center justify-center shrink-0">
-                  <Phone size={18} />
-                </span>
-                <span>
-                  <span className="block text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider">Buyer Helpline</span>
-                  <span className="block text-sm font-extrabold">{HELPLINE_NUMBER}</span>
-                </span>
-              </a>
-              <a
-                href={`tel:${PAYMENT_HELPLINE_NUMBER}`}
-                className="flex items-center gap-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[12px] px-4 py-3 mb-4 text-[#0f172a] no-underline hover:bg-[#dcfce7] transition-colors"
-              >
-                <span className="w-9 h-9 rounded-[8px] bg-white text-[#16a34a] flex items-center justify-center shrink-0">
-                  <CreditCard size={18} />
-                </span>
-                <span>
-                  <span className="block text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider">For Payment Issues Queries</span>
-                  <span className="block text-sm font-extrabold">{PAYMENT_HELPLINE_NUMBER}</span>
-                </span>
-              </a>
+        {activeTab === 'contactus' && (
+          <div className="py-6 max-w-[1000px]">
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Contact & Raise Ticket</h3>
+            <p className="text-sm text-[#64748b] mb-6">Have a question or need help? Fill in the form and our team will reach out to you. For specific issues, use the Raise Ticket form.</p>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Existing Enquiry Form */}
               <div className="bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col gap-4">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Full Name *</label>
@@ -833,7 +815,7 @@ const Profile: React.FC = () => {
                     type="text"
                     value={enquiryForm.name}
                     onChange={e => setEnquiryForm(prev => ({ ...prev, name: e.target.value }))}
-                    className={inputCls}
+                    className={inputCls()}
                     placeholder="Your name"
                   />
                 </div>
@@ -843,7 +825,7 @@ const Profile: React.FC = () => {
                     type="text"
                     value={enquiryForm.phone}
                     onChange={e => setEnquiryForm(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '') }))}
-                    className={inputCls}
+                    className={inputCls()}
                     placeholder="10-digit mobile number"
                     maxLength={10}
                   />
@@ -854,7 +836,7 @@ const Profile: React.FC = () => {
                     type="email"
                     value={enquiryForm.email}
                     onChange={e => setEnquiryForm(prev => ({ ...prev, email: e.target.value }))}
-                    className={inputCls}
+                    className={inputCls()}
                     placeholder="your@email.com"
                   />
                 </div>
@@ -866,31 +848,37 @@ const Profile: React.FC = () => {
                     rows={5}
                     className={inputCls + ' resize-y'}
                     placeholder="Describe your problem, question, or enquiry..."
-                  ></textarea>
-                  <button
-                    type="button"
-                    onClick={handleEnquirySubmit}
-                    className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
-                  >
-                    {enquirySubmitting ? 'Submitting...' : 'Submit Enquiry'}
-                  </button>
-                  <Modal
-                    isOpen={showLogoutModal}
-                    onClose={() => setShowLogoutModal(false)}
-                    title="Sign Out"
-                    footer={
-                      <>
-                        <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
-                        <Button variant="danger" onClick={handleLogout}>Sign Out</Button>
-                      </>
-                    }
-                  >
-                    Are you sure you want to sign out of your account?
-                  </Modal>
+                  />
                 </div>
+                <button
+                  type="button"
+                  onClick={handleEnquirySubmit}
+                  className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                  disabled={enquirySubmitting}
+                >
+                  {enquirySubmitting ? 'Submitting...' : 'Submit Enquiry'}
+                </button>
               </div>
+
+              {/* Raise Ticket Form */}
+              <RaiseTicketForm />
             </div>
-          )}
+          </div>
+        )}
+        
+        <Modal
+          isOpen={showLogoutModal}
+          onClose={() => setShowLogoutModal(false)}
+          title="Sign Out"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>Cancel</Button>
+              <Button variant="danger" onClick={handleLogout}>Sign Out</Button>
+            </>
+          }
+        >
+          Are you sure you want to sign out of your account?
+        </Modal>
         </div>
       </div>
     </div>

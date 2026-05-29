@@ -21,9 +21,11 @@ import EnquiryManagement from '../components/EnquiryManagement';
 import AdminPlatformSettings from '../components/AdminPlatformSettings';
 import AdminWithdrawals from '../components/AdminWithdrawals';
 import AdminEarnings from '../components/AdminEarnings';
-import AdminPages from '../components/AdminPages';
+import BuyerQueries from '../components/BuyerQueries';
 import ControlAuthority from '../components/ControlAuthority';
 import RequirementManagement from '../components/RequirementManagement';
+import AdminPages from '../components/AdminPages';
+
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
 import { Navigate } from 'react-router-dom';
@@ -45,7 +47,7 @@ const tabLabel: Record<string, string> = {
   withdrawals: 'Withdrawal Requests',
   pages: 'Manage Pages',
   'requirement-management': 'Requirement Management',
-  'control-authority': 'Control Authority',
+  'buyer-queries': 'Buyer Queries',
 };
 
 const AdminDashboard: React.FC = () => {
@@ -72,6 +74,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'products', label: 'Product Queue', icon: Package },
     { id: 'categories', label: 'Categories', icon: Tags },
     { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
+    { id: 'buyer-queries', label: 'Buyer Queries', icon: MessageSquare },
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
     { id: 'requirement-management', label: 'Requirements', icon: FileText },
     { id: 'earnings', label: 'AMJ Earnings', icon: TrendingUp },
@@ -94,6 +97,7 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'products') return hasPermission('product_queue');
     if (item.id === 'categories') return hasPermission('category_management');
     if (item.id === 'banners') return hasPermission('banner_management');
+    if (item.id === 'buyer-queries') return true;
     if (item.id === 'enquiry') return hasPermission('enquiry_management');
     if (item.id === 'requirement-management') return hasPermission('requirement_management');
     if (item.id === 'earnings') return hasPermission('earnings');
@@ -201,8 +205,10 @@ const AdminDashboard: React.FC = () => {
             )}
             {activeTab === 'categories' && <CategoryManagement />}
             {activeTab === 'banners' && <BannerManagement />}
-            {activeTab === 'enquiry' && <EnquiryManagement />}
+            
             {activeTab === 'earnings' && <AdminEarnings />}
+            {activeTab === 'enquiry' && <EnquiryManagement />}
+            {activeTab === 'buyer-queries' && <BuyerQueries />}
             {activeTab === 'pages' && <AdminPages />}
             {activeTab === 'requirement-management' && <RequirementManagement />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}
