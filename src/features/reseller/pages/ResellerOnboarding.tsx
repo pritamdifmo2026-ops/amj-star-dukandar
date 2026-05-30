@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIfscVerification } from '@/shared/hooks/useIfscVerification';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
 import { ROUTES } from '@/shared/constants/routes';
@@ -95,6 +96,14 @@ const ResellerOnboarding: React.FC = () => {
   const [bankName, setBankName] = useState('');
   const [panNumber, setPanNumber] = useState('');
   const [gstNumber, setGstNumber] = useState('');
+
+  const { verifying: ifscVerifying, bankInfo: ifscBankInfo, ifscError: ifscApiError } = useIfscVerification(ifscCode);
+
+  useEffect(() => {
+    if (ifscBankInfo?.bank && !bankName) {
+      setBankName(ifscBankInfo.bank);
+    }
+  }, [ifscBankInfo]);
 
   const [idProofUrl, setIdProofUrl] = useState('');
   const [idProofFile, setIdProofFile] = useState<File | null>(null);
@@ -568,13 +577,40 @@ const ResellerOnboarding: React.FC = () => {
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className={labelCls}>IFSC Code *</label>
-                  <input
-                    className={inputCls(!!formErrors.ifscCode)}
-                    value={ifscCode}
-                    onChange={e => { setIfscCode(e.target.value.toUpperCase()); clearError('ifscCode'); }}
-                    placeholder="ABCD0123456"
-                  />
-                  {formErrors.ifscCode && <span className={errorCls}>{formErrors.ifscCode}</span>}
+                  <div className="relative">
+                    <input
+                      className={`${inputCls(!!(formErrors.ifscCode || ifscApiError))} uppercase font-mono pr-8`}
+                      value={ifscCode}
+                      onChange={e => {
+                        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        if (val.length <= 11) { setIfscCode(val); clearError('ifscCode'); }
+                      }}
+                      placeholder="SBIN0001234"
+                      maxLength={11}
+                    />
+                    {ifscVerifying && (
+                      <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin h-4 w-4 text-[#94a3b8]" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                    )}
+                    {!ifscVerifying && ifscBankInfo && !formErrors.ifscCode && (
+                      <Check size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#16a34a] pointer-events-none" />
+                    )}
+                  </div>
+                  {formErrors.ifscCode
+                    ? <span className={errorCls}>{formErrors.ifscCode}</span>
+                    : ifscApiError
+                      ? <span className={errorCls}>⚠ {ifscApiError}</span>
+                      : ifscBankInfo
+                        ? (
+                          <div className="flex items-center gap-1.5 mt-1 px-2.5 py-1.5 bg-[#f0fdf4] border border-[#86efac] rounded-[6px]">
+                            <Check size={12} className="text-[#16a34a] shrink-0" />
+                            <span className="text-xs text-[#15803d] font-semibold">{ifscBankInfo.bank} — {ifscBankInfo.branch}{ifscBankInfo.city ? `, ${ifscBankInfo.city}` : ''}</span>
+                          </div>
+                        )
+                        : null
+                  }
                 </div>
               </div>
 

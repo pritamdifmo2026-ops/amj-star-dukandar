@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { User, Building2, Mail, Phone, ShieldCheck, Save, AlertCircle, PhoneCall, Plus, Edit2, Trash2, CheckCircle, Landmark } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Building2, Mail, Phone, ShieldCheck, Save, AlertCircle, PhoneCall, Plus, Edit2, Trash2, CheckCircle, Landmark, Check } from 'lucide-react';
+import { useIfscVerification } from '@/shared/hooks/useIfscVerification';
 import Button from '@/shared/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import supplierService from '../services/supplier.service';
@@ -61,6 +62,14 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
   const [bankForm, setBankForm] = useState({ accountHolderName: '', accountNumber: '', ifscCode: '', bankName: '' });
   const [bankErrors, setBankErrors] = useState<Record<string, string>>({});
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
+
+  const { verifying: ifscVerifying, bankInfo: ifscBankInfo, ifscError: ifscApiError } = useIfscVerification(bankForm.ifscCode);
+
+  useEffect(() => {
+    if (ifscBankInfo?.bank && !bankForm.bankName) {
+      setBankForm(p => ({ ...p, bankName: ifscBankInfo.bank }));
+    }
+  }, [ifscBankInfo]);
   const [formData, setFormData] = useState({
     name: profile?.businessDetails?.ownerName || profile?.user?.name || '',
     businessName: profile?.businessName || '',
@@ -365,30 +374,53 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               {[
                 { key: 'accountHolderName', label: 'Account Holder Name', placeholder: 'e.g. John Smith' },
                 { key: 'accountNumber', label: 'Account Number', placeholder: '9-18 digits' },
-                { key: 'ifscCode', label: 'IFSC Code', placeholder: 'e.g. SBIN0000123' },
+                { key: 'ifscCode', label: 'IFSC Code', placeholder: 'e.g. SBIN0001234' },
                 { key: 'bankName', label: 'Bank Name', placeholder: 'e.g. State Bank of India' },
               ].map(({ key, label, placeholder }) => (
                 <div key={key}>
                   <label className={labelCls}>{label}</label>
-                  <input
-                    type={key === 'accountNumber' ? 'tel' : 'text'}
-                    value={(bankForm as any)[key] || ''}
-                    onChange={e => {
-                      const raw = e.target.value;
-                      let val = raw;
-                      if (key === 'ifscCode') {
-                        val = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
-                      } else if (key === 'accountNumber') {
-                        val = raw.replace(/\D/g, '');
-                      }
-                      setBankForm(p => ({ ...p, [key]: val }));
-                      setBankErrors(p => ({ ...p, [key]: bankFieldError[key as keyof typeof bankFieldError](val) }));
-                    }}
-                    placeholder={placeholder}
-                    className={`w-full border ${bankErrors[key] ? 'border-[#dc2626]' : 'border-[#e2e8f0]'} rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary`}
-                    maxLength={key === 'ifscCode' ? 11 : key === 'accountNumber' ? 18 : 50}
-                  />
-                  {bankErrors[key] && <span className="text-xs text-[#dc2626] mt-1 block">⚠ {bankErrors[key]}</span>}
+                  <div className="relative">
+                    <input
+                      type={key === 'accountNumber' ? 'tel' : 'text'}
+                      value={(bankForm as any)[key] || ''}
+                      onChange={e => {
+                        const raw = e.target.value;
+                        let val = raw;
+                        if (key === 'ifscCode') {
+                          val = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        } else if (key === 'accountNumber') {
+                          val = raw.replace(/\D/g, '');
+                        }
+                        setBankForm(p => ({ ...p, [key]: val }));
+                        setBankErrors(p => ({ ...p, [key]: bankFieldError[key as keyof typeof bankFieldError](val) }));
+                      }}
+                      placeholder={placeholder}
+                      className={`w-full border ${bankErrors[key] || (key === 'ifscCode' && ifscApiError) ? 'border-[#dc2626]' : 'border-[#e2e8f0]'} rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary ${key === 'ifscCode' ? 'uppercase font-mono pr-8' : ''}`}
+                      maxLength={key === 'ifscCode' ? 11 : key === 'accountNumber' ? 18 : 50}
+                    />
+                    {key === 'ifscCode' && ifscVerifying && (
+                      <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 animate-spin h-4 w-4 text-[#94a3b8]" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                    )}
+                    {key === 'ifscCode' && !ifscVerifying && ifscBankInfo && !bankErrors[key] && (
+                      <Check size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#16a34a] pointer-events-none" />
+                    )}
+                  </div>
+                  {bankErrors[key]
+                    ? <span className="text-xs text-[#dc2626] mt-1 block">⚠ {bankErrors[key]}</span>
+                    : key === 'ifscCode' && ifscApiError
+                      ? <span className="text-xs text-[#dc2626] mt-1 block">⚠ {ifscApiError}</span>
+                      : key === 'ifscCode' && ifscBankInfo
+                        ? (
+                          <div className="flex items-center gap-1.5 mt-1 px-2.5 py-1.5 bg-[#f0fdf4] border border-[#86efac] rounded-[6px]">
+                            <Check size={12} className="text-[#16a34a] shrink-0" />
+                            <span className="text-xs text-[#15803d] font-semibold">{ifscBankInfo.bank} — {ifscBankInfo.branch}{ifscBankInfo.city ? `, ${ifscBankInfo.city}` : ''}</span>
+                          </div>
+                        )
+                        : null
+                  }
                 </div>
               ))}
               <div className="flex gap-2 pt-2">

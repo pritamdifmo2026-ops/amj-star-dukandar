@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIfscVerification } from '@/shared/hooks/useIfscVerification';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
 import { SupplierTier, OnboardingStatus, setSupplierProfile } from '@/features/supplier/store/supplier.slice';
@@ -136,6 +137,14 @@ const Onboarding: React.FC = () => {
   const [confirmAccountNumber, setConfirmAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
   const [bankName, setBankName] = useState('');
+
+  const { verifying: ifscVerifying, bankInfo: ifscBankInfo, ifscError: ifscApiError } = useIfscVerification(ifscCode);
+
+  useEffect(() => {
+    if (ifscBankInfo?.bank && !bankName) {
+      setBankName(ifscBankInfo.bank);
+    }
+  }, [ifscBankInfo]);
 
   useEffect(() => {
     if (user?.phone && !phone) setPhone(user.phone);
@@ -932,7 +941,7 @@ const Onboarding: React.FC = () => {
                 <div className="relative flex items-center">
                   <input
                     name="ifscCode"
-                    className={`${inputCls(!!errors.ifscCode)} uppercase font-mono pr-9`}
+                    className={`${inputCls(!!(errors.ifscCode || ifscApiError))} uppercase font-mono pr-9`}
                     value={ifscCode}
                     onChange={e => {
                       const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -945,13 +954,28 @@ const Onboarding: React.FC = () => {
                     placeholder="e.g. SBIN0001234"
                     maxLength={11}
                   />
-                  {ifscCode && !bankFieldError.ifscCode(ifscCode) && (
+                  {ifscVerifying && (
+                    <svg className="absolute right-3 animate-spin h-4 w-4 text-[#94a3b8]" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  )}
+                  {!ifscVerifying && ifscBankInfo && !errors.ifscCode && (
                     <Check size={16} className="absolute right-3 text-[#059669] pointer-events-none" />
                   )}
                 </div>
                 {errors.ifscCode
                   ? <span className={errorTextCls}>⚠ {errors.ifscCode}</span>
-                  : <span className="text-xs text-[#94a3b8]">11 chars: 4 letters + 0 + 6 alphanumeric (e.g. SBIN0001234) — {ifscCode.length}/11</span>
+                  : ifscApiError
+                    ? <span className={errorTextCls}>⚠ {ifscApiError}</span>
+                    : ifscBankInfo
+                      ? (
+                        <div className="flex items-center gap-2 mt-1 px-3 py-2 bg-[#f0fdf4] border border-[#86efac] rounded-[8px]">
+                          <Check size={13} className="text-[#16a34a] shrink-0" />
+                          <span className="text-xs text-[#15803d] font-semibold">{ifscBankInfo.bank} — {ifscBankInfo.branch}{ifscBankInfo.city ? `, ${ifscBankInfo.city}` : ''}</span>
+                        </div>
+                      )
+                      : <span className="text-xs text-[#94a3b8]">11 chars: 4 letters + 0 + 6 alphanumeric (e.g. SBIN0001234) — {ifscCode.length}/11</span>
                 }
               </div>
 
