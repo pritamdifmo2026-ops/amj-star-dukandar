@@ -11,7 +11,7 @@ import {
   LayoutDashboard, Package, Truck, LogOut, Trash2, FileText, MessageCircle,
   Handshake, Menu, Image as ImageIcon, Layers, CheckCircle, Clock,
   AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store,
-  AlertTriangle, WifiOff, Wifi
+  AlertTriangle, WifiOff, Wifi, Star
 } from 'lucide-react';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
 
@@ -21,6 +21,7 @@ import SupplierPartnerships from '../components/SupplierPartnerships';
 import SupplierOverview from '../components/SupplierOverview';
 import SupplierInventory from '../components/SupplierInventory';
 import SupplierSettings from '../components/SupplierSettings';
+import SupplierReviews from '../components/SupplierReviews';
 import SupplierWallet from '../components/SupplierWallet';
 import SupplierReports from '../components/SupplierReports';
 import SupplierStoreFront from '../components/SupplierStoreFront';
@@ -220,6 +221,7 @@ const SupplierDashboard: React.FC = () => {
     { id: 'wallet', label: 'Wallet', icon: Wallet },
     { id: 'reports', label: 'Reports', icon: BarChart2 },
     { id: 'logistics', label: 'Logistics', icon: Truck },
+    { id: 'reviews', label: 'My Reviews', icon: Star },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
@@ -369,6 +371,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'reports' && <SupplierReports />}
         {activeView === 'logistics' && <SupplierLogistics />}
         {activeView === 'partnerships' && <SupplierPartnerships />}
+        {activeView === 'reviews' && <div className="p-5"><SupplierReviews /></div>}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}
         {(activeView === 'add-product' || activeView === 'edit-product') && (
           <div className="animate-fade-in -mt-4">

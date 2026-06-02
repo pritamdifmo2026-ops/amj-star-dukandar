@@ -29,12 +29,40 @@ export const orderApi = {
     return res.data;
   },
 
-  dispatch: async (id: string): Promise<{ trackingId: string; dispatchedAt: string }> => {
-    const res = await apiClient.patch(ENDPOINTS.ORDERS.DISPATCH(id));
+  dispatch: async (
+    id: string,
+    payload?: { courierName?: string; trackingNumber?: string; trackingURL?: string }
+  ): Promise<{ trackingId: string; dispatchedAt: string; courierName: string; isOwnShipping: boolean }> => {
+    const res = await apiClient.patch(ENDPOINTS.ORDERS.DISPATCH(id), payload || {});
     return res.data.data;
   },
 
-  confirmDelivery: async (id: string): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.CONFIRM_DELIVERY(id));
+  markDelivered: async (id: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.MARK_DELIVERED(id));
+  },
+
+  confirmDelivery: async (
+    id: string,
+    payload: {
+      condition: 'good' | 'issue';
+      disputeType?: string;
+      disputeDescription?: string;
+      rating?: number;
+      dimensions?: { quality?: number; packaging?: number; communication?: number; onTime?: number };
+      comment?: string;
+    }
+  ): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.CONFIRM_DELIVERY(id), payload);
+  },
+
+  submitReview: async (
+    id: string,
+    payload: {
+      rating: number;
+      dimensions?: { quality?: number; packaging?: number; communication?: number; onTime?: number };
+      comment?: string;
+    }
+  ): Promise<void> => {
+    await apiClient.post(ENDPOINTS.ORDERS.REVIEW(id), payload);
   },
 };

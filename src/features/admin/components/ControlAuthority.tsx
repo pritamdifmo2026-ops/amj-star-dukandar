@@ -119,6 +119,11 @@ const ControlAuthority: React.FC = () => {
   if (isLoading) return <div>Loading...</div>;
 
   return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-xl font-extrabold text-[#0f172a] m-0 mb-1">Control Authority</h2>
+        <p className="text-sm text-[#64748b] m-0">Manage sub-admin accounts and their access permissions across the platform.</p>
+      </div>
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
       <div className="flex items-center justify-between p-6 border-b border-slate-100">
         <div />
@@ -274,6 +279,7 @@ const ControlAuthority: React.FC = () => {
           </p>
         </div>
       </Modal>
+    </div>
     </div>
   );
 };

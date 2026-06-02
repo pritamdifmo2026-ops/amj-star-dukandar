@@ -27,6 +27,8 @@ export const ENDPOINTS = {
     UPDATE_STATUS: (id: string | number) => `/orders/${id}/status`,
     DISPATCH: (id: string | number) => `/orders/${id}/dispatch`,
     CONFIRM_DELIVERY: (id: string | number) => `/orders/${id}/confirm-delivery`,
+    MARK_DELIVERED: (id: string | number) => `/orders/${id}/mark-delivered`,
+    REVIEW: (id: string | number) => `/orders/${id}/review`,
     PO_DOWNLOAD: (id: string | number) => `/orders/${id}/po-download`,
   },
 

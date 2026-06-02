@@ -21,6 +21,7 @@ import EnquiryManagement from '../components/EnquiryManagement';
 import AdminPlatformSettings from '../components/AdminPlatformSettings';
 import AdminWithdrawals from '../components/AdminWithdrawals';
 import AdminEarnings from '../components/AdminEarnings';
+import AdminPerformance from '../components/AdminPerformance';
 import BuyerQueries from '../components/BuyerQueries';
 import ControlAuthority from '../components/ControlAuthority';
 import RequirementManagement from '../components/RequirementManagement';
@@ -43,6 +44,7 @@ const tabLabel: Record<string, string> = {
   banners: 'Banner Management',
   enquiry: 'Customer Enquiries',
   earnings: 'AMJStar Earnings',
+  performance: 'Supplier Performance',
   'platform-settings': 'Platform Settings',
   withdrawals: 'Withdrawal Requests',
   pages: 'Manage Pages',
@@ -78,6 +80,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
     { id: 'requirement-management', label: 'Requirements', icon: FileText },
     { id: 'earnings', label: 'AMJ Earnings', icon: TrendingUp },
+    { id: 'performance', label: 'Performance', icon: BarChart3 },
     { id: 'withdrawals', label: 'Withdrawals', icon: Wallet },
     { id: 'pages', label: 'Manage Pages', icon: FileText },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
@@ -101,6 +104,7 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'enquiry') return hasPermission('enquiry_management');
     if (item.id === 'requirement-management') return hasPermission('requirement_management');
     if (item.id === 'earnings') return hasPermission('earnings');
+    if (item.id === 'performance') return hasPermission('performance');
     if (item.id === 'withdrawals') return hasPermission('withdrawals');
     if (item.id === 'pages') return hasPermission('pages_management');
     if (item.id === 'platform-settings') return hasPermission('platform_settings');
@@ -207,6 +211,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'banners' && <BannerManagement />}
             
             {activeTab === 'earnings' && <AdminEarnings />}
+            {activeTab === 'performance' && <AdminPerformance />}
             {activeTab === 'enquiry' && <EnquiryManagement />}
             {activeTab === 'buyer-queries' && <BuyerQueries />}
             {activeTab === 'pages' && <AdminPages />}
