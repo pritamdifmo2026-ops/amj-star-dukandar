@@ -130,6 +130,41 @@ const adminService = {
     return response.data.supplier;
   },
 
+  getFrozenOrders: async (userId: string) => {
+    const response = await api.get(`/admin/suppliers/${userId}/frozen-orders`);
+    return response.data.orders as Array<{
+      orderId: string;
+      orderNumber: string;
+      status: string;
+      totalAmount: number;
+      frozenAmount: number;
+      buyerName: string;
+      itemName: string;
+      createdAt: string;
+    }>;
+  },
+
+  unfreezeCommission: async (orderId: string, reason: string) => {
+    const response = await api.post(`/admin/orders/${orderId}/unfreeze`, { reason });
+    return response.data;
+  },
+
+  // ── Disputes ──
+  getDisputes: async (status?: string) => {
+    const response = await api.get('/admin/disputes', { params: status ? { status } : {} });
+    return response.data.disputes as any[];
+  },
+
+  validateDispute: async (id: string) => {
+    const response = await api.patch(`/admin/disputes/${id}/validate`);
+    return response.data;
+  },
+
+  rejectDispute: async (id: string, reason: string) => {
+    const response = await api.patch(`/admin/disputes/${id}/reject`, { reason });
+    return response.data;
+  },
+
   setAutoLiveProducts: async (supplierId: string, autoLiveProducts: boolean) => {
     const response = await api.patch(`/admin/suppliers/${supplierId}/auto-live`, { autoLiveProducts });
     return response.data.supplier;

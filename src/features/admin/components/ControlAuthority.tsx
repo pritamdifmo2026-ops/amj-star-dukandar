@@ -16,6 +16,8 @@ const AVAILABLE_PERMISSIONS = [
   { id: 'category_management', label: 'Category Management' },
   { id: 'banner_management', label: 'Banner Management' },
   { id: 'earnings', label: 'Earnings' },
+  { id: 'performance', label: 'Performance' },
+  { id: 'disputes', label: 'Disputes' },
   { id: 'withdrawals', label: 'Withdrawals' },
   { id: 'platform_settings', label: 'Platform Settings' },
   { id: 'pages_management', label: 'Pages Management' },

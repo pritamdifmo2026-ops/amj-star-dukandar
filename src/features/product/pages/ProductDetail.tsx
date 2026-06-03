@@ -150,11 +150,19 @@ const ProductDetail: React.FC = () => {
   const hasCerts = product.certifications && product.certifications.length > 0;
 
   const returnPolicyLabel: Record<string, string> = {
+    refund: 'Refund Available',
+    replacement: 'Replacement Available',
+    both: 'Refund or Replacement',
+    // legacy
     return_available: 'Return Available',
     no_return: 'No Return Policy',
     custom: 'Custom Terms',
   };
   const returnPolicyColor: Record<string, string> = {
+    refund: 'bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]',
+    replacement: 'bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]',
+    both: 'bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]',
+    // legacy
     return_available: 'bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]',
     no_return: 'bg-[#fef2f2] text-[#b91c1c] border-[#fecaca]',
     custom: 'bg-[#eff6ff] text-[#1d4ed8] border-[#bfdbfe]',
@@ -419,6 +427,16 @@ const ProductDetail: React.FC = () => {
                     <RotateCcw size={11} />
                     {returnPolicyLabel[product.supplierReturnPolicyType] || product.supplierReturnPolicyType}
                   </div>
+                  {product.supplierReturnPolicyType === 'refund' && (
+                    <p className="text-sm text-body">If a verified issue is found with your order, this supplier will refund your money.</p>
+                  )}
+                  {product.supplierReturnPolicyType === 'replacement' && (
+                    <p className="text-sm text-body">If a verified issue is found with your order, this supplier will send a replacement (no refund).</p>
+                  )}
+                  {product.supplierReturnPolicyType === 'both' && (
+                    <p className="text-sm text-body">If a verified issue is found with your order, this supplier offers either a refund or a replacement.</p>
+                  )}
+                  {/* legacy */}
                   {product.supplierReturnPolicyType === 'return_available' && (
                     <p className="text-sm text-body">This supplier accepts returns. Contact the supplier for specific return conditions and timelines.</p>
                   )}

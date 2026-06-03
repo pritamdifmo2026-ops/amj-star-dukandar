@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 
@@ -22,6 +22,7 @@ import AdminPlatformSettings from '../components/AdminPlatformSettings';
 import AdminWithdrawals from '../components/AdminWithdrawals';
 import AdminEarnings from '../components/AdminEarnings';
 import AdminPerformance from '../components/AdminPerformance';
+import AdminDisputes from '../components/AdminDisputes';
 import BuyerQueries from '../components/BuyerQueries';
 import ControlAuthority from '../components/ControlAuthority';
 import RequirementManagement from '../components/RequirementManagement';
@@ -45,6 +46,7 @@ const tabLabel: Record<string, string> = {
   enquiry: 'Customer Enquiries',
   earnings: 'AMJStar Earnings',
   performance: 'Supplier Performance',
+  disputes: 'Disputes',
   'platform-settings': 'Platform Settings',
   withdrawals: 'Withdrawal Requests',
   pages: 'Manage Pages',
@@ -81,6 +83,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'requirement-management', label: 'Requirements', icon: FileText },
     { id: 'earnings', label: 'AMJ Earnings', icon: TrendingUp },
     { id: 'performance', label: 'Performance', icon: BarChart3 },
+    { id: 'disputes', label: 'Disputes', icon: AlertTriangle },
     { id: 'withdrawals', label: 'Withdrawals', icon: Wallet },
     { id: 'pages', label: 'Manage Pages', icon: FileText },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
@@ -105,6 +108,7 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'requirement-management') return hasPermission('requirement_management');
     if (item.id === 'earnings') return hasPermission('earnings');
     if (item.id === 'performance') return hasPermission('performance');
+    if (item.id === 'disputes') return hasPermission('disputes');
     if (item.id === 'withdrawals') return hasPermission('withdrawals');
     if (item.id === 'pages') return hasPermission('pages_management');
     if (item.id === 'platform-settings') return hasPermission('platform_settings');
@@ -212,6 +216,7 @@ const AdminDashboard: React.FC = () => {
             
             {activeTab === 'earnings' && <AdminEarnings />}
             {activeTab === 'performance' && <AdminPerformance />}
+            {activeTab === 'disputes' && <AdminDisputes />}
             {activeTab === 'enquiry' && <EnquiryManagement />}
             {activeTab === 'buyer-queries' && <BuyerQueries />}
             {activeTab === 'pages' && <AdminPages />}

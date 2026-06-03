@@ -344,10 +344,10 @@ const ChatInbox: React.FC = () => {
     }
   };
 
-  const handleAcceptQuote = async (quoteId: string) => {
+  const handleAcceptQuote = async (quoteId: string, paymentMethod: 'direct' | 'amjstar' = 'direct') => {
     const loadingToast = toast.loading('Confirming deal...');
     try {
-      await quotationApi.acceptQuotation(quoteId);
+      await quotationApi.acceptQuotation(quoteId, paymentMethod);
       loadMessages();
       toast.success('Deal Confirmed! Order created.', { id: loadingToast });
     } catch (err: any) {
@@ -388,6 +388,8 @@ const ChatInbox: React.FC = () => {
     const [contactPhone, setContactPhone] = useState<string | null>(null);
     const hasFetchedContact = useRef(false);
     const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
+    const [payMethod, setPayMethod] = useState<'direct' | 'amjstar'>('direct');
+    const [directAck, setDirectAck] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showCancelInput, setShowCancelInput] = useState(false);
@@ -737,24 +739,13 @@ const ChatInbox: React.FC = () => {
                 onClick={() => setConfirmAction('decline')}>Decline</button>
             </div>
 
-            {/* Confirmation popup */}
-            {confirmAction && (
+            {/* Decline confirmation popup */}
+            {confirmAction === 'decline' && (
               <div className="mx-4 mb-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5">
-                {confirmAction === 'accept' ? (
-                  <>
-                    <p className="text-xs font-extrabold text-[#0f172a] m-0 mb-1">Confirm Order?</p>
-                    <p className="text-[11px] text-[#475569] m-0 mb-2.5 leading-relaxed">
-                      This will create a Purchase Order. Payment is settled directly with the supplier — contact them via phone after confirming.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xs font-extrabold text-[#dc2626] m-0 mb-1">Decline this quote?</p>
-                    <p className="text-[11px] text-[#475569] m-0 mb-2.5">
-                      The supplier will be notified. You can request a new quotation anytime.
-                    </p>
-                  </>
-                )}
+                <p className="text-xs font-extrabold text-[#dc2626] m-0 mb-1">Decline this quote?</p>
+                <p className="text-[11px] text-[#475569] m-0 mb-2.5">
+                  The supplier will be notified. You can request a new quotation anytime.
+                </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setConfirmAction(null)}
@@ -762,13 +753,75 @@ const ChatInbox: React.FC = () => {
                     Cancel
                   </button>
                   <button
+                    onClick={() => { setConfirmAction(null); handleRejectQuote(quote._id); }}
+                    className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#dc2626] hover:bg-[#b91c1c]">
+                    Yes, Decline
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Accept → payment method picker */}
+            {confirmAction === 'accept' && (
+              <div className="mx-4 mb-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5">
+                <p className="text-xs font-extrabold text-[#0f172a] m-0 mb-2">Choose how you'll pay</p>
+
+                {/* Direct */}
+                <button
+                  onClick={() => setPayMethod('direct')}
+                  className={`w-full text-left mb-2 p-2.5 rounded-[8px] border cursor-pointer transition-colors ${payMethod === 'direct' ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 ${payMethod === 'direct' ? 'border-[#059669] bg-[#059669]' : 'border-[#cbd5e1]'}`} />
+                    <span className="text-xs font-bold text-[#0f172a]">Direct Payment to Supplier</span>
+                  </div>
+                  <p className="text-[10px] text-[#64748b] m-0 mt-1 ml-[22px] leading-relaxed">
+                    You pay the supplier directly (UPI / bank / cash). Phone numbers unlock so you can coordinate.
+                  </p>
+                </button>
+
+                {/* AMJSTAR — coming soon */}
+                <div className="w-full mb-2 p-2.5 rounded-[8px] border border-dashed border-[#e2e8f0] bg-[#fafafa] opacity-70 cursor-not-allowed">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-[#cbd5e1] shrink-0" />
+                    <span className="text-xs font-bold text-[#94a3b8]">Pay Through AMJSTAR (Escrow)</span>
+                    <span className="text-[9px] font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] px-1.5 py-0.5 rounded-full ml-auto">COMING SOON</span>
+                  </div>
+                  <p className="text-[10px] text-[#94a3b8] m-0 mt-1 ml-[22px] leading-relaxed">
+                    AMJSTAR holds your payment safely until you confirm delivery. Launching soon.
+                  </p>
+                </div>
+
+                {/* Direct disclaimer + ack */}
+                {payMethod === 'direct' && (
+                  <label className="flex items-start gap-2 mb-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={directAck}
+                      onChange={e => setDirectAck(e.target.checked)}
+                      className="mt-0.5 accent-[#059669] shrink-0"
+                    />
+                    <span className="text-[10px] text-[#475569] leading-relaxed">
+                      I understand that payment is handled <strong>directly between me and the supplier</strong>, and AMJSTAR is not responsible for the payment or its settlement.
+                    </span>
+                  </label>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setConfirmAction(null); setDirectAck(false); }}
+                    className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                    Cancel
+                  </button>
+                  <button
+                    disabled={payMethod === 'direct' && !directAck}
                     onClick={() => {
                       setConfirmAction(null);
-                      if (confirmAction === 'accept') handleAcceptQuote(quote._id);
-                      else handleRejectQuote(quote._id);
+                      setDirectAck(false);
+                      handleAcceptQuote(quote._id, payMethod);
                     }}
-                    className={`flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer ${confirmAction === 'accept' ? 'bg-[#059669] hover:bg-[#047857]' : 'bg-[#dc2626] hover:bg-[#b91c1c]'}`}>
-                    {confirmAction === 'accept' ? 'Yes, Confirm Order' : 'Yes, Decline'}
+                    className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#059669] hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed">
+                    Confirm &amp; Generate PO
                   </button>
                 </div>
               </div>

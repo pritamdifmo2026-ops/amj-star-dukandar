@@ -711,13 +711,13 @@ const Onboarding: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-2">
-                <label className={labelCls}>Return & Refund Policy <span className="text-[#dc2626]">*</span></label>
-                <p className="text-xs text-[#64748b] -mt-1 mb-1">This will be visible to buyers on your product listings.</p>
+                <label className={labelCls}>Dispute Resolution Policy <span className="text-[#dc2626]">*</span></label>
+                <p className="text-xs text-[#64748b] -mt-1 mb-1">If a buyer reports a genuine issue (verified by AMJSTAR), how will you make it right? This is shown to buyers on your listings.</p>
                 <div className="flex flex-col gap-2">
                   {[
-                    { value: 'return_available', label: 'Return Available', desc: 'You accept returns from buyers' },
-                    { value: 'no_return', label: 'No Return Policy', desc: 'All sales are final, no returns accepted' },
-                    { value: 'custom', label: 'Custom Return Terms', desc: 'Specify your own return conditions' },
+                    { value: 'refund', label: 'Refund', desc: 'You return the buyer’s money for verified issues' },
+                    { value: 'replacement', label: 'Replacement', desc: 'You send a replacement item — no money returned' },
+                    { value: 'both', label: 'Both (Refund or Replacement)', desc: 'You offer either, decided per case' },
                   ].map(opt => (
                     <label
                       key={opt.value}
@@ -739,18 +739,6 @@ const Onboarding: React.FC = () => {
                   ))}
                 </div>
                 {errors.returnPolicyType && <span className={errorTextCls}>{errors.returnPolicyType}</span>}
-                {returnPolicyType === 'custom' && (
-                  <div className="mt-2">
-                    <textarea
-                      className={inputCls(!!errors.returnPolicyCustomTerms)}
-                      value={returnPolicyCustomTerms}
-                      onChange={e => { setReturnPolicyCustomTerms(e.target.value); setErrors(prev => ({ ...prev, returnPolicyCustomTerms: '' })); }}
-                      placeholder="e.g. Returns accepted within 7 days of delivery for defective items only. Contact us within 48 hours of receipt."
-                      rows={3}
-                    />
-                    {errors.returnPolicyCustomTerms && <span className={errorTextCls}>{errors.returnPolicyCustomTerms}</span>}
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-3 mt-2">

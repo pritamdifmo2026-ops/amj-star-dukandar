@@ -65,4 +65,38 @@ export const orderApi = {
   ): Promise<void> => {
     await apiClient.post(ENDPOINTS.ORDERS.REVIEW(id), payload);
   },
+
+  // ── Packed (supplier, optional pre-dispatch step) ──
+  markPacked: async (id: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.PACK(id));
+  },
+
+  // ── Disputes (Flow A) ──
+  raiseDispute: async (
+    id: string,
+    payload: {
+      issueType: string;
+      description: string;
+      evidence: { url: string; type: 'image' | 'video' }[];
+    }
+  ): Promise<void> => {
+    await apiClient.post(ENDPOINTS.ORDERS.RAISE_DISPUTE(id), payload);
+  },
+
+  getDispute: async (orderId: string): Promise<any | null> => {
+    const res = await apiClient.get(ENDPOINTS.ORDERS.GET_DISPUTE(orderId));
+    return res.data.dispute;
+  },
+
+  supplierResolveDispute: async (disputeId: string, resolutionMethod: 'refund' | 'replacement' | 'partial' | 'other', resolutionNote: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote });
+  },
+
+  buyerConfirmResolved: async (disputeId: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_BUYER_CONFIRM(disputeId));
+  },
+
+  buyerReopenDispute: async (disputeId: string, reason: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_REOPEN(disputeId), { reason });
+  },
 };

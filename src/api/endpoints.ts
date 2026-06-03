@@ -26,10 +26,17 @@ export const ENDPOINTS = {
     CREATE: '/orders',
     UPDATE_STATUS: (id: string | number) => `/orders/${id}/status`,
     DISPATCH: (id: string | number) => `/orders/${id}/dispatch`,
+    PACK: (id: string | number) => `/orders/${id}/pack`,
     CONFIRM_DELIVERY: (id: string | number) => `/orders/${id}/confirm-delivery`,
     MARK_DELIVERED: (id: string | number) => `/orders/${id}/mark-delivered`,
     REVIEW: (id: string | number) => `/orders/${id}/review`,
     PO_DOWNLOAD: (id: string | number) => `/orders/${id}/po-download`,
+    // Disputes
+    RAISE_DISPUTE: (id: string | number) => `/orders/${id}/dispute`,
+    GET_DISPUTE: (orderId: string | number) => `/orders/${orderId}/dispute`,
+    DISPUTE_SUPPLIER_RESOLVE: (id: string | number) => `/orders/disputes/${id}/supplier-resolve`,
+    DISPUTE_BUYER_CONFIRM: (id: string | number) => `/orders/disputes/${id}/buyer-confirm`,
+    DISPUTE_REOPEN: (id: string | number) => `/orders/disputes/${id}/reopen`,
   },
 
   // Cart

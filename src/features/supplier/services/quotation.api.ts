@@ -13,8 +13,8 @@ export const quotationApi = {
     const res = await apiClient.get(`/quotations/${id}`);
     return res.data;
   },
-  acceptQuotation: async (id: string) => {
-    const res = await apiClient.post(`/quotations/${id}/accept`);
+  acceptQuotation: async (id: string, paymentMethod: 'direct' | 'amjstar' = 'direct') => {
+    const res = await apiClient.post(`/quotations/${id}/accept`, { paymentMethod });
     return res.data;
   },
   rejectQuotation: async (id: string) => {
