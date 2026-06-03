@@ -82,10 +82,7 @@ const AdminDisputes: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h2 className="text-xl font-extrabold text-[#0f172a] m-0 mb-1">Disputes</h2>
-        <p className="text-sm text-[#64748b] m-0">Review buyer tickets and their evidence. Validate authentic disputes so the supplier is notified to resolve, or reject unverifiable ones.</p>
-      </div>
+      <p className="text-sm text-[#64748b] m-0">Review buyer tickets and their evidence. Validate authentic disputes so the supplier is notified to resolve, or reject unverifiable ones.</p>
 
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
