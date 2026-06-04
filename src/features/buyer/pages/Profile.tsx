@@ -121,9 +121,9 @@ const Profile: React.FC = () => {
   const fetchUnreadCount = async () => {
     try {
       const conversations = await chatApi.getConversations();
+      const uid = user?._id || user?.id;
       const count = conversations.reduce((acc: number, conv: any) => {
-        const userId = user?.id;
-        const unread = userId ? (conv.unreadCount?.[userId] || 0) : 0;
+        const unread = conv.unreadCount?.[uid] || conv.unreadCount?.[user?.id] || 0;
         return acc + unread;
       }, 0);
       setTotalUnread(count);
@@ -135,6 +135,15 @@ const Profile: React.FC = () => {
   React.useEffect(() => {
     if (user) fetchUnreadCount();
   }, [user]);
+
+  // Keep the sidebar badge live + clear it when the buyer reads a chat
+  React.useEffect(() => {
+    if (!socket) return;
+    const refresh = () => fetchUnreadCount();
+    socket.on('new_notification', refresh);
+    socket.on('messages_read', refresh);
+    return () => { socket.off('new_notification', refresh); socket.off('messages_read', refresh); };
+  }, [socket, user]);
 
   React.useEffect(() => {
     if (!socket) return;

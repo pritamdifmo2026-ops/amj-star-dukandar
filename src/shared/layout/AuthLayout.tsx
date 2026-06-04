@@ -6,8 +6,8 @@ import { ShieldCheck, ShoppingBag, Tag, Headphones, Zap } from 'lucide-react';
 
 const FEATURES = [
   { Icon: ShieldCheck, label: 'Secure & Safe' },
-  { Icon: Tag,         label: 'Wholesale Prices' },
-  { Icon: Zap,         label: 'Instant OTP Login' },
+  { Icon: Tag, label: 'Wholesale Prices' },
+  { Icon: Zap, label: 'Instant OTP Login' },
 ];
 
 const AuthLayout: React.FC = () => {
@@ -44,9 +44,9 @@ const AuthLayout: React.FC = () => {
 
             <div className="flex flex-col gap-5">
               {[
-                { Icon: ShieldCheck, title: 'Secure & Safe',       desc: 'Your data is protected with enterprise-grade security.' },
-                { Icon: ShoppingBag, title: 'Huge Product Range',  desc: 'Thousands of products across multiple categories.' },
-                { Icon: Tag,         title: 'Best Wholesale Prices', desc: 'Competitive pricing for your growing business.' },
+                { Icon: ShieldCheck, title: 'Secure & Safe', desc: 'Your data is protected with enterprise-grade security.' },
+                { Icon: ShoppingBag, title: 'Huge Product Range', desc: 'Thousands of products across multiple categories.' },
+                { Icon: Tag, title: 'Best Wholesale Prices', desc: 'Competitive pricing for your growing business.' },
               ].map(({ Icon, title, desc }) => (
                 <div key={title} className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shrink-0 border border-white/10">
@@ -66,7 +66,7 @@ const AuthLayout: React.FC = () => {
             <Headphones size={22} className="text-white/80 shrink-0" />
             <div>
               <span className="text-[10px] font-bold opacity-55 uppercase tracking-widest text-white block">Need Help?</span>
-              <p className="text-[12px] font-medium m-0 text-white">support@amjstar.com · +91 123 456 7890</p>
+              <p className="text-[12px] font-medium m-0 text-white">support@amjstar.com · +91 9034440682</p>
             </div>
           </div>
         </div>

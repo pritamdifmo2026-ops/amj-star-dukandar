@@ -275,6 +275,7 @@ export const FloatingChat: React.FC = () => {
     const [quote, setQuote] = useState<any>(null);
     const [showCounter, setShowCounter] = useState(false);
     const [counterPrice, setCounterPrice] = useState('');
+    const [counterTimeline, setCounterTimeline] = useState('');
     const [counterNote, setCounterNote] = useState('');
     const [counterSubmitting, setCounterSubmitting] = useState(false);
     const [contactPhone, setContactPhone] = useState<string | null>(null);
@@ -326,13 +327,24 @@ export const FloatingChat: React.FC = () => {
     const grandTotal = taxableAmt + gstAmt + shipCost;
     const halfRate = (quote.gstRate ?? 0) / 2;
 
+    const fmtTimeline = (v: string) => {
+      if (!v) return v;
+      if (/day|week|month|hour/i.test(v)) return v;
+      return v.replace(/-/g, '–') + ' days';
+    };
+
     const submitCounter = async () => {
-      if (!counterPrice || Number(counterPrice) <= 0) return;
+      if (!counterPrice && !counterTimeline.trim()) return;
       setCounterSubmitting(true);
       try {
-        await quotationApi.counterOffer(quote._id, { price: Number(counterPrice), note: counterNote.trim() || undefined });
+        await quotationApi.counterOffer(quote._id, {
+          price: counterPrice ? Number(counterPrice) : undefined,
+          deliveryTimeline: counterTimeline.trim() || undefined,
+          note: counterNote.trim() || undefined,
+        });
         loadMessages();
         setShowCounter(false);
+        setCounterPrice(''); setCounterTimeline(''); setCounterNote('');
       } catch (err: any) {
         toast.error(err.response?.data?.message || 'Failed to send counter');
       } finally { setCounterSubmitting(false); }
@@ -488,7 +500,15 @@ export const FloatingChat: React.FC = () => {
                   placeholder="Enter total amount"
                   className="flex-1 border-none outline-none px-2 py-1.5 text-[11px] bg-transparent" />
               </div>
-              <p className="text-[9px] text-gray-400 m-0">Excluding GST &amp; shipping charges</p>
+              <p className="text-[9px] text-gray-400 m-0">Excluding GST &amp; shipping charges. Leave blank to keep current.</p>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[10px] text-gray-500 font-semibold">Delivery Timeline Request <span className="font-normal text-gray-400">(enter days)</span></label>
+              <input type="text" value={counterTimeline}
+                onChange={e => setCounterTimeline(e.target.value)}
+                onBlur={e => { const raw = e.target.value.trim(); if (raw) setCounterTimeline(fmtTimeline(raw)); }}
+                placeholder="e.g. 3 or 7–10"
+                className="border border-gray-200 rounded-[6px] px-2 py-1.5 text-[11px] outline-none focus:border-blue-400" />
             </div>
             <input type="text" value={counterNote} onChange={e => setCounterNote(e.target.value)}
               placeholder="Note (optional)" className="border border-gray-200 rounded-[6px] px-2 py-1.5 text-[11px] outline-none" />
@@ -497,7 +517,7 @@ export const FloatingChat: React.FC = () => {
                 className="flex-1 py-1.5 text-[11px] font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-[6px] cursor-pointer">
                 Cancel
               </button>
-              <button onClick={submitCounter} disabled={counterSubmitting || !counterPrice}
+              <button onClick={submitCounter} disabled={counterSubmitting || (!counterPrice && !counterTimeline.trim())}
                 className="flex-1 py-1.5 text-[11px] font-bold text-white bg-blue-600 rounded-[6px] border-none cursor-pointer disabled:opacity-50">
                 {counterSubmitting ? 'Sending…' : 'Send Counter'}
               </button>

@@ -99,6 +99,11 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const [order, setOrder] = useState<any>(initialOrder);
   // Re-sync when the parent refetches (e.g. a real-time order_update arrives)
   useEffect(() => { setOrder(initialOrder); }, [initialOrder]);
+  // Open at the top — otherwise (esp. on mobile) the page appears scrolled down
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    document.querySelector('main')?.scrollTo({ top: 0 });
+  }, []);
   const dispute = order._dispute;
   const cfg = getStatusConfig(order.status);
 
@@ -355,7 +360,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
               <Phone size={14} /> Call
             </a>
           )}
-          {contactEmail && (
+          {!isSupplier && contactEmail && (
             <a href={`mailto:${contactEmail}?subject=${encodeURIComponent(`Regarding Order ${order.orderNumber}`)}`} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#0284c7] bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] no-underline hover:bg-[#dbeafe]">
               <Mail size={14} /> Mail
             </a>
