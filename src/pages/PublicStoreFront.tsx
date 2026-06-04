@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Store, MapPin, Globe, Mail, Phone, ShieldCheck, ChevronDown, ChevronUp,
   Package, Calendar, TrendingUp, Award, Building2, ArrowUpRight,
-  Factory, Star, CheckCircle, MessageCircle, Share2, Copy, Check,
+  Factory, Star, CheckCircle, Share2, Copy, Check,
   LayoutGrid, List, X, Instagram, Facebook, Twitter,
 } from 'lucide-react';
 import api from '@/api/client';
@@ -370,16 +370,10 @@ const PublicStoreFront: React.FC = () => {
             <div className="sm:self-center flex gap-2 shrink-0 flex-wrap w-full sm:w-auto">
               <button
                 onClick={() => setShowShareModal(true)}
-                className="flex items-center justify-center gap-1.5 bg-[#f1f5f9] text-[#475569] text-sm font-bold px-3 py-2.5 rounded-[10px] hover:bg-[#e2e8f0] transition-colors border-none cursor-pointer max-sm:w-11"
+                className="flex items-center justify-center gap-1.5 bg-[#f1f5f9] text-[#475569] text-sm font-bold px-4 py-2.5 rounded-[10px] hover:bg-[#e2e8f0] transition-colors border-none cursor-pointer"
               >
-                <Share2 size={14} />
+                <Share2 size={14} /> Share
               </button>
-              <a
-                href={businessDetails?.email ? `mailto:${businessDetails.email}` : '#'}
-                className="flex items-center justify-center gap-2 bg-[#e65c00] hover:bg-[#c2410c] text-white text-sm font-bold px-4 py-2.5 rounded-[10px] transition-colors no-underline flex-1 sm:flex-none"
-              >
-                <MessageCircle size={15} /> Contact Supplier
-              </a>
             </div>
           </div>
         </div>

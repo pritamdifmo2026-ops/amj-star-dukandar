@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart,
-  CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck, RotateCcw
+  CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck, RotateCcw, Store
 } from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
@@ -460,7 +460,7 @@ const ProductDetail: React.FC = () => {
                   <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-xl shrink-0">
                     {(product.supplierName || 'S')[0].toUpperCase()}
                   </div>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h2 className="text-base font-extrabold text-heading mb-1">{product.supplierName}</h2>
                     <div className="flex flex-wrap gap-2">
                       {product.isVerified && (
@@ -475,6 +475,14 @@ const ProductDetail: React.FC = () => {
                       )}
                     </div>
                   </div>
+                  {product.supplierId && (
+                    <button
+                      onClick={() => navigate(`/store/${product.supplierId}`)}
+                      className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-primary bg-primary/5 border border-primary/20 rounded-[8px] cursor-pointer hover:bg-primary hover:text-white transition-colors"
+                    >
+                      <Store size={15} /> Visit Store
+                    </button>
+                  )}
                 </div>
 
                 {/* Details grid */}

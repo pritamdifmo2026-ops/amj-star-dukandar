@@ -58,7 +58,9 @@ const OrderList: React.FC = () => {
   const { socket } = useSocket();
 
   const isSupplier = user?.role === 'supplier';
-  const isOwnShipping = profile?.usesOwnShipping ?? false;
+  // V1: AMJ provides no logistics — every supplier ships with their own courier.
+  // (V2 will re-introduce AMJ logistics via profile.usesOwnShipping.)
+  const isOwnShipping = true;
 
   // Resolution methods this supplier offers (from onboarding policy); legacy/unset → both
   const policy = profile?.businessDetails?.returnPolicyType;

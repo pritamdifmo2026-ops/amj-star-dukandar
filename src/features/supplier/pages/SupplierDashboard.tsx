@@ -8,7 +8,7 @@ import productService from '@/features/product/services/product.service';
 import { chatApi } from '@/features/chat/services/chat.api';
 import Button from '@/shared/components/ui/Button';
 import {
-  LayoutDashboard, Package, Truck, LogOut, Trash2, FileText, MessageCircle,
+  LayoutDashboard, Package, LogOut, Trash2, FileText, MessageCircle,
   Handshake, Menu, Image as ImageIcon, Layers, CheckCircle, Clock,
   AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store,
   AlertTriangle, WifiOff, Wifi, Star
@@ -27,7 +27,6 @@ import SupplierReports from '../components/SupplierReports';
 import SupplierStoreFront from '../components/SupplierStoreFront';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import SupplierQuotations from '../components/SupplierQuotations';
-import SupplierLogistics from '../components/SupplierLogistics';
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import OrderList from '../../buyer/components/OrderList';
@@ -220,7 +219,6 @@ const SupplierDashboard: React.FC = () => {
     { id: 'store', label: 'Front Store', icon: Store },
     { id: 'wallet', label: 'Wallet', icon: Wallet },
     { id: 'reports', label: 'Reports', icon: BarChart2 },
-    { id: 'logistics', label: 'Logistics', icon: Truck },
     { id: 'reviews', label: 'My Reviews', icon: Star },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
@@ -369,7 +367,6 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'store' && profile?._id && <SupplierStoreFront supplierId={profile._id} />}
         {activeView === 'wallet' && <SupplierWallet />}
         {activeView === 'reports' && <SupplierReports />}
-        {activeView === 'logistics' && <SupplierLogistics />}
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'reviews' && <div className="p-5"><SupplierReviews /></div>}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}

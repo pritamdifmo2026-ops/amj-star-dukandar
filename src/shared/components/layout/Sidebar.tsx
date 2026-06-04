@@ -84,7 +84,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       style={{ '--brand-color': brandColor } as React.CSSProperties}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-14 px-2">
+      <div className={[
+        'flex mb-14',
+        isSidebarOpen ? 'items-center justify-between px-2' : 'flex-col items-center gap-4',
+      ].join(' ')}>
         <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/')}>
           <div className={[
             'w-[52px] h-[52px] rounded-full flex items-center justify-center p-2',
@@ -112,8 +115,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Desktop toggle */}
         <button
-          className="max-lg:hidden bg-white/5 border border-white/10 text-slate-400 w-8 h-8 rounded-[10px] cursor-pointer flex items-center justify-center transition-all hover:bg-white/10 hover:text-primary hover:border-white/30"
+          className="max-lg:hidden shrink-0 bg-white/5 border border-white/10 text-slate-400 w-8 h-8 rounded-[10px] cursor-pointer flex items-center justify-center transition-all hover:bg-white/10 hover:text-primary hover:border-white/30"
           onClick={onToggle}
+          title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           {isSidebarOpen ? <ChevronLeft size={18} /> : <Menu size={18} />}
         </button>

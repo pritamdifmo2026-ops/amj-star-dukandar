@@ -12,8 +12,15 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string; bo
   validated:         { label: 'Validated',        color: '#0284c7', bg: '#eff6ff', border: '#93c5fd' },
   reopened:          { label: 'Reopened',         color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
   supplier_resolved: { label: 'Supplier Resolved',color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe' },
+  exchange:          { label: 'Exchange',         color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
   resolved:          { label: 'Resolved',         color: '#15803d', bg: '#f0fdf4', border: '#86efac' },
   rejected:          { label: 'Rejected',         color: '#64748b', bg: '#f8fafc', border: '#e2e8f0' },
+};
+
+const EXCHANGE_STAGE_LABEL: Record<string, string> = {
+  awaiting_return: 'Awaiting buyer return',
+  return_received: 'Return received — preparing replacement',
+  replacement_shipped: 'Replacement shipped — awaiting buyer',
 };
 
 const FILTERS = [
@@ -46,9 +53,9 @@ const AdminDisputes: React.FC = () => {
     return () => { socket.off('dispute_update', handler); };
   }, [socket, qc]);
 
-  // "In Progress" = validated + reopened + supplier_resolved
+  // "In Progress" = validated + reopened + supplier_resolved + exchange
   const visible = filter === 'validated'
-    ? disputes.filter((d: any) => ['validated', 'reopened', 'supplier_resolved'].includes(d.status))
+    ? disputes.filter((d: any) => ['validated', 'reopened', 'supplier_resolved', 'exchange'].includes(d.status))
     : disputes;
 
   const handleValidate = async (id: string) => {
@@ -171,13 +178,13 @@ const AdminDisputes: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Resolution */}
-                  {(d.resolutionMethod || d.resolutionNote) && (
+                  {/* Resolution (refund/partial/other — exchange has its own block) */}
+                  {d.status !== 'exchange' && (d.resolutionMethod || d.resolutionNote) && (
                     <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px] px-4 py-3">
                       <p className="text-xs font-bold text-[#15803d] m-0 mb-1 uppercase tracking-wide">Supplier's Resolution</p>
                       {d.resolutionMethod && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#15803d] bg-white border border-[#bbf7d0] px-2 py-0.5 rounded-full mb-1.5">
-                          {d.resolutionMethod === 'refund' ? '💰 Refund' : '📦 Replacement'}
+                          {{ refund: '💰 Refund', replacement: '📦 Replacement', partial: '⚖️ Partial Settlement', other: '🤝 Other' }[d.resolutionMethod as string] || d.resolutionMethod}
                         </span>
                       )}
                       {d.resolutionNote && <p className="text-sm text-[#166534] m-0">{d.resolutionNote}</p>}
@@ -210,6 +217,15 @@ const AdminDisputes: React.FC = () => {
                   )}
                   {d.status === 'supplier_resolved' && (
                     <p className="text-xs text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={13} /> Supplier marked resolved — buyer's 72h confirmation window running.</p>
+                  )}
+                  {d.status === 'exchange' && (
+                    <div className="bg-[#ecfeff] border border-[#a5f3fc] rounded-[8px] px-4 py-3">
+                      <p className="text-xs font-bold text-[#0891b2] m-0 mb-1 uppercase tracking-wide">📦 Exchange in progress {d.requiresReturn ? '(return required)' : '(no return)'}</p>
+                      <p className="text-sm text-[#155e75] m-0">{EXCHANGE_STAGE_LABEL[d.exchangeStage] || d.exchangeStage}</p>
+                      {d.returnTracking && <p className="text-xs text-[#155e75] m-0 mt-1">Return: {d.returnCourier} · {d.returnTracking}</p>}
+                      {d.replacementTracking && <p className="text-xs text-[#155e75] m-0">Replacement: {d.replacementCourier} · {d.replacementTracking}</p>}
+                      {d.escalatedAt && <p className="text-xs font-bold text-[#dc2626] m-0 mt-1.5 flex items-center gap-1"><AlertTriangle size={12} /> Stalled 7+ days — needs your attention.</p>}
+                    </div>
                   )}
                   {d.status === 'resolved' && (
                     <p className="text-xs text-[#15803d] m-0 flex items-center gap-1.5"><CheckCircle size={13} /> Resolved and order completed.</p>

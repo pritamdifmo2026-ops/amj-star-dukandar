@@ -27,8 +27,22 @@ const DISPUTE_LABEL: Record<string, string> = {
   validated: 'Verified — please resolve',
   reopened: 'Reopened — please resolve again',
   supplier_resolved: 'Awaiting buyer confirmation',
+  exchange: 'Exchange in progress',
   resolved: 'Resolved',
   rejected: 'Not verified',
+};
+
+const EXCHANGE_STEPS = [
+  { key: 'awaiting_return',     label: 'Return' },
+  { key: 'return_received',     label: 'Inspected' },
+  { key: 'replacement_shipped', label: 'Replacement Sent' },
+  { key: 'done',                label: 'Confirmed' },
+];
+const exchangeStepIndex = (stage?: string) => {
+  if (stage === 'awaiting_return') return 0;
+  if (stage === 'return_received') return 1;
+  if (stage === 'replacement_shipped') return 2;
+  return 0;
 };
 
 const METHOD_META: Record<string, { label: string; icon: string }> = {
@@ -108,6 +122,13 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   // ── Supplier: resolve ──
   const [resolveMethod, setResolveMethod] = useState<'refund' | 'replacement' | 'partial' | 'other' | ''>('');
   const [resolveNote, setResolveNote] = useState('');
+  const [requiresReturn, setRequiresReturn] = useState<boolean | null>(null);
+
+  // ── Exchange: courier/tracking inputs (return + replacement) ──
+  const [exCourier, setExCourier] = useState('');
+  const [exTracking, setExTracking] = useState('');
+  const [reportIssue, setReportIssue] = useState(false);
+  const [reportReason, setReportReason] = useState('');
 
   // ── Buyer: confirm / rating / ticket ──
   const [confirmMode, setConfirmMode] = useState<'idle' | 'rating' | 'ticket'>('idle');
@@ -156,13 +177,49 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
 
   const handleResolve = async () => {
     if (!resolveMethod) { toast.error('Choose a resolution method.'); return; }
+    if (resolveMethod === 'replacement' && requiresReturn === null) { toast.error('Choose whether the original must be returned.'); return; }
     setBusy(true);
     try {
-      await orderApi.supplierResolveDispute(dispute._id, resolveMethod as any, resolveNote.trim());
-      syncDispute({ status: 'supplier_resolved', resolutionMethod: resolveMethod, resolutionNote: resolveNote.trim() });
-      toast.success('Resolution submitted. Buyer has 72h to confirm.');
+      await orderApi.supplierResolveDispute(dispute._id, resolveMethod as any, resolveNote.trim(), resolveMethod === 'replacement' ? !!requiresReturn : undefined);
+      if (resolveMethod === 'replacement') {
+        syncDispute({ status: 'exchange', resolutionMethod: 'replacement', requiresReturn: !!requiresReturn, exchangeStage: requiresReturn ? 'awaiting_return' : 'return_received' });
+        toast.success('Exchange started. Buyer notified.');
+      } else {
+        syncDispute({ status: 'supplier_resolved', resolutionMethod: resolveMethod, resolutionNote: resolveNote.trim() });
+        toast.success('Resolution submitted. Buyer has 72h to confirm.');
+      }
     } catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); }
     finally { setBusy(false); }
+  };
+
+  // ── Exchange milestone handlers ──
+  const exReset = () => { setExCourier(''); setExTracking(''); };
+  const handleReturnShipment = async () => {
+    if (!exCourier.trim() || !exTracking.trim()) { toast.error('Enter return courier and tracking.'); return; }
+    setBusy(true);
+    try { await orderApi.submitReturnShipment(dispute._id, exCourier.trim(), exTracking.trim()); syncDispute({ returnCourier: exCourier.trim(), returnTracking: exTracking.trim() }); exReset(); toast.success('Return shipment recorded.'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); } finally { setBusy(false); }
+  };
+  const handleReturnReceived = async () => {
+    setBusy(true);
+    try { await orderApi.markReturnReceived(dispute._id); syncDispute({ exchangeStage: 'return_received' }); toast.success('Return received. Now dispatch the replacement.'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); } finally { setBusy(false); }
+  };
+  const handleDispatchReplacement = async () => {
+    if (!exCourier.trim() || !exTracking.trim()) { toast.error('Enter courier and tracking.'); return; }
+    setBusy(true);
+    try { await orderApi.dispatchReplacement(dispute._id, exCourier.trim(), exTracking.trim()); syncDispute({ exchangeStage: 'replacement_shipped', replacementCourier: exCourier.trim(), replacementTracking: exTracking.trim() }); exReset(); toast.success('Replacement dispatched. Buyer notified.'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); } finally { setBusy(false); }
+  };
+  const handleConfirmExchange = async () => {
+    setBusy(true);
+    try { await orderApi.confirmExchangeDone(dispute._id); sync({ status: 'completed', _dispute: { ...dispute, status: 'resolved' } }); toast.success('Exchange confirmed. Order completed!'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); } finally { setBusy(false); }
+  };
+  const handleReportReplacement = async () => {
+    setBusy(true);
+    try { await orderApi.reportReplacementIssue(dispute._id, reportReason.trim()); syncDispute({ status: 'reopened', exchangeStage: undefined }); toast.success('Reported. Supplier notified.'); setReportIssue(false); setReportReason(''); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); } finally { setBusy(false); }
   };
 
   const handleEvidenceUpload = async (files: FileList | null) => {
@@ -405,19 +462,39 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           {isSupplier && ['validated', 'reopened'].includes(dispute.status) && (
             <div className="border-t border-[#f1f5f9] pt-4">
               <p className="text-sm font-bold text-[#0f172a] m-0 mb-1">Resolve this dispute</p>
-              <p className="text-xs text-[#64748b] m-0 mb-3">Coordinate with the buyer (call / mail above), then record how you resolved it. Buyer gets 72h to confirm.</p>
+              <p className="text-xs text-[#64748b] m-0 mb-3">Coordinate with the buyer (call / mail above), then pick how you'll resolve it.</p>
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {resolveOptions.map(m => (
-                  <button key={m} type="button" onClick={() => setResolveMethod(m)}
+                  <button key={m} type="button" onClick={() => { setResolveMethod(m); if (m !== 'replacement') setRequiresReturn(null); }}
                     className={`text-left p-3 rounded-[8px] border cursor-pointer transition-colors ${resolveMethod === m ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}>
                     <span className="text-sm font-bold text-[#0f172a]">{METHOD_META[m].icon} {METHOD_META[m].label}</span>
                   </button>
                 ))}
               </div>
-              <textarea value={resolveNote} onChange={e => setResolveNote(e.target.value)} rows={3} placeholder="Details shared with the buyer — e.g. 'Refunded ₹X via UPI ref ABC' or 'Replacement shipped, tracking XYZ'"
-                className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary resize-none mb-3" />
-              <button onClick={handleResolve} disabled={busy || !resolveMethod} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">
-                {busy ? 'Submitting…' : 'Submit Resolution'}
+
+              {/* Replacement → ask about return logistics */}
+              {resolveMethod === 'replacement' && (
+                <div className="mb-3 p-3 bg-[#f8fafc] border border-[#eef2f6] rounded-[8px]">
+                  <p className="text-xs font-bold text-[#0f172a] m-0 mb-2">Does the buyer need to return the original first?</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setRequiresReturn(true)}
+                      className={`flex-1 p-2.5 rounded-[8px] border text-xs font-bold cursor-pointer ${requiresReturn === true ? 'border-[#059669] bg-[#f0fdf4] text-[#15803d]' : 'border-[#e2e8f0] bg-white text-[#475569]'}`}>
+                      Yes — return required
+                    </button>
+                    <button type="button" onClick={() => setRequiresReturn(false)}
+                      className={`flex-1 p-2.5 rounded-[8px] border text-xs font-bold cursor-pointer ${requiresReturn === false ? 'border-[#059669] bg-[#f0fdf4] text-[#15803d]' : 'border-[#e2e8f0] bg-white text-[#475569]'}`}>
+                      No — replace directly
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {resolveMethod !== 'replacement' && (
+                <textarea value={resolveNote} onChange={e => setResolveNote(e.target.value)} rows={3} placeholder="Details shared with the buyer — e.g. 'Refunded ₹X via UPI ref ABC'"
+                  className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary resize-none mb-3" />
+              )}
+              <button onClick={handleResolve} disabled={busy || !resolveMethod || (resolveMethod === 'replacement' && requiresReturn === null)} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">
+                {busy ? 'Submitting…' : resolveMethod === 'replacement' ? 'Approve Exchange' : 'Submit Resolution'}
               </button>
             </div>
           )}
@@ -425,7 +502,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           {isSupplier && dispute.status === 'open' && <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> Awaiting AMJSTAR review before you act.</p>}
           {isSupplier && dispute.status === 'supplier_resolved' && <p className="text-xs text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={13} /> Awaiting buyer confirmation (72h window).</p>}
 
-          {/* BUYER confirm / reopen panel */}
+          {/* BUYER confirm / reopen panel (refund/partial/other) */}
           {!isSupplier && dispute.status === 'open' && <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> Our team is reviewing your ticket.</p>}
           {!isSupplier && ['validated', 'reopened'].includes(dispute.status) && <p className="text-xs text-[#0284c7] m-0 flex items-center gap-1.5"><Clock size={13} /> Verified — the supplier is resolving it. Coordinate via call / mail above.</p>}
           {!isSupplier && dispute.status === 'supplier_resolved' && (
@@ -444,6 +521,98 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                     <button onClick={handleReopen} disabled={busy} className="flex-1 py-2.5 text-sm font-bold text-white bg-[#dc2626] rounded-[8px] border-none cursor-pointer hover:bg-[#b91c1c] disabled:opacity-50">{busy ? 'Submitting…' : 'Reopen Dispute'}</button>
                   </div>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* ── EXCHANGE milestone panel ── */}
+          {dispute.status === 'exchange' && (
+            <div className="border-t border-[#f1f5f9] pt-4">
+              {/* Exchange stepper */}
+              <div className="flex items-center justify-between mb-4">
+                {EXCHANGE_STEPS.filter(s => dispute.requiresReturn || s.key !== 'awaiting_return').map((s, i, arr) => {
+                  const active = exchangeStepIndex(dispute.exchangeStage);
+                  const myIdx = EXCHANGE_STEPS.findIndex(x => x.key === s.key);
+                  const reached = myIdx <= active;
+                  return (
+                    <React.Fragment key={s.key}>
+                      <div className="flex flex-col items-center gap-1 shrink-0">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${reached ? 'bg-[#0284c7] text-white' : 'bg-[#f1f5f9] text-[#94a3b8]'}`}>{i + 1}</div>
+                        <span className={`text-[9px] font-bold ${reached ? 'text-[#0f172a]' : 'text-[#94a3b8]'}`}>{s.label}</span>
+                      </div>
+                      {i < arr.length - 1 && <div className={`flex-1 h-0.5 mx-1 ${myIdx < active ? 'bg-[#0284c7]' : 'bg-[#e2e8f0]'}`} />}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+
+              {/* Return tracking shown */}
+              {dispute.returnTracking && (
+                <p className="text-xs text-[#64748b] m-0 mb-2">Return: <strong className="text-[#0f172a]">{dispute.returnCourier} · {dispute.returnTracking}</strong></p>
+              )}
+              {dispute.replacementTracking && (
+                <p className="text-xs text-[#64748b] m-0 mb-2">Replacement: <strong className="text-[#0f172a]">{dispute.replacementCourier} · {dispute.replacementTracking}</strong></p>
+              )}
+
+              {/* STAGE: awaiting_return */}
+              {dispute.exchangeStage === 'awaiting_return' && (
+                !isSupplier ? (
+                  dispute.returnTracking ? (
+                    <p className="text-xs text-[#0284c7] m-0 flex items-center gap-1.5"><Clock size={13} /> Return shipped — waiting for the supplier to inspect it.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm font-bold text-[#0f172a] m-0">Ship the original back</p>
+                      <input value={exCourier} onChange={e => setExCourier(e.target.value)} placeholder="Return courier *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary" />
+                      <input value={exTracking} onChange={e => setExTracking(e.target.value)} placeholder="Return tracking number *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary uppercase" />
+                      <button onClick={handleReturnShipment} disabled={busy} className="py-2.5 text-sm font-bold text-white bg-[#0284c7] rounded-[8px] border-none cursor-pointer hover:bg-[#0369a1] disabled:opacity-50">{busy ? 'Saving…' : 'I\'ve Shipped the Return'}</button>
+                    </div>
+                  )
+                ) : (
+                  dispute.returnTracking ? (
+                    <button onClick={handleReturnReceived} disabled={busy} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">{busy ? 'Working…' : 'Mark Return Received'}</button>
+                  ) : (
+                    <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> Waiting for the buyer to ship the original back.</p>
+                  )
+                )
+              )}
+
+              {/* STAGE: return_received → supplier dispatches replacement */}
+              {dispute.exchangeStage === 'return_received' && (
+                isSupplier ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-bold text-[#0f172a] m-0">Dispatch the replacement</p>
+                    <input value={exCourier} onChange={e => setExCourier(e.target.value)} placeholder="Courier *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary" />
+                    <input value={exTracking} onChange={e => setExTracking(e.target.value)} placeholder="Tracking number *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary uppercase" />
+                    <button onClick={handleDispatchReplacement} disabled={busy} className="py-2.5 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50">{busy ? 'Dispatching…' : 'Dispatch Replacement'}</button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#0284c7] m-0 flex items-center gap-1.5"><Clock size={13} /> Supplier is preparing your replacement.</p>
+                )
+              )}
+
+              {/* STAGE: replacement_shipped → buyer confirms */}
+              {dispute.exchangeStage === 'replacement_shipped' && (
+                !isSupplier ? (
+                  !reportIssue ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm font-bold text-[#0f172a] m-0">Replacement on the way — confirm once it arrives & passes inspection.</p>
+                      <div className="flex gap-3">
+                        <button onClick={() => setReportIssue(true)} disabled={busy} className="flex-1 py-2.5 text-sm font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fca5a5] rounded-[8px] cursor-pointer hover:bg-[#fee2e2] disabled:opacity-50">Issue with Replacement</button>
+                        <button onClick={handleConfirmExchange} disabled={busy} className="flex-1 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">{busy ? 'Submitting…' : 'Confirm Exchange Done'}</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <textarea value={reportReason} onChange={e => setReportReason(e.target.value)} rows={3} placeholder="What's wrong with the replacement?" className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary resize-none" />
+                      <div className="flex gap-3">
+                        <button onClick={() => setReportIssue(false)} className="flex-1 py-2.5 text-sm font-bold text-[#64748b] bg-[#f1f5f9] rounded-[8px] border-none cursor-pointer">Cancel</button>
+                        <button onClick={handleReportReplacement} disabled={busy} className="flex-1 py-2.5 text-sm font-bold text-white bg-[#dc2626] rounded-[8px] border-none cursor-pointer hover:bg-[#b91c1c] disabled:opacity-50">{busy ? 'Submitting…' : 'Report Issue'}</button>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <p className="text-xs text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={13} /> Replacement dispatched — waiting for the buyer to confirm (auto-completes in 7 days).</p>
+                )
               )}
             </div>
           )}

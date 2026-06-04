@@ -88,8 +88,30 @@ export const orderApi = {
     return res.data.dispute;
   },
 
-  supplierResolveDispute: async (disputeId: string, resolutionMethod: 'refund' | 'replacement' | 'partial' | 'other', resolutionNote: string): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote });
+  supplierResolveDispute: async (
+    disputeId: string,
+    resolutionMethod: 'refund' | 'replacement' | 'partial' | 'other',
+    resolutionNote: string,
+    requiresReturn?: boolean,
+  ): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote, requiresReturn });
+  },
+
+  // ── Replacement exchange sub-flow ──
+  submitReturnShipment: async (disputeId: string, courier: string, tracking: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_RETURN_SHIPMENT(disputeId), { courier, tracking });
+  },
+  markReturnReceived: async (disputeId: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_RETURN_RECEIVED(disputeId));
+  },
+  dispatchReplacement: async (disputeId: string, courier: string, tracking: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_DISPATCH_REPLACEMENT(disputeId), { courier, tracking });
+  },
+  confirmExchangeDone: async (disputeId: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_CONFIRM(disputeId));
+  },
+  reportReplacementIssue: async (disputeId: string, reason: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_REPORT(disputeId), { reason });
   },
 
   buyerConfirmResolved: async (disputeId: string): Promise<void> => {
