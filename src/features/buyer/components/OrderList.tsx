@@ -279,7 +279,7 @@ const OrderList: React.FC = () => {
                   )}
                   {attention && <span className="text-[10px] font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fca5a5] px-2 py-0.5 rounded-full">Action needed</span>}
                   <button onClick={() => setManageOrder(order)} className="flex items-center gap-1 px-3.5 py-1.5 text-xs font-bold text-white bg-primary rounded-[6px] hover:opacity-90 border-none cursor-pointer">
-                    Manage Order <ChevronRight size={13} />
+                    {isSupplier ? 'Manage Order' : 'View Order'} <ChevronRight size={13} />
                   </button>
                 </div>
               </div>

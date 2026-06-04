@@ -64,7 +64,7 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
     if (isAdmin) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`); return; }
-    if (!user.name?.trim()) { setShowProfilePrompt(true); return; }
+    if (!user.name?.trim() || !user.email?.trim()) { setShowProfilePrompt(true); return; }
     setShowEnquiryModal(true);
   };
 
@@ -83,10 +83,16 @@ const ProductDetail: React.FC = () => {
         enquiry.deliveryAddress.state,
         enquiry.deliveryAddress.pincode,
       ].filter(Boolean).join(', ');
+      const priceLine =
+        enquiry.priceMode === 'negotiate'
+          ? 'Open to negotiation'
+          : enquiry.priceMode === 'custom' && enquiry.targetPrice
+            ? `Target budget: ₹${enquiry.targetPrice.toLocaleString()} total`
+            : 'As listed';
       const text = [
         `📦 Enquiry: ${product.name}`,
         `Quantity: ${enquiry.quantity} ${product.unit}s`,
-        `Price: ${enquiry.targetPrice ? `₹${enquiry.targetPrice.toLocaleString()} total` : 'As listed'}`,
+        `Price: ${priceLine}`,
         `Delivery Timeline: ${enquiry.deliveryTimeline}`,
         shipTo ? `Ship to: ${shipTo}` : '',
         `Requirements: ${enquiry.requirements}`,

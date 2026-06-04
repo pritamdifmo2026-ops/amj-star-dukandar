@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { orderApi } from '@/features/order/services/order.api';
 import apiClient from '@/api/client';
 import {
@@ -97,6 +97,8 @@ interface OrderManageProps {
 
 const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSupplier, isOwnShipping, allowedMethods, onBack, onRefresh }) => {
   const [order, setOrder] = useState<any>(initialOrder);
+  // Re-sync when the parent refetches (e.g. a real-time order_update arrives)
+  useEffect(() => { setOrder(initialOrder); }, [initialOrder]);
   const dispute = order._dispute;
   const cfg = getStatusConfig(order.status);
 
@@ -123,6 +125,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const [resolveMethod, setResolveMethod] = useState<'refund' | 'replacement' | 'partial' | 'other' | ''>('');
   const [resolveNote, setResolveNote] = useState('');
   const [requiresReturn, setRequiresReturn] = useState<boolean | null>(null);
+  const [refundTxId, setRefundTxId] = useState('');
 
   // ── Exchange: courier/tracking inputs (return + replacement) ──
   const [exCourier, setExCourier] = useState('');
@@ -178,14 +181,15 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const handleResolve = async () => {
     if (!resolveMethod) { toast.error('Choose a resolution method.'); return; }
     if (resolveMethod === 'replacement' && requiresReturn === null) { toast.error('Choose whether the original must be returned.'); return; }
+    if (resolveMethod === 'refund' && !refundTxId.trim()) { toast.error('Enter the refund Transaction ID (UTR).'); return; }
     setBusy(true);
     try {
-      await orderApi.supplierResolveDispute(dispute._id, resolveMethod as any, resolveNote.trim(), resolveMethod === 'replacement' ? !!requiresReturn : undefined);
+      await orderApi.supplierResolveDispute(dispute._id, resolveMethod as any, resolveNote.trim(), resolveMethod === 'replacement' ? !!requiresReturn : undefined, resolveMethod === 'refund' ? refundTxId.trim() : undefined);
       if (resolveMethod === 'replacement') {
         syncDispute({ status: 'exchange', resolutionMethod: 'replacement', requiresReturn: !!requiresReturn, exchangeStage: requiresReturn ? 'awaiting_return' : 'return_received' });
         toast.success('Exchange started. Buyer notified.');
       } else {
-        syncDispute({ status: 'supplier_resolved', resolutionMethod: resolveMethod, resolutionNote: resolveNote.trim() });
+        syncDispute({ status: 'supplier_resolved', resolutionMethod: resolveMethod, resolutionNote: resolveNote.trim(), refundTransactionId: resolveMethod === 'refund' ? refundTxId.trim() : undefined });
         toast.success('Resolution submitted. Buyer has 72h to confirm.');
       }
     } catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); }
@@ -352,7 +356,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             </a>
           )}
           {contactEmail && (
-            <a href={`mailto:${contactEmail}?subject=Regarding Order ${order.orderNumber}`} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#0284c7] bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] no-underline hover:bg-[#dbeafe]">
+            <a href={`mailto:${contactEmail}?subject=${encodeURIComponent(`Regarding Order ${order.orderNumber}`)}`} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#0284c7] bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] no-underline hover:bg-[#dbeafe]">
               <Mail size={14} /> Mail
             </a>
           )}
@@ -454,6 +458,9 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#15803d] bg-white border border-[#bbf7d0] px-2 py-0.5 rounded-full mb-1.5">
                 {METHOD_META[dispute.resolutionMethod]?.icon} {METHOD_META[dispute.resolutionMethod]?.label}
               </span>
+              {dispute.refundTransactionId && (
+                <p className="text-sm text-[#166534] m-0 font-semibold">Transaction ID (UTR): <span className="font-mono">{dispute.refundTransactionId}</span></p>
+              )}
               {dispute.resolutionNote && <p className="text-sm text-[#166534] m-0">{dispute.resolutionNote}</p>}
             </div>
           )}
@@ -489,11 +496,22 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                 </div>
               )}
 
+              {/* Refund → require Transaction ID (UTR) */}
+              {resolveMethod === 'refund' && (
+                <div className="mb-3">
+                  <label className="text-xs font-bold text-[#0f172a] block mb-1">Refund Transaction ID / UTR <span className="text-[#dc2626]">*</span></label>
+                  <input value={refundTxId} onChange={e => setRefundTxId(e.target.value)} placeholder="e.g. UTR 1234567890 / UPI ref"
+                    className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary uppercase" />
+                  <p className="text-[11px] text-[#94a3b8] m-0 mt-1">The buyer sees this to verify the refund hit their account.</p>
+                </div>
+              )}
+
               {resolveMethod !== 'replacement' && (
-                <textarea value={resolveNote} onChange={e => setResolveNote(e.target.value)} rows={3} placeholder="Details shared with the buyer — e.g. 'Refunded ₹X via UPI ref ABC'"
+                <textarea value={resolveNote} onChange={e => setResolveNote(e.target.value)} rows={3}
+                  placeholder={resolveMethod === 'refund' ? 'Optional note for the buyer…' : "Details shared with the buyer — e.g. 'Settled ₹X by mutual agreement'"}
                   className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary resize-none mb-3" />
               )}
-              <button onClick={handleResolve} disabled={busy || !resolveMethod || (resolveMethod === 'replacement' && requiresReturn === null)} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">
+              <button onClick={handleResolve} disabled={busy || !resolveMethod || (resolveMethod === 'replacement' && requiresReturn === null) || (resolveMethod === 'refund' && !refundTxId.trim())} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">
                 {busy ? 'Submitting…' : resolveMethod === 'replacement' ? 'Approve Exchange' : 'Submit Resolution'}
               </button>
             </div>

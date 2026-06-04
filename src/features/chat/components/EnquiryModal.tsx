@@ -19,6 +19,7 @@ interface EnquiryModalProps {
 export interface EnquiryPayload {
   quantity: number;
   targetPrice: number | null;
+  priceMode: 'quoted' | 'negotiate' | 'custom';
   deliveryTimeline: string;
   requirements: string;
   note: string;
@@ -131,6 +132,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
       await onSubmit({
         quantity: finalQty,
         targetPrice: finalPrice,
+        priceMode,
         deliveryTimeline: timeline,
         requirements: requirements.join(', '),
         note: note.trim(),

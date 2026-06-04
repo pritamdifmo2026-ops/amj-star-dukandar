@@ -59,6 +59,7 @@ const AdminDisputes: React.FC = () => {
     : disputes;
 
   const handleValidate = async (id: string) => {
+    if (acting) return; // guard against double-fire
     setActing(id);
     try {
       await adminService.validateDispute(id);
@@ -187,6 +188,7 @@ const AdminDisputes: React.FC = () => {
                           {{ refund: '💰 Refund', replacement: '📦 Replacement', partial: '⚖️ Partial Settlement', other: '🤝 Other' }[d.resolutionMethod as string] || d.resolutionMethod}
                         </span>
                       )}
+                      {d.refundTransactionId && <p className="text-sm text-[#166534] m-0 font-semibold">UTR: <span className="font-mono">{d.refundTransactionId}</span></p>}
                       {d.resolutionNote && <p className="text-sm text-[#166534] m-0">{d.resolutionNote}</p>}
                     </div>
                   )}

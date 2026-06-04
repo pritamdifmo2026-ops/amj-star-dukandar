@@ -93,8 +93,9 @@ export const orderApi = {
     resolutionMethod: 'refund' | 'replacement' | 'partial' | 'other',
     resolutionNote: string,
     requiresReturn?: boolean,
+    refundTransactionId?: string,
   ): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote, requiresReturn });
+    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote, requiresReturn, refundTransactionId });
   },
 
   // ── Replacement exchange sub-flow ──

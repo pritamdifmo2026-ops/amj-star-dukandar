@@ -256,7 +256,10 @@ const ChatInbox: React.FC = () => {
     return conv?.buyerId;
   };
 
-  const getUnread = (conv: any) => conv.unreadCount?.[user?.id] || 0;
+  const getUnread = (conv: any) => {
+    const uid = user?._id || user?.id;
+    return conv.unreadCount?.[uid] || conv.unreadCount?.[user?.id] || 0;
+  };
 
   const filteredConversations = conversations.filter((conv) => {
     const other = getOtherParticipant(conv);
@@ -269,6 +272,12 @@ const ChatInbox: React.FC = () => {
 
   const handleSelectConv = (conv: any) => {
     setActiveConv(conv);
+    // Clear the unread dot/badge for this conversation immediately
+    const uid = user?._id || user?.id;
+    setConversations(prev => prev.map(c =>
+      c._id === conv._id ? { ...c, unreadCount: { ...(c.unreadCount || {}), [uid]: 0, [user?.id]: 0 } } : c
+    ));
+    socket?.emit('mark_read', conv._id);
     setQuoteForm(prev => ({
       ...prev,
       itemName: conv.productId?.name || '',
@@ -1102,8 +1111,11 @@ const ChatInbox: React.FC = () => {
               <div key={conv._id}
                 className={`group relative flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors border-b border-[#f8fafc] ${isActive ? 'bg-[#fff7ed]' : 'hover:bg-[#f8fafc]'} ${isDeleting ? 'opacity-40 pointer-events-none' : ''}`}
                 onClick={() => handleSelectConv(conv)}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold shrink-0 ${isActive ? 'bg-primary text-white' : 'bg-[#f1f5f9] text-[#475569]'}`}>
-                  {other?.name?.[0]?.toUpperCase() || '?'}
+                <div className="relative shrink-0">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold ${isActive ? 'bg-primary text-white' : 'bg-[#f1f5f9] text-[#475569]'}`}>
+                    {other?.name?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-white" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   {(() => {
@@ -1114,11 +1126,11 @@ const ChatInbox: React.FC = () => {
                     ) : null;
                   })()}
                   <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-sm font-semibold text-[#0f172a] truncate">{other?.name || 'User'}</span>
+                    <span className={`text-sm truncate ${unread > 0 ? 'font-extrabold text-[#0f172a]' : 'font-semibold text-[#0f172a]'}`}>{other?.name || 'User'}</span>
                     <span className="text-[10px] text-[#94a3b8] shrink-0 mr-5">{new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-xs text-[#94a3b8] truncate">{conv.lastMessage || 'Start of conversation'}</span>
+                    <span className={`text-xs truncate ${unread > 0 ? 'font-bold text-[#475569]' : 'text-[#94a3b8]'}`}>{conv.lastMessage || 'Start of conversation'}</span>
                     {unread > 0 && <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0 mr-5">{unread}</span>}
                   </div>
                 </div>
