@@ -130,6 +130,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const [resolveMethod, setResolveMethod] = useState<'refund' | 'replacement' | 'partial' | 'other' | ''>('');
   const [resolveNote, setResolveNote] = useState('');
   const [requiresReturn, setRequiresReturn] = useState<boolean | null>(null);
+  const [returnMode, setReturnMode] = useState<'buyer_ships' | 'supplier_pickup' | null>(null);
   const [refundTxId, setRefundTxId] = useState('');
 
   // ── Exchange: courier/tracking inputs (return + replacement) ──
@@ -186,12 +187,13 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const handleResolve = async () => {
     if (!resolveMethod) { toast.error('Choose a resolution method.'); return; }
     if (resolveMethod === 'replacement' && requiresReturn === null) { toast.error('Choose whether the original must be returned.'); return; }
+    if (resolveMethod === 'replacement' && requiresReturn === true && returnMode === null) { toast.error('Choose who arranges the return courier.'); return; }
     if (resolveMethod === 'refund' && !refundTxId.trim()) { toast.error('Enter the refund Transaction ID (UTR).'); return; }
     setBusy(true);
     try {
-      await orderApi.supplierResolveDispute(dispute._id, resolveMethod as any, resolveNote.trim(), resolveMethod === 'replacement' ? !!requiresReturn : undefined, resolveMethod === 'refund' ? refundTxId.trim() : undefined);
+      await orderApi.supplierResolveDispute(dispute._id, resolveMethod as any, resolveNote.trim(), resolveMethod === 'replacement' ? !!requiresReturn : undefined, resolveMethod === 'refund' ? refundTxId.trim() : undefined, resolveMethod === 'replacement' && requiresReturn ? (returnMode || 'buyer_ships') : undefined);
       if (resolveMethod === 'replacement') {
-        syncDispute({ status: 'exchange', resolutionMethod: 'replacement', requiresReturn: !!requiresReturn, exchangeStage: requiresReturn ? 'awaiting_return' : 'return_received' });
+        syncDispute({ status: 'exchange', resolutionMethod: 'replacement', requiresReturn: !!requiresReturn, returnMode: requiresReturn ? (returnMode || 'buyer_ships') : undefined, exchangeStage: requiresReturn ? 'awaiting_return' : 'return_received' });
         toast.success('Exchange started. Buyer notified.');
       } else {
         syncDispute({ status: 'supplier_resolved', resolutionMethod: resolveMethod, resolutionNote: resolveNote.trim(), refundTransactionId: resolveMethod === 'refund' ? refundTxId.trim() : undefined });
@@ -206,7 +208,18 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const handleReturnShipment = async () => {
     if (!exCourier.trim() || !exTracking.trim()) { toast.error('Enter return courier and tracking.'); return; }
     setBusy(true);
-    try { await orderApi.submitReturnShipment(dispute._id, exCourier.trim(), exTracking.trim()); syncDispute({ returnCourier: exCourier.trim(), returnTracking: exTracking.trim() }); exReset(); toast.success('Return shipment recorded.'); }
+    try { await orderApi.submitReturnShipment(dispute._id, exCourier.trim(), exTracking.trim()); syncDispute({ returnCourier: exCourier.trim(), returnTracking: exTracking.trim(), returnShippedAt: new Date().toISOString() }); exReset(); toast.success('Return shipment recorded.'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); } finally { setBusy(false); }
+  };
+  const handlePickupTracking = async () => {
+    if (!exCourier.trim() || !exTracking.trim()) { toast.error('Enter pickup courier and tracking.'); return; }
+    setBusy(true);
+    try { await orderApi.setPickupTracking(dispute._id, exCourier.trim(), exTracking.trim()); syncDispute({ returnCourier: exCourier.trim(), returnTracking: exTracking.trim() }); exReset(); toast.success('Pickup tracking saved. Buyer notified.'); }
+    catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); } finally { setBusy(false); }
+  };
+  const handleConfirmHandover = async () => {
+    setBusy(true);
+    try { await orderApi.confirmHandover(dispute._id); syncDispute({ returnShippedAt: new Date().toISOString() }); toast.success('Handover confirmed.'); }
     catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); } finally { setBusy(false); }
   };
   const handleReturnReceived = async () => {
@@ -353,6 +366,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         <div>
           <p className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] m-0 mb-0.5">{isSupplier ? 'Buyer' : 'Supplier'}</p>
           <p className="text-sm font-extrabold text-[#0f172a] m-0">{contactName}</p>
+          {contactPhone && <p className="text-xs text-[#64748b] m-0 mt-0.5">{contactPhone}</p>}
         </div>
         <div className="flex items-center gap-2">
           {contactPhone && (
@@ -493,11 +507,28 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                       className={`flex-1 p-2.5 rounded-[8px] border text-xs font-bold cursor-pointer ${requiresReturn === true ? 'border-[#059669] bg-[#f0fdf4] text-[#15803d]' : 'border-[#e2e8f0] bg-white text-[#475569]'}`}>
                       Yes — return required
                     </button>
-                    <button type="button" onClick={() => setRequiresReturn(false)}
+                    <button type="button" onClick={() => { setRequiresReturn(false); setReturnMode(null); }}
                       className={`flex-1 p-2.5 rounded-[8px] border text-xs font-bold cursor-pointer ${requiresReturn === false ? 'border-[#059669] bg-[#f0fdf4] text-[#15803d]' : 'border-[#e2e8f0] bg-white text-[#475569]'}`}>
                       No — replace directly
                     </button>
                   </div>
+
+                  {/* Who arranges the return courier? */}
+                  {requiresReturn === true && (
+                    <div className="mt-3">
+                      <p className="text-xs font-bold text-[#0f172a] m-0 mb-2">Who arranges the return courier?</p>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => setReturnMode('supplier_pickup')}
+                          className={`flex-1 p-2.5 rounded-[8px] border text-xs font-bold cursor-pointer ${returnMode === 'supplier_pickup' ? 'border-[#059669] bg-[#f0fdf4] text-[#15803d]' : 'border-[#e2e8f0] bg-white text-[#475569]'}`}>
+                          📦 I'll send a courier to pick it up
+                        </button>
+                        <button type="button" onClick={() => setReturnMode('buyer_ships')}
+                          className={`flex-1 p-2.5 rounded-[8px] border text-xs font-bold cursor-pointer ${returnMode === 'buyer_ships' ? 'border-[#059669] bg-[#f0fdf4] text-[#15803d]' : 'border-[#e2e8f0] bg-white text-[#475569]'}`}>
+                          🚚 Buyer ships it back
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -516,7 +547,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                   placeholder={resolveMethod === 'refund' ? 'Optional note for the buyer…' : "Details shared with the buyer — e.g. 'Settled ₹X by mutual agreement'"}
                   className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary resize-none mb-3" />
               )}
-              <button onClick={handleResolve} disabled={busy || !resolveMethod || (resolveMethod === 'replacement' && requiresReturn === null) || (resolveMethod === 'refund' && !refundTxId.trim())} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">
+              <button onClick={handleResolve} disabled={busy || !resolveMethod || (resolveMethod === 'replacement' && requiresReturn === null) || (resolveMethod === 'replacement' && requiresReturn === true && returnMode === null) || (resolveMethod === 'refund' && !refundTxId.trim())} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">
                 {busy ? 'Submitting…' : resolveMethod === 'replacement' ? 'Approve Exchange' : 'Submit Resolution'}
               </button>
             </div>
@@ -578,26 +609,61 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
               )}
 
               {/* STAGE: awaiting_return */}
-              {dispute.exchangeStage === 'awaiting_return' && (
-                !isSupplier ? (
-                  dispute.returnTracking ? (
-                    <p className="text-xs text-[#0284c7] m-0 flex items-center gap-1.5"><Clock size={13} /> Return shipped — waiting for the supplier to inspect it.</p>
+              {dispute.exchangeStage === 'awaiting_return' && (() => {
+                const pickup = dispute.returnMode === 'supplier_pickup';
+                const hasTracking = !!dispute.returnTracking;
+                const handedOver = !!dispute.returnShippedAt;
+
+                // ── Buyer ships back ──
+                if (!pickup) {
+                  return !isSupplier ? (
+                    handedOver ? (
+                      <p className="text-xs text-[#0284c7] m-0 flex items-center gap-1.5"><Clock size={13} /> Return shipped — waiting for the supplier to inspect it.</p>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <p className="text-sm font-bold text-[#0f172a] m-0">Ship the original back</p>
+                        <input value={exCourier} onChange={e => setExCourier(e.target.value)} placeholder="Return courier *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary" />
+                        <input value={exTracking} onChange={e => setExTracking(e.target.value)} placeholder="Return tracking number *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary uppercase" />
+                        <button onClick={handleReturnShipment} disabled={busy} className="py-2.5 text-sm font-bold text-white bg-[#0284c7] rounded-[8px] border-none cursor-pointer hover:bg-[#0369a1] disabled:opacity-50">{busy ? 'Saving…' : 'I\'ve Shipped the Return'}</button>
+                      </div>
+                    )
+                  ) : (
+                    handedOver ? (
+                      <button onClick={handleReturnReceived} disabled={busy} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">{busy ? 'Working…' : 'Mark Return Received'}</button>
+                    ) : (
+                      <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> Waiting for the buyer to ship the original back.</p>
+                    )
+                  );
+                }
+
+                // ── Supplier arranges pickup ──
+                return !isSupplier ? (
+                  !hasTracking ? (
+                    <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> The supplier is arranging a courier to pick up the original.</p>
+                  ) : handedOver ? (
+                    <p className="text-xs text-[#0284c7] m-0 flex items-center gap-1.5"><Clock size={13} /> Handed over — waiting for the supplier to inspect it.</p>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <p className="text-sm font-bold text-[#0f172a] m-0">Ship the original back</p>
-                      <input value={exCourier} onChange={e => setExCourier(e.target.value)} placeholder="Return courier *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary" />
-                      <input value={exTracking} onChange={e => setExTracking(e.target.value)} placeholder="Return tracking number *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary uppercase" />
-                      <button onClick={handleReturnShipment} disabled={busy} className="py-2.5 text-sm font-bold text-white bg-[#0284c7] rounded-[8px] border-none cursor-pointer hover:bg-[#0369a1] disabled:opacity-50">{busy ? 'Saving…' : 'I\'ve Shipped the Return'}</button>
+                      <p className="text-sm font-bold text-[#0f172a] m-0">Pickup arranged</p>
+                      <p className="text-xs text-[#475569] m-0">Courier: <strong>{dispute.returnCourier}</strong> · Tracking: <strong>{dispute.returnTracking}</strong></p>
+                      <button onClick={handleConfirmHandover} disabled={busy} className="py-2.5 text-sm font-bold text-white bg-[#0284c7] rounded-[8px] border-none cursor-pointer hover:bg-[#0369a1] disabled:opacity-50">{busy ? 'Saving…' : 'I\'ve Handed Over the Item'}</button>
                     </div>
                   )
                 ) : (
-                  dispute.returnTracking ? (
-                    <button onClick={handleReturnReceived} disabled={busy} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">{busy ? 'Working…' : 'Mark Return Received'}</button>
+                  !hasTracking ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm font-bold text-[#0f172a] m-0">Arrange the return pickup</p>
+                      <input value={exCourier} onChange={e => setExCourier(e.target.value)} placeholder="Pickup courier *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary" />
+                      <input value={exTracking} onChange={e => setExTracking(e.target.value)} placeholder="Pickup tracking number *" className="border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm outline-none focus:border-primary uppercase" />
+                      <button onClick={handlePickupTracking} disabled={busy} className="py-2.5 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90 disabled:opacity-50">{busy ? 'Saving…' : 'Send Pickup Tracking'}</button>
+                    </div>
+                  ) : !handedOver ? (
+                    <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> Pickup tracking sent ({dispute.returnTracking}). Waiting for the buyer to hand over the item.</p>
                   ) : (
-                    <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> Waiting for the buyer to ship the original back.</p>
+                    <button onClick={handleReturnReceived} disabled={busy} className="w-full py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">{busy ? 'Working…' : 'Mark Return Received'}</button>
                   )
-                )
-              )}
+                );
+              })()}
 
               {/* STAGE: return_received → supplier dispatches replacement */}
               {dispute.exchangeStage === 'return_received' && (

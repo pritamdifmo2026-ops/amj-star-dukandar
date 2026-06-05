@@ -94,13 +94,20 @@ export const orderApi = {
     resolutionNote: string,
     requiresReturn?: boolean,
     refundTransactionId?: string,
+    returnMode?: 'buyer_ships' | 'supplier_pickup',
   ): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote, requiresReturn, refundTransactionId });
+    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote, requiresReturn, refundTransactionId, returnMode });
   },
 
   // ── Replacement exchange sub-flow ──
   submitReturnShipment: async (disputeId: string, courier: string, tracking: string): Promise<void> => {
     await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_RETURN_SHIPMENT(disputeId), { courier, tracking });
+  },
+  setPickupTracking: async (disputeId: string, courier: string, tracking: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_PICKUP_TRACKING(disputeId), { courier, tracking });
+  },
+  confirmHandover: async (disputeId: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_CONFIRM_HANDOVER(disputeId));
   },
   markReturnReceived: async (disputeId: string): Promise<void> => {
     await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_RETURN_RECEIVED(disputeId));

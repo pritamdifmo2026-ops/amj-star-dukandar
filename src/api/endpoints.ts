@@ -39,6 +39,8 @@ export const ENDPOINTS = {
     DISPUTE_REOPEN: (id: string | number) => `/orders/disputes/${id}/reopen`,
     // Replacement exchange sub-flow
     EXCHANGE_RETURN_SHIPMENT: (id: string | number) => `/orders/disputes/${id}/return-shipment`,
+    EXCHANGE_PICKUP_TRACKING: (id: string | number) => `/orders/disputes/${id}/pickup-tracking`,
+    EXCHANGE_CONFIRM_HANDOVER: (id: string | number) => `/orders/disputes/${id}/confirm-handover`,
     EXCHANGE_RETURN_RECEIVED: (id: string | number) => `/orders/disputes/${id}/return-received`,
     EXCHANGE_DISPATCH_REPLACEMENT: (id: string | number) => `/orders/disputes/${id}/dispatch-replacement`,
     EXCHANGE_CONFIRM: (id: string | number) => `/orders/disputes/${id}/confirm-exchange`,

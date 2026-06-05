@@ -351,6 +351,11 @@ const SupplierDashboard: React.FC = () => {
       )}
 
       <main className={`flex-1 transition-all duration-300 max-w-full overflow-x-hidden max-lg:ml-0 max-lg:p-4 max-lg:w-full ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'} p-10`}>
+        {/* Desktop top-right notification bell (mobile has it in the header) */}
+        <div className="hidden lg:flex justify-end mb-4">
+          <NotificationBell />
+        </div>
+
         {error && (
           <div className="bg-[#fef2f2] border border-[#fecaca] p-4 rounded-[6px] flex items-center gap-3 text-[#b91c1c] text-[0.9rem] mb-6">
             <AlertCircle size={18} />
@@ -364,7 +369,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'orders' && <div className="p-5"><OrderList /></div>}
         {activeView === 'quotations' && <SupplierQuotations onGoToWallet={() => setActiveView('wallet')} />}
         {/* enquiry is rendered in the full-screen overlay above */}
-        {activeView === 'store' && profile?._id && <SupplierStoreFront supplierId={profile._id} />}
+        {activeView === 'store' && (profile?._id ? <SupplierStoreFront supplierId={profile._id} /> : <div className="flex items-center justify-center h-64 text-[#64748b]">Loading store…</div>)}
         {activeView === 'wallet' && <SupplierWallet />}
         {activeView === 'reports' && <SupplierReports />}
         {activeView === 'partnerships' && <SupplierPartnerships />}

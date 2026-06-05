@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Star } from 'lucide-react';
+import { Check } from 'lucide-react';
+import logo from '@/assets/logoo.png';
 
 interface Step {
   n: number;
@@ -22,9 +23,12 @@ const SupplierOnboardingLayout: React.FC<SupplierOnboardingLayoutProps> = ({ chi
         <div className="flex flex-col">
           <Link
             to="/"
-            className="text-[1.4rem] font-bold text-white no-underline flex items-center gap-2 pb-3 mb-10 relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[3px] after:bg-primary max-md:mb-5"
+            className="flex items-center gap-3 pb-3 mb-10 relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-10 after:h-[3px] after:bg-primary max-md:mb-5 no-underline"
           >
-            AMJSTAR <Star size={20} className="text-primary fill-primary" />
+            <div className="w-[45px] h-[45px] rounded-full flex items-center justify-center p-1.5 shadow-[0_4px_12px_rgba(0,0,0,0.15)] bg-transparent">
+              <img src={logo} alt="AMJSTAR Logo" className="w-full h-full object-contain" />
+            </div>
+            <span className="text-[1.3rem] font-extrabold text-white tracking-tight">AMJSTAR</span>
           </Link>
 
           <div className="flex flex-col gap-[60px] relative before:content-[''] before:absolute before:top-[15px] before:bottom-[15px] before:left-[15px] before:w-[2px] before:border-l-2 before:border-dashed before:border-[#334155] before:z-0 max-md:flex-row max-md:overflow-x-auto max-md:gap-3 max-md:pb-2 max-md:before:hidden">
