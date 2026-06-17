@@ -232,7 +232,7 @@ const Navbar: React.FC = () => {
             })}
           </div>
           <div className="flex items-center gap-6 border-l border-border pl-6">
-            <Link to={ROUTES.PRODUCT_LIST} className="text-[11px] font-medium text-heading no-underline whitespace-nowrap hover:text-primary">
+            <Link to="/verified-manufacturers" className="text-[11px] font-medium text-heading no-underline whitespace-nowrap hover:text-primary">
               Verified manufacturers
             </Link>
           </div>

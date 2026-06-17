@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
+import toast from 'react-hot-toast';
 import MainLayout from '@/shared/layout/MainLayout';
-import { ROUTES } from '@/shared/constants/routes';
 
 const stepCards = [
   { n: '1', title: 'Curate Catalog', desc: 'Choose the best products from our verified manufacturers and add them to your store.' },
@@ -29,9 +28,12 @@ const Resellers: React.FC = () => (
           <p className="text-base text-body leading-relaxed max-w-[600px] mx-auto mb-8">
             Start and scale your digital storefront with zero inventory. Connect with top suppliers and sell directly to your audience.
           </p>
-          <Link to={`${ROUTES.LOGIN}?mode=reseller`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
+          <button 
+            onClick={() => toast('This feature is coming soon with AMJSTAR V2!', { icon: '🚀' })} 
+            className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] border-none cursor-pointer hover:opacity-90 transition-opacity text-base"
+          >
             Join as a Reseller
-          </Link>
+          </button>
         </div>
       </section>
 

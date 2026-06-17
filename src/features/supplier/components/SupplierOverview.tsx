@@ -49,6 +49,25 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
   const fmt = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
   const money = (n: number) => `₹${fmt(n || 0)}`;
 
+  const getGreeting = () => {
+    const now = new Date();
+    let istHours = now.getUTCHours() + 5;
+    let istMinutes = now.getUTCMinutes() + 30;
+    if (istMinutes >= 60) {
+      istHours += 1;
+      istMinutes -= 60;
+    }
+    istHours = istHours % 24;
+
+    if (istHours >= 4 && istHours < 12) {
+      return "Good morning";
+    } else if (istHours >= 12 && istHours < 17) {
+      return "Good afternoon";
+    } else {
+      return "Good day to you";
+    }
+  };
+
   const { salesTrend, orderStatusData, topProductData } = useMemo(() => {
     const monthMap = new Map<string, { month: string; sales: number; orders: number }>();
     const statusMap = new Map<string, number>();
@@ -137,9 +156,8 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
       <div className="flex justify-between items-start mb-10 gap-6 max-lg:flex-col max-lg:items-stretch max-lg:gap-4 max-lg:mb-6">
         <div>
           <h1 className="text-[1.75rem] text-[#0f172a] mb-2 font-extrabold tracking-tight max-sm:text-2xl">
-            Supplier Dashboard
+            {getGreeting()} {profile?.name || profile?.fullName || profile?.businessName || 'Supplier'}!
           </h1>
-          <p className="text-[#64748b] m-0 text-[0.95rem]">Welcome back, {profile?.businessName || 'Supplier'}. Track sales, orders, and product activity in one place.</p>
           {isTrusted ? (
             <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary text-white rounded-full text-xs font-bold mt-2 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
               <ShieldCheck size={16} /> <span>Trusted Supplier</span>

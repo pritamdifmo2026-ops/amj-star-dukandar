@@ -24,21 +24,19 @@ const AuthLayout: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-primary/40 flex flex-col justify-between px-12 py-10 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[8px] bg-primary flex items-center justify-center shadow-lg">
-              <ShoppingBag size={22} className="text-white" />
-            </div>
+            <img src={logo} alt="Logo" className="w-12 h-12 rounded-full shadow-lg border-2 border-white/30" />
             <div>
-              <h2 className="text-[17px] font-extrabold leading-none text-white m-0 tracking-wider">AMJSTAR</h2>
-              <span className="text-[10px] font-medium tracking-[0.25em] opacity-60 text-white">WHOLESALE</span>
+              <h2 className="text-[17px] font-extrabold leading-none !text-white m-0 tracking-wider">AMJSTAR</h2>
+              <span className="text-[10px] font-medium tracking-[0.25em] opacity-80 !text-white">WHOLESALE</span>
             </div>
           </div>
 
           {/* Hero Copy */}
-          <div className="text-white flex flex-col gap-0">
-            <h1 className="font-display text-[clamp(34px,3.8vw,52px)] leading-[1.08] font-extrabold mb-4 text-white tracking-[-0.04em]">
+          <div className="!text-white flex flex-col gap-0">
+            <h1 className="font-display text-[clamp(34px,3.8vw,52px)] leading-[1.08] font-extrabold mb-4 !text-white tracking-[-0.04em]">
               Smart Wholesale<br />Better Business
             </h1>
-            <p className="text-[15px] opacity-75 max-w-[390px] mb-9 leading-relaxed">
+            <p className="text-[15px] opacity-90 max-w-[390px] mb-9 leading-relaxed !text-white">
               Your trusted partner for quality products at wholesale prices. Join thousands of verified businesses on AMJSTAR.
             </p>
 
@@ -50,11 +48,11 @@ const AuthLayout: React.FC = () => {
               ].map(({ Icon, title, desc }) => (
                 <div key={title} className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shrink-0 border border-white/10">
-                    <Icon size={18} className="text-white" />
+                    <Icon size={18} className="!text-white" />
                   </div>
                   <div>
-                    <h4 className="text-[13px] font-bold mb-0.5 text-white m-0">{title}</h4>
-                    <p className="text-[12px] opacity-65 leading-snug m-0">{desc}</p>
+                    <h4 className="text-[13px] font-bold mb-0.5 !text-white m-0">{title}</h4>
+                    <p className="text-[12px] opacity-80 leading-snug m-0 !text-white">{desc}</p>
                   </div>
                 </div>
               ))}
@@ -65,8 +63,8 @@ const AuthLayout: React.FC = () => {
           <div className="flex items-center gap-4 px-5 py-3.5 bg-black/30 rounded-[10px] backdrop-blur-md border border-white/10 w-fit">
             <Headphones size={22} className="text-white/80 shrink-0" />
             <div>
-              <span className="text-[10px] font-bold opacity-55 uppercase tracking-widest text-white block">Need Help?</span>
-              <p className="text-[12px] font-medium m-0 text-white">support@amjstar.com · +91 9034440682</p>
+              <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest !text-white block">Need Help?</span>
+              <p className="text-[12px] font-medium m-0 !text-white">support@amjstar.com · +91 9034440682</p>
             </div>
           </div>
         </div>
@@ -84,16 +82,16 @@ const AuthLayout: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/70 to-slate-900/90" />
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center py-8 px-5 text-white text-center gap-3">
+        <div className="relative z-10 flex flex-col items-center justify-center py-8 px-5 !text-white text-center gap-3">
           <div className="flex items-center gap-2.5">
             <img src={logo} alt="Logo" className="w-9 h-9 rounded-full shadow-lg border-2 border-white/30" />
             <div className="text-left">
-              <span className="text-[16px] font-extrabold tracking-wider block leading-none">AMJSTAR</span>
-              <span className="text-[9px] font-medium tracking-[0.22em] opacity-60 uppercase">Wholesale</span>
+              <span className="text-[16px] font-extrabold tracking-wider block leading-none !text-white">AMJSTAR</span>
+              <span className="text-[9px] font-medium tracking-[0.22em] opacity-80 uppercase !text-white">Wholesale</span>
             </div>
           </div>
 
-          <h1 className="text-[20px] font-extrabold text-white tracking-tight leading-snug m-0">
+          <h1 className="text-[20px] font-extrabold !text-white tracking-tight leading-snug m-0">
             Smart Wholesale, Better Business
           </h1>
 
@@ -102,9 +100,9 @@ const AuthLayout: React.FC = () => {
             {FEATURES.map(({ Icon, label }) => (
               <span
                 key={label}
-                className="flex items-center gap-1.5 bg-white/10 border border-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-[11px] font-semibold text-white"
+                className="flex items-center gap-1.5 bg-white/10 border border-white/15 backdrop-blur-sm rounded-full px-3 py-1 text-[11px] font-semibold !text-white"
               >
-                <Icon size={11} className="shrink-0" />
+                <Icon size={11} className="shrink-0 !text-white" />
                 {label}
               </span>
             ))}

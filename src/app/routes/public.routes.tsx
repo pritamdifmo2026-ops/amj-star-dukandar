@@ -23,6 +23,7 @@ import Suppliers from '@/features/landing/pages/Suppliers';
 import Contact from '@/features/landing/pages/Contact';
 import Terms from '@/features/landing/pages/Terms';
 import Privacy from '@/features/landing/pages/Privacy';
+import VerifiedManufacturers from '@/features/landing/pages/VerifiedManufacturers';
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -56,6 +57,10 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/privacy',
     element: <Privacy />,
+  },
+  {
+    path: '/verified-manufacturers',
+    element: <VerifiedManufacturers />,
   },
   {
     element: <AuthLayout />,
