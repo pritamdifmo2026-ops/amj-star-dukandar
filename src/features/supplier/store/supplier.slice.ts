@@ -1,10 +1,9 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 export const SupplierTier = {
-  FREE: 'FREE',
-  GOLD: 'GOLD',
-  DIAMOND: 'DIAMOND',
-  PLATINUM: 'PLATINUM'
+  VERIFIED: 'VERIFIED',
+  GAMMA: 'GAMMA',
+  BETA: 'BETA'
 } as const;
 export type SupplierTier = (typeof SupplierTier)[keyof typeof SupplierTier];
 

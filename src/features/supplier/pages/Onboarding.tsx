@@ -108,7 +108,7 @@ const Onboarding: React.FC = () => {
   const [pan, setPan] = useState('');
   const [about, setAbout] = useState('');
   const [yearOfEstablishment, setYearOfEstablishment] = useState('');
-  const [selectedTier, setSelectedTier] = useState<SupplierTier>(SupplierTier.FREE);
+  const [selectedTier, setSelectedTier] = useState<SupplierTier>(SupplierTier.VERIFIED);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPhoneVerified] = useState(true);
   const [isPhoneEditable, setIsPhoneEditable] = useState(false);
@@ -1028,10 +1028,30 @@ const Onboarding: React.FC = () => {
               <StepHeader icon={<Check size={24} />} title="Select Subscription Plan" desc="Choose a plan that fits your business needs." />
               <div className="flex flex-col gap-3">
                 {[
-                  { id: SupplierTier.FREE, label: 'Free Tier', desc: 'Basic visibility. List up to 5K products (group).', price: '₹0', features: ['Up to 5,000 Products', 'Basic Marketplace Visibility'] },
-                  { id: SupplierTier.GOLD, label: 'Gold Plan', desc: 'Increased visibility. KYC required. List up to 5K products.', price: '₹999/mo', features: ['Up to 5,000 Products', 'Priority Placement', 'KYC Verified Badge'] },
-                  { id: SupplierTier.DIAMOND, label: 'Diamond Plan', desc: 'Higher ranking. Can list single product pushes.', price: '₹2,499/mo', features: ['Single Product Pushes', 'Higher Ranking', 'Advanced Analytics'] },
-                  { id: SupplierTier.PLATINUM, label: 'Platinum Plan', desc: 'Max visibility, dedicated support, e-commerce integration.', price: '₹4,999/mo', features: ['Maximum Visibility', 'Dedicated Account Manager', 'E-commerce Integration'] },
+                  {
+                    id: SupplierTier.VERIFIED,
+                    label: 'Verified Supplier',
+                    desc: 'Build trust and verify your business.',
+                    price: '₹2,100',
+                    period: '/year + GST',
+                    features: ['GST Verified Badge', 'Unlimited Product Listings', 'Buyer Direct Contact', 'Inventory Management', 'Share Products via WhatsApp & Social Media', 'Better Search Ranking']
+                  },
+                  {
+                    id: SupplierTier.GAMMA,
+                    label: 'SME TrustSEAL Gamma',
+                    desc: 'Everything in Verified',
+                    price: '₹21,000',
+                    period: '/year + GST',
+                    features: ['TrustSEAL Badge', 'Physical Business Verification', 'Higher Search Ranking', 'Featured Placement', 'Priority Lead Visibility', 'Technical Product Verification']
+                  },
+                  {
+                    id: SupplierTier.BETA,
+                    label: 'SME TrustSEAL Beta',
+                    desc: 'Everything in Gamma, plus complete listing support.',
+                    price: '₹51,000',
+                    period: '/year + GST',
+                    features: ['Dedicated Listing Support', 'Product Catalog Management', 'SEO Optimization', 'Product Content Writing', 'Listing Optimization', 'Technical Support Throughout the Year']
+                  },
                 ].map(tier => (
                   <div
                     key={tier.id}
@@ -1050,7 +1070,10 @@ const Onboarding: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      <span className="text-xl font-extrabold text-[#0f172a]">{tier.price}</span>
+                      <div className="flex items-end gap-1">
+                        <span className="text-xl font-extrabold text-[#0f172a]">{tier.price}</span>
+                        <span className="text-sm font-semibold text-[#64748b] mb-0.5">{tier.period}</span>
+                      </div>
                       {selectedTier === tier.id && (
                         <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center"><Check size={14} /></div>
                       )}
