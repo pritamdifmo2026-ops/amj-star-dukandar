@@ -115,8 +115,8 @@ const AdminEarnings: React.FC = () => {
           <>
             <SummaryCard
               label="Total AMJ Earnings"
-              value={`₹${fmt(totals?.totalCommissionEarned ?? 0)}`}
-              sub="Commission confirmed on delivered orders"
+              value={`₹${fmt(totals?.totalAmjEarned ?? 0)}`}
+              sub="Commissions + Listing Fees"
               icon={<IndianRupee size={22} />}
               accent="#059669"
               bg="#ecfdf5"
@@ -165,6 +165,7 @@ const AdminEarnings: React.FC = () => {
                   <th className="text-center px-4 py-3">Commission Rate</th>
                   <th className="text-right px-4 py-3">Wallet Balance</th>
                   <th className="text-right px-4 py-3">Frozen</th>
+                  <th className="text-right px-4 py-3">Listing Fees</th>
                   <th className="text-right px-4 py-3">AMJ Earned</th>
                   <th className="text-right px-6 py-3">Supplier Earned</th>
                 </tr>
@@ -248,8 +249,11 @@ const AdminEarnings: React.FC = () => {
                         <span className="text-[#94a3b8]">—</span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-right font-medium text-[#0f172a]">
+                      ₹{fmt(row.totalListingFeesPaid ?? 0)}
+                    </td>
                     <td className="px-4 py-3 text-right font-bold text-[#059669]">
-                      ₹{fmt(row.totalCommissionPaid)}
+                      ₹{fmt((row.totalCommissionPaid ?? 0) + (row.totalListingFeesPaid ?? 0))}
                     </td>
                     <td className="px-6 py-3 text-right font-medium text-[#0f172a]">
                       ₹{fmt(row.totalEarned)}
@@ -266,8 +270,11 @@ const AdminEarnings: React.FC = () => {
                   <td className="px-4 py-3 text-right font-bold text-[#d97706]">
                     ₹{fmt(rows.reduce((s, r) => s + r.frozenBalance, 0))}
                   </td>
+                  <td className="px-4 py-3 text-right font-medium text-[#0f172a]">
+                    ₹{fmt(totals?.totalListingFeesEarned ?? 0)}
+                  </td>
                   <td className="px-4 py-3 text-right font-bold text-[#059669]">
-                    ₹{fmt(totals?.totalCommissionEarned ?? 0)}
+                    ₹{fmt(totals?.totalAmjEarned ?? 0)}
                   </td>
                   <td className="px-6 py-3 text-right font-bold text-[#0f172a]">
                     ₹{fmt(totals?.totalSupplierEarned ?? 0)}

@@ -11,7 +11,7 @@ import {
   LayoutDashboard, Package, LogOut, Trash2, FileText, MessageCircle,
   Handshake, Menu, Image as ImageIcon, Layers, CheckCircle, Clock,
   AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store,
-  AlertTriangle, WifiOff, Wifi, Star
+  AlertTriangle, WifiOff, Wifi, Star, ReceiptText
 } from 'lucide-react';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
 
@@ -25,6 +25,7 @@ import SupplierReviews from '../components/SupplierReviews';
 import SupplierWallet from '../components/SupplierWallet';
 import SupplierReports from '../components/SupplierReports';
 import SupplierStoreFront from '../components/SupplierStoreFront';
+import BillingManagement from '../components/BillingManagement';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import SupplierQuotations from '../components/SupplierQuotations';
 import Modal from '@/shared/components/ui/Modal';
@@ -217,8 +218,9 @@ const SupplierDashboard: React.FC = () => {
     { id: 'enquiry', label: 'Enquiry', icon: MessageCircle, badge: unreadEnquiries || undefined },
     { id: 'quotations', label: 'Quotations', icon: FileText },
     { id: 'store', label: 'Front Store', icon: Store },
-    { id: 'wallet', label: 'Wallet', icon: Wallet },
-    { id: 'reports', label: 'Reports', icon: BarChart2 },
+    { id: 'wallet',   label: 'Wallet',             icon: Wallet },
+    { id: 'billing',  label: 'Billing Management',  icon: ReceiptText },
+    { id: 'reports',  label: 'Reports',              icon: BarChart2 },
     { id: 'reviews', label: 'My Reviews', icon: Star },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
@@ -370,8 +372,9 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'quotations' && <SupplierQuotations onGoToWallet={() => setActiveView('wallet')} />}
         {/* enquiry is rendered in the full-screen overlay above */}
         {activeView === 'store' && (profile?._id ? <SupplierStoreFront supplierId={profile._id} /> : <div className="flex items-center justify-center h-64 text-[#64748b]">Loading store…</div>)}
-        {activeView === 'wallet' && <SupplierWallet />}
-        {activeView === 'reports' && <SupplierReports />}
+        {activeView === 'wallet'   && <SupplierWallet />}
+        {activeView === 'billing'  && <BillingManagement setActiveView={setActiveView} />}
+        {activeView === 'reports'  && <SupplierReports />}
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'reviews' && <div className="p-5"><SupplierReviews /></div>}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}

@@ -122,7 +122,7 @@ const adminService = {
 
   getEarnings: async () => {
     const response = await api.get('/admin/earnings');
-    return response.data as { rows: any[]; totals: { totalCommissionEarned: number; totalFrozen: number; totalSupplierEarned: number } };
+    return response.data as { rows: any[]; totals: { totalCommissionEarned: number; totalFrozen: number; totalSupplierEarned: number; totalListingFeesEarned: number; totalAmjEarned: number } };
   },
 
   setCommissionRate: async (supplierId: string, commissionRate: number) => {

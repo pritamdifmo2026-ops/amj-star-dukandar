@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { ShieldCheck, Zap, Plus, AlertTriangle, Wallet, Receipt, IndianRupee, ShoppingBag, PackageCheck } from 'lucide-react';
-import NotificationBell from '@/features/notifications/components/NotificationBell';
 import Button from '@/shared/components/ui/Button';
 import SupplierStats from './SupplierStats';
 import { useQuery } from '@tanstack/react-query';
@@ -173,7 +172,6 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
           )}
         </div>
         <div className="flex items-center gap-3 max-sm:grid max-sm:grid-cols-2">
-          <NotificationBell />
           <Button onClick={() => setActiveView('add-product')}>
             <Plus size={20} /> Add New Product
           </Button>
