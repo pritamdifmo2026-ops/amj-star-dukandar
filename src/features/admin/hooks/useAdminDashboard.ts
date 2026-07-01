@@ -28,7 +28,7 @@ export const useAdminDashboard = (activeTab: string) => {
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['admin', 'stats'],
     queryFn: () => adminService.getStats(),
-    enabled: activeTab === 'stats',
+    refetchInterval: 60_000,
   });
 
   const { data: allSuppliers = [], isLoading: suppliersLoading } = useQuery<AdminSupplier[]>({

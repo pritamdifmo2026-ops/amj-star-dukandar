@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, ShieldCheck } from 'lucide-react';
+import { Heart, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { addToCartAsync } from '@/features/buyer/store/cart.slice';
 import { toggleWishlistItem } from '@/features/buyer/store/wishlist.slice';
@@ -51,6 +51,11 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
       className="flex flex-col bg-white rounded-[var(--radius-lg)] border border-border overflow-hidden no-underline transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] h-full hover:-translate-y-2 hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.1)] hover:border-primary group"
     >
       <div className="relative aspect-square bg-[#f8f8f8] overflow-hidden">
+        {product.isFeatured && (
+          <span className="absolute top-2 left-2 z-10 flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider text-white bg-primary px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.15)]" title="Featured Supplier">
+            <Sparkles size={10} /> Featured
+          </span>
+        )}
         <button
           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface border-none flex items-center justify-center cursor-pointer z-10 shadow-[0_4px_10px_rgba(0,0,0,0.1)] transition-transform hover:scale-110"
           onClick={handleToggleWishlist}

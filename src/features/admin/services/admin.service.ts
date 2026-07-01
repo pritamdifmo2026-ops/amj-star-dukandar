@@ -25,6 +25,34 @@ const adminService = {
     return response.data.supplier;
   },
 
+  completeSupplierUpgrade: async (id: string): Promise<AdminSupplier> => {
+    const response = await api.patch(`/admin/suppliers/${id}/complete-upgrade`);
+    return response.data.supplier;
+  },
+
+  getPendingUpgrades: async () => {
+    const response = await api.get('/admin/pending-upgrades');
+    return response.data.suppliers as Array<{
+      _id: string;
+      businessName: string;
+      phone?: string;
+      pendingUpgrade?: { targetTier?: string; paidAt?: string };
+    }>;
+  },
+
+  getSupplierBillingHistory: async (supplierId: string) => {
+    const response = await api.get(`/admin/suppliers/${supplierId}/billing-history`);
+    return response.data.records as Array<{
+      _id: string;
+      billingDate: string;
+      amountCharged: number;
+      totalLiveProducts: number;
+      productsKept: number;
+      productsBlocked: number;
+      blockedProductIds?: { _id: string; name: string }[];
+    }>;
+  },
+
   getAllUsers: async (): Promise<AdminUser[]> => {
     const response = await api.get('/admin/users');
     return response.data.users;

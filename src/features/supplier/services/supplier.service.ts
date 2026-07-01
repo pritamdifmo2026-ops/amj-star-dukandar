@@ -27,6 +27,39 @@ const supplierService = {
     return response.data;
   },
 
+  getPlans: async () => {
+    const response = await apiClient.get('/supplier/plans');
+    return response.data;
+  },
+
+  createSubscriptionOrder: async () => {
+    const response = await apiClient.post('/supplier/subscription/order');
+    return response.data;
+  },
+
+  verifySubscription: async (data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => {
+    const response = await apiClient.post('/supplier/subscription/verify', data);
+    return response.data;
+  },
+
+  createUpgradeOrder: async (targetTier: SupplierTier) => {
+    const response = await apiClient.post('/supplier/upgrade/order', { targetTier });
+    return response.data;
+  },
+
+  verifyUpgrade: async (data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+  }) => {
+    const response = await apiClient.post('/supplier/upgrade/verify', data);
+    return response.data;
+  },
+
   submitKYC: async (details: any) => {
     const response = await apiClient.post('/supplier/kyc', details);
     return response.data;

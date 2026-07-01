@@ -35,6 +35,8 @@ const AdminEarnings: React.FC = () => {
 
   // Frozen-orders modal state
   const [frozenModal, setFrozenModal] = useState<{ userId: string; businessName: string } | null>(null);
+  // Listing-fee billing records modal state
+  const [billingModal, setBillingModal] = useState<{ supplierId: string; businessName: string } | null>(null);
   const [confirmUnfreeze, setConfirmUnfreeze] = useState<{ orderId: string; amount: number } | null>(null);
   const [unfreezeReason, setUnfreezeReason] = useState('');
   const [unfreezing, setUnfreezing] = useState(false);
@@ -48,6 +50,12 @@ const AdminEarnings: React.FC = () => {
     queryKey: ['admin', 'frozen-orders', frozenModal?.userId],
     queryFn: () => adminService.getFrozenOrders(frozenModal!.userId),
     enabled: !!frozenModal,
+  });
+
+  const { data: billingRecords = [], isLoading: billingLoading } = useQuery({
+    queryKey: ['admin', 'billing-history', billingModal?.supplierId],
+    queryFn: () => adminService.getSupplierBillingHistory(billingModal!.supplierId),
+    enabled: !!billingModal,
   });
 
   const doUnfreeze = async () => {
@@ -250,7 +258,14 @@ const AdminEarnings: React.FC = () => {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-[#0f172a]">
-                      ₹{fmt(row.totalListingFeesPaid ?? 0)}
+                      <button
+                        onClick={() => setBillingModal({ supplierId: row.supplierId, businessName: row.businessName })}
+                        className="inline-flex items-center gap-1 text-[#0f172a] font-medium hover:bg-[#eff6ff] hover:text-[#0284c7] px-2 py-1 rounded-md cursor-pointer transition-colors border border-transparent hover:border-[#bae6fd]"
+                        title="View listing-fee billing records"
+                      >
+                        ₹{fmt(row.totalListingFeesPaid ?? 0)}
+                        <Package size={11} />
+                      </button>
                     </td>
                     <td className="px-4 py-3 text-right font-bold text-[#059669]">
                       ₹{fmt((row.totalCommissionPaid ?? 0) + (row.totalListingFeesPaid ?? 0))}
@@ -345,6 +360,71 @@ const AdminEarnings: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Listing-fee Billing Records Modal ───────────────────────────── */}
+      {billingModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4"
+          onClick={e => { if (e.target === e.currentTarget) setBillingModal(null); }}
+        >
+          <div className="w-full max-w-2xl bg-white rounded-[16px] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#f1f5f9]">
+              <div>
+                <h3 className="text-base font-extrabold text-[#0f172a] m-0 flex items-center gap-2">
+                  <Package size={16} className="text-[#0284c7]" /> Listing-Fee Billing Records
+                </h3>
+                <p className="text-xs text-[#94a3b8] m-0 mt-0.5">{billingModal.businessName}</p>
+              </div>
+              <button onClick={() => setBillingModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f1f5f9] border-none bg-transparent cursor-pointer text-[#64748b]">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 px-6 py-4">
+              {billingLoading ? (
+                <div className="py-10 flex justify-center">
+                  <div className="w-6 h-6 border-2 border-[#e2e8f0] border-t-[#0284c7] rounded-full animate-spin" />
+                </div>
+              ) : billingRecords.length === 0 ? (
+                <div className="py-10 text-center text-sm text-[#94a3b8]">
+                  No monthly billing records yet. Records appear here after the supplier's first billing cycle.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[520px]">
+                    <thead>
+                      <tr className="bg-[#f8fafc] text-[#64748b] text-xs font-semibold uppercase">
+                        <th className="text-left px-4 py-2.5">Billing Date</th>
+                        <th className="text-right px-4 py-2.5">Charged</th>
+                        <th className="text-right px-4 py-2.5">Live</th>
+                        <th className="text-right px-4 py-2.5">Kept</th>
+                        <th className="text-right px-4 py-2.5">Blocked</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {billingRecords.map(r => (
+                        <tr key={r._id} className="border-t border-[#f1f5f9]">
+                          <td className="px-4 py-2.5 text-[#0f172a]">
+                            {new Date(r.billingDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-bold text-[#059669]">₹{fmt(r.amountCharged)}</td>
+                          <td className="px-4 py-2.5 text-right text-[#0f172a]">{r.totalLiveProducts}</td>
+                          <td className="px-4 py-2.5 text-right text-[#059669]">{r.productsKept}</td>
+                          <td className="px-4 py-2.5 text-right">
+                            {r.productsBlocked > 0
+                              ? <span className="text-[#dc2626] font-semibold">{r.productsBlocked}</span>
+                              : <span className="text-[#94a3b8]">0</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

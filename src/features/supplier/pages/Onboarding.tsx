@@ -6,6 +6,7 @@ import { logout } from '@/features/auth/store/auth.slice';
 import { SupplierTier, OnboardingStatus, setSupplierProfile } from '@/features/supplier/store/supplier.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import supplierService from '../services/supplier.service';
+import { PLAN_LIST, formatINR } from '../constants/plans';
 import SupplierOnboardingLayout from '../layout/SupplierOnboardingLayout';
 import Button from '@/shared/components/ui/Button';
 import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Handshake, XCircle, Upload, Package, Landmark } from 'lucide-react';
@@ -1026,55 +1027,33 @@ const Onboarding: React.FC = () => {
           <div className="w-full max-w-[580px] mx-auto px-4">
             <div className="flex flex-col gap-5">
               <StepHeader icon={<Check size={24} />} title="Select Subscription Plan" desc="Choose a plan that fits your business needs." />
+              <p className="text-xs text-[#64748b] -mt-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3">
+                Pick the plan you want. You'll be prompted to pay and activate it from your dashboard <strong>after AMJSTAR verifies your account</strong>.
+              </p>
               <div className="flex flex-col gap-3">
-                {[
-                  {
-                    id: SupplierTier.VERIFIED,
-                    label: 'Verified Supplier',
-                    desc: 'Build trust and verify your business.',
-                    price: '₹2,100',
-                    period: '/year + GST',
-                    features: ['GST Verified Badge', 'Unlimited Product Listings', 'Buyer Direct Contact', 'Inventory Management', 'Share Products via WhatsApp & Social Media', 'Better Search Ranking']
-                  },
-                  {
-                    id: SupplierTier.GAMMA,
-                    label: 'SME TrustSEAL Gamma',
-                    desc: 'Everything in Verified',
-                    price: '₹21,000',
-                    period: '/year + GST',
-                    features: ['TrustSEAL Badge', 'Physical Business Verification', 'Higher Search Ranking', 'Featured Placement', 'Priority Lead Visibility', 'Technical Product Verification']
-                  },
-                  {
-                    id: SupplierTier.BETA,
-                    label: 'SME TrustSEAL Beta',
-                    desc: 'Everything in Gamma, plus complete listing support.',
-                    price: '₹51,000',
-                    period: '/year + GST',
-                    features: ['Dedicated Listing Support', 'Product Catalog Management', 'SEO Optimization', 'Product Content Writing', 'Listing Optimization', 'Technical Support Throughout the Year']
-                  },
-                ].map(tier => (
+                {PLAN_LIST.map(plan => (
                   <div
-                    key={tier.id}
-                    className={`flex items-center gap-4 p-5 border-2 rounded-[12px] cursor-pointer transition-all ${selectedTier === tier.id ? 'border-primary bg-[#fff7ed]' : 'border-[#e2e8f0] hover:border-primary hover:bg-[#fafafa]'}`}
-                    onClick={() => setSelectedTier(tier.id)}
+                    key={plan.id}
+                    className={`flex items-center gap-4 p-5 border-2 rounded-[12px] cursor-pointer transition-all ${selectedTier === plan.id ? 'border-primary bg-[#fff7ed]' : 'border-[#e2e8f0] hover:border-primary hover:bg-[#fafafa]'}`}
+                    onClick={() => setSelectedTier(plan.id)}
                   >
                     <div className="flex-1 flex flex-col gap-2">
                       <div>
-                        <h3 className="text-base font-bold text-[#0f172a] m-0">{tier.label}</h3>
-                        <p className="text-sm text-[#64748b] m-0">{tier.desc}</p>
+                        <h3 className="text-base font-bold text-[#0f172a] m-0">{plan.name}</h3>
+                        <p className="text-sm text-[#64748b] m-0">{plan.description}</p>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {tier.features.map((f, i) => (
+                        {plan.features.map((f, i) => (
                           <span key={i} className="text-xs bg-white border border-[#e2e8f0] text-[#475569] px-2.5 py-1 rounded-full font-semibold">{f}</span>
                         ))}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       <div className="flex items-end gap-1">
-                        <span className="text-xl font-extrabold text-[#0f172a]">{tier.price}</span>
-                        <span className="text-sm font-semibold text-[#64748b] mb-0.5">{tier.period}</span>
+                        <span className="text-xl font-extrabold text-[#0f172a]">{formatINR(plan.price)}</span>
+                        <span className="text-sm font-semibold text-[#64748b] mb-0.5">/year + GST</span>
                       </div>
-                      {selectedTier === tier.id && (
+                      {selectedTier === plan.id && (
                         <div className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center"><Check size={14} /></div>
                       )}
                     </div>
@@ -1153,6 +1132,24 @@ const Onboarding: React.FC = () => {
               <p className="m-0 font-semibold text-base text-[#1e293b]">Status: <strong className={isRejected ? 'text-[#b91c1c]' : 'text-[#059669]'}>{profile?.kycStatus || 'PENDING'}</strong></p>
               {!isRejected && <p className="text-sm text-[#64748b] m-0 mt-1">Next step: Formal Cold Call (within 24h)</p>}
             </div>
+
+            {!isRejected && (selectedTier === SupplierTier.GAMMA || selectedTier === SupplierTier.BETA) && (
+              <div className="w-full bg-[#eff6ff] border border-[#bfdbfe] rounded-[10px] p-5 my-4 text-left">
+                <div className="flex items-center gap-2 mb-2 text-[#1d4ed8]">
+                  <ShieldCheck size={18} />
+                  <p className="font-bold m-0 text-sm">Physical Verification (part of your SME TrustSEAL plan)</p>
+                </div>
+                <p className="text-sm text-[#334155] m-0 mb-2 leading-relaxed">
+                  An AMJSTAR technical expert will <strong>schedule a call and visit your premises</strong> to verify your
+                  business — location &amp; documents, the products/services you offer, your manufacturing/service process,
+                  and quality standards.
+                </p>
+                <p className="text-xs text-[#475569] m-0 leading-relaxed">
+                  Verification runs <strong>once a year</strong> (or on request). Please be ready to arrange
+                  <strong> travel &amp; stay for up to 2 people</strong> if the visit requires it.
+                </p>
+              </div>
+            )}
 
             {isRejected && (
               <div className="w-full text-center flex flex-col gap-3 my-4 text-sm text-[#475569]">

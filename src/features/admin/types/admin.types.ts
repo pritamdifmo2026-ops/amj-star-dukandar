@@ -21,6 +21,13 @@ export interface AdminSupplier {
   tier?: string;
   userId?: { name: string; email: string; phone: string };
   autoLiveProducts?: boolean;
+  subscription?: { status?: string; tier?: string };
+  pendingUpgrade?: {
+    status?: 'NONE' | 'PAYMENT_PENDING' | 'VERIFICATION_PENDING';
+    targetTier?: string;
+    amountPaid?: number;
+    requiresVerification?: boolean;
+  };
   businessDetails?: {
     ownerName?: string;
     email?: string;

@@ -4,6 +4,7 @@ import { ShieldCheck, MapPin, CalendarDays, Star, Store, Search, ExternalLink } 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import apiClient from '@/api/client';
+import PlanBadge from '@/features/supplier/components/PlanBadge';
 
 interface Supplier {
   _id: string;
@@ -12,6 +13,7 @@ interface Supplier {
   createdAt: string;
   averageRating?: number;
   totalReviews?: number;
+  subscription?: { status?: string; tier?: string };
   businessDetails?: {
     city?: string;
     state?: string;
@@ -20,15 +22,9 @@ interface Supplier {
     yearOfEstablishment?: string;
     ownerName?: string;
     isWomenEntrepreneur?: boolean;
+    gstin?: string;
   };
 }
-
-const TIER_LABEL: Record<string, { label: string; color: string; bg: string }> = {
-  FREE: { label: 'Standard', color: '#64748b', bg: '#f1f5f9' },
-  GOLD: { label: 'Gold', color: '#92400e', bg: '#fef3c7' },
-  DIAMOND: { label: 'Diamond', color: '#1e40af', bg: '#dbeafe' },
-  PLATINUM: { label: 'Platinum', color: '#4c1d95', bg: '#ede9fe' },
-};
 
 const StarRating: React.FC<{ rating: number; count: number }> = ({ rating, count }) => (
   <div className="flex items-center gap-1.5">
@@ -130,7 +126,6 @@ const VerifiedManufacturers: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map(supplier => {
-              const tier = TIER_LABEL[supplier.tier] || TIER_LABEL.FREE;
               const initials = supplier.businessName.slice(0, 2).toUpperCase();
               const location = [supplier.businessDetails?.city, supplier.businessDetails?.state].filter(Boolean).join(', ');
               const about = supplier.businessDetails?.about || supplier.businessDetails?.description || '';
@@ -151,12 +146,7 @@ const VerifiedManufacturers: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <h2 className="text-[0.95rem] font-extrabold text-slate-900 leading-tight">{supplier.businessName}</h2>
-                        <span
-                          className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
-                          style={{ color: tier.color, background: tier.bg }}
-                        >
-                          {tier.label}
-                        </span>
+                        <PlanBadge supplier={supplier} className="shrink-0" />
                       </div>
                       {supplier.businessDetails?.isWomenEntrepreneur && (
                         <span className="inline-flex items-center gap-1 text-[9px] font-bold text-pink-600 bg-pink-50 border border-pink-200 px-2 py-0.5 rounded-full mt-1">

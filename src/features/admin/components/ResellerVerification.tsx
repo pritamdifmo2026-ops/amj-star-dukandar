@@ -10,6 +10,8 @@ interface ResellerVerificationProps {
   onVerify: (id: string, status: 'APPROVED' | 'REJECTED') => void;
 }
 
+type ViewMode = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9] max-md:hidden";
 const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155] max-md:flex max-md:justify-between max-md:items-center max-md:border-none max-md:py-2 max-md:px-0 text-right md:text-left";
 const trCls = "hover:bg-[#fafbfc] max-md:block max-md:p-4 max-md:border-b max-md:border-[#e2e8f0] last:border-none";
@@ -102,12 +104,28 @@ const ResellerVerification: React.FC<ResellerVerificationProps> = ({ resellers, 
   const selectedReseller = resellers.find(r => r._id === resellerId);
   const pendingResellers = resellers.filter(r => r.status === 'PENDING');
   const approvedResellers = resellers.filter(r => r.status === 'APPROVED');
+  const rejectedResellers = resellers.filter(r => r.status === 'REJECTED');
+  const statusParam = searchParams.get('status');
+  const initialView: ViewMode =
+    statusParam === 'APPROVED' ? 'APPROVED' : statusParam === 'REJECTED' ? 'REJECTED' : 'PENDING';
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
+
+  const updateViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    setSearchParams({ tab: 'resellers', status: mode });
+  };
+
+  const listByMode: Record<ViewMode, { title: string; resellers: AdminReseller[] }> = {
+    PENDING: { title: 'Pending Resellers', resellers: pendingResellers },
+    APPROVED: { title: 'Approved Resellers', resellers: approvedResellers },
+    REJECTED: { title: 'Rejected Resellers', resellers: rejectedResellers },
+  };
 
   if (activeTab === 'reseller-detail' && selectedReseller) {
     return (
       <div>
         <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-          <button onClick={() => setSearchParams({ tab: 'resellers' })} className="flex items-center gap-1.5 text-sm font-semibold text-[#475569] bg-transparent border-none cursor-pointer hover:text-[#1e293b] p-0">
+          <button onClick={() => setSearchParams({ tab: 'resellers', status: viewMode })} className="flex items-center gap-1.5 text-sm font-semibold text-[#475569] bg-transparent border-none cursor-pointer hover:text-[#1e293b] p-0">
             <ChevronLeft size={18} /> Back to List
           </button>
           {selectedReseller.status === 'PENDING' && (
@@ -193,9 +211,24 @@ const ResellerVerification: React.FC<ResellerVerificationProps> = ({ resellers, 
 
   return (
     <div>
-      <ResellerTable title="Pending Resellers" resellers={pendingResellers} onVerify={onVerify} onView={id => setSearchParams({ tab: 'reseller-detail', id })} showActions />
-      <div className="my-8 border-t-2 border-[#e2e8f0]" />
-      <ResellerTable title="Approved Resellers" resellers={approvedResellers} onVerify={onVerify} onView={id => setSearchParams({ tab: 'reseller-detail', id })} />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4">
+        <select
+          value={viewMode}
+          onChange={e => updateViewMode(e.target.value as ViewMode)}
+          className="w-full sm:w-auto border border-[#e2e8f0] rounded-[8px] px-3 py-2 focus-within:border-primary"
+        >
+          <option value="PENDING">Pending Resellers</option>
+          <option value="APPROVED">Approved Resellers</option>
+          <option value="REJECTED">Rejected Resellers</option>
+        </select>
+      </div>
+      <ResellerTable
+        title={listByMode[viewMode].title}
+        resellers={listByMode[viewMode].resellers}
+        onVerify={onVerify}
+        onView={id => setSearchParams({ tab: 'reseller-detail', id })}
+        showActions
+      />
     </div>
   );
 };

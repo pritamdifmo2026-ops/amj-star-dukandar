@@ -32,6 +32,8 @@ export interface Product {
   supplierAbout?: string;
   supplierYearEst?: string;
   isGSTVerified?: boolean;
+  /** True when the supplier has an active Gamma/Beta plan (earns Featured placement). */
+  isFeatured?: boolean;
   supplierReturnPolicyType?: string;
   supplierReturnPolicyCustomTerms?: string;
   createdAt: string;

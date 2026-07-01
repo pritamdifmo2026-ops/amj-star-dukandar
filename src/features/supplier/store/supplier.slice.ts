@@ -21,6 +21,41 @@ export const OnboardingStatus = {
 } as const;
 export type OnboardingStatus = (typeof OnboardingStatus)[keyof typeof OnboardingStatus];
 
+export const SubscriptionStatus = {
+  NONE: 'NONE',
+  ACTIVE: 'ACTIVE',
+  EXPIRED: 'EXPIRED'
+} as const;
+export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus];
+
+export interface Subscription {
+  status: SubscriptionStatus;
+  tier?: SupplierTier;
+  price?: number;
+  gstAmount?: number;
+  amountPaid?: number;
+  startDate?: string;
+  expiryDate?: string;
+}
+
+export const UpgradeStatus = {
+  NONE: 'NONE',
+  PAYMENT_PENDING: 'PAYMENT_PENDING',
+  VERIFICATION_PENDING: 'VERIFICATION_PENDING'
+} as const;
+export type UpgradeStatus = (typeof UpgradeStatus)[keyof typeof UpgradeStatus];
+
+export interface PendingUpgrade {
+  status: UpgradeStatus;
+  targetTier?: SupplierTier;
+  price?: number;
+  gstAmount?: number;
+  amountPaid?: number;
+  requiresVerification?: boolean;
+  requestedAt?: string;
+  paidAt?: string;
+}
+
 interface SupplierProfile {
   _id?: string;
   businessName: string;
@@ -31,6 +66,10 @@ interface SupplierProfile {
   isActive: boolean;
   rejectionReason?: string;
   usesOwnShipping?: boolean;
+  verifiedByAdmin?: boolean;
+  subscription?: Subscription;
+  pendingUpgrade?: PendingUpgrade;
+  maxProducts?: number;
 }
 
 interface SupplierState {

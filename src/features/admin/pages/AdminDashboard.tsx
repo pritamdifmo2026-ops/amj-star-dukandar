@@ -9,6 +9,8 @@ import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
+import NotificationBell from '@/features/notifications/components/NotificationBell';
+import PendingUpgradeAlert from '../components/PendingUpgradeAlert';
 
 import DashboardOverview from '../components/DashboardOverview';
 import SupplierVerification from '../components/SupplierVerification';
@@ -70,12 +72,26 @@ const AdminDashboard: React.FC = () => {
     refetchInterval: 60_000,
   });
 
+  const {
+    stats, allSuppliers, allResellers, allUsers,
+    pendingProducts, approvedProducts, loading,
+    // ui state
+    messageModal, setMessageModal,
+    confirmVerify, setConfirmVerify,
+    rejectPrompt, setRejectPrompt,
+    rejectionReasonInput, setRejectionReasonInput,
+    // handlers
+    handleVerifySupplier, handleVerifyReseller,
+    executeVerify, executeReject,
+    handleVerifyProduct, handleToggleUserStatus
+  } = useAdminDashboard(activeTab);
+
   const adminMenu: MenuItem[] = [
     { id: 'stats', label: 'Overview', icon: BarChart3 },
     { id: 'suppliers', label: 'Manage Suppliers', icon: Users },
     { id: 'resellers', label: 'Manage Resellers', icon: Users },
     { id: 'users', label: 'User Management', icon: Users },
-    { id: 'products', label: 'Product Queue', icon: Package },
+    { id: 'products', label: 'Product Queue', icon: Package, badge: stats?.pendingProducts || undefined },
     { id: 'categories', label: 'Categories', icon: Tags },
     { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
     { id: 'buyer-queries', label: 'Buyer Queries', icon: MessageSquare },
@@ -135,19 +151,7 @@ const AdminDashboard: React.FC = () => {
     else if (activeTab === 'supplier-detail' || activeTab === 'supplier-products') setSearchParams({ tab: 'suppliers' });
   }, []);
 
-  const {
-    stats, allSuppliers, allResellers, allUsers,
-    pendingProducts, approvedProducts, loading,
-    // ui state
-    messageModal, setMessageModal,
-    confirmVerify, setConfirmVerify,
-    rejectPrompt, setRejectPrompt,
-    rejectionReasonInput, setRejectionReasonInput,
-    // handlers
-    handleVerifySupplier, handleVerifyReseller,
-    executeVerify, executeReject,
-    handleVerifyProduct, handleToggleUserStatus
-  } = useAdminDashboard(activeTab);
+  // useAdminDashboard hook was moved up
 
   const handleSignOut = () => { dispatch(logout()); window.location.href = '/'; };
 
@@ -161,7 +165,7 @@ const AdminDashboard: React.FC = () => {
           <Menu size={20} />
         </button>
         <div className="font-bold text-[#0f172a] text-sm">AMJ Admin</div>
-        <div className="w-9 h-9" />
+        <NotificationBell />
       </header>
 
       {isSidebarOpen && window.innerWidth <= 1024 && (
@@ -186,9 +190,13 @@ const AdminDashboard: React.FC = () => {
       />
 
       <main className={`flex-1 p-8 transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] max-lg:ml-0 max-lg:p-4 ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'}`}>
-        <header className="mb-6">
+        <header className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-xl font-extrabold text-[#0f172a] m-0">{tabLabel[activeTab] || ''}</h2>
+          <div className="hidden lg:block"><NotificationBell /></div>
         </header>
+
+        {/* Admin login alert: suppliers awaiting physical verification for an upgrade */}
+        <PendingUpgradeAlert onReview={id => setSearchParams({ tab: 'supplier-detail', id })} />
 
         {loading ? (
           <div className="py-16 text-center text-sm text-[#64748b]">Loading...</div>

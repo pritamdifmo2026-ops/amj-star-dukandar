@@ -18,6 +18,8 @@ interface SupplierVerificationProps {
   onVerifyProduct: (id: string, status: 'APPROVED' | 'REJECTED') => void;
 }
 
+type ViewMode = 'PENDING' | 'VERIFIED' | 'REJECTED';
+
 const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9] max-md:hidden";
 const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155] max-md:flex max-md:justify-between max-md:items-center max-md:border-none max-md:py-2 max-md:px-0 text-right md:text-left truncate max-w-xs";
 const trCls = "hover:bg-[#fafbfc] max-md:block max-md:p-4 max-md:border-b max-md:border-[#e2e8f0] last:border-none";
@@ -46,6 +48,12 @@ const SupplierTable: React.FC<{
   );
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
+  const statusCls = (status: string) => {
+    if (status === 'VERIFIED') return 'bg-[#ecfdf5] text-[#059669]';
+    if (status === 'REJECTED') return 'bg-[#fef2f2] text-[#dc2626]';
+    return 'bg-[#fffbeb] text-[#a16207]';
+  };
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
@@ -69,7 +77,7 @@ const SupplierTable: React.FC<{
                   <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Contact</span> {s.phone}</td>
                   <td className={tdCls}>
                     <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Status</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.kycStatus === 'VERIFIED' ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#fffbeb] text-[#a16207]'}`}>{s.kycStatus}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusCls(s.kycStatus)}`}>{s.kycStatus}</span>
                   </td>
                   <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Tier</span> <span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{s.tier}</span></td>
                   <td className={tdCls}>
@@ -295,14 +303,33 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
   const selectedSupplier = suppliers.find(s => s._id === supplierId);
   const pendingSuppliers = suppliers.filter(s => s.kycStatus === 'PENDING');
   const verifiedSuppliers = suppliers.filter(s => s.kycStatus === 'VERIFIED');
+  const rejectedSuppliers = suppliers.filter(s => s.kycStatus === 'REJECTED');
   const statusParam = searchParams.get('status');
-  const initialView = statusParam === 'VERIFIED' ? 'VERIFIED' : 'PENDING';
-  const [viewMode, setViewMode] = useState<'PENDING' | 'VERIFIED'>(initialView);
+  const initialView: ViewMode =
+    statusParam === 'VERIFIED' ? 'VERIFIED' : statusParam === 'REJECTED' ? 'REJECTED' : 'PENDING';
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
+  const qc = useQueryClient();
+
+  const completeUpgradeMutation = useMutation({
+    mutationFn: (id: string) => adminService.completeSupplierUpgrade(id),
+    onSuccess: () => {
+      toast.success('Upgrade activated for this supplier');
+      qc.invalidateQueries({ queryKey: ['admin', 'suppliers'] });
+      qc.invalidateQueries({ queryKey: ['admin', 'pending-upgrades'] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to activate upgrade'),
+  });
 
   // Update URL when viewMode changes
-  const updateViewMode = (mode: 'PENDING' | 'VERIFIED') => {
+  const updateViewMode = (mode: ViewMode) => {
     setViewMode(mode);
     setSearchParams({ tab: 'suppliers', status: mode });
+  };
+
+  const listByMode: Record<ViewMode, { title: string; suppliers: AdminSupplier[] }> = {
+    PENDING: { title: 'Pending Suppliers', suppliers: pendingSuppliers },
+    VERIFIED: { title: 'Approved Suppliers', suppliers: verifiedSuppliers },
+    REJECTED: { title: 'Rejected Suppliers', suppliers: rejectedSuppliers },
   };
 
   // Helper to navigate to supplier detail
@@ -357,6 +384,31 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
           </div>
         </div>
         <div className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+          {selectedSupplier.kycStatus === 'REJECTED' && (
+            <div className="p-6 border-2 border-[#fee2e2] bg-[#fffafb] m-4 rounded-[10px]">
+              <h3 className="text-base font-extrabold text-[#ef4444] m-0 mb-2">Rejection Reason</h3>
+              <p className="text-sm text-[#7f1d1d] m-0 mt-2">{selectedSupplier.rejectionReason || 'No reason provided'}</p>
+            </div>
+          )}
+
+          {selectedSupplier.pendingUpgrade?.status === 'VERIFICATION_PENDING' && (
+            <div className="p-6 border-2 border-[#bfdbfe] bg-[#eff6ff] m-4 rounded-[10px] flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <h3 className="text-base font-extrabold text-[#1d4ed8] m-0 mb-1">Plan Upgrade — Physical Verification Pending</h3>
+                <p className="text-sm text-[#334155] m-0">
+                  This supplier paid for an upgrade to <strong>{selectedSupplier.pendingUpgrade.targetTier}</strong>.
+                  Complete the physical verification, then activate the new plan. They keep their current plan until you do.
+                </p>
+              </div>
+              <button
+                onClick={() => completeUpgradeMutation.mutate(selectedSupplier._id)}
+                disabled={completeUpgradeMutation.isPending}
+                className="shrink-0 flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-[#1d4ed8] rounded-[8px] border-none cursor-pointer hover:bg-[#1e40af] disabled:opacity-50"
+              >
+                <CheckCircle size={16} /> {completeUpgradeMutation.isPending ? 'Activating…' : 'Physical Verification Done — Approve Upgrade'}
+              </button>
+            </div>
+          )}
           <div className="p-6 border-b border-[#f1f5f9]">
             <div className="flex items-center gap-2 mb-4 text-primary">
               <ShieldCheck size={20} />
@@ -509,16 +561,17 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4">
         <select
           value={viewMode}
-          onChange={e => updateViewMode(e.target.value as 'PENDING' | 'VERIFIED')}
+          onChange={e => updateViewMode(e.target.value as ViewMode)}
           className="w-full sm:w-auto border border-[#e2e8f0] rounded-[8px] px-3 py-2 focus-within:border-primary"
         >
           <option value="PENDING">Pending Suppliers</option>
           <option value="VERIFIED">Approved Suppliers</option>
+          <option value="REJECTED">Rejected Suppliers</option>
         </select>
       </div>
       <SupplierTable
-        title={viewMode === 'PENDING' ? 'Pending Suppliers' : 'Approved Suppliers'}
-        suppliers={viewMode === 'PENDING' ? pendingSuppliers : verifiedSuppliers}
+        title={listByMode[viewMode].title}
+        suppliers={listByMode[viewMode].suppliers}
         onVerify={onVerify}
         onView={goToDetail}
         showActions={true}

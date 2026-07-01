@@ -11,7 +11,7 @@ import {
   LayoutDashboard, Package, LogOut, Trash2, FileText, MessageCircle,
   Handshake, Menu, Image as ImageIcon, Layers, CheckCircle, Clock,
   AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store,
-  AlertTriangle, WifiOff, Wifi, Star, ReceiptText
+  AlertTriangle, WifiOff, Wifi, Star, ReceiptText, Ban
 } from 'lucide-react';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
 
@@ -26,6 +26,8 @@ import SupplierWallet from '../components/SupplierWallet';
 import SupplierReports from '../components/SupplierReports';
 import SupplierStoreFront from '../components/SupplierStoreFront';
 import BillingManagement from '../components/BillingManagement';
+import SubscriptionActivation from '../components/SubscriptionActivation';
+import MembershipUpgrade from '../components/MembershipUpgrade';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import SupplierQuotations from '../components/SupplierQuotations';
 import Modal from '@/shared/components/ui/Modal';
@@ -34,6 +36,10 @@ import OrderList from '../../buyer/components/OrderList';
 
 const isLowStock = (p: any) =>
   typeof p.stock === 'number' && typeof p.moq === 'number' && p.moq > 0 && p.stock <= p.moq * 1.5;
+
+/** Approved but hidden from the marketplace because the wallet couldn't cover its ₹10 listing fee. */
+const isBlocked = (p: any) =>
+  p.status === 'APPROVED' && p.listingStatus === 'blocked_insufficient_balance';
 
 interface ProductGridProps {
   products: any[];
@@ -107,6 +113,11 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, on
               {product.isDisabledBySeller && (
                 <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#6b7280] bg-[#f3f4f6] border border-[#d1d5db] px-2 py-0.5 rounded-full w-fit">
                   <WifiOff size={10} /> Offline
+                </span>
+              )}
+              {isBlocked(product) && (
+                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#b91c1c] bg-[#fef2f2] border border-[#fecaca] px-2 py-0.5 rounded-full w-fit">
+                  <Ban size={10} /> Blocked — wallet low
                 </span>
               )}
             </div>
@@ -366,6 +377,25 @@ const SupplierDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* Blocked-products (low wallet) banner */}
+        {products.filter(isBlocked).length > 0 && (
+          <div className="mb-6 flex items-start gap-3 p-4 rounded-[10px] bg-[#fef2f2] border border-[#fecaca] text-[#991b1b]">
+            <Ban size={20} className="shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-bold text-sm m-0">
+                {products.filter(isBlocked).length} product{products.filter(isBlocked).length > 1 ? 's are' : ' is'} hidden from the marketplace — wallet balance too low
+              </p>
+              <p className="text-sm m-0 mt-0.5">Each live listing costs ₹10/month. Top up your wallet to bring {products.filter(isBlocked).length > 1 ? 'them' : 'it'} back live.</p>
+            </div>
+            <button onClick={() => setActiveView('wallet')} className="shrink-0 self-center px-4 py-2 bg-[#dc2626] text-white rounded-[8px] text-sm font-bold border-none cursor-pointer hover:bg-[#b91c1c]">
+              Top Up Wallet
+            </button>
+          </div>
+        )}
+
+        {/* Post-approval plan activation prompt (only shows when verified & plan not yet paid) */}
+        <SubscriptionActivation />
+
         {activeView === 'overview' && <SupplierOverview profile={profile} products={products} isTrusted={isTrusted} handleRefresh={() => fetchProducts(true)} setActiveView={setActiveView} renderProductListing={renderProductListing} />}
         {activeView === 'inventory' && <SupplierInventory products={products} handleRefresh={() => fetchProducts(true)} onAddProduct={handleAddProduct} renderProductListing={renderProductListing} />}
         {activeView === 'orders' && <div className="p-5"><OrderList /></div>}
@@ -378,6 +408,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'reviews' && <div className="p-5"><SupplierReviews /></div>}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}
+        {activeView === 'upgrade-plan' && <MembershipUpgrade />}
         {(activeView === 'add-product' || activeView === 'edit-product') && (
           <div className="animate-fade-in -mt-4">
             <AddProductForm onBack={() => { setActiveView('inventory'); setEditingProduct(null); }} onSuccess={handleFormSuccess} editingProduct={editingProduct} returnTab={previousTab} />

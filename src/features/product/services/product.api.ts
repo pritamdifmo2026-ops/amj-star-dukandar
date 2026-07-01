@@ -39,6 +39,8 @@ const mapProduct = (item: any): Product => {
     supplierAbout: item.supplierId?.businessDetails?.about,
     supplierYearEst: item.supplierId?.businessDetails?.yearOfEstablishment,
     isGSTVerified: !!(item.supplierId?.businessDetails?.gstin),
+    isFeatured: item.supplierId?.subscription?.status === 'ACTIVE'
+      && (item.supplierId?.tier === 'GAMMA' || item.supplierId?.tier === 'BETA'),
     supplierReturnPolicyType: item.supplierId?.businessDetails?.returnPolicyType,
     supplierReturnPolicyCustomTerms: item.supplierId?.businessDetails?.returnPolicyCustomTerms,
     createdAt: item.createdAt,

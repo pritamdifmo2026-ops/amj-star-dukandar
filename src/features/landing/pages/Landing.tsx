@@ -8,6 +8,7 @@ import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import BannerSlider from '../components/BannerSlider';
 import PostRequirementSection from '../components/PostRequirementSection';
+import FeaturedSuppliers from '../components/FeaturedSuppliers';
 import Footer from '../components/Footer';
 import { ROUTES } from '@/shared/constants/routes';
 import { productApi } from '@/features/product/services/product.api';
@@ -161,6 +162,8 @@ const Landing: React.FC = () => {
           <BannerSlider />
         </div>
         <Hero />
+
+        <FeaturedSuppliers />
 
         {categories.slice(0, 4).map(cat => (
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />

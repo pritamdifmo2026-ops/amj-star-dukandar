@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import supplierService from '../services/supplier.service';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import walletApi from '../services/wallet.api';
+import MembershipPlan from './MembershipPlan';
 
 interface SupplierSettingsProps { profile: any; }
 
@@ -256,7 +257,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               { label: 'Tier', val: profile?.tier || 'FREE' },
               { label: 'PAN Number', val: profile?.businessDetails?.pan },
               { label: 'Verification Status', val: profile?.kycStatus === 'VERIFIED' ? '✅ Approved' : `⚠️ ${profile?.kycStatus || 'In Review'}` },
-              { label: 'Plan Limit', val: profile?.maxProducts ? `${profile.maxProducts.toLocaleString()} Products` : 'N/A' },
+              { label: 'Plan Limit', val: profile?.maxProducts == null ? 'N/A' : (profile.maxProducts < 0 ? 'Unlimited' : `${profile.maxProducts.toLocaleString()} Products`) },
             ].map(({ label, val }) => (
               <div key={label}>
                 <label className={labelCls}>{label}</label>
@@ -453,6 +454,9 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
           </button>
         )}
       </div>
+
+      {/* Membership Plan (view current plan + upgrade) */}
+      <MembershipPlan />
     </div>
   );
 };

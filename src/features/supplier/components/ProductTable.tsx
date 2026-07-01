@@ -1,9 +1,13 @@
 import React from 'react';
-import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi } from 'lucide-react';
+import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi, Ban } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 
 const isLowStock = (p: any) =>
   typeof p.stock === 'number' && typeof p.moq === 'number' && p.moq > 0 && p.stock <= p.moq * 1.5;
+
+/** Approved but hidden from the marketplace because the wallet couldn't cover its ₹10 listing fee. */
+export const isBlocked = (p: any) =>
+  p.status === 'APPROVED' && p.listingStatus === 'blocked_insufficient_balance';
 
 const statusCls: Record<string, string> = {
   approved: 'bg-[#ecfdf5] text-[#059669]',
@@ -66,6 +70,11 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
                     {product.isDisabledBySeller && (
                       <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#6b7280] bg-[#f3f4f6] border border-[#d1d5db] px-2 py-0.5 rounded-full w-fit">
                         <WifiOff size={10} /> Offline
+                      </span>
+                    )}
+                    {isBlocked(product) && (
+                      <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#b91c1c] bg-[#fef2f2] border border-[#fecaca] px-2 py-0.5 rounded-full w-fit">
+                        <Ban size={10} /> Blocked — wallet low
                       </span>
                     )}
                   </div>
