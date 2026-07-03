@@ -96,12 +96,12 @@ const supplierService = {
   },
   
   sendVerificationEmail: async () => {
-    const response = await apiClient.post('/supplier/send-verification-email');
+    const response = await apiClient.post('/supplier/send-verification-email', {}, { timeout: 60000 });
     return response.data;
   },
 
   requestEmailChange: async (newEmail: string) => {
-    const response = await apiClient.post('/supplier/request-email-change', { newEmail });
+    const response = await apiClient.post('/supplier/request-email-change', { newEmail }, { timeout: 60000 });
     return response.data;
   },
 
