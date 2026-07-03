@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Send, CheckCircle2, X, FileText, Users, Handshake } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import toast from 'react-hot-toast';
@@ -62,10 +62,11 @@ const PostRequirementSection: React.FC = () => {
   };
 
   const openModal = () => {
+    const phone = String(user?.phone || quickPhone || '').replace(/\D/g, '');
     setFormData(prev => ({
       ...prev,
       productName: quickProduct,
-      buyerPhone: quickPhone,
+      buyerPhone: /^[6-9]\d{9}$/.test(phone) ? phone : quickPhone,
       buyerName: user?.name || '',
       buyerEmail: user?.email || '',
     }));
@@ -78,10 +79,33 @@ const PostRequirementSection: React.FC = () => {
     openModal();
   };
 
+  const formScrollRef = useRef<HTMLFormElement>(null);
+
+  const scrollToField = (id: string) => {
+    const el = document.getElementById(id);
+    if (el && formScrollRef.current) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      (el as HTMLElement).focus?.();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.productName || !formData.buyerName || !formData.buyerEmail || !formData.buyerPhone || !formData.buyerCompany) {
-      return toast.error('Please fill in all required fields');
+    if (!formData.productName) {
+      scrollToField('req-productName');
+      return toast.error('Please enter the product name');
+    }
+    if (!formData.buyerName) {
+      scrollToField('req-buyerName');
+      return toast.error('Please enter your contact name (scroll to Contact Details)');
+    }
+    if (!formData.buyerEmail) {
+      scrollToField('req-buyerEmail');
+      return toast.error('Please enter your email address (scroll to Contact Details)');
+    }
+    if (!formData.buyerPhone) {
+      scrollToField('req-buyerPhone');
+      return toast.error('Please enter your phone number (scroll to Contact Details)');
     }
     setIsSubmitting(true);
     try {
@@ -195,7 +219,7 @@ const PostRequirementSection: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto" ref={formScrollRef}>
                 <div className="px-8 py-6 flex flex-col gap-6">
                   {/* Product Details */}
                   <div>
@@ -203,7 +227,7 @@ const PostRequirementSection: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
                       <div className="col-span-2 max-sm:col-span-1">
                         <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Product Name *</label>
-                        <input name="productName" value={formData.productName} onChange={handleChange} className={inputCls} placeholder="e.g. Industrial Electric Motor" />
+                        <input id="req-productName" name="productName" value={formData.productName} onChange={handleChange} className={inputCls} placeholder="e.g. Industrial Electric Motor" />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Category <span className="text-[#94a3b8] font-normal">(optional)</span></label>
@@ -238,21 +262,21 @@ const PostRequirementSection: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
                       <div>
                         <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Contact Person *</label>
-                        <input name="buyerName" value={formData.buyerName} onChange={handleChange} className={inputCls} placeholder="Your Name" />
+                        <input id="req-buyerName" name="buyerName" value={formData.buyerName} onChange={handleChange} className={inputCls} placeholder="Your Name" />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Company Name *</label>
-                        <input name="buyerCompany" value={formData.buyerCompany} onChange={handleChange} className={inputCls} placeholder="Your Company" />
+                        <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Company Name <span className="text-[#94a3b8] font-normal">(optional)</span></label>
+                        <input id="req-buyerCompany" name="buyerCompany" value={formData.buyerCompany} onChange={handleChange} className={inputCls} placeholder="Your Company" />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Email Address *</label>
-                        <input name="buyerEmail" type="email" value={formData.buyerEmail} onChange={handleChange} className={inputCls} placeholder="you@company.com" />
+                        <input id="req-buyerEmail" name="buyerEmail" type="email" value={formData.buyerEmail} onChange={handleChange} className={inputCls} placeholder="you@company.com" />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Phone Number *</label>
                         <div className="flex items-center bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] overflow-hidden focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
                           <span className="px-3 text-sm font-semibold text-[#475569] border-r border-[#e2e8f0] py-3 shrink-0">+91</span>
-                          <input name="buyerPhone" type="tel" maxLength={10} value={formData.buyerPhone} onChange={(e) => setFormData({ ...formData, buyerPhone: e.target.value.replace(/\D/g, '') })} placeholder="Mobile number" className="flex-1 px-3 py-3 text-sm text-[#0f172a] outline-none bg-transparent" />
+                          <input id="req-buyerPhone" name="buyerPhone" type="tel" maxLength={10} value={formData.buyerPhone} onChange={(e) => setFormData({ ...formData, buyerPhone: e.target.value.replace(/\D/g, '') })} placeholder="Mobile number" className="flex-1 px-3 py-3 text-sm text-[#0f172a] outline-none bg-transparent" />
                         </div>
                       </div>
                       <div className="col-span-2 max-sm:col-span-1">

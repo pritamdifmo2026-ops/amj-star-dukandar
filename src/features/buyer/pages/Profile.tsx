@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toast } from 'react-hot-toast';
-import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import {
   User, Package, MapPin, CreditCard, Bell, Heart,
-  X, Mail, Phone, ShoppingBag,
+  X, Mail, Phone, ShoppingBag, ShoppingCart,
   LogOut, ChevronRight, Star, Clock, Check, MessageCircle,
   Plus, Trash2, Edit2, CheckCircle2, BookUser, ClipboardList,
   CheckCheck, Truck, Tag
@@ -26,6 +26,8 @@ import Navbar from '@/features/landing/components/Navbar';
 import Modal from '@/shared/components/ui/Modal';
 import AccountOverviewSection from '@/features/buyer/components/AccountOverviewSection';
 import MyRequirementsList from '@/features/buyer/components/MyRequirementsList';
+import { CartContent } from '@/features/buyer/pages/Cart';
+import { CheckoutContent } from '@/features/order/pages/Checkout';
 import Button from '@/shared/components/ui/Button';
 import { buyerProfileApi } from '@/features/buyer/services/buyer-profile.api';
 import { compressImage } from '@/shared/utils/compressImage';
@@ -54,8 +56,11 @@ const Profile: React.FC = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user) as any;
   const wishlistItems = useAppSelector((state) => state.wishlist.items);
+  const cartItems = useAppSelector((state) => state.cart.items);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const checkoutBuyNowItem = location.state?.buyNowItem;
   const activeTab = searchParams.get('tab') || 'overview';
   const setActiveTab = (tab: string) => setSearchParams({ tab });
 
@@ -164,7 +169,7 @@ const Profile: React.FC = () => {
   const fetchRequirementsCount = async () => {
     try {
       const list = await buyerProfileApi.getMyRequirements();
-      setRequirementsCount(list.length);
+      setRequirementsCount(list.filter(r => r.status !== 'Closed').length);
     } catch (err) {
       console.error('Failed to fetch requirements count');
     }
@@ -418,6 +423,7 @@ const Profile: React.FC = () => {
     { id: 'overview', label: 'Account Overview', icon: User },
     { id: 'requirements', label: 'My Requirements', icon: ClipboardList, badge: requirementsCount },
     { id: 'orders', label: 'My Orders', icon: Package, badge: orderCount },
+    { id: 'cart', label: 'My Cart', icon: ShoppingCart, badge: cartItems.length },
     { id: 'messages', label: 'Enquiries', icon: MessageCircle, badge: totalUnread },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistItems.length },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
@@ -585,7 +591,7 @@ const Profile: React.FC = () => {
                 </div>
               </div>
 
-              <div className="px-6 pt-6 pb-24 max-w-[1000px] mx-auto">
+              <div className="px-6 pt-6 pb-24">
                 <div className="grid grid-cols-2 gap-5 mb-8 max-lg:grid-cols-1">
                 <div className="bg-white border border-[#eef2f6] rounded-[16px] p-6 shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.05)] transition-all">
                   <div className="flex items-center justify-between mb-5">
@@ -671,14 +677,33 @@ const Profile: React.FC = () => {
           )}
 
           {activeTab === 'requirements' && (
-            <div className="p-6 max-w-[1000px] mx-auto">
+            <div className="p-6">
               <MyRequirementsList />
             </div>
           )}
 
           {activeTab === 'orders' && (
-            <div className="p-6 max-w-[1000px] mx-auto">
+            <div className="p-6">
               <OrderList />
+            </div>
+          )}
+
+          {activeTab === 'cart' && (
+            <div className="p-6">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-5 flex items-center gap-2">
+                <ShoppingCart size={18} className="text-primary" /> My Cart
+              </h3>
+              <CartContent />
+            </div>
+          )}
+
+          {activeTab === 'checkout' && (
+            <div className="p-6">
+              <CheckoutContent
+                buyNowItem={checkoutBuyNowItem}
+                onBack={() => setActiveTab('cart')}
+                onOrderPlaced={() => setActiveTab('orders')}
+              />
             </div>
           )}
 
@@ -689,10 +714,10 @@ const Profile: React.FC = () => {
           )}
 
           {activeTab === 'wishlist' && (
-          <div className="p-6 max-w-[1200px] mx-auto">
+          <div className="p-6">
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">My Wishlist ({wishlistItems.length})</h3>
             {wishlistItems.length > 0 ? (
-              <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-2">
+              <div className="grid grid-cols-5 gap-4 max-xl:grid-cols-4 max-lg:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-2">
                 {wishlistItems.map((item) => (
                   <ProductCard key={item.id} product={item} variant="wishlist" />
                 ))}
@@ -703,9 +728,8 @@ const Profile: React.FC = () => {
           </div>
         )}
 
-          {/* Phone UI placeholder */}
           {activeTab === 'addresses' && (
-          <div className="py-6">
+          <div className="p-6">
             <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
               <div>
                 <h3 className="text-base font-extrabold text-[#0f172a] m-0">My Addresses</h3>
@@ -859,7 +883,7 @@ const Profile: React.FC = () => {
 
 
         {activeTab === 'notifications' && (
-          <div className="p-6 max-w-[800px] mx-auto">
+          <div className="p-6">
             <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
               <div>
                 <h3 className="text-base font-extrabold text-[#0f172a] m-0">Notifications</h3>
@@ -962,7 +986,7 @@ const Profile: React.FC = () => {
         )}
 
         {activeTab === 'contactus' && (
-          <div className="py-6 max-w-[1000px]">
+          <div className="p-6">
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Contact & Raise Ticket</h3>
             <p className="text-sm text-[#64748b] mb-6">Have a question or need help? Fill in the form and our team will reach out to you. For specific issues, use the Raise Ticket form.</p>
             <div className="grid md:grid-cols-2 gap-6">

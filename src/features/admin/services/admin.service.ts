@@ -30,6 +30,18 @@ const adminService = {
     return response.data.supplier;
   },
 
+  getSupplierPlans: async () => {
+    const response = await api.get('/admin/supplier-plans');
+    return response.data.suppliers as Array<{
+      _id: string;
+      businessName: string;
+      phone?: string;
+      tier: string;
+      subscription?: { status?: string; tier?: string; startDate?: string; expiryDate?: string };
+      pendingUpgrade?: { status?: string; targetTier?: string };
+    }>;
+  },
+
   getPendingUpgrades: async () => {
     const response = await api.get('/admin/pending-upgrades');
     return response.data.suppliers as Array<{

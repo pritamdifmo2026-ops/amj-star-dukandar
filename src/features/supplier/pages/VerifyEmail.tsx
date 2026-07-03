@@ -3,10 +3,14 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import supplierService from '../services/supplier.service';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setCredentials } from '@/features/auth/store/auth.slice';
 
 const VerifyEmail: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated } = useAppSelector(s => s.auth);
   const token = searchParams.get('token');
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
@@ -17,7 +21,10 @@ const VerifyEmail: React.FC = () => {
       if (!token || hasStarted.current) return;
       hasStarted.current = true;
       try {
-        await supplierService.verifyEmailChange(token);
+        const result = await supplierService.verifyEmailChange(token);
+        if (result.user && isAuthenticated && user) {
+          dispatch(setCredentials({ user: { ...user, email: result.user.email, isEmailVerified: true } }));
+        }
         setStatus('success');
       } catch (error: any) {
         setStatus('error');

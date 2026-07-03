@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [soonFeature, setSoonFeature] = React.useState('');
 
   const displayName = profile?.businessName || profile?.storeName || profile?.fullName || user?.name || 'User';
-  const displayEmail = user?.email || 'user@amjstar.com';
+  const displayEmail = user?.email || (profile as any)?.user?.email || (profile as any)?.businessDetails?.email || 'user@amjstar.com';
 
   const handleTabClick = (item: MenuItem) => {
     if (item.disabled || item.comingSoon) {

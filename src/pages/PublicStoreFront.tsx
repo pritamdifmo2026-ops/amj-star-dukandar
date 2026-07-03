@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  Store, MapPin, Globe, Mail, Phone, ShieldCheck, ChevronDown, ChevronUp,
+  Store, MapPin, Globe, Mail, ShieldCheck, ChevronDown, ChevronUp,
   Package, Calendar, TrendingUp, Award, Building2, ArrowUpRight,
   Factory, Star, CheckCircle, Share2, Copy, Check,
   LayoutGrid, List, X, Instagram, Facebook, Twitter,
@@ -294,7 +294,7 @@ const PublicStoreFront: React.FC = () => {
     );
   }
 
-  const { businessName, businessDetails, verifiedByAdmin, tier, createdAt } = supplier;
+  const { businessName, businessDetails, verifiedByAdmin, tier, createdAt, gstRegistered } = supplier;
   const estYear = businessDetails?.yearOfEstablishment;
   const initials = businessName?.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || '??';
   const location = [businessDetails?.city, businessDetails?.state].filter(Boolean).join(', ');
@@ -358,7 +358,7 @@ const PublicStoreFront: React.FC = () => {
               <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-[#64748b] font-medium mb-3">
                 {location && <span className="flex items-center gap-1"><MapPin size={12} />{location}</span>}
                 {estYear && <span className="flex items-center gap-1"><Calendar size={12} />Est. {estYear}</span>}
-                {businessDetails?.gstin && <span className="flex items-center gap-1 text-[#059669]"><CheckCircle size={12} />GST Registered</span>}
+                {gstRegistered && <span className="flex items-center gap-1 text-[#059669]"><CheckCircle size={12} />GST Registered</span>}
                 {businessDetails?.isWomenEntrepreneur && <span className="flex items-center gap-1 text-[#7c3aed]"><Award size={12} />Women Entrepreneur</span>}
               </div>
               {(businessDetails?.about || businessDetails?.description) && (
@@ -524,8 +524,8 @@ const PublicStoreFront: React.FC = () => {
                         {businessDetails?.monthlyProductionCapacity && (
                           <div className="flex justify-between text-sm"><span className="text-[#64748b]">Monthly Production</span><span className="font-bold text-[#0f172a]">{Number(businessDetails.monthlyProductionCapacity).toLocaleString()} units</span></div>
                         )}
-                        {businessDetails?.gstin && (
-                          <div className="flex justify-between gap-3 text-sm max-sm:flex-col max-sm:gap-1"><span className="text-[#64748b]">GSTIN</span><span className="font-mono text-xs font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded break-all">{businessDetails.gstin}</span></div>
+                        {gstRegistered && (
+                          <div className="flex justify-between gap-3 text-sm"><span className="text-[#64748b]">GST</span><span className="text-xs font-bold text-[#059669]">Registered ✓</span></div>
                         )}
                         {businessDetails?.fssaiLicenseNumber && (
                           <div className="flex justify-between text-sm"><span className="text-[#64748b]">FSSAI License</span><span className="font-bold text-[#0f172a]">{businessDetails.fssaiLicenseNumber}</span></div>
@@ -553,18 +553,12 @@ const PublicStoreFront: React.FC = () => {
                 <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Contact Supplier</h3>
               </div>
               <div className="px-5 py-4 space-y-3">
-                {supplier.phone && <InfoRow icon={<Phone size={14} />} text={supplier.phone} href={`tel:${supplier.phone}`} />}
                 {businessDetails?.email && <InfoRow icon={<Mail size={14} />} text={businessDetails.email} href={`mailto:${businessDetails.email}`} />}
                 {location && <InfoRow icon={<MapPin size={14} />} text={location + (businessDetails?.pinCode ? ` - ${businessDetails.pinCode}` : '')} />}
                 {businessDetails?.website && <InfoRow icon={<Globe size={14} />} text={businessDetails.website.replace(/^https?:\/\//, '')} href={businessDetails.website} />}
               </div>
-              <div className="px-5 pb-5">
-                <a
-                  href={businessDetails?.email ? `mailto:${businessDetails.email}` : '#'}
-                  className="block text-center bg-[#e65c00] hover:bg-[#c2410c] text-white text-sm font-bold py-2.5 rounded-[10px] no-underline transition-colors"
-                >
-                  Send Enquiry
-                </a>
+              <div className="px-5 pb-4">
+                <p className="text-[11px] text-[#94a3b8] m-0 text-center">Select a product below to enquire</p>
               </div>
             </div>
 
@@ -578,7 +572,7 @@ const PublicStoreFront: React.FC = () => {
                     <div><p className="font-bold text-[#0f172a] m-0 text-xs">AMJSTAR Verified</p><p className="text-[#64748b] text-[11px] m-0">Identity & KYC verified</p></div>
                   </div>
                 )}
-                {businessDetails?.gstin && (
+                {gstRegistered && (
                   <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-full bg-[#f0fdf4] flex items-center justify-center shrink-0"><CheckCircle size={14} className="text-[#16a34a]" /></div>
                     <div><p className="font-bold text-[#0f172a] m-0 text-xs">GST Registered</p><p className="text-[#64748b] text-[11px] m-0">Valid GSTIN on record</p></div>

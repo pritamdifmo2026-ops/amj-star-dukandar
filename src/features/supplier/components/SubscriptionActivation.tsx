@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { ShieldCheck, Check, Sparkles } from 'lucide-react';
+import { ShieldCheck, Check, Sparkles, ClipboardList } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { setSupplierProfile, SubscriptionStatus } from '../store/supplier.slice';
+import { setSupplierProfile, SubscriptionStatus, SupplierTier } from '../store/supplier.slice';
 import supplierService from '../services/supplier.service';
 import { getPlan, getPlanGstAmount, getPlanTotal, formatINR } from '../constants/plans';
 import Button from '@/shared/components/ui/Button';
@@ -126,6 +126,17 @@ const SubscriptionActivation: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {(plan.id === SupplierTier.GAMMA || plan.id === SupplierTier.BETA) && (
+        <div className="mt-4 flex items-start gap-3 p-4 bg-[#eff6ff] border border-[#bfdbfe] rounded-[10px] text-[#1e40af]">
+          <ClipboardList size={18} className="shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-bold m-0 mb-1">Physical Verification Required After Payment</p>
+            <p className="text-[#334155] m-0 mb-2">An AMJSTAR expert will contact you to schedule an on-site visit. Please arrange travel & accommodation for up to 2 people.</p>
+            <p className="text-xs text-[#475569] m-0">Verification covers: business location · documents · products / services · manufacturing process · quality standards.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

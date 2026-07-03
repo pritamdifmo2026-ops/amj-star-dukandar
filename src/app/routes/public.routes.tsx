@@ -1,4 +1,5 @@
 import type { RouteObject } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants/routes';
 import AuthLayout from '@/shared/layout/AuthLayout';
 import Login from '@/features/auth/pages/Login';
@@ -12,8 +13,6 @@ import AddProduct from '@/features/product/pages/AddProduct';
 import AdminLogin from '@/features/admin/pages/AdminLogin';
 import StorefrontDispatcher from '@/pages/StorefrontDispatcher';
 import SupplierVerifyEmail from '@/features/supplier/pages/VerifyEmail';
-import Cart from '@/features/buyer/pages/Cart';
-import Checkout from '@/features/order/pages/Checkout';
 import Payment from '@/features/order/pages/Payment';
 import Addresses from '@/features/buyer/pages/Addresses';
 import About from '@/features/landing/pages/About';
@@ -109,11 +108,11 @@ export const publicRoutes: RouteObject[] = [
   },
   {
     path: ROUTES.CART,
-    element: <Cart />,
+    element: <Navigate to="/profile?tab=cart" replace />,
   },
   {
     path: ROUTES.CHECKOUT,
-    element: <Checkout />,
+    element: <Navigate to="/profile?tab=checkout" replace />,
   },
   {
     path: ROUTES.PAYMENT,

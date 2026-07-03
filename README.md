@@ -175,4 +175,4 @@ The backend is a separate Node.js/Express + MongoDB repository at `amj-backend`.
 
 ---
 
-*Built by Anushka & Soni*
+*Built by Anushka*

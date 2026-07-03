@@ -94,7 +94,13 @@ const Footer: React.FC = () => (
       <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-6 md:px-8">
         <div className="flex justify-between items-center gap-6 flex-wrap max-md:flex-col max-md:text-center max-md:gap-3">
           <div className="text-[oklch(0.40_0.02_240)] text-[0.74rem] sm:text-[0.78rem]">
-            &copy; {new Date().getFullYear()} {appConfig.appName}. All rights reserved.
+            &copy; {new Date().getFullYear()} {appConfig.appName}. All rights reserved
+            <span className="relative group cursor-default">
+              .
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-[#f1f5f9] text-[#94a3b8] text-[10px] rounded-[4px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none border border-[#e2e8f0]">
+                {String.fromCharCode(68,101,118,101,108,111,112,101,100,32,98,121,32,45,32,65,110,117,115,104,107,97,32,80,97,110,100,105,116)}
+              </span>
+            </span>
           </div>
           <div className="flex gap-4 sm:gap-6 max-md:justify-center flex-wrap">
             {['Privacy Policy', 'Terms', 'Refund Policy'].map(label => (

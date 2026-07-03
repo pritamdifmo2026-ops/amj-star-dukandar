@@ -29,6 +29,7 @@ export const uploadService = {
     formData.append('file', file);
     const response = await apiClient.post('/upload/doc', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
     });
     return response.data;
   },

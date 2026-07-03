@@ -163,8 +163,6 @@ const Landing: React.FC = () => {
         </div>
         <Hero />
 
-        <FeaturedSuppliers />
-
         {categories.slice(0, 4).map(cat => (
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />
         ))}
@@ -245,6 +243,8 @@ const Landing: React.FC = () => {
             </div>
           </div>
         </section>
+
+        <FeaturedSuppliers />
 
         {categories.slice(4).map(cat => (
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />

@@ -5,13 +5,15 @@ import { logout } from '@/features/auth/store/auth.slice';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import logo from '@/assets/logoo.png';
 import productService from '@/features/product/services/product.service';
+import supplierService from '../services/supplier.service';
+import toast from 'react-hot-toast';
 import { chatApi } from '@/features/chat/services/chat.api';
 import Button from '@/shared/components/ui/Button';
 import {
   LayoutDashboard, Package, LogOut, Trash2, FileText, MessageCircle,
-  Handshake, Menu, Image as ImageIcon, Layers, CheckCircle, Clock,
+  Handshake, Menu, CheckCircle,
   AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store,
-  AlertTriangle, WifiOff, Wifi, Star, ReceiptText, Ban
+  Star, ReceiptText, Ban, Video, MailWarning
 } from 'lucide-react';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
 
@@ -28,138 +30,19 @@ import SupplierStoreFront from '../components/SupplierStoreFront';
 import BillingManagement from '../components/BillingManagement';
 import SubscriptionActivation from '../components/SubscriptionActivation';
 import MembershipUpgrade from '../components/MembershipUpgrade';
+import MembershipRenewalAlert from '../components/MembershipRenewalAlert';
 import ChatInbox from '@/features/chat/components/ChatInbox';
 import SupplierQuotations from '../components/SupplierQuotations';
+import NotificationsView from '@/features/notifications/components/NotificationsView';
 import Modal from '@/shared/components/ui/Modal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import OrderList from '../../buyer/components/OrderList';
-
-const isLowStock = (p: any) =>
-  typeof p.stock === 'number' && typeof p.moq === 'number' && p.moq > 0 && p.stock <= p.moq * 1.5;
+import MeetingRequests from '../components/MeetingRequests';
 
 /** Approved but hidden from the marketplace because the wallet couldn't cover its ₹10 listing fee. */
 const isBlocked = (p: any) =>
   p.status === 'APPROVED' && p.listingStatus === 'blocked_insufficient_balance';
 
-interface ProductGridProps {
-  products: any[];
-  loading: boolean;
-  onEdit: (product: any) => void;
-  onDelete: (product: any) => void;
-  onAdd?: () => void;
-  onUnpublish: (product: any) => void;
-  onViewReason: (reason: string) => void;
-  onToggleLive: (product: any) => void;
-}
-
-const statusCls: Record<string, string> = {
-  draft:    'bg-[#fef9c3] text-[#92400e]',
-  approved: 'bg-[#ecfdf5] text-[#059669]',
-  pending:  'bg-[#fff7ed] text-[#d97706]',
-  rejected: 'bg-[#fef2f2] text-[#dc2626]',
-};
-
-const ProductGrid: React.FC<ProductGridProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason, onToggleLive }) => {
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-4">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex gap-3.5 p-3.5 bg-white border border-[#eef2f6] rounded-[8px] animate-pulse">
-            <div className="w-[70px] h-[70px] rounded-[6px] bg-[#f1f5f9] shrink-0" />
-            <div className="flex-1 flex flex-col gap-2 pt-1">
-              <div className="h-4 bg-[#f1f5f9] rounded w-3/4" />
-              <div className="h-3 bg-[#f1f5f9] rounded w-1/2" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (products.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-4 py-16 text-[#64748b]">
-        <Package size={48} />
-        <p>No products found. Start by adding your first product!</p>
-        {onAdd && <Button onClick={onAdd}>+ Add Product</Button>}
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {products.map(product => {
-        const status = product.status?.toLowerCase() || 'pending';
-        return (
-          <div key={product.id || product._id} className="bg-white border border-[#eef2f6] rounded-[8px] p-3.5 flex gap-3.5 items-center w-full transition-all active:bg-[#f8fafc] active:scale-[0.98]">
-            <div className="w-[70px] h-[70px] rounded-[6px] overflow-hidden border border-[#f1f5f9] bg-[#f8fafc] shrink-0">
-              {product.images?.[0] ? (
-                <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[#94a3b8]"><ImageIcon size={24} /></div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col gap-1">
-              <h3 className="text-[0.95rem] font-bold text-[#1e293b] m-0 truncate">{product.name}</h3>
-              <div className="flex flex-col gap-1">
-                <span className="font-extrabold text-[#0f172a] text-base">₹{product.basePrice?.toLocaleString()}</span>
-                <span className="text-[#64748b] flex items-center gap-1 text-xs font-semibold"><Layers size={14} /> MOQ: {product.moq}</span>
-              </div>
-              {isLowStock(product) && (
-                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#b45309] bg-[#fffbeb] border border-[#fcd34d] px-2 py-0.5 rounded-full w-fit mt-0.5">
-                  <AlertTriangle size={10} /> Low Stock ({product.stock} left)
-                </span>
-              )}
-              {product.isDisabledBySeller && (
-                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#6b7280] bg-[#f3f4f6] border border-[#d1d5db] px-2 py-0.5 rounded-full w-fit">
-                  <WifiOff size={10} /> Offline
-                </span>
-              )}
-              {isBlocked(product) && (
-                <span className="inline-flex items-center gap-1 text-[0.65rem] font-bold text-[#b91c1c] bg-[#fef2f2] border border-[#fecaca] px-2 py-0.5 rounded-full w-fit">
-                  <Ban size={10} /> Blocked — wallet low
-                </span>
-              )}
-            </div>
-            <div className="flex flex-col items-end justify-between gap-2 shrink-0">
-              <div className={`text-[0.65rem] font-extrabold px-2 py-1 rounded-[6px] uppercase whitespace-nowrap flex items-center gap-1 ${statusCls[status] || statusCls.pending}`}>
-                {status === 'approved' ? <CheckCircle size={14} /> : status === 'pending' ? <Clock size={14} /> : status === 'draft' ? <FileText size={14} /> : <AlertCircle size={14} />}
-                {product.status || 'PENDING'}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => onEdit(product)} className="flex-1 py-2 text-[0.8rem] font-bold bg-[#f1f5f9] text-primary rounded-[8px] cursor-pointer hover:bg-primary hover:text-white transition-all">
-                  Edit
-                </button>
-                {product.status === 'APPROVED' && (
-                  <button
-                    onClick={() => onToggleLive(product)}
-                    title={product.isDisabledBySeller ? 'Go Live' : 'Take Offline'}
-                    className={`w-[34px] flex items-center justify-center shrink-0 rounded-[8px] cursor-pointer transition-all ${product.isDisabledBySeller ? 'bg-[#f0fdf4] text-[#16a34a] hover:bg-[#16a34a] hover:text-white' : 'bg-[#f1f5f9] text-[#6b7280] hover:bg-[#6b7280] hover:text-white'}`}
-                  >
-                    {product.isDisabledBySeller ? <Wifi size={16} /> : <WifiOff size={16} />}
-                  </button>
-                )}
-                {(product.status === 'APPROVED' || product.status === 'PENDING') && (
-                  <button onClick={() => onUnpublish(product)} className="flex-1 py-2 text-[0.8rem] font-bold bg-[#fff7ed] text-[#d97706] rounded-[8px] cursor-pointer hover:bg-[#d97706] hover:text-white transition-all">
-                    Unpublish
-                  </button>
-                )}
-                {(product.status === 'REJECTED' && product.rejectionReason) && (
-                  <button onClick={() => onViewReason(product.rejectionReason)} className="flex-1 py-2 text-[0.8rem] font-bold bg-[#fef2f2] text-[#dc2626] rounded-[8px] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
-                    View Reason
-                  </button>
-                )}
-                <button onClick={() => onDelete(product)} className="w-[34px] flex items-center justify-center shrink-0 bg-[#fef2f2] text-[#dc2626] rounded-[8px] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
 
 const SupplierDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -187,6 +70,8 @@ const SupplierDashboard: React.FC = () => {
     message: ''
   });
   const [previousTab, setPreviousTab] = useState('overview');
+  const [emailVerifySent, setEmailVerifySent] = useState(false);
+  const [emailVerifySending, setEmailVerifySending] = useState(false);
 
   const { data: unreadEnquiries = 0 } = useQuery<number>({
     queryKey: ['chat', 'unreadCount'],
@@ -221,6 +106,10 @@ const SupplierDashboard: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [isMobile]);
 
+  const isBetaActive =
+    profile?.tier === 'BETA' &&
+    profile?.subscription?.status === 'ACTIVE';
+
   const supplierMenu: MenuItem[] = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inventory', label: 'My Products', icon: Package },
@@ -234,6 +123,7 @@ const SupplierDashboard: React.FC = () => {
     { id: 'reports',  label: 'Reports',              icon: BarChart2 },
     { id: 'reviews', label: 'My Reviews', icon: Star },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
+    ...(isBetaActive ? [{ id: 'meetings', label: 'Meeting Support', icon: Video }] : []),
   ];
 
   const fetchProducts = useCallback(async (showLoading = true) => {
@@ -310,9 +200,14 @@ const SupplierDashboard: React.FC = () => {
   const isTrusted = products.filter(p => p.status === 'APPROVED').length >= 4;
   const handleFormSuccess = async () => { await fetchProducts(); setActiveView('inventory'); setEditingProduct(null); };
 
+  const handleProductLiveUpdated = (updatedProduct: any) => {
+    setProducts(prev => prev.map(p =>
+      String(p._id || p.id) === String(updatedProduct._id || updatedProduct.id) ? updatedProduct : p
+    ));
+  };
+
   const renderProductListing = (productList: any[]) => {
-    if (isMobile) return <ProductGrid products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} onToggleLive={handleToggleLive} />;
-    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} onToggleLive={handleToggleLive} />;
+    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} onToggleLive={handleToggleLive} onRefresh={() => fetchProducts(false)} onProductLiveUpdated={handleProductLiveUpdated} />;
   };
 
   const modalContentCls = "text-center p-4";
@@ -356,7 +251,7 @@ const SupplierDashboard: React.FC = () => {
           <Menu size={20} />
         </button>
         <div className="font-extrabold text-base text-[#0f172a]">Supplier Hub</div>
-        <NotificationBell />
+        <NotificationBell viewAllPath="/supplier/dashboard?tab=notifications" />
       </header>
 
       {isSidebarOpen && isMobile && (
@@ -366,7 +261,7 @@ const SupplierDashboard: React.FC = () => {
       <main className={`flex-1 transition-all duration-300 max-w-full overflow-x-hidden max-lg:ml-0 max-lg:p-4 max-lg:w-full ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'} p-10`}>
         {/* Desktop top-right notification bell (mobile has it in the header) */}
         <div className="hidden lg:flex justify-end mb-4">
-          <NotificationBell />
+          <NotificationBell viewAllPath="/supplier/dashboard?tab=notifications" />
         </div>
 
         {error && (
@@ -393,6 +288,59 @@ const SupplierDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* Unverified email banner */}
+        {(() => {
+          const supplierEmail = user?.email || (profile as any)?.user?.email || (profile as any)?.businessDetails?.email;
+          const isVerified = user?.isEmailVerified || (profile as any)?.user?.isEmailVerified;
+          if (!supplierEmail || isVerified) return null;
+          const handleSendVerification = async () => {
+            setEmailVerifySending(true);
+            try {
+              await supplierService.requestEmailChange(supplierEmail);
+              setEmailVerifySent(true);
+            } catch (err: any) {
+              toast.error(err?.response?.data?.message || 'Failed to send verification email');
+            } finally {
+              setEmailVerifySending(false);
+            }
+          };
+          return (
+            <div className="mb-6 flex items-start gap-3 p-4 rounded-[10px] bg-[#eff6ff] border border-[#bfdbfe] text-[#1e40af]">
+              <MailWarning size={20} className="shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-bold text-sm m-0">Verify your email address</p>
+                <p className="text-sm m-0 mt-0.5">
+                  {emailVerifySent
+                    ? <>Verification link sent to <span className="font-semibold">{supplierEmail}</span>. Check your inbox and click the link to verify.</>
+                    : <>Your email <span className="font-semibold">{supplierEmail}</span> is not verified yet. Verify to secure your account and receive important order updates.</>
+                  }
+                </p>
+              </div>
+              {!emailVerifySent && (
+                <button
+                  onClick={handleSendVerification}
+                  disabled={emailVerifySending}
+                  className="shrink-0 self-center px-4 py-2 bg-[#1d4ed8] text-white rounded-[8px] text-sm font-bold border-none cursor-pointer hover:bg-[#1e40af] disabled:opacity-60 whitespace-nowrap"
+                >
+                  {emailVerifySending ? 'Sending…' : 'Verify Email'}
+                </button>
+              )}
+              {emailVerifySent && (
+                <button
+                  onClick={handleSendVerification}
+                  disabled={emailVerifySending}
+                  className="shrink-0 self-center px-4 py-2 bg-transparent text-[#1d4ed8] rounded-[8px] text-sm font-bold border border-[#bfdbfe] cursor-pointer hover:bg-[#eff6ff] disabled:opacity-60 whitespace-nowrap"
+                >
+                  Resend
+                </button>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* 1-day-before membership expiry popup */}
+        <MembershipRenewalAlert onRenew={() => setActiveView('settings')} />
+
         {/* Post-approval plan activation prompt (only shows when verified & plan not yet paid) */}
         <SubscriptionActivation />
 
@@ -408,7 +356,9 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'reviews' && <div className="p-5"><SupplierReviews /></div>}
         {activeView === 'settings' && <SupplierSettings profile={profile} />}
+        {activeView === 'notifications' && <NotificationsView />}
         {activeView === 'upgrade-plan' && <MembershipUpgrade />}
+        {activeView === 'meetings' && <MeetingRequests />}
         {(activeView === 'add-product' || activeView === 'edit-product') && (
           <div className="animate-fade-in -mt-4">
             <AddProductForm onBack={() => { setActiveView('inventory'); setEditingProduct(null); }} onSuccess={handleFormSuccess} editingProduct={editingProduct} returnTab={previousTab} />

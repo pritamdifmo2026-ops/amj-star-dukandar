@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
@@ -29,6 +29,8 @@ import BuyerQueries from '../components/BuyerQueries';
 import ControlAuthority from '../components/ControlAuthority';
 import RequirementManagement from '../components/RequirementManagement';
 import AdminPages from '../components/AdminPages';
+import AdminSupplierPlans from '../components/AdminSupplierPlans';
+import AdminMeetingRequests from '../components/AdminMeetingRequests';
 
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
@@ -54,6 +56,8 @@ const tabLabel: Record<string, string> = {
   pages: 'Manage Pages',
   'requirement-management': 'Requirement Management',
   'buyer-queries': 'Buyer Queries',
+  'supplier-plans': 'Supplier Memberships',
+  'meeting-requests': 'Meeting Requests',
 };
 
 const AdminDashboard: React.FC = () => {
@@ -103,6 +107,8 @@ const AdminDashboard: React.FC = () => {
     { id: 'withdrawals', label: 'Withdrawals', icon: Wallet },
     { id: 'pages', label: 'Manage Pages', icon: FileText },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
+    { id: 'supplier-plans', label: 'Supplier Memberships', icon: CreditCard },
+    { id: 'meeting-requests', label: 'Meeting Requests', icon: Video },
   ];
 
   const hasPermission = (perm: string) => {
@@ -128,6 +134,8 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'withdrawals') return hasPermission('withdrawals');
     if (item.id === 'pages') return hasPermission('pages_management');
     if (item.id === 'platform-settings') return hasPermission('platform_settings');
+    if (item.id === 'supplier-plans') return hasPermission('supplier_verify');
+    if (item.id === 'meeting-requests') return hasPermission('meeting_requests');
     return false;
   });
 
@@ -231,6 +239,10 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'requirement-management' && <RequirementManagement />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}
             {activeTab === 'withdrawals' && <AdminWithdrawals />}
+            {activeTab === 'supplier-plans' && (
+              <AdminSupplierPlans onViewSupplier={id => setSearchParams({ tab: 'supplier-detail', id })} />
+            )}
+            {activeTab === 'meeting-requests' && <AdminMeetingRequests />}
             {activeTab === 'control-authority' && user?.role === 'superadmin' && <ControlAuthority />}
           </div>
         )}

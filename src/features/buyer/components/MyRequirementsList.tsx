@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { buyerProfileApi } from '../services/buyer-profile.api';
 import type { PostedRequirement } from '../services/buyer-profile.api';
-import { ClipboardList, Clock, CheckCircle, XCircle, Mail, Building2, Package, Tag, Layers, FileText } from 'lucide-react';
+import { ClipboardList, Clock, CheckCircle, XCircle, Building2, Package, Tag, Layers, FileText, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSocket } from '@/shared/contexts/SocketContext';
+
+const PAGE_SIZE = 10;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; Icon: React.FC<any> }> = {
   'New':         { label: 'New',          color: '#0369a1', bg: '#f0f9ff', border: '#bae6fd', Icon: Clock },
@@ -19,12 +22,10 @@ const MyRequirementsList: React.FC = () => {
   const [, setSearchParams] = useSearchParams();
   const [requirements, setRequirements] = useState<PostedRequirement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const { socket } = useSocket();
 
-  useEffect(() => {
-    fetchRequirements();
-  }, []);
-
-  const fetchRequirements = async () => {
+  const fetchRequirements = useCallback(async () => {
     try {
       const list = await buyerProfileApi.getMyRequirements();
       setRequirements(list);
@@ -33,7 +34,21 @@ const MyRequirementsList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchRequirements();
+  }, [fetchRequirements]);
+
+  // Refetch when admin assigns a supplier / recommends a product
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (n: { type?: string }) => {
+      if (n.type === 'inquiry') fetchRequirements();
+    };
+    socket.on('bell_notification', handler);
+    return () => { socket.off('bell_notification', handler); };
+  }, [socket, fetchRequirements]);
 
   if (loading) {
     return (
@@ -70,6 +85,9 @@ const MyRequirementsList: React.FC = () => {
     );
   }
 
+  const totalPages = Math.ceil(requirements.length / PAGE_SIZE);
+  const paginated = requirements.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="py-6">
       <div className="flex items-center justify-between mb-5">
@@ -79,7 +97,7 @@ const MyRequirementsList: React.FC = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4">
-        {requirements.map((req) => {
+        {paginated.map((req) => {
           const cfg = getStatusConfig(req.status);
           const StatusIcon = cfg.Icon;
           return (
@@ -142,17 +160,28 @@ const MyRequirementsList: React.FC = () => {
                   <div className="bg-[#f8fafc] rounded-[8px] p-3 border border-[#eef2f6] flex flex-col gap-1.5 justify-center">
                     <span className="text-[10px] font-extrabold uppercase text-[#94a3b8] tracking-wider block">Assigned Supplier</span>
                     {req.assignedSupplierId ? (
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-2">
                         <span className="text-xs font-bold text-[#1e293b] flex items-center gap-1.5">
-                          <Building2 size={12} className="text-[#64748b]" />
-                          {req.assignedSupplierId.businessName || req.assignedSupplierId.name}
+                          <Building2 size={12} className="text-[#64748b] shrink-0" />
+                          {req.assignedSupplierId.businessName}
                         </span>
-                        <div className="flex items-center gap-3 text-[11px] text-[#64748b]">
-                          <span className="flex items-center gap-1">
-                            <Mail size={11} className="text-[#94a3b8]" />
-                            {req.assignedSupplierId.email}
+                        {req.recommendedProductId ? (
+                          <Link
+                            to={`/products/${req.recommendedProductId.id}`}
+                            className="flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:underline leading-snug"
+                          >
+                            <Package size={11} className="shrink-0" />
+                            <span className="line-clamp-2">{req.recommendedProductId.name}</span>
+                            <ExternalLink size={10} className="shrink-0 opacity-70" />
+                          </Link>
+                        ) : (
+                          <span className="text-[11px] text-[#94a3b8] italic">Product match pending</span>
+                        )}
+                        {req.recommendedAt && (
+                          <span className="text-[10px] text-[#b0bec5]">
+                            Matched {new Date(req.recommendedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                           </span>
-                        </div>
+                        )}
                       </div>
                     ) : (
                       <span className="text-xs text-[#94a3b8] italic">Supplier matching in progress...</span>
@@ -164,6 +193,44 @@ const MyRequirementsList: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Pagination — only when there are more than PAGE_SIZE requirements */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#eef2f6]">
+          <p className="text-xs text-[#64748b] m-0">
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, requirements.length)} of {requirements.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="w-8 h-8 flex items-center justify-center rounded-[6px] border border-[#e2e8f0] bg-white text-[#475569] disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary hover:text-primary transition-colors cursor-pointer"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                onClick={() => setPage(n)}
+                className={`w-8 h-8 flex items-center justify-center rounded-[6px] border text-xs font-bold transition-colors cursor-pointer ${
+                  n === page
+                    ? 'bg-primary text-white border-primary'
+                    : 'border-[#e2e8f0] bg-white text-[#475569] hover:border-primary hover:text-primary'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="w-8 h-8 flex items-center justify-center rounded-[6px] border border-[#e2e8f0] bg-white text-[#475569] disabled:opacity-40 disabled:cursor-not-allowed hover:border-primary hover:text-primary transition-colors cursor-pointer"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -179,7 +179,7 @@ const Navbar: React.FC = () => {
             )}
             {isAuth && <NotificationBell />}
             {isAuth && !isSupplier && !isReseller && !isAdmin && (
-              <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate(ROUTES.CART)}>
+              <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate('/profile?tab=cart')}>
                 <ShoppingCart size={20} />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2.5 bg-primary text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-surface">

@@ -1,6 +1,7 @@
-import React from 'react';
-import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi, Ban } from 'lucide-react';
+import React, { useState } from 'react';
+import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi, Ban, SlidersHorizontal, X, AlertCircle } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
+import LiveUpdateModal from './LiveUpdateModal';
 
 const isLowStock = (p: any) =>
   typeof p.stock === 'number' && typeof p.moq === 'number' && p.moq > 0 && p.stock <= p.moq * 1.5;
@@ -24,9 +25,14 @@ interface ProductTableProps {
   onUnpublish: (product: any) => void;
   onViewReason: (reason: string) => void;
   onToggleLive: (product: any) => void;
+  onRefresh: () => void;
+  onProductLiveUpdated: (updatedProduct: any) => void;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason, onToggleLive }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason, onToggleLive, onProductLiveUpdated }) => {
+  const [liveUpdateProduct, setLiveUpdateProduct] = useState<any | null>(null);
+  const [unpublishTarget, setUnpublishTarget] = useState<any | null>(null);
+
   if (loading) return <p>Loading products...</p>;
 
   if (products.length === 0) {
@@ -40,6 +46,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
   }
 
   return (
+    <>
     <div className="-mx-7 px-7 overflow-x-auto">
       <table className="w-full border-collapse">
         <thead>
@@ -89,19 +96,28 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
               </td>
               <td className="px-4 py-5 border-b border-[#f8fafc]">
                 <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => onEdit(product)} title="Edit" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
-                    <Edit2 size={16} />
-                  </button>
-                  {product.status === 'APPROVED' && (
-                    <button
-                      onClick={() => onToggleLive(product)}
-                      title={product.isDisabledBySeller ? 'Go Live' : 'Take Offline'}
-                      className={`w-[34px] h-[34px] flex items-center justify-center rounded-[10px] border cursor-pointer transition-all ${product.isDisabledBySeller ? 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0] hover:bg-[#16a34a] hover:text-white' : 'bg-[#f1f5f9] text-[#6b7280] border-[#e2e8f0] hover:bg-[#6b7280] hover:text-white'}`}
-                    >
-                      {product.isDisabledBySeller ? <Wifi size={16} /> : <WifiOff size={16} />}
+                  {product.status === 'APPROVED' ? (
+                    /* Live product — restricted update only */
+                    <button onClick={() => setLiveUpdateProduct(product)} title="Update stock / price / MOQ" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
+                      <SlidersHorizontal size={16} />
+                    </button>
+                  ) : (
+                    /* Draft / pending / rejected — full edit form */
+                    <button onClick={() => onEdit(product)} title="Edit" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
+                      <Edit2 size={16} />
                     </button>
                   )}
-                  {(product.status === 'APPROVED' || product.status === 'PENDING') && (
+                  {product.status === 'APPROVED' && (
+                    /* Unpublish = toggle isDisabledBySeller (stays listed, just hidden from buyers) */
+                    <button
+                      onClick={() => product.isDisabledBySeller ? onToggleLive(product) : setUnpublishTarget(product)}
+                      title={product.isDisabledBySeller ? 'Publish (go live)' : 'Unpublish'}
+                      className={`w-[34px] h-[34px] flex items-center justify-center rounded-[10px] border cursor-pointer transition-all ${product.isDisabledBySeller ? 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0] hover:bg-[#16a34a] hover:text-white' : 'bg-[#fff7ed] text-[#d97706] border-[#ffedd5] hover:bg-[#d97706] hover:text-white'}`}
+                    >
+                      {product.isDisabledBySeller ? <Wifi size={16} /> : <EyeOff size={16} />}
+                    </button>
+                  )}
+                  {product.status === 'PENDING' && (
                     <button onClick={() => onUnpublish(product)} title="Unpublish" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fff7ed] text-[#d97706] border border-[#ffedd5] cursor-pointer hover:bg-[#d97706] hover:text-white transition-all">
                       <EyeOff size={16} />
                     </button>
@@ -121,6 +137,50 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
         </tbody>
       </table>
     </div>
+
+    {liveUpdateProduct && (
+      <LiveUpdateModal
+        product={liveUpdateProduct}
+        onClose={() => setLiveUpdateProduct(null)}
+        onSuccess={(updatedProduct) => { setLiveUpdateProduct(null); onProductLiveUpdated(updatedProduct); }}
+      />
+    )}
+
+    {unpublishTarget && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-[16px] w-full max-w-[420px] shadow-xl">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#f1f5f9]">
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0">Unpublish Product?</h3>
+            <button onClick={() => setUnpublishTarget(null)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#f1f5f9] text-[#64748b] border-none cursor-pointer hover:bg-[#e2e8f0]">
+              <X size={16} />
+            </button>
+          </div>
+          <div className="px-6 py-5 flex flex-col gap-4">
+            <p className="text-sm text-[#334155] m-0">
+              <span className="font-semibold">{unpublishTarget.name}</span> will be hidden from buyers immediately.
+            </p>
+            <div className="flex gap-3 items-start bg-[#fff7ed] rounded-[10px] border border-[#ffedd5] px-4 py-3">
+              <AlertCircle size={16} className="text-[#d97706] mt-0.5 shrink-0" />
+              <p className="text-xs text-[#92400e] m-0">
+                This product will <span className="font-bold">still be counted</span> in your monthly billing cycle even while unpublished. To stop being charged for it, <span className="font-bold">delete it</span> from your inventory instead.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3 px-6 py-4 border-t border-[#f1f5f9]">
+            <button onClick={() => setUnpublishTarget(null)} className="flex-1 py-2.5 text-sm font-bold text-[#64748b] bg-[#f1f5f9] rounded-[8px] border-none cursor-pointer hover:bg-[#e2e8f0]">
+              Cancel
+            </button>
+            <button
+              onClick={() => { onToggleLive(unpublishTarget); setUnpublishTarget(null); }}
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-[#d97706] rounded-[8px] border-none cursor-pointer hover:bg-[#b45309]"
+            >
+              Yes, Unpublish
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

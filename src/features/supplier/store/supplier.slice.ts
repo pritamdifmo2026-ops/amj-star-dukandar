@@ -67,6 +67,7 @@ interface SupplierProfile {
   rejectionReason?: string;
   usesOwnShipping?: boolean;
   verifiedByAdmin?: boolean;
+  autoLiveProducts?: boolean;
   subscription?: Subscription;
   pendingUpgrade?: PendingUpgrade;
   maxProducts?: number;

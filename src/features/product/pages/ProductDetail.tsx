@@ -297,6 +297,11 @@ const ProductDetail: React.FC = () => {
               </div>
 
               {/* Action buttons */}
+              {product.stock > 0 && product.stock < product.minOrderQty && (
+                <p className="text-[11px] text-[#94a3b8] mb-2">
+                  Available stock ({product.stock} {product.unit}s) is below the minimum order quantity — use "For Bulk Purchase" to enquire.
+                </p>
+              )}
               <div className="flex flex-col sm:flex-row gap-3 mb-8">
                 <Button size="lg" onClick={handleAddToCart} disabled={product.stock < product.minOrderQty} className="flex-1 h-[52px] whitespace-nowrap">
                   <ShoppingCart size={18} /> {isInCart ? 'Go to Cart' : 'Add to Cart'}

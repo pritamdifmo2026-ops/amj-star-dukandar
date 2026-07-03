@@ -825,12 +825,17 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
       )}
 
       {/* Buyer: rate after completed */}
-      {!isSupplier && order.status === 'completed' && !order._reviewSubmitted && confirmMode !== 'rating' && (
+      {!isSupplier && order.status === 'completed' && !order.hasReview && !order._reviewSubmitted && confirmMode !== 'rating' && (
         <div className={`${card} p-5`}>
           <p className={sectionTitle}>Rate Your Supplier</p>
           <button onClick={() => setConfirmMode('rating')} className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] rounded-[8px] cursor-pointer hover:bg-[#fef3c7]">
             <Star size={15} /> Leave a Rating
           </button>
+        </div>
+      )}
+      {!isSupplier && order.status === 'completed' && (order.hasReview || order._reviewSubmitted) && confirmMode !== 'rating' && (
+        <div className={`${card} p-5 flex items-center gap-2 text-sm text-[#15803d]`}>
+          <CheckCircle size={16} className="text-[#16a34a]" /> You have already rated this supplier for this order.
         </div>
       )}
       {!isSupplier && order.status === 'completed' && confirmMode === 'rating' && (

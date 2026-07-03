@@ -14,7 +14,7 @@ import type { ProductFilters } from '../types';
 const LEAD_TIME_OPTIONS = ['Any', '1-3 days', '1 week', '2 weeks', '1 month', '2+ months'];
 const CERT_OPTIONS = ['ISO', 'FSSAI', 'BIS', 'MSME', 'GMP', 'CE', 'Organic'];
 const SORT_OPTIONS: { value: ProductFilters['sort']; label: string }[] = [
-  { value: 'newest', label: 'Newest First' },
+  { value: 'popularity', label: 'Popularity' },
   { value: 'price_asc', label: 'Price: Low to High' },
   { value: 'price_desc', label: 'Price: High to Low' },
 ];
@@ -56,7 +56,7 @@ const ProductList: React.FC = () => {
 
   const [showFilters, setShowFilters] = useState(() => searchParams.get('showFilters') === 'true');
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [sort, setSort] = useState<ProductFilters['sort']>('newest');
+  const [sort, setSort] = useState<ProductFilters['sort']>('popularity');
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
@@ -116,7 +116,7 @@ const ProductList: React.FC = () => {
   const clearAllFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
     setAppliedFilters(DEFAULT_FILTERS);
-    setSort('newest');
+    setSort('popularity');
   }, []);
 
   const handleReset = useCallback(() => {
@@ -160,7 +160,7 @@ const ProductList: React.FC = () => {
   };
 
   const activeFilterCount = filterCount(appliedFilters);
-  const currentSortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || 'Newest First';
+  const currentSortLabel = SORT_OPTIONS.find(o => o.value === sort)?.label || 'Popularity';
 
   const controlBtnCls = "flex items-center gap-2 px-4 py-2 bg-white border border-border rounded-[8px] text-sm font-semibold text-body cursor-pointer transition-all hover:border-primary hover:text-primary max-md:px-3 select-none relative";
 

@@ -61,7 +61,7 @@ export interface ProductFilters {
   certifications?: string[];
   leadTime?: string;
   verifiedOnly?: boolean;
-  sort?: 'newest' | 'price_asc' | 'price_desc';
+  sort?: 'popularity' | 'price_asc' | 'price_desc';
   page?: number;
   pageSize?: number;
 }

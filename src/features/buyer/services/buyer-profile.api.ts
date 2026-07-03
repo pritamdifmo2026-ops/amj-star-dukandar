@@ -40,10 +40,16 @@ export interface PostedRequirement {
   status: 'New' | 'In Progress' | 'Follow Up' | 'Converted' | 'Closed';
   assignedSupplierId?: {
     _id: string;
-    name: string;
-    email: string;
-    businessName?: string;
+    businessName: string;
+    phone?: string;
   };
+  recommendedProductId?: {
+    id: string;
+    name: string;
+    images?: string[];
+    basePrice?: number;
+  };
+  recommendedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

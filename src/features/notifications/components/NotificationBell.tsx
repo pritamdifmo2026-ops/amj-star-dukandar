@@ -19,7 +19,11 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-const NotificationBell: React.FC = () => {
+interface NotificationBellProps {
+  viewAllPath?: string;
+}
+
+const NotificationBell: React.FC<NotificationBellProps> = ({ viewAllPath = '/notifications' }) => {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
   const navigate = useNavigate();
   const { socket } = useSocket();
@@ -121,15 +125,15 @@ const NotificationBell: React.FC = () => {
             )}
           </div>
 
-          {/* List */}
-          <div className="max-h-[360px] overflow-y-auto">
+          {/* List — show latest 5 only in the dropdown */}
+          <div className="max-h-[320px] overflow-y-auto">
             {localList.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-body text-sm gap-2">
                 <Bell size={28} className="opacity-30" />
                 <span>No notifications yet</span>
               </div>
             ) : (
-              localList.map((n) => (
+              localList.slice(0, 5).map((n) => (
                 <button
                   key={n._id}
                   onClick={() => handleClickNotification(n)}
@@ -156,6 +160,14 @@ const NotificationBell: React.FC = () => {
               ))
             )}
           </div>
+
+          {/* View all footer */}
+          <button
+            onClick={() => { setOpen(false); navigate(viewAllPath); }}
+            className="w-full py-2.5 text-xs font-bold text-primary bg-[#f8fafc] border-t border-border hover:bg-primary hover:text-white transition-colors cursor-pointer"
+          >
+            View all notifications →
+          </button>
         </div>
       )}
     </div>

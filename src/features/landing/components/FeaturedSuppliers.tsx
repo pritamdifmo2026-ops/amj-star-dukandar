@@ -40,7 +40,7 @@ const FeaturedSuppliers: React.FC = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
           {suppliers.slice(0, 8).map(s => {
             const initials = s.businessName.slice(0, 2).toUpperCase();
             const location = [s.businessDetails?.city, s.businessDetails?.state].filter(Boolean).join(', ');

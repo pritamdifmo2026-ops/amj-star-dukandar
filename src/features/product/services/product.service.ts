@@ -72,6 +72,14 @@ export const productService = {
     const response = await apiClient.patch(`/products/${id}/seller-toggle`);
     return response.data;
   },
+
+  liveUpdate: async (id: string, data: {
+    stock?: number; basePrice?: number; moq?: number;
+    leadTime?: string; gstRate?: number; gstIncluded?: boolean; keywords?: string[];
+  }) => {
+    const response = await apiClient.patch(`/products/${id}/live-update`, data);
+    return response.data;
+  },
 };
 
 export default productService;

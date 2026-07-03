@@ -164,7 +164,7 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
           ) : (
             null
           )}
-          {isTrusted && (
+          {profile?.autoLiveProducts && (
             <div className="mt-4 px-4 py-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[6px] text-[#166534] text-[0.85rem] flex items-center gap-2">
               <Zap size={14} />
               <span><strong>Auto-Upload Active:</strong> Your products will now be live instantly!</span>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Filter, X, CheckCircle2, RefreshCw, UserCheck, Inbox, Mail } from 'lucide-react';
+import { Search, X, CheckCircle2, RefreshCw, UserCheck, Inbox, Mail, Sparkles, Package } from 'lucide-react';
 import api from '@/api/client';
 import toast from 'react-hot-toast';
 import Button from '@/shared/components/ui/Button';
@@ -28,6 +28,8 @@ interface Requirement {
   buyerLocation?: string;
   status: 'New' | 'In Progress' | 'Follow Up' | 'Converted' | 'Closed';
   assignedSupplierId?: { _id: string; name: string; email: string; businessName: string };
+  recommendedProductId?: { _id: string; name: string; images?: string[] };
+  recommendedAt?: string;
   createdAt: string;
 }
 
@@ -49,6 +51,8 @@ const RequirementManagement: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [selectedReqId, setSelectedReqId] = useState<string | null>(null);
   const [selectedSupplierToAssign, setSelectedSupplierToAssign] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [recommendDone, setRecommendDone] = useState<string | null>(null); // reqId of last successful recommend
   const [compose, setCompose] = useState<ComposeState | null>(null);
 
   // Fetch all suppliers for assignment
@@ -80,7 +84,14 @@ const RequirementManagement: React.FC = () => {
     } else {
       setSelectedSupplierToAssign('');
     }
-  }, [selectedReq?.assignedSupplierId?._id]);
+    setSelectedProductId('');
+    setRecommendDone(null);
+  }, [selectedReq?._id]);
+
+  // Clear product selection when supplier changes
+  React.useEffect(() => {
+    setSelectedProductId('');
+  }, [selectedSupplierToAssign]);
 
   // Calculate stats
   const { data: allReqsForStats = [] } = useQuery<Requirement[]>({
@@ -110,16 +121,26 @@ const RequirementManagement: React.FC = () => {
     onError: () => toast.error('Failed to update status')
   });
 
-  const assignMutation = useMutation({
-    mutationFn: async ({ id, supplierId }: { id: string; supplierId: string }) => {
-      const res = await api.patch(`/requirements/${id}/assign`, { supplierId });
+
+  // Products for the selected supplier (only APPROVED ones make sense to recommend)
+  const { data: supplierProducts = [] } = useQuery<import('../types/admin.types').AdminProduct[]>({
+    queryKey: ['admin', 'supplier-products', selectedSupplierToAssign],
+    queryFn: () => adminService.getSupplierProducts(selectedSupplierToAssign),
+    enabled: !!selectedSupplierToAssign,
+  });
+  const approvedProducts = supplierProducts.filter(p => p.status === 'APPROVED');
+
+  const recommendMutation = useMutation({
+    mutationFn: async ({ id, supplierDocId, productId }: { id: string; supplierDocId: string; productId?: string }) => {
+      const res = await api.patch(`/requirements/${id}/recommend`, { supplierDocId, productId });
       return res.data;
     },
-    onSuccess: () => {
-      toast.success('Supplier assigned successfully');
+    onSuccess: (_, vars) => {
+      toast.success('Supplier & product recommended! Both parties notified.');
+      setRecommendDone(vars.id);
       queryClient.invalidateQueries({ queryKey: ['admin', 'requirements'] });
     },
-    onError: () => toast.error('Failed to assign supplier')
+    onError: () => toast.error('Recommendation failed. Please try again.')
   });
 
   // Derived filtered items based on client-side search
@@ -270,9 +291,6 @@ const RequirementManagement: React.FC = () => {
               <option value="Machinery">Machinery</option>
               <option value="Textiles">Textiles</option>
             </select>
-            <Button variant="secondary" className="flex items-center gap-2 max-sm:w-full max-sm:justify-center">
-              <Filter size={16} /> Filters
-            </Button>
           </div>
           {/* Table */}
           <div className="overflow-x-auto min-h-[400px]">
@@ -381,32 +399,61 @@ const RequirementManagement: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Assign Supplier */}
-                <div className="bg-white rounded-xl border border-slate-200 p-4">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Assign Supplier</label>
-                  <div className="flex gap-2">
-                    <select
-                      className="flex-1 min-w-0 border border-slate-200 rounded-lg text-sm px-3 py-2 outline-none focus:border-blue-500 bg-white"
-                      value={selectedSupplierToAssign}
-                      onChange={e => setSelectedSupplierToAssign(e.target.value)}
-                    >
-                      <option value="">Select Supplier...</option>
-                      {sortedSuppliers.map(s => (
-                        <option key={s._id} value={s._id}>{s.businessName || s.name} ({s.commissionRate || 0}%)</option>
-                      ))}
-                    </select>
-                    <button
-                      className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50"
-                      onClick={() => assignMutation.mutate({ id: selectedReq._id, supplierId: selectedSupplierToAssign })}
-                      disabled={!selectedSupplierToAssign || assignMutation.isPending}
-                    >
-                      {assignMutation.isPending ? '...' : 'Assign'}
-                    </button>
+                {/* Recommend supplier + product → notify both parties */}
+                <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-orange-500" />
+                    <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Recommend & Notify</label>
                   </div>
-                  {selectedReq.assignedSupplierId && (
-                    <div className="mt-2 text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded-lg">
-                      ✓ Assigned: {selectedReq.assignedSupplierId.businessName}
+
+                  {selectedReq.assignedSupplierId && selectedReq.recommendedAt && (
+                    <div className="text-xs bg-green-50 border border-green-200 rounded-lg px-3 py-2 flex flex-col gap-0.5">
+                      <span className="font-bold text-green-700">✓ {selectedReq.assignedSupplierId.businessName}</span>
+                      {selectedReq.recommendedProductId && (
+                        <span className="text-green-600 flex items-center gap-1"><Package size={11} /> {selectedReq.recommendedProductId.name}</span>
+                      )}
+                      <span className="text-green-600">Notified {new Date(selectedReq.recommendedAt).toLocaleDateString('en-IN')}</span>
                     </div>
+                  )}
+
+                  <select
+                    className="w-full border border-slate-200 rounded-lg text-sm px-3 py-2 outline-none focus:border-orange-400 bg-white"
+                    value={selectedSupplierToAssign}
+                    onChange={e => setSelectedSupplierToAssign(e.target.value)}
+                  >
+                    <option value="">1. Select Supplier...</option>
+                    {sortedSuppliers.map(s => (
+                      <option key={s._id} value={s._id}>{s.businessName || s.name} ({s.commissionRate || 0}%)</option>
+                    ))}
+                  </select>
+
+                  {selectedSupplierToAssign && (
+                    <select
+                      className="w-full border border-slate-200 rounded-lg text-sm px-3 py-2 outline-none focus:border-orange-400 bg-white"
+                      value={selectedProductId}
+                      onChange={e => setSelectedProductId(e.target.value)}
+                    >
+                      <option value="">2. Select Product...</option>
+                      {approvedProducts.length === 0
+                        ? <option disabled>No approved products</option>
+                        : approvedProducts.map(p => (
+                            <option key={p._id ?? p.id} value={p._id ?? p.id}>{p.name}</option>
+                          ))
+                      }
+                    </select>
+                  )}
+
+                  <button
+                    className="w-full flex justify-center items-center gap-2 py-2.5 rounded-xl text-sm font-bold bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    disabled={!selectedSupplierToAssign || !selectedProductId || recommendMutation.isPending}
+                    onClick={() => recommendMutation.mutate({ id: selectedReq._id, supplierDocId: selectedSupplierToAssign, productId: selectedProductId })}
+                  >
+                    <Sparkles size={14} />
+                    {recommendMutation.isPending ? 'Sending…' : 'Recommend & Notify Both'}
+                  </button>
+
+                  {recommendDone === selectedReq._id && (
+                    <p className="text-xs text-green-600 font-semibold text-center">✓ Both parties notified!</p>
                   )}
                 </div>
 
@@ -480,21 +527,62 @@ const RequirementManagement: React.FC = () => {
               {/* Action Buttons */}
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex flex-col gap-3 pb-8">
                 <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Actions</h4>
-                <div className="flex flex-col gap-2 mb-2 p-3 bg-white rounded-lg border border-slate-200">
-                  <label className="text-xs font-semibold text-slate-600">Assign Supplier</label>
-                  <div className="flex gap-2">
-                    <select className="flex-1 min-w-0 border border-slate-200 rounded text-sm px-2 py-1.5 outline-none focus:border-blue-500" value={selectedSupplierToAssign} onChange={e => setSelectedSupplierToAssign(e.target.value)}>
-                      <option value="">Select Supplier...</option>
-                      {sortedSuppliers.map(s => (
-                        <option key={s._id} value={s._id}>{s.businessName || s.name} (Comm: {s.commissionRate || 0}%)</option>
-                      ))}
-                    </select>
-                    <button className="shrink-0 px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-semibold hover:bg-blue-700 disabled:opacity-50" onClick={() => assignMutation.mutate({ id: selectedReq._id, supplierId: selectedSupplierToAssign })} disabled={!selectedSupplierToAssign || assignMutation.isPending}>
-                      {assignMutation.isPending ? '...' : 'Assign'}
-                    </button>
+                {/* Recommend supplier + product → notify both parties */}
+                <div className="flex flex-col gap-2.5 p-3 bg-white rounded-lg border border-slate-200">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-orange-500" />
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">Recommend Supplier & Notify</label>
                   </div>
-                  {selectedReq.assignedSupplierId && (
-                    <div className="mt-1 text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded inline-block">Assigned: {selectedReq.assignedSupplierId.businessName}</div>
+
+                  {/* Already recommended banner */}
+                  {selectedReq.assignedSupplierId && selectedReq.recommendedAt && (
+                    <div className="flex flex-col gap-0.5 text-xs bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                      <span className="font-bold text-green-700">✓ Matched: {selectedReq.assignedSupplierId.businessName}</span>
+                      {selectedReq.recommendedProductId && (
+                        <span className="text-green-600 flex items-center gap-1"><Package size={11} /> {selectedReq.recommendedProductId.name}</span>
+                      )}
+                      <span className="text-green-600">Notified on {new Date(selectedReq.recommendedAt).toLocaleDateString('en-IN')}</span>
+                    </div>
+                  )}
+
+                  <select
+                    className="w-full border border-slate-200 rounded text-sm px-2 py-1.5 outline-none focus:border-orange-400"
+                    value={selectedSupplierToAssign}
+                    onChange={e => setSelectedSupplierToAssign(e.target.value)}
+                  >
+                    <option value="">1. Select Supplier...</option>
+                    {sortedSuppliers.map(s => (
+                      <option key={s._id} value={s._id}>{s.businessName || s.name} ({s.commissionRate || 0}% comm)</option>
+                    ))}
+                  </select>
+
+                  {selectedSupplierToAssign && (
+                    <select
+                      className="w-full border border-slate-200 rounded text-sm px-2 py-1.5 outline-none focus:border-orange-400"
+                      value={selectedProductId}
+                      onChange={e => setSelectedProductId(e.target.value)}
+                    >
+                      <option value="">2. Select Product to Recommend...</option>
+                      {approvedProducts.length === 0
+                        ? <option disabled>No approved products for this supplier</option>
+                        : approvedProducts.map(p => (
+                            <option key={p._id ?? p.id} value={p._id ?? p.id}>{p.name}</option>
+                          ))
+                      }
+                    </select>
+                  )}
+
+                  <button
+                    className="w-full flex justify-center items-center gap-2 py-2 rounded-lg text-sm font-bold transition-colors bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!selectedSupplierToAssign || !selectedProductId || recommendMutation.isPending}
+                    onClick={() => recommendMutation.mutate({ id: selectedReq._id, supplierDocId: selectedSupplierToAssign, productId: selectedProductId })}
+                  >
+                    <Sparkles size={14} />
+                    {recommendMutation.isPending ? 'Sending notifications…' : 'Recommend & Notify Both Parties'}
+                  </button>
+
+                  {recommendDone === selectedReq._id && (
+                    <p className="text-xs text-green-600 font-semibold text-center">✓ Supplier and buyer notified successfully!</p>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-2">

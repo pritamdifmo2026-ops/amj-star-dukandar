@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Building2, Mail, Phone, ShieldCheck, Save, AlertCircle, PhoneCall, Plus, Edit2, Trash2, CheckCircle, Landmark, Check } from 'lucide-react';
+import { User, Building2, Mail, Phone, ShieldCheck, AlertCircle, PhoneCall, Plus, Edit2, Trash2, CheckCircle, Landmark, Check } from 'lucide-react';
 import { useIfscVerification } from '@/shared/hooks/useIfscVerification';
 import Button from '@/shared/components/ui/Button';
 import { toast } from 'react-hot-toast';
@@ -54,11 +54,18 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
   const contactPhone = rawPhone.length === 10 ? `+91 ${rawPhone.slice(0, 5)} ${rawPhone.slice(5)}` : rawPhone;
   const contactHref = rawPhone.length === 10 ? `tel:+91${rawPhone}` : '';
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
-  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
+  // Email update flow
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailLinkSent, setEmailLinkSent] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  // Phone update flow
+  const [editingPhone, setEditingPhone] = useState(false);
+  const [newPhone, setNewPhone] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otp, setOtp] = useState('');
+  const [isVerifyingPhone, setIsVerifyingPhone] = useState(false);
   const [showAddBank, setShowAddBank] = useState(false);
   const [bankForm, setBankForm] = useState({ accountHolderName: '', accountNumber: '', ifscCode: '', bankName: '' });
   const [bankErrors, setBankErrors] = useState<Record<string, string>>({});
@@ -120,49 +127,45 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to set primary bank'),
   });
 
-  const handleUpdate = () => { setIsEditing(false); toast.success('Settings updated!'); };
-
-  const handleEmailVerify = async () => {
-    if (!formData.email || !/^\S+@\S+\.\S+$/.test(formData.email)) { toast.error('Please enter a valid email address'); return; }
-    setIsVerifyingEmail(true);
-    try { await supplierService.requestEmailChange(formData.email); toast.success('Verification link sent to your new email!'); }
-    catch (err: any) { toast.error(err.response?.data?.message || 'Failed to send verification link'); }
-    finally { setIsVerifyingEmail(false); }
+  const handleSendEmailLink = async () => {
+    if (!newEmail || !/^\S+@\S+\.\S+$/.test(newEmail)) { toast.error('Please enter a valid email address'); return; }
+    setIsSendingEmail(true);
+    try {
+      await supplierService.requestEmailChange(newEmail);
+      setEmailLinkSent(true);
+    } catch (err: any) { toast.error(err?.response?.data?.message || 'Failed to send verification link'); }
+    finally { setIsSendingEmail(false); }
   };
 
-  const handlePhoneUpdate = async () => {
-    if (!formData.phone || formData.phone.length < 10) { toast.error('Please enter a valid phone number'); return; }
+  const handlePhoneGetOtp = async () => {
+    if (!newPhone || newPhone.replace(/\D/g, '').length < 10) { toast.error('Please enter a valid 10-digit phone number'); return; }
     setIsVerifyingPhone(true);
-    try { await supplierService.requestPhoneChange(formData.phone); setShowOtpInput(true); toast.success('OTP sent!'); }
-    catch (err: any) { toast.error(err.response?.data?.message || 'Failed to send OTP'); }
+    try { await supplierService.requestPhoneChange(newPhone.replace(/\D/g, '')); setShowOtpInput(true); toast.success('OTP sent!'); }
+    catch (err: any) { toast.error(err?.response?.data?.message || 'Failed to send OTP'); }
     finally { setIsVerifyingPhone(false); }
   };
 
-  const handlePhoneVerify = async () => {
+  const handlePhoneVerifyOtp = async () => {
     if (otp.length !== 6) { toast.error('Please enter a valid 6-digit OTP'); return; }
     setIsVerifyingPhone(true);
-    try { await supplierService.verifyPhoneChange(otp); toast.success('Phone number updated!'); setShowOtpInput(false); setOtp(''); }
-    catch (err: any) { toast.error(err.response?.data?.message || 'Invalid or expired OTP'); }
+    try {
+      await supplierService.verifyPhoneChange(otp);
+      toast.success('Phone number updated!');
+      setFormData(p => ({ ...p, phone: newPhone.replace(/\D/g, '') }));
+      setEditingPhone(false); setShowOtpInput(false); setOtp(''); setNewPhone('');
+    } catch (err: any) { toast.error(err?.response?.data?.message || 'Invalid or expired OTP'); }
     finally { setIsVerifyingPhone(false); }
   };
 
-  const verifyBtnCls = "px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-[6px] border-none cursor-pointer shrink-0 hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed";
+  const actionBtnCls = "px-3 py-1.5 text-xs font-bold rounded-[6px] border-none cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed";
+  const primaryBtnCls = `${actionBtnCls} bg-primary text-white hover:opacity-90`;
+  const outlineBtnCls = `${actionBtnCls} bg-transparent text-[#64748b] border border-[#e2e8f0] hover:bg-[#f8fafc]`;
 
   return (
     <div className="max-w-[900px]">
-      <header className="flex justify-between items-start mb-8 max-sm:flex-col max-sm:gap-4">
-        <div>
-          <h2 className="text-[1.75rem] text-[#0f172a] font-extrabold m-0 mb-1">Account Settings</h2>
-          <p className="text-[#64748b] m-0 text-[0.95rem]">Manage your account details and business information</p>
-        </div>
-        {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
-        ) : (
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-            <Button onClick={handleUpdate} className="flex items-center gap-2"><Save size={18} /> Save Changes</Button>
-          </div>
-        )}
+      <header className="mb-8">
+        <h2 className="text-[1.75rem] text-[#0f172a] font-extrabold m-0 mb-1">Account Settings</h2>
+        <p className="text-[#64748b] m-0 text-[0.95rem]">Manage your account details and business information</p>
       </header>
 
       <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1">
@@ -183,30 +186,104 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               </div>
             ))}
 
+            {/* Email */}
             <div>
               <label className={labelCls}>Email Address</label>
-              <div className={inputWrapCls}>
-                <Mail size={16} className="text-[#94a3b8] shrink-0" />
-                <input className={inputCls} type="email" value={formData.email} disabled={!isEditing} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-                <button className={verifyBtnCls} onClick={handleEmailVerify} disabled={isVerifyingEmail}>{isVerifyingEmail ? 'Sending...' : 'Verify'}</button>
-              </div>
+              {!editingEmail ? (
+                <div className={inputWrapCls}>
+                  <Mail size={16} className="text-[#94a3b8] shrink-0" />
+                  <span className="flex-1 text-sm text-[#1e293b]">{formData.email || '—'}</span>
+                  <button className={primaryBtnCls} onClick={() => { setEditingEmail(true); setNewEmail(formData.email); setEmailLinkSent(false); }}>
+                    Update
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className={inputWrapCls}>
+                    <Mail size={16} className="text-[#94a3b8] shrink-0" />
+                    <input
+                      className={inputCls}
+                      type="email"
+                      value={newEmail}
+                      onChange={e => { setNewEmail(e.target.value); setEmailLinkSent(false); }}
+                      placeholder="Enter new email address"
+                      autoFocus
+                    />
+                  </div>
+                  {!emailLinkSent ? (
+                    <div className="flex gap-2">
+                      <button className={outlineBtnCls} onClick={() => { setEditingEmail(false); setEmailLinkSent(false); }}>Cancel</button>
+                      <button className={primaryBtnCls} onClick={handleSendEmailLink} disabled={isSendingEmail}>
+                        {isSendingEmail ? 'Sending…' : 'Send Verification Link'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-2 bg-[#f0fdf4] border border-[#86efac] rounded-[8px] px-3 py-2.5">
+                      <CheckCircle size={15} className="text-[#16a34a] shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-[#15803d] m-0">Verification link sent to <span className="font-bold">{newEmail}</span>. Click the link in your inbox to confirm the change.</p>
+                      </div>
+                      <button className={outlineBtnCls} onClick={handleSendEmailLink} disabled={isSendingEmail}>Resend</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
+            {/* Phone */}
             <div>
               <label className={labelCls}>Phone Number</label>
-              <div className={inputWrapCls}>
-                <Phone size={16} className="text-[#94a3b8] shrink-0" />
-                <input className={inputCls} type="tel" value={formData.phone} disabled={!isEditing} maxLength={10} onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })} />
-                <button className={verifyBtnCls} onClick={handlePhoneUpdate} disabled={isVerifyingPhone}>{isVerifyingPhone ? 'Sending...' : 'Update'}</button>
-              </div>
-              {showOtpInput && (
-                <div className="mt-3">
+              {!editingPhone ? (
+                <div className={inputWrapCls}>
+                  <Phone size={16} className="text-[#94a3b8] shrink-0" />
+                  <span className="flex-1 text-sm text-[#1e293b]">{formData.phone || '—'}</span>
+                  <button className={primaryBtnCls} onClick={() => { setEditingPhone(true); setNewPhone(''); setShowOtpInput(false); setOtp(''); }}>
+                    Update
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
                   <div className={inputWrapCls}>
-                    <ShieldCheck size={16} className="text-[#94a3b8] shrink-0" />
-                    <input className={inputCls} type="text" placeholder="Enter 6-digit OTP" value={otp} maxLength={6} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} />
-                    <button className={verifyBtnCls} onClick={handlePhoneVerify} disabled={isVerifyingPhone}>{isVerifyingPhone ? 'Verifying...' : 'Verify OTP'}</button>
+                    <Phone size={16} className="text-[#94a3b8] shrink-0" />
+                    <input
+                      className={inputCls}
+                      type="tel"
+                      value={newPhone}
+                      maxLength={10}
+                      onChange={e => { setNewPhone(e.target.value.replace(/\D/g, '')); setShowOtpInput(false); setOtp(''); }}
+                      placeholder="Enter new 10-digit number"
+                      autoFocus
+                    />
                   </div>
-                  <p className="text-[#64748b] text-xs mt-1">Use dummy OTP: <strong className="text-[#0284c7]">123456</strong></p>
+                  {!showOtpInput ? (
+                    <div className="flex gap-2">
+                      <button className={outlineBtnCls} onClick={() => { setEditingPhone(false); setShowOtpInput(false); setOtp(''); }}>Cancel</button>
+                      <button className={primaryBtnCls} onClick={handlePhoneGetOtp} disabled={isVerifyingPhone}>
+                        {isVerifyingPhone ? 'Sending…' : 'Get OTP'}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className={inputWrapCls}>
+                        <ShieldCheck size={16} className="text-[#94a3b8] shrink-0" />
+                        <input
+                          className={inputCls}
+                          type="text"
+                          placeholder="Enter 6-digit OTP"
+                          value={otp}
+                          maxLength={6}
+                          onChange={e => setOtp(e.target.value.replace(/\D/g, ''))}
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button className={outlineBtnCls} onClick={() => { setEditingPhone(false); setShowOtpInput(false); setOtp(''); }}>Cancel</button>
+                        <button className={primaryBtnCls} onClick={handlePhoneVerifyOtp} disabled={isVerifyingPhone}>
+                          {isVerifyingPhone ? 'Verifying…' : 'Verify OTP'}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>

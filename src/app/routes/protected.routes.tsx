@@ -11,6 +11,7 @@ import ResellerDashboard from '@/features/reseller/pages/ResellerDashboard';
 import ResellerOnboarding from '@/features/reseller/pages/ResellerOnboarding';
 import ResellerGuard from '@/features/reseller/components/ResellerGuard';
 import ForceChangePassword from '@/features/admin/pages/ForceChangePassword';
+import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 
 export const protectedRoutes: RouteObject[] = [
   {
@@ -80,6 +81,14 @@ export const protectedRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
         <AdminDashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/notifications',
+    element: (
+      <ProtectedRoute>
+        <NotificationsPage />
       </ProtectedRoute>
     ),
   },
