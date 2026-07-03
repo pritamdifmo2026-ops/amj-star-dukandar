@@ -72,6 +72,7 @@ const SupplierDashboard: React.FC = () => {
   const [previousTab, setPreviousTab] = useState('overview');
   const [emailVerifySent, setEmailVerifySent] = useState(false);
   const [emailVerifySending, setEmailVerifySending] = useState(false);
+  const [emailVerifySentTo, setEmailVerifySentTo] = useState('');
 
   const { data: unreadEnquiries = 0 } = useQuery<number>({
     queryKey: ['chat', 'unreadCount'],
@@ -296,7 +297,8 @@ const SupplierDashboard: React.FC = () => {
           const handleSendVerification = async () => {
             setEmailVerifySending(true);
             try {
-              await supplierService.requestEmailChange(supplierEmail);
+              const result = await supplierService.sendVerificationEmail();
+              setEmailVerifySentTo(result.sentTo || '');
               setEmailVerifySent(true);
             } catch (err: any) {
               toast.error(err?.response?.data?.message || 'Failed to send verification email');
@@ -311,7 +313,7 @@ const SupplierDashboard: React.FC = () => {
                 <p className="font-bold text-sm m-0">Verify your email address</p>
                 <p className="text-sm m-0 mt-0.5">
                   {emailVerifySent
-                    ? <>Verification link sent to <span className="font-semibold">{supplierEmail}</span>. Check your inbox and click the link to verify.</>
+                    ? <>Verification link sent to <span className="font-semibold">{emailVerifySentTo}</span>. Check your inbox and click the link to verify.</>
                     : <>Your email <span className="font-semibold">{supplierEmail}</span> is not verified yet. Verify to secure your account and receive important order updates.</>
                   }
                 </p>
