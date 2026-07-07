@@ -12,6 +12,7 @@ import ResellerOnboarding from '@/features/reseller/pages/ResellerOnboarding';
 import ResellerGuard from '@/features/reseller/components/ResellerGuard';
 import ForceChangePassword from '@/features/admin/pages/ForceChangePassword';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
+import OrderDetailPage from '@/features/buyer/pages/OrderDetailPage';
 
 export const protectedRoutes: RouteObject[] = [
   {
@@ -19,6 +20,14 @@ export const protectedRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute allowedRoles={['buyer']}>
         <Profile />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/orders/:id',
+    element: (
+      <ProtectedRoute allowedRoles={['buyer', 'supplier']}>
+        <OrderDetailPage />
       </ProtectedRoute>
     ),
   },

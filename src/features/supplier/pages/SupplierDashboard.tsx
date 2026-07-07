@@ -7,8 +7,10 @@ import logo from '@/assets/logoo.png';
 import productService from '@/features/product/services/product.service';
 import supplierService from '../services/supplier.service';
 import { useSocket } from '@/shared/contexts/SocketContext';
+import { notificationApi } from '@/features/notifications/notificationApi';
 import toast from 'react-hot-toast';
 import { chatApi } from '@/features/chat/services/chat.api';
+import { orderApi } from '@/features/order/services/order.api';
 import Button from '@/shared/components/ui/Button';
 import {
   LayoutDashboard, Package, LogOut, Trash2, FileText, MessageCircle,
@@ -55,8 +57,7 @@ const SupplierDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [walletAlertNotif, setWalletAlertNotif] = useState<{ body: string } | null>(null);
-  const walletAlertCountRef = React.useRef(0);
+  const [walletAlertNotif, setWalletAlertNotif] = useState<{ _id: string; body: string } | null>(null);
   const { socket } = useSocket();
   const [rejectionReasonModal, setRejectionReasonModal] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -81,6 +82,12 @@ const SupplierDashboard: React.FC = () => {
   const { data: unreadEnquiries = 0 } = useQuery<number>({
     queryKey: ['chat', 'unreadCount'],
     queryFn: () => chatApi.getUnreadCount(),
+    refetchInterval: 30_000,
+  });
+
+  const { data: activeOrderCount = 0 } = useQuery<number>({
+    queryKey: ['orders', 'supplierActiveCount'],
+    queryFn: () => orderApi.supplierActiveOrderCount(),
     refetchInterval: 30_000,
   });
 
@@ -118,7 +125,7 @@ const SupplierDashboard: React.FC = () => {
   const supplierMenu: MenuItem[] = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'inventory', label: 'My Products', icon: Package },
-    { id: 'orders', label: 'Orders', icon: ShoppingBag },
+    { id: 'orders', label: 'Orders', icon: ShoppingBag, badge: activeOrderCount || undefined },
     { id: 'partnerships', label: 'Reseller Partnerships', icon: Handshake },
     { id: 'enquiry', label: 'Enquiry', icon: MessageCircle, badge: unreadEnquiries || undefined },
     { id: 'quotations', label: 'Quotations', icon: FileText },
@@ -148,18 +155,37 @@ const SupplierDashboard: React.FC = () => {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  // Real-time wallet_low notification — show popup up to 3 times per session
+  // On mount: if there's an unread wallet_low notification from before a refresh, re-show the popup
+  useEffect(() => {
+    notificationApi.getAll().then(list => {
+      const unread = list.find(n => n.type === 'wallet_low' && !n.isRead);
+      if (unread) setWalletAlertNotif({ _id: unread._id, body: unread.body });
+    }).catch(() => {});
+  }, []);
+
+  // Real-time wallet_low notification — persists until the supplier explicitly dismisses it
   useEffect(() => {
     if (!socket) return;
     const handler = (notif: any) => {
       if (notif.type !== 'wallet_low') return;
-      if (walletAlertCountRef.current >= 3) return;
-      walletAlertCountRef.current += 1;
-      setWalletAlertNotif({ body: notif.body });
+      setWalletAlertNotif({ _id: notif._id, body: notif.body });
     };
     socket.on('bell_notification', handler);
     return () => { socket.off('bell_notification', handler); };
   }, [socket]);
+
+  // Refresh the Orders sidebar badge instantly on any order status change
+  useEffect(() => {
+    if (!socket) return;
+    const handler = () => queryClient.invalidateQueries({ queryKey: ['orders', 'supplierActiveCount'] });
+    socket.on('order_update', handler);
+    return () => { socket.off('order_update', handler); };
+  }, [socket, queryClient]);
+
+  const dismissWalletAlert = () => {
+    if (walletAlertNotif) notificationApi.markRead(walletAlertNotif._id).catch(() => {});
+    setWalletAlertNotif(null);
+  };
 
   const handleAddProduct = () => { setPreviousTab(activeView); setActiveView('add-product'); };
   const handleEdit = (product: any) => { setPreviousTab(activeView); setEditingProduct(product); setActiveView('edit-product'); };
@@ -478,16 +504,16 @@ const SupplierDashboard: React.FC = () => {
             <p className="text-sm text-[#64748b] mb-6">{walletAlertNotif.body}</p>
             <div className="flex gap-3 w-full">
               <button
-                onClick={() => setWalletAlertNotif(null)}
+                onClick={dismissWalletAlert}
                 className="flex-1 py-2.5 rounded-xl border border-[#e2e8f0] text-sm text-[#64748b] hover:bg-[#f8fafc] transition-colors"
               >
                 Dismiss
               </button>
               <button
-                onClick={() => { setWalletAlertNotif(null); setActiveView('wallet'); }}
+                onClick={() => { dismissWalletAlert(); setActiveView('wallet'); }}
                 className="flex-1 py-2.5 rounded-xl bg-[#059669] text-white text-sm font-semibold hover:bg-[#047857] transition-colors"
               >
-                Recharge Now
+                Top-up
               </button>
             </div>
           </div>

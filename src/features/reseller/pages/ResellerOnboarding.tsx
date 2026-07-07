@@ -172,10 +172,10 @@ const ResellerOnboarding: React.FC = () => {
     }
     if (step === 3) {
       if (!primarySellingMethod) errors.primarySellingMethod = 'Primary selling method is required';
-    }
-    if (step === 4) {
       if (!monthlyVolume) errors.monthlyVolume = 'Monthly sales volume is required';
       if (!reach) errors.reach = 'Selling reach is required';
+    }
+    if (step === 4) {
       if (!experience) errors.experience = 'Experience level is required';
     }
     if (step === 5) {

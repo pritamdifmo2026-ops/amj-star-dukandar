@@ -195,7 +195,10 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
   const [categoriesError, setCategoriesError] = useState(false);
 
   const isDraftProduct = editingProduct?.status === 'DRAFT';
-  const isEditingPublished = !!editingProduct && !isDraftProduct;
+  const isRejectedProduct = editingProduct?.status === 'REJECTED';
+  // Rejected products go through full validation on resubmit — a rejection is often
+  // caused by a missing/invalid required field, so re-editing must catch that again.
+  const isEditingPublished = !!editingProduct && !isDraftProduct && !isRejectedProduct;
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -475,7 +478,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
           <div className="flex items-center gap-2">
             <Package size={22} className="text-primary" />
             <h2 className="text-lg font-extrabold text-[#0f172a] m-0">
-              {editingProduct ? (isDraftProduct ? 'Edit Draft Product' : 'Edit Product') : 'Add New Product'}
+              {editingProduct ? (isDraftProduct ? 'Edit Draft Product' : isRejectedProduct ? 'Fix & Resubmit Product' : 'Edit Product') : 'Add New Product'}
             </h2>
           </div>
         </div>

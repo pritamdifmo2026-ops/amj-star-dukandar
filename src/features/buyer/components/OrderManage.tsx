@@ -3,7 +3,7 @@ import { orderApi } from '@/features/order/services/order.api';
 import apiClient from '@/api/client';
 import {
   ArrowLeft, Phone, Mail, Package, Truck, Boxes, CheckCircle, AlertTriangle,
-  Clock, XCircle, Download, Star, Upload, X, ShieldCheck, Wifi,
+  Clock, XCircle, Download, Star, Upload, X, ShieldCheck, Wifi, Link2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -334,12 +334,22 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         <button onClick={onBack} className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-[#475569] bg-white border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f8fafc]">
           <ArrowLeft size={15} /> Back to Orders
         </button>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap flex-1">
           <span className="text-sm font-extrabold text-[#0f172a] bg-[#e2e8f0] px-3 py-1 rounded-full">{order.orderNumber}</span>
           <span className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border" style={{ color: cfg.color, backgroundColor: cfg.bg, borderColor: cfg.border }}>
             <StatusIcon size={12} /> {cfg.label}
           </span>
         </div>
+        <button
+          onClick={() => {
+            const url = `${window.location.origin}/orders/${order._id}`;
+            navigator.clipboard.writeText(url).then(() => toast.success('Order link copied!'));
+          }}
+          className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-[#475569] bg-white border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f8fafc] shrink-0"
+          title="Copy shareable link"
+        >
+          <Link2 size={14} /> Share
+        </button>
       </div>
 
       {/* Lifecycle stepper */}

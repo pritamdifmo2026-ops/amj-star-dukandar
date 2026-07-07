@@ -14,6 +14,11 @@ export const orderApi = {
     return res.data;
   },
 
+  supplierActiveOrderCount: async (): Promise<number> => {
+    const res = await apiClient.get(ENDPOINTS.ORDERS.SUPPLIER_ACTIVE_COUNT);
+    return res.data.count;
+  },
+
   detail: async (id: string): Promise<Order> => {
     const res = await apiClient.get(ENDPOINTS.ORDERS.DETAIL(id));
     return res.data;

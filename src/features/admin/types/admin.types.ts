@@ -8,6 +8,12 @@ export interface AdminStats {
   activeUsers: number;
   totalProducts: number;
   monthlySignups: { month: string; users: number }[];
+  totalOrders: number;
+  totalGMV: number;
+  totalCommissionEarned: number;
+  totalListingFeesEarned: number;
+  ordersByStatus: { status: string; count: number }[];
+  monthlyRevenue: { month: string; gmv: number; commission: number }[];
 }
 
 export interface AdminSupplier {

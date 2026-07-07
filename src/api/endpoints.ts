@@ -22,6 +22,7 @@ export const ENDPOINTS = {
   ORDERS: {
     LIST: '/orders',
     SUPPLIER_LIST: '/orders/supplier',
+    SUPPLIER_ACTIVE_COUNT: '/orders/supplier/active-count',
     DETAIL: (id: string | number) => `/orders/${id}`,
     CREATE: '/orders',
     UPDATE_STATUS: (id: string | number) => `/orders/${id}/status`,
