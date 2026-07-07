@@ -8,6 +8,7 @@ import Register from '@/features/auth/pages/Register';
 import VerifyEmail from '@/features/auth/pages/VerifyEmail';
 import Landing from '@/features/landing/pages/Landing';
 import ProductDetail from '@/features/product/pages/ProductDetail';
+import ProductList from '@/features/product/pages/ProductList';
 import AddProduct from '@/features/product/pages/AddProduct';
 import AdminLogin from '@/features/admin/pages/AdminLogin';
 import StorefrontDispatcher from '@/pages/StorefrontDispatcher';
@@ -79,7 +80,7 @@ export const publicRoutes: RouteObject[] = [
   },
   {
     path: ROUTES.PRODUCT_LIST,
-    element: <Navigate to="/" replace />,
+    element: <ProductList />,
   },
   {
     path: ROUTES.PRODUCT_DETAIL,
