@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { ArrowLeft, Phone, Loader2 } from 'lucide-react';
 import authService from '../services/auth.service';
+import { useAppSelector } from '@/store/hooks';
 
 const modeConfig = {
   buyer: {
@@ -37,6 +38,18 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = (searchParams.get('mode') || 'buyer') as keyof typeof modeConfig;
+
+  const { isAuthenticated, user } = useAppSelector(s => s.auth);
+  if (isAuthenticated && user) {
+    const roleRedirect: Record<string, string> = {
+      supplier: '/supplier/dashboard',
+      reseller: '/reseller/dashboard',
+      admin: '/admin/dashboard',
+      superadmin: '/admin/dashboard',
+      buyer: '/profile',
+    };
+    return <Navigate to={roleRedirect[user.role] ?? '/'} replace />;
+  }
 
   const cfg = modeConfig[mode] ?? modeConfig.buyer;
 

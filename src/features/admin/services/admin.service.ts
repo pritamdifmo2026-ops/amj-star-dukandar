@@ -215,7 +215,12 @@ const adminService = {
     return response.data.settings;
   },
 
-  updatePlatformSettings: async (data: { minimumWalletBalance?: number; minimumWithdrawalAmount?: number; contactPhone?: string }) => {
+  updatePlatformSettings: async (data: {
+    minimumWalletBalance?: number;
+    minimumWithdrawalAmount?: number;
+    contactPhone?: string;
+    planPrices?: { VERIFIED?: number; GAMMA?: number; BETA?: number };
+  }) => {
     const response = await api.put('/admin/platform-settings', data);
     return response.data.settings;
   },

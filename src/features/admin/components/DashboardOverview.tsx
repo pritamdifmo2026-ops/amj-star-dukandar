@@ -13,13 +13,7 @@ interface DashboardOverviewProps {
 const COLORS = ['oklch(0.55 0.16 38)', '#ec4899', '#6366f1'];
 
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
-  const growthData = [
-    { name: 'Jan', users: Math.floor(stats.totalUsers * 0.4) },
-    { name: 'Feb', users: Math.floor(stats.totalUsers * 0.55) },
-    { name: 'Mar', users: Math.floor(stats.totalUsers * 0.7) },
-    { name: 'Apr', users: Math.floor(stats.totalUsers * 0.85) },
-    { name: 'May', users: stats.totalUsers },
-  ];
+  const growthData = (stats.monthlySignups ?? []).map(m => ({ name: m.month, users: m.users }));
 
   const userData = [
     { name: 'Suppliers', value: stats.totalSuppliers },
@@ -27,7 +21,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
     { name: 'Buyers', value: stats.totalUsers - stats.totalSuppliers - stats.totalResellers },
   ];
 
-  const totalProductsCount = stats.totalProducts || stats.pendingProducts + 10;
+  const totalProductsCount = stats.totalProducts;
   const productData = [
     { name: 'Pending', count: stats.pendingProducts, fill: '#f59e0b' },
     { name: 'Active', count: Math.max(0, totalProductsCount - stats.pendingProducts), fill: '#10b981' },

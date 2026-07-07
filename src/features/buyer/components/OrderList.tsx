@@ -89,6 +89,13 @@ const OrderList: React.FC = () => {
         const map = new Map(disputed.map((o, i) => [o._id, disputes[i]]));
         list.forEach(o => { if (map.has(o._id)) o._dispute = map.get(o._id); });
       }
+      const DONE = new Set(['completed', 'delivered', 'cancelled']);
+      list.sort((a, b) => {
+        const aDone = DONE.has(a.status) ? 1 : 0;
+        const bDone = DONE.has(b.status) ? 1 : 0;
+        if (aDone !== bDone) return aDone - bDone;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
       setOrders(list);
       // keep the managed order's dispute data fresh if its card is open
       setManageOrder((cur: any) => cur ? (list.find(o => o._id === cur._id) ?? cur) : cur);

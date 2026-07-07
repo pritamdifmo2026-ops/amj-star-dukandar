@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { clearCart } from '@/features/buyer/store/cart.slice';
 import apiClient from '@/api/client';
 import {
   ShoppingBag, MapPin, Plus, Truck, ArrowLeft,
-  CheckCircle, Package, AlertCircle, Wallet, CreditCard,
-  ChevronRight, Receipt
+  CheckCircle, Package, AlertCircle, X,
+  ChevronRight, Receipt, Handshake, FileText
 } from 'lucide-react';
 import { addressApi } from '@/features/buyer/services/address.api';
-
-const GST_RATE = 0.18;
+import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
+import { pincodeToState, normaliseState, getShippingZone } from '@/shared/utils/pincodeToState';
 
 interface CheckoutItem {
   productId: string;
@@ -21,6 +22,10 @@ interface CheckoutItem {
   supplierId: string;
   imageUrl?: string;
   moq: number;
+  gstRate?: number;
+  gstIncluded?: boolean;
+  supplierState?: string;
+  shippingRates?: { local: number; regional: number; national: number };
 }
 
 interface CheckoutContentProps {
@@ -33,7 +38,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector(state => state.cart.items);
-
+  const user = useAppSelector(state => state.auth.user) as any;
 
   const items: CheckoutItem[] = buyNowItem ? [buyNowItem] : (cartItems as CheckoutItem[]);
   const isBuyNow = !!buyNowItem;
@@ -43,24 +48,89 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placedOrders, setPlacedOrders] = useState<any[] | null>(null);
+  const [showDealPanel, setShowDealPanel] = useState(false);
+  const [dealPayMethod, setDealPayMethod] = useState<'direct' | 'amjstar'>('direct');
+  const [dealAck, setDealAck] = useState(false);
 
-  // Fetch addresses
+  // Fetch saved addresses; fall back to profile address if none saved yet
   useEffect(() => {
     addressApi.getAddresses().then(data => {
-      setAddresses(data);
-      const def = data.find((a: any) => a.isDefault) || data[0];
+      let all: any[] = data;
+      if (all.length === 0 && user?.address?.city) {
+        all = [{
+          _id: 'profile-address',
+          fullName: user.name || '',
+          phone: user.phone || '',
+          pincode: user.address.pincode || '',
+          state: user.address.state || '',
+          city: user.address.city || '',
+          houseNo: user.address.fullAddress || '',
+          area: '',
+          isDefault: true,
+        }];
+      }
+      setAddresses(all);
+      const def = all.find((a: any) => a.isDefault) || all[0];
       if (def) setSelectedAddressId(def._id);
     }).catch(() => {});
   }, []);
 
   const selectedAddress = addresses.find(a => a._id === selectedAddressId) || addresses[0];
+  const buyerState = selectedAddress?.pincode ? pincodeToState(selectedAddress.pincode) : null;
 
-  // Financials
-  const taxableAmount  = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
-  const gstAmount      = Math.round(taxableAmount * GST_RATE * 100) / 100;
-  const grandTotal     = taxableAmount + gstAmount;
+  // GST + shipping — same logic as Cart.tsx
+  const financials = items.reduce((acc, item) => {
+    const rate = item.gstRate ?? 18;
+    const qty = item.quantity;
+    let basePerUnit: number;
+    let gstPerUnit: number;
+    if (item.gstIncluded) {
+      basePerUnit = priceWithoutGST(item.price, rate);
+      gstPerUnit = item.price - basePerUnit;
+    } else {
+      basePerUnit = item.price;
+      gstPerUnit = calculateGST(item.price, rate);
+    }
+    acc.subtotal += basePerUnit * qty;
+    if (rate > 0) {
+      const gstAmt = gstPerUnit * qty;
+      if (buyerState && item.supplierState) {
+        const isIntra = normaliseState(item.supplierState) === buyerState;
+        if (isIntra) {
+          acc.cgstSgst[rate] = (acc.cgstSgst[rate] || 0) + gstAmt;
+        } else {
+          acc.igst[rate] = (acc.igst[rate] || 0) + gstAmt;
+        }
+      } else {
+        acc.igst[rate] = (acc.igst[rate] || 0) + gstAmt;
+      }
+    }
+    return acc;
+  }, { subtotal: 0, cgstSgst: {} as Record<number, number>, igst: {} as Record<number, number> });
 
-  const handlePlaceOrder = async (paymentMethod: 'cod') => {
+  const totalGst = [...Object.values(financials.cgstSgst), ...Object.values(financials.igst)].reduce((s, v) => s + v, 0);
+
+  // Shipping: one charge per unique supplier
+  const shippingBySupplierId = Object.fromEntries(
+    Object.entries(
+      items.reduce((acc, item) => {
+        if (!acc[item.supplierId]) acc[item.supplierId] = item;
+        return acc;
+      }, {} as Record<string, CheckoutItem>)
+    ).map(([sid, item]) => {
+      if (!buyerState || !item.supplierState || !item.shippingRates) return [sid, null];
+      const zone = getShippingZone(buyerState, item.supplierState);
+      return [sid, { zone, cost: item.shippingRates[zone] }];
+    })
+  );
+  const totalShipping = buyerState
+    ? Object.values(shippingBySupplierId).reduce((s, v) => s + (v?.cost ?? 0), 0)
+    : 0;
+
+  const taxableAmount = financials.subtotal;
+  const grandTotal = taxableAmount + totalGst + totalShipping;
+
+  const handlePlaceOrder = async (paymentMethod: 'direct') => {
     if (!selectedAddress) { setError('Please add a delivery address.'); return; }
     setPlacing(true); setError(null);
     try {
@@ -108,10 +178,10 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
         <div className="w-full bg-[#f8fafc] border border-[#eef2f6] rounded-[12px] p-5 text-left">
           <div className="flex items-start gap-3 mb-3">
-            <Truck size={18} className="text-primary shrink-0 mt-0.5" />
+            <Handshake size={18} className="text-primary shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-bold text-[#0f172a] m-0">Cash on Delivery</p>
-              <p className="text-xs text-[#64748b] m-0 mt-0.5">Pay when your order arrives · 5–7 business days</p>
+              <p className="text-sm font-bold text-[#0f172a] m-0">Direct Payment to Supplier</p>
+              <p className="text-xs text-[#64748b] m-0 mt-0.5">Coordinate payment directly with your supplier</p>
             </div>
           </div>
           {selectedAddress && (
@@ -128,17 +198,22 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         </div>
 
         <div className="flex flex-col gap-3 w-full">
+          {placedOrders.map(order => order._id && (
+            <a
+              key={order._id}
+              href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '')}/api/orders/${order._id}/po-download`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white border-2 border-[#059669] text-[#059669] font-bold text-sm rounded-[10px] no-underline hover:bg-[#f0fdf4] transition-colors"
+            >
+              <FileText size={16} /> Download PO {order.poNumber ? `(${order.poNumber})` : ''}
+            </a>
+          ))}
           <button
             onClick={() => { if (onOrderPlaced) onOrderPlaced(); else navigate('/profile?tab=orders'); }}
             className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-white font-bold text-sm rounded-[10px] border-none cursor-pointer hover:opacity-90"
           >
             <Package size={16} /> Track My Orders <ChevronRight size={15} />
-          </button>
-          <button
-            onClick={() => navigate('/products')}
-            className="w-full text-sm text-[#64748b] bg-transparent border border-[#e2e8f0] rounded-[10px] py-2.5 cursor-pointer hover:border-primary hover:text-primary transition-colors"
-          >
-            Continue Shopping
           </button>
         </div>
       </div>
@@ -231,19 +306,50 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
             <div className="px-5 py-4 bg-[#f8fafc] border-t border-[#eef2f6] flex flex-col gap-2.5 text-sm">
               <div className="flex justify-between text-[#475569]">
                 <span>Taxable Amount</span>
-                <span>₹{taxableAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>₹{Math.round(taxableAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
+
+              {/* CGST + SGST (intra-state) */}
+              {Object.entries(financials.cgstSgst).map(([rateStr, amt]) => {
+                const rate = Number(rateStr);
+                const half = rate / 2;
+                const halfAmt = Math.round(amt / 2);
+                return (
+                  <React.Fragment key={`intra-${rate}`}>
+                    <div className="flex justify-between text-[#475569]">
+                      <span>CGST @{half}%</span>
+                      <span>₹{halfAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex justify-between text-[#475569]">
+                      <span>SGST @{half}%</span>
+                      <span>₹{halfAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </React.Fragment>
+                );
+              })}
+
+              {/* IGST (inter-state) */}
+              {Object.entries(financials.igst).map(([rateStr, amt]) => (
+                <div key={`igst-${rateStr}`} className="flex justify-between text-[#475569]">
+                  <span>IGST @{rateStr}%</span>
+                  <span>₹{Math.round(amt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                </div>
+              ))}
+
+              {/* Shipping */}
               <div className="flex justify-between text-[#475569]">
-                <span>IGST @ 18%</span>
-                <span>₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>Shipping</span>
+                <span className={totalShipping === 0 ? 'text-[#059669] font-semibold' : ''}>
+                  {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN')}`}
+                </span>
               </div>
+
               <div className="flex justify-between items-center pt-2.5 border-t border-[#e2e8f0]">
                 <span className="font-extrabold text-[#0f172a] text-base">Grand Total</span>
                 <span className="font-extrabold text-[#0f172a] text-base">
-                  ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  ₹{Math.round(grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                 </span>
               </div>
-              <p className="text-[10px] text-[#94a3b8] m-0">* GST @ 18% (IGST) applicable as per current tax regulations.</p>
             </div>
           </div>
 
@@ -309,16 +415,19 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
             <h3 className="text-sm font-extrabold text-[#0f172a] m-0 mb-3">Summary</h3>
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between text-[#475569]">
-                <span>Subtotal</span><span>₹{taxableAmount.toLocaleString('en-IN')}</span>
+                <span>Subtotal</span><span>₹{Math.round(taxableAmount).toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-[#475569]">
-                <span>GST (18%)</span><span>₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>GST</span><span>₹{Math.round(totalGst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-[#475569]">
-                <span>Shipping</span><span className="text-[#059669] font-semibold">Free</span>
+                <span>Shipping</span>
+                <span className={totalShipping === 0 ? 'text-[#059669] font-semibold' : ''}>
+                  {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN')}`}
+                </span>
               </div>
               <div className="flex justify-between font-extrabold text-[#0f172a] text-base pt-2.5 border-t border-[#f1f5f9] mt-1">
-                <span>Total</span><span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>Total</span><span>₹{Math.round(grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -333,40 +442,20 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               </div>
             )}
 
-            {/* COD */}
             <button
-              onClick={() => handlePlaceOrder('cod')}
-              disabled={placing || !selectedAddress}
-              className="w-full flex items-center gap-3 p-4 bg-[#f0fdf4] border-2 border-[#86efac] rounded-[10px] mb-3 text-left cursor-pointer hover:border-[#22c55e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+              onClick={() => setShowDealPanel(true)}
+              disabled={!selectedAddress}
+              className="w-full flex items-center gap-3 p-4 bg-[#f0fdf4] border-2 border-[#86efac] rounded-[10px] text-left cursor-pointer hover:border-[#22c55e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
             >
               <div className="w-10 h-10 rounded-[8px] bg-white border border-[#86efac] flex items-center justify-center shrink-0 group-hover:border-[#22c55e]">
-                <Wallet size={18} className="text-[#16a34a]" />
+                <Handshake size={18} className="text-[#16a34a]" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-[#15803d] m-0">
-                  {placing ? 'Placing order...' : 'Cash on Delivery'}
-                </p>
-                <p className="text-xs text-[#64748b] m-0">Pay when your order arrives</p>
+                <p className="text-sm font-bold text-[#15803d] m-0">Confirm Deal</p>
+                <p className="text-xs text-[#64748b] m-0">Choose your payment method</p>
               </div>
-              {!placing && <ChevronRight size={16} className="text-[#16a34a] shrink-0" />}
-              {placing && (
-                <svg className="animate-spin shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="#16a34a" strokeWidth="3" strokeDasharray="60" strokeDashoffset="15" />
-                </svg>
-              )}
+              <ChevronRight size={16} className="text-[#16a34a] shrink-0" />
             </button>
-
-            {/* Online (coming soon) */}
-            <div className="w-full flex items-center gap-3 p-4 bg-[#f8fafc] border-2 border-[#e2e8f0] rounded-[10px] opacity-60 cursor-not-allowed">
-              <div className="w-10 h-10 rounded-[8px] bg-white border border-[#e2e8f0] flex items-center justify-center shrink-0">
-                <CreditCard size={18} className="text-[#94a3b8]" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-[#94a3b8] m-0">Online Payment</p>
-                <p className="text-xs text-[#94a3b8] m-0">UPI / Card · Coming soon</p>
-              </div>
-              <span className="text-[10px] font-bold bg-[#e2e8f0] text-[#64748b] px-2 py-0.5 rounded-full shrink-0">SOON</span>
-            </div>
 
             {!selectedAddress && (
               <p className="text-xs text-[#dc2626] mt-3 m-0 text-center">Add a delivery address above to place order</p>
@@ -375,10 +464,93 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
           <div className="flex items-start gap-2 p-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-[10px] text-[#1e40af] text-xs">
             <Truck size={14} className="shrink-0 mt-0.5" />
-            <span>Standard delivery · 5–7 business days · Free shipping</span>
+            <span>Standard delivery · 5–7 business days{totalShipping === 0 && buyerState ? ' · Free shipping' : ''}</span>
           </div>
         </div>
       </div>
+
+      {/* Deal confirmation panel — rendered via portal so parent overflow/transform can't break centering */}
+      {showDealPanel && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => { setShowDealPanel(false); setDealAck(false); }}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+          <div
+            className="relative bg-white rounded-[16px] w-full max-w-[440px] p-5 shadow-[0_24px_64px_rgba(0,0,0,0.2)]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Choose how you'll pay</h3>
+              <button
+                onClick={() => { setShowDealPanel(false); setDealAck(false); }}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-[#f1f5f9] border-none cursor-pointer text-[#64748b] hover:bg-[#e2e8f0]"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Direct Payment option */}
+            <button
+              onClick={() => setDealPayMethod('direct')}
+              className={`w-full text-left mb-2 p-3 rounded-[10px] border-2 cursor-pointer transition-colors ${dealPayMethod === 'direct' ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex-none ${dealPayMethod === 'direct' ? 'border-[#059669] bg-[#059669]' : 'border-[#cbd5e1]'}`} />
+                <span className="text-sm font-bold text-[#0f172a]">Direct Payment to Supplier</span>
+              </div>
+              <p className="text-xs text-[#64748b] m-0 mt-1.5 ml-[22px] leading-relaxed">
+                You pay the supplier directly (UPI / bank / cash). Phone numbers unlock so you can coordinate.
+              </p>
+            </button>
+
+            {/* AMJSTAR Escrow — coming soon */}
+            <div className="w-full mb-3 p-3 rounded-[10px] border border-dashed border-[#e2e8f0] bg-[#fafafa] opacity-70 cursor-not-allowed">
+              <div className="flex items-center gap-2">
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-[#cbd5e1] shrink-0 flex-none" />
+                <span className="text-sm font-bold text-[#94a3b8]">Pay Through AMJSTAR (Escrow)</span>
+                <span className="text-[9px] font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] px-1.5 py-0.5 rounded-full ml-auto">COMING SOON</span>
+              </div>
+              <p className="text-xs text-[#94a3b8] m-0 mt-1.5 ml-[22px] leading-relaxed">
+                AMJSTAR holds your payment safely until you confirm delivery. Launching soon.
+              </p>
+            </div>
+
+            {/* Acknowledgement */}
+            {dealPayMethod === 'direct' && (
+              <label className="flex items-start gap-2 mb-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={dealAck}
+                  onChange={e => setDealAck(e.target.checked)}
+                  className="mt-0.5 accent-[#059669] shrink-0"
+                />
+                <span className="text-xs text-[#475569] leading-relaxed">
+                  I understand that payment is handled <strong>directly between me and the supplier</strong>, and AMJSTAR is not responsible for the payment or its settlement.
+                </span>
+              </label>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowDealPanel(false); setDealAck(false); }}
+                className="flex-1 py-2.5 text-sm font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[10px] cursor-pointer hover:bg-[#f8fafc]"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={placing || (dealPayMethod === 'direct' && !dealAck)}
+                onClick={() => { setShowDealPanel(false); handlePlaceOrder('direct'); }}
+                className="flex-1 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[10px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {placing ? (
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="60" strokeDashoffset="15" />
+                  </svg>
+                ) : 'Confirm & Generate'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

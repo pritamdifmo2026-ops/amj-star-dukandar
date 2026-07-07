@@ -144,7 +144,17 @@ const supplierService = {
   setPrimaryBank: async (bankId: string) => {
     const response = await apiClient.patch(`/supplier/banks/${bankId}/set-primary`);
     return response.data;
-  }
+  },
+
+  getShippingZones: async () => {
+    const response = await apiClient.get('/supplier/shipping-zones');
+    return response.data;
+  },
+
+  updateShippingZones: async (zones: { local: number; regional: number; national: number }) => {
+    const response = await apiClient.put('/supplier/shipping-zones', zones);
+    return response.data;
+  },
 };
 
 export default supplierService;

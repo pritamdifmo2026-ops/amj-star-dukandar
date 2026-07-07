@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Receipt, IndianRupee, Truck, Download, FileText, Table2, FileSpreadsheet } from 'lucide-react';
+import { Receipt, IndianRupee, Truck, Download, FileText, Table2, FileSpreadsheet, Loader2 } from 'lucide-react';
 import apiClient from '@/api/client';
 import toast from 'react-hot-toast';
 
@@ -42,6 +42,7 @@ const SupplierReports: React.FC = () => {
   const [to, setTo] = useState('');
   const [format, setFormat] = useState<'pdf' | 'xlsx' | 'csv'>('pdf');
   const [generating, setGenerating] = useState(false);
+  const [openingInvoiceId, setOpeningInvoiceId] = useState<string | null>(null);
 
   const fetchOrders = async (f?: string, t?: string) => {
     setLoading(true);
@@ -60,6 +61,22 @@ const SupplierReports: React.FC = () => {
   };
 
   useEffect(() => { fetchOrders(); }, []);
+
+  const handleOpenInvoice = async (orderId: string) => {
+    if (openingInvoiceId) return;
+    setOpeningInvoiceId(orderId);
+    try {
+      const res = await apiClient.get(`/orders/${orderId}/po-download`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      toast.error('Failed to open invoice');
+    } finally {
+      setOpeningInvoiceId(null);
+    }
+  };
 
   const handleApplyFilter = () => fetchOrders(from, to);
   const handleClearFilter = () => { setFrom(''); setTo(''); fetchOrders(); };
@@ -245,9 +262,21 @@ const SupplierReports: React.FC = () => {
                   const itemsSummary = o.items.slice(0, 2).map(i => `${i.name} ×${i.quantity}`).join(', ') + (o.items.length > 2 ? '…' : '');
                   return (
                     <tr key={o._id} className="border-t border-[#f1f5f9] hover:bg-[#fafafa]">
-                      <td className="px-5 py-3 font-semibold text-[#0f172a]">
-                        <div>{o.poNumber || o.orderNumber}</div>
-                        {o.poNumber && <div className="text-xs text-[#94a3b8]">{o.orderNumber}</div>}
+                      <td className="px-5 py-3">
+                        <button
+                          onClick={() => handleOpenInvoice(o._id)}
+                          disabled={openingInvoiceId === o._id}
+                          title="Open invoice PDF"
+                          className="text-left group cursor-pointer disabled:opacity-60"
+                        >
+                          <div className="flex items-center gap-1.5 font-semibold text-[#0f172a] group-hover:underline">
+                            {openingInvoiceId === o._id
+                              ? <Loader2 size={12} className="animate-spin shrink-0" />
+                              : <FileText size={12} className="shrink-0 text-[#64748b]" />}
+                            <span>{o.poNumber || o.orderNumber}</span>
+                          </div>
+                          {o.poNumber && <div className="text-xs text-[#94a3b8]">{o.orderNumber}</div>}
+                        </button>
                       </td>
                       <td className="px-4 py-3 text-[#475569] whitespace-nowrap">{new Date(o.createdAt).toLocaleDateString('en-IN')}</td>
                       <td className="px-4 py-3 text-[#475569]">{buyerName}</td>

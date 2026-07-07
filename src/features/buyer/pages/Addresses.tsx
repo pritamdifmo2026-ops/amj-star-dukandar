@@ -7,11 +7,14 @@ import {
   BookUser, Edit2
 } from 'lucide-react';
 import { addressApi } from '@/features/buyer/services/address.api';
+import { indiaStates, stateCityMap } from '@/utils/indiaAddressData';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 
 const inputCls = (hasError = false) =>
   `w-full border ${hasError ? 'border-[#dc2626] bg-[#fef2f2]' : 'border-[#e2e8f0]'} rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors`;
+const selectCls = (hasError = false) =>
+  `w-full border ${hasError ? 'border-[#dc2626] bg-[#fef2f2]' : 'border-[#e2e8f0]'} rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors bg-white appearance-none cursor-pointer`;
 const labelCls = "text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5";
 const errorCls = "text-xs text-[#dc2626] mt-1";
 
@@ -43,7 +46,11 @@ const Addresses: React.FC = () => {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setForm({ ...form, [field]: value });
+    if (field === 'state') {
+      setForm(prev => ({ ...prev, state: value, city: '' }));
+    } else {
+      setForm(prev => ({ ...prev, [field]: value }));
+    }
     if (errors[field]) {
       setErrors(prev => { const u = { ...prev }; delete u[field]; return u; });
     }
@@ -172,27 +179,64 @@ const Addresses: React.FC = () => {
 
               <form onSubmit={handleSave}>
                 <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1 mb-4">
-                  {[
-                    { field: 'fullName', label: 'Full Name', placeholder: 'Enter full name', type: 'text' },
-                    { field: 'phone', label: 'Phone Number', placeholder: '10-digit mobile number', type: 'tel', maxLen: 10 },
-                    { field: 'pincode', label: 'Pincode', placeholder: '6 digits PIN code', type: 'text', maxLen: 6 },
-                    { field: 'state', label: 'State', placeholder: 'State', type: 'text' },
-                    { field: 'city', label: 'City', placeholder: 'City', type: 'text' },
-                    { field: 'houseNo', label: 'House No. / Building', placeholder: 'House No.', type: 'text' },
-                  ].map(({ field, label, placeholder, type, maxLen }) => (
-                    <div key={field}>
-                      <label className={labelCls}>{label}</label>
-                      <input
-                        type={type}
-                        placeholder={placeholder}
-                        value={(form as any)[field]}
-                        onChange={e => handleInputChange(field, field === 'phone' || field === 'pincode' ? e.target.value.replace(/\D/g, '') : e.target.value)}
-                        maxLength={maxLen}
-                        className={inputCls(!!errors[field])}
-                      />
-                      {errors[field] && <p className={errorCls}>{errors[field]}</p>}
-                    </div>
-                  ))}
+                  {/* Full Name */}
+                  <div>
+                    <label className={labelCls}>Full Name</label>
+                    <input type="text" placeholder="Enter full name" value={form.fullName}
+                      onChange={e => handleInputChange('fullName', e.target.value)}
+                      className={inputCls(!!errors.fullName)} />
+                    {errors.fullName && <p className={errorCls}>{errors.fullName}</p>}
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className={labelCls}>Phone Number</label>
+                    <input type="tel" placeholder="10-digit mobile number" value={form.phone}
+                      maxLength={10} onChange={e => handleInputChange('phone', e.target.value.replace(/\D/g, ''))}
+                      className={inputCls(!!errors.phone)} />
+                    {errors.phone && <p className={errorCls}>{errors.phone}</p>}
+                  </div>
+
+                  {/* Pincode */}
+                  <div>
+                    <label className={labelCls}>Pincode</label>
+                    <input type="text" placeholder="6-digit pincode" value={form.pincode}
+                      maxLength={6} onChange={e => handleInputChange('pincode', e.target.value.replace(/\D/g, ''))}
+                      className={inputCls(!!errors.pincode)} />
+                    {errors.pincode && <p className={errorCls}>{errors.pincode}</p>}
+                  </div>
+
+                  {/* State — dropdown */}
+                  <div>
+                    <label className={labelCls}>State</label>
+                    <select value={form.state} onChange={e => handleInputChange('state', e.target.value)}
+                      className={selectCls(!!errors.state)}>
+                      <option value="">Select state</option>
+                      {indiaStates.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    {errors.state && <p className={errorCls}>{errors.state}</p>}
+                  </div>
+
+                  {/* City — dropdown, depends on state */}
+                  <div>
+                    <label className={labelCls}>City</label>
+                    <select value={form.city} onChange={e => handleInputChange('city', e.target.value)}
+                      disabled={!form.state}
+                      className={selectCls(!!errors.city)}>
+                      <option value="">{form.state ? 'Select city' : 'Select state first'}</option>
+                      {(stateCityMap[form.state] ?? []).map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    {errors.city && <p className={errorCls}>{errors.city}</p>}
+                  </div>
+
+                  {/* House No. */}
+                  <div>
+                    <label className={labelCls}>House No. / Building</label>
+                    <input type="text" placeholder="House No." value={form.houseNo}
+                      onChange={e => handleInputChange('houseNo', e.target.value)}
+                      className={inputCls(!!errors.houseNo)} />
+                    {errors.houseNo && <p className={errorCls}>{errors.houseNo}</p>}
+                  </div>
                 </div>
 
                 <div className="mb-4">

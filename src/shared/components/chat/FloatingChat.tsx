@@ -253,10 +253,10 @@ export const FloatingChat: React.FC = () => {
     } catch { toast.error('Failed to send quotation'); }
   };
 
-  const handleAcceptQuote = async (quoteId: string) => {
+  const handleAcceptQuote = async (quoteId: string, paymentMethod: 'direct' | 'amjstar' = 'direct') => {
     const t = toast.loading('Confirming deal...');
     try {
-      await quotationApi.acceptQuotation(quoteId);
+      await quotationApi.acceptQuotation(quoteId, paymentMethod);
       loadMessages();
       toast.success('Deal Confirmed!', { id: t });
     } catch (err: any) {
@@ -280,6 +280,8 @@ export const FloatingChat: React.FC = () => {
     const [counterSubmitting, setCounterSubmitting] = useState(false);
     const [contactPhone, setContactPhone] = useState<string | null>(null);
     const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
+    const [payMethod, setPayMethod] = useState<'direct' | 'amjstar'>('direct');
+    const [directAck, setDirectAck] = useState(false);
     const hasFetchedContact = useRef(false);
 
     const fetchQuote = () => {
@@ -456,10 +458,45 @@ export const FloatingChat: React.FC = () => {
               <div className="mx-3 mb-3 bg-gray-50 border border-gray-100 rounded-[8px] p-2.5">
                 {confirmAction === 'accept' ? (
                   <>
-                    <p className="text-[11px] font-extrabold text-slate-800 m-0 mb-1">Confirm Order?</p>
-                    <p className="text-[10px] text-gray-500 m-0 mb-2 leading-relaxed">
-                      This creates a Purchase Order. Payment is settled directly with the supplier — contact them via phone.
-                    </p>
+                    <p className="text-[11px] font-extrabold text-slate-800 m-0 mb-2">Choose how you'll pay</p>
+
+                    {/* Direct Payment */}
+                    <button
+                      onClick={() => setPayMethod('direct')}
+                      className={`w-full text-left mb-1.5 p-2 rounded-[7px] border cursor-pointer transition-colors ${payMethod === 'direct' ? 'border-[#059669] bg-[#f0fdf4]' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-3 h-3 rounded-full border-2 shrink-0 flex-none ${payMethod === 'direct' ? 'border-[#059669] bg-[#059669]' : 'border-gray-300'}`} />
+                        <span className="text-[11px] font-bold text-slate-800">Direct Payment to Supplier</span>
+                      </div>
+                      <p className="text-[10px] text-gray-500 m-0 mt-0.5 ml-[18px] leading-relaxed">
+                        UPI / bank / cash. Phone numbers unlock so you can coordinate.
+                      </p>
+                    </button>
+
+                    {/* AMJSTAR Escrow — coming soon */}
+                    <div className="w-full mb-1.5 p-2 rounded-[7px] border border-dashed border-gray-200 bg-white opacity-60 cursor-not-allowed">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-full border-2 border-gray-300 shrink-0 flex-none" />
+                        <span className="text-[11px] font-bold text-gray-400">Pay Through AMJSTAR (Escrow)</span>
+                        <span className="text-[8px] font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] px-1 py-0.5 rounded-full ml-auto">COMING SOON</span>
+                      </div>
+                    </div>
+
+                    {/* Acknowledgement */}
+                    {payMethod === 'direct' && (
+                      <label className="flex items-start gap-1.5 mb-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={directAck}
+                          onChange={e => setDirectAck(e.target.checked)}
+                          className="mt-0.5 accent-[#059669] shrink-0"
+                        />
+                        <span className="text-[10px] text-gray-500 leading-relaxed">
+                          I understand payment is handled <strong>directly between me and the supplier</strong>. AMJSTAR is not responsible.
+                        </span>
+                      </label>
+                    )}
                   </>
                 ) : (
                   <>
@@ -470,18 +507,21 @@ export const FloatingChat: React.FC = () => {
                   </>
                 )}
                 <div className="flex gap-1.5">
-                  <button onClick={() => setConfirmAction(null)}
+                  <button onClick={() => { setConfirmAction(null); setDirectAck(false); }}
                     className="flex-1 py-1.5 text-[10px] font-semibold text-gray-500 bg-white border border-gray-200 rounded-[5px] cursor-pointer">
                     Cancel
                   </button>
                   <button
+                    disabled={confirmAction === 'accept' && payMethod === 'direct' && !directAck}
                     onClick={() => {
+                      const action = confirmAction;
                       setConfirmAction(null);
-                      if (confirmAction === 'accept') handleAcceptQuote(quote._id);
+                      setDirectAck(false);
+                      if (action === 'accept') handleAcceptQuote(quote._id, payMethod);
                       else handleRejectQuote(quote._id);
                     }}
-                    className={`flex-1 py-1.5 text-[10px] font-bold text-white rounded-[5px] border-none cursor-pointer ${confirmAction === 'accept' ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`}>
-                    {confirmAction === 'accept' ? 'Yes, Confirm' : 'Yes, Decline'}
+                    className={`flex-1 py-1.5 text-[10px] font-bold text-white rounded-[5px] border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${confirmAction === 'accept' ? 'bg-[#059669] hover:bg-[#047857]' : 'bg-red-500 hover:bg-red-600'}`}>
+                    {confirmAction === 'accept' ? 'Confirm & Generate' : 'Yes, Decline'}
                   </button>
                 </div>
               </div>

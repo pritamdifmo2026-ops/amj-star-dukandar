@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
@@ -7,6 +7,7 @@ import { toggleWishlistItem } from '@/features/buyer/store/wishlist.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import type { Product } from '../types';
 import Button from '@/shared/components/ui/Button';
+import Modal from '@/shared/components/ui/Modal';
 
 interface Props {
   product: Product;
@@ -28,6 +29,8 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
   });
   const isInCart = cartItems.some(item => item.productId === currentProductId);
   const user = useAppSelector(state => state.auth.user);
+  const isNonBuyer = ['admin', 'supplier', 'reseller', 'superadmin'].includes(user?.role ?? '');
+  const [showNonBuyerModal, setShowNonBuyerModal] = useState(false);
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -37,15 +40,18 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (isNonBuyer) { setShowNonBuyerModal(true); return; }
     if (isInCart) { navigate(ROUTES.CART); return; }
-    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products`); return; }
+    if (!user) { navigate(`${ROUTES.LOGIN}`); return; }
     dispatch(addToCartAsync({
       productId: currentProductId, name: product.name, price: product.price,
       quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: product.imageUrl, moq: product.minOrderQty,
+      gstRate: product.gstRate, gstIncluded: product.gstIncluded,
     }));
   };
 
   return (
+    <>
     <Link
       to={ROUTES.PRODUCT_DETAIL.replace(':id', currentProductId)}
       className="flex flex-col bg-white rounded-[var(--radius-lg)] border border-border overflow-hidden no-underline transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] h-full hover:-translate-y-2 hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.1)] hover:border-primary group"
@@ -101,6 +107,23 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
         </div>
       )}
     </Link>
+    <Modal
+      isOpen={showNonBuyerModal}
+      onClose={() => setShowNonBuyerModal(false)}
+      title="Buyer Account Required"
+      footer={<Button onClick={() => setShowNonBuyerModal(false)}>Got it</Button>}
+    >
+      <div className="py-2 text-center">
+        <div className="text-4xl mb-4">🛒</div>
+        <p className="text-base font-semibold text-[#0f172a] mb-3">
+          This action is only available for buyer accounts.
+        </p>
+        <p className="text-sm text-[#64748b] leading-relaxed">
+          Suppliers, resellers, and admins have separate dashboards and cannot add to cart or place orders. Please log in with a buyer account to continue.
+        </p>
+      </div>
+    </Modal>
+    </>
   );
 };
 

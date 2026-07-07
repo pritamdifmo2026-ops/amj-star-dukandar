@@ -95,40 +95,41 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
                 </span>
               </td>
               <td className="px-4 py-5 border-b border-[#f8fafc]">
-                <div className="flex gap-2 flex-wrap">
-                  {product.status === 'APPROVED' ? (
-                    /* Live product — restricted update only */
-                    <button onClick={() => setLiveUpdateProduct(product)} title="Update stock / price / MOQ" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
-                      <SlidersHorizontal size={16} />
-                    </button>
-                  ) : (
-                    /* Draft / pending / rejected — full edit form */
-                    <button onClick={() => onEdit(product)} title="Edit" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
-                      <Edit2 size={16} />
-                    </button>
-                  )}
-                  {product.status === 'APPROVED' && (
-                    /* Unpublish = toggle isDisabledBySeller (stays listed, just hidden from buyers) */
-                    <button
-                      onClick={() => product.isDisabledBySeller ? onToggleLive(product) : setUnpublishTarget(product)}
-                      title={product.isDisabledBySeller ? 'Publish (go live)' : 'Unpublish'}
-                      className={`w-[34px] h-[34px] flex items-center justify-center rounded-[10px] border cursor-pointer transition-all ${product.isDisabledBySeller ? 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0] hover:bg-[#16a34a] hover:text-white' : 'bg-[#fff7ed] text-[#d97706] border-[#ffedd5] hover:bg-[#d97706] hover:text-white'}`}
-                    >
-                      {product.isDisabledBySeller ? <Wifi size={16} /> : <EyeOff size={16} />}
-                    </button>
-                  )}
-                  {product.status === 'PENDING' && (
-                    <button onClick={() => onUnpublish(product)} title="Unpublish" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fff7ed] text-[#d97706] border border-[#ffedd5] cursor-pointer hover:bg-[#d97706] hover:text-white transition-all">
-                      <EyeOff size={16} />
-                    </button>
-                  )}
-                  {(product.status === 'REJECTED' && product.rejectionReason) && (
-                    <button onClick={() => onViewReason(product.rejectionReason)} title="View Reason" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
-                      <Info size={16} />
-                    </button>
-                  )}
-                  <button onClick={() => onDelete(product)} title="Delete" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
-                    <Trash2 size={16} />
+                <div className="flex flex-col gap-2 w-fit">
+                  {/* Top row: edit/update + publish/unpublish/info */}
+                  <div className="flex gap-2">
+                    {product.status === 'APPROVED' ? (
+                      <button onClick={() => setLiveUpdateProduct(product)} title="Update stock / price / MOQ" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
+                        <SlidersHorizontal size={16} />
+                      </button>
+                    ) : (
+                      <button onClick={() => onEdit(product)} title="Edit" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f1f5f9] text-primary border border-[#e2e8f0] cursor-pointer hover:bg-primary hover:text-white transition-all">
+                        <Edit2 size={16} />
+                      </button>
+                    )}
+                    {product.status === 'APPROVED' && (
+                      <button
+                        onClick={() => product.isDisabledBySeller ? onToggleLive(product) : setUnpublishTarget(product)}
+                        title={product.isDisabledBySeller ? 'Publish (go live)' : 'Unpublish'}
+                        className={`w-[34px] h-[34px] flex items-center justify-center rounded-[10px] border cursor-pointer transition-all ${product.isDisabledBySeller ? 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0] hover:bg-[#16a34a] hover:text-white' : 'bg-[#fff7ed] text-[#d97706] border-[#ffedd5] hover:bg-[#d97706] hover:text-white'}`}
+                      >
+                        {product.isDisabledBySeller ? <Wifi size={16} /> : <EyeOff size={16} />}
+                      </button>
+                    )}
+                    {product.status === 'PENDING' && (
+                      <button onClick={() => onUnpublish(product)} title="Unpublish" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fff7ed] text-[#d97706] border border-[#ffedd5] cursor-pointer hover:bg-[#d97706] hover:text-white transition-all">
+                        <EyeOff size={16} />
+                      </button>
+                    )}
+                    {(product.status === 'REJECTED' && product.rejectionReason) && (
+                      <button onClick={() => onViewReason(product.rejectionReason)} title="View Reason" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all">
+                        <Info size={16} />
+                      </button>
+                    )}
+                  </div>
+                  {/* Delete — full width to match row above */}
+                  <button onClick={() => onDelete(product)} className="w-full h-[34px] flex items-center justify-center gap-1.5 rounded-[10px] bg-[#fef2f2] text-[#dc2626] border border-[#fee2e2] cursor-pointer hover:bg-[#dc2626] hover:text-white transition-all text-xs font-bold">
+                    <Trash2 size={13} /> Delete
                   </button>
                 </div>
               </td>

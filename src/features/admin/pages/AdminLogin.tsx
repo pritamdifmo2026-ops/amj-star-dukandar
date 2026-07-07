@@ -4,7 +4,7 @@ import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
 import {
-  Lock, Mail, Eye, EyeOff, Globe, ChevronDown,
+  Lock, Mail, Eye, EyeOff,
   Package, ShoppingCart, Users, BarChart2
 } from 'lucide-react';
 import logo from '@/assets/logoo.png';
@@ -47,7 +47,7 @@ const AdminLogin: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-50 p-6 font-sans">
-      <div className="flex w-full max-w-[880px] min-h-[540px] bg-white rounded-xl shadow-none lg:shadow-2xl overflow-hidden">
+      <div className="flex w-full max-w-[880px] min-h-[540px] bg-white rounded-xl overflow-hidden">
         
         {/* Left Side */}
         <div 
@@ -57,11 +57,8 @@ const AdminLogin: React.FC = () => {
           }}
         >
           {/* Logo Section */}
-          <div className="absolute top-8 left-8 flex flex-col items-start gap-1">
+          <div className="absolute top-8 left-8">
             <img src={logo} alt="AMJSTAR" className="h-10 rounded-full" />
-            <div className="bg-black/60 rounded px-2 py-0.5 mt-1">
-              <span className="text-[7px] font-bold text-white tracking-[0.1em] uppercase">Wholesale Marketplace</span>
-            </div>
           </div>
 
           <div className="text-white mt-10">
@@ -86,16 +83,7 @@ const AdminLogin: React.FC = () => {
         {/* Right Side */}
         <div className="w-full lg:w-1/2 flex flex-col relative px-8 py-8">
           
-          {/* Language selector */}
-          <div className="absolute top-6 right-6">
-            <button className="flex items-center gap-1.5 border border-gray-200 rounded-md px-2.5 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-              <Globe size={14} className="text-gray-500" />
-              English
-              <ChevronDown size={14} className="text-gray-500 ml-1" />
-            </button>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center max-w-[320px] mx-auto w-full">
+<div className="flex-1 flex flex-col justify-center max-w-[320px] mx-auto w-full">
             <div className="text-center mb-6 mt-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-1.5">Admin Login</h2>
               <p className="text-gray-500 text-sm">Sign in to your admin account</p>

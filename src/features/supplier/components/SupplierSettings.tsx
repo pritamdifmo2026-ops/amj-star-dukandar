@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Building2, Mail, Phone, ShieldCheck, AlertCircle, PhoneCall, Plus, Edit2, Trash2, CheckCircle, Landmark, Check } from 'lucide-react';
+import { User, Building2, Mail, Phone, ShieldCheck, AlertCircle, PhoneCall, Plus, Edit2, Trash2, CheckCircle, Landmark, Check, Truck } from 'lucide-react';
 import { useIfscVerification } from '@/shared/hooks/useIfscVerification';
 import Button from '@/shared/components/ui/Button';
 import { toast } from 'react-hot-toast';
@@ -83,6 +83,24 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
     businessName: profile?.businessName || '',
     email: profile?.businessDetails?.email || profile?.user?.email || '',
     phone: profile?.phone || profile?.user?.phone || '',
+  });
+
+  const { data: shippingData } = useQuery({ queryKey: ['supplier', 'shippingZones'], queryFn: supplierService.getShippingZones });
+  const [shippingForm, setShippingForm] = useState({ local: 0, regional: 0, national: 0 });
+  const [shippingEditing, setShippingEditing] = useState(false);
+
+  useEffect(() => {
+    if (shippingData?.zones) setShippingForm(shippingData.zones);
+  }, [shippingData]);
+
+  const updateShippingMutation = useMutation({
+    mutationFn: (zones: { local: number; regional: number; national: number }) => supplierService.updateShippingZones(zones),
+    onSuccess: () => {
+      toast.success('Shipping rates saved!');
+      setShippingEditing(false);
+      qc.invalidateQueries({ queryKey: ['supplier', 'shippingZones'] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to save shipping rates'),
   });
 
   const validateBankForm = () => {
@@ -530,6 +548,86 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
             <Plus size={16} /> Add Bank Account
           </button>
         )}
+      </div>
+
+      {/* Shipping Zones */}
+      <div className={`${cardCls} mt-6`}>
+        <div className={cardHeaderCls}>
+          <Truck size={20} className="text-primary" />
+          <h3 className="text-base font-bold text-[#1e293b] m-0">Shipping Rates (Buy Now)</h3>
+          {!shippingEditing && (
+            <button
+              onClick={() => setShippingEditing(true)}
+              className={`${primaryBtnCls} ml-auto`}
+            >
+              Edit
+            </button>
+          )}
+        </div>
+
+        <p className="text-xs text-[#64748b] mb-5 m-0">
+          Set your per-order shipping charge for three zones. The buyer's delivery pincode determines the zone automatically.
+        </p>
+
+        <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1 mb-4">
+          {([
+            { key: 'local', label: 'Local', desc: 'Same state as you', color: '#16a34a' },
+            { key: 'regional', label: 'Regional', desc: 'Neighbouring states', color: '#d97706' },
+            { key: 'national', label: 'National', desc: 'Rest of India', color: '#2563eb' },
+          ] as const).map(({ key, label, desc, color }) => (
+            <div key={key} className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                <p className="text-xs font-bold text-[#1e293b] m-0">{label}</p>
+              </div>
+              <p className="text-[11px] text-[#94a3b8] m-0 mb-3">{desc}</p>
+              {shippingEditing ? (
+                <div className="flex items-center gap-1.5 border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 bg-white">
+                  <span className="text-xs text-[#64748b]">₹</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={shippingForm[key]}
+                    onChange={e => setShippingForm(p => ({ ...p, [key]: Math.max(0, Number(e.target.value)) }))}
+                    className="flex-1 border-none outline-none text-sm font-bold text-[#0f172a] bg-transparent w-full"
+                  />
+                </div>
+              ) : (
+                <p className="text-xl font-extrabold text-[#0f172a] m-0">
+                  {shippingData?.zones?.[key] != null ? `₹${shippingData.zones[key]}` : '₹0'}
+                  <span className="text-xs font-normal text-[#94a3b8] ml-1">/ order</span>
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {shippingEditing && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShippingEditing(false); if (shippingData?.zones) setShippingForm(shippingData.zones); }}
+              className={outlineBtnCls}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => updateShippingMutation.mutate(shippingForm)}
+              disabled={updateShippingMutation.isPending}
+              className={primaryBtnCls}
+            >
+              {updateShippingMutation.isPending ? 'Saving…' : 'Save Rates'}
+            </button>
+          </div>
+        )}
+
+        <div className="mt-4 p-3 bg-[#fffbeb] border border-[#fde68a] rounded-[8px]">
+          <p className="text-[11px] text-[#92400e] m-0">
+            <strong>How zones work:</strong> When a buyer enters their pincode at checkout, we compare their state with yours.
+            Same state = Local · Neighbouring state = Regional · All others = National.
+            Set ₹0 for free shipping in any zone.
+          </p>
+        </div>
       </div>
 
       {/* Membership Plan (view current plan + upgrade) */}

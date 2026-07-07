@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import logo from '@/assets/logoo.png';
 import productService from '@/features/product/services/product.service';
 import supplierService from '../services/supplier.service';
+import { useSocket } from '@/shared/contexts/SocketContext';
 import toast from 'react-hot-toast';
 import { chatApi } from '@/features/chat/services/chat.api';
 import Button from '@/shared/components/ui/Button';
@@ -54,6 +55,9 @@ const SupplierDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [walletAlertNotif, setWalletAlertNotif] = useState<{ body: string } | null>(null);
+  const walletAlertCountRef = React.useRef(0);
+  const { socket } = useSocket();
   const [rejectionReasonModal, setRejectionReasonModal] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeView = (searchParams.get('tab') as any) || 'overview';
@@ -143,6 +147,19 @@ const SupplierDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  // Real-time wallet_low notification — show popup up to 3 times per session
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (notif: any) => {
+      if (notif.type !== 'wallet_low') return;
+      if (walletAlertCountRef.current >= 3) return;
+      walletAlertCountRef.current += 1;
+      setWalletAlertNotif({ body: notif.body });
+    };
+    socket.on('bell_notification', handler);
+    return () => { socket.off('bell_notification', handler); };
+  }, [socket]);
 
   const handleAddProduct = () => { setPreviousTab(activeView); setActiveView('add-product'); };
   const handleEdit = (product: any) => { setPreviousTab(activeView); setEditingProduct(product); setActiveView('edit-product'); };
@@ -449,6 +466,33 @@ const SupplierDashboard: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Real-time wallet_low alert modal */}
+      {walletAlertNotif && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col items-center text-center">
+            <div className="w-14 h-14 rounded-full bg-[#fef3c7] flex items-center justify-center mb-4">
+              <MailWarning size={28} className="text-[#d97706]" />
+            </div>
+            <h3 className="text-base font-bold text-[#0f172a] mb-2">Order Blocked – Wallet Low</h3>
+            <p className="text-sm text-[#64748b] mb-6">{walletAlertNotif.body}</p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setWalletAlertNotif(null)}
+                className="flex-1 py-2.5 rounded-xl border border-[#e2e8f0] text-sm text-[#64748b] hover:bg-[#f8fafc] transition-colors"
+              >
+                Dismiss
+              </button>
+              <button
+                onClick={() => { setWalletAlertNotif(null); setActiveView('wallet'); }}
+                className="flex-1 py-2.5 rounded-xl bg-[#059669] text-white text-sm font-semibold hover:bg-[#047857] transition-colors"
+              >
+                Recharge Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

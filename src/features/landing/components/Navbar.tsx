@@ -131,7 +131,7 @@ const Navbar: React.FC = () => {
           <div className="flex items-center gap-4">
             {isAuth ? (
               <div className="relative cursor-pointer flex items-center gap-2" onClick={() => setUserMenuOpen(p => !p)} ref={userMenuRef}>
-                <span className="font-semibold text-heading text-[11px]">{displayName}</span>
+                <span className="font-semibold text-heading text-[11px] border border-[#d1a97a] rounded-[6px] px-3 py-1 bg-[#fdf6ee]">{displayName}</span>
                 {userMenuOpen && (
                   <div className="absolute top-full right-0 mt-3 bg-cream border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] min-w-[200px] p-2 z-10">
                     {isSupplier ? (
@@ -182,9 +182,7 @@ const Navbar: React.FC = () => {
               <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate('/profile?tab=cart')}>
                 <ShoppingCart size={20} />
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2.5 bg-primary text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-surface">
-                    {cartCount}
-                  </span>
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-surface" />
                 )}
               </div>
             )}

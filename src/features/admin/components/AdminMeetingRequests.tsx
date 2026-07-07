@@ -1,11 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '@/api/client';
-import Modal from '@/shared/components/ui/Modal';
-import Button from '@/shared/components/ui/Button';
 import {
   Video, Clock, CheckCircle, XCircle, RefreshCw, Calendar,
-  AlertCircle, User, Link as LinkIcon
+  AlertCircle, User, Link as LinkIcon, ArrowLeft
 } from 'lucide-react';
+
+interface ConfirmDialog {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  confirmCls: string;
+  onConfirm: () => void;
+}
+
+const ConfirmPopup: React.FC<{ dialog: ConfirmDialog; onClose: () => void }> = ({ dialog, onClose }) => {
+  if (!dialog.open) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-[16px] shadow-xl w-full max-w-sm mx-4 p-6 flex flex-col gap-4">
+        <h3 className="text-base font-extrabold text-[#0f172a]">{dialog.title}</h3>
+        <p className="text-sm text-[#475569]">{dialog.message}</p>
+        <div className="flex gap-3 justify-end pt-1">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-[8px] border border-[#e2e8f0] bg-white text-[#475569] font-semibold text-sm cursor-pointer hover:bg-[#f8fafc]"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => { dialog.onConfirm(); onClose(); }}
+            className={`px-4 py-2 rounded-[8px] text-white font-bold text-sm cursor-pointer ${dialog.confirmCls}`}
+          >
+            {dialog.confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface MeetingRequest {
   _id: string;
@@ -36,8 +69,8 @@ const AdminMeetingRequests: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<typeof STATUS_FILTERS[number]>('ALL');
 
-  // Schedule modal
-  const [scheduleModal, setScheduleModal] = useState<{ open: boolean; meeting: MeetingRequest | null }>({ open: false, meeting: null });
+  // Full-page schedule view
+  const [schedulingMeeting, setSchedulingMeeting] = useState<MeetingRequest | null>(null);
   const [scheduleForm, setScheduleForm] = useState({
     scheduledAt: '',
     meetingLink: '',
@@ -47,8 +80,11 @@ const AdminMeetingRequests: React.FC = () => {
   const [scheduleError, setScheduleError] = useState<string | null>(null);
   const [scheduleSubmitting, setScheduleSubmitting] = useState(false);
 
-  // Action in-progress tracker
   const [actionId, setActionId] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialog>({
+    open: false, title: '', message: '', confirmLabel: '', confirmCls: '', onConfirm: () => {},
+  });
+  const closeConfirm = () => setConfirmDialog(d => ({ ...d, open: false }));
 
   const fetchMeetings = async () => {
     setLoading(true); setError(null);
@@ -63,7 +99,7 @@ const AdminMeetingRequests: React.FC = () => {
 
   useEffect(() => { fetchMeetings(); }, [statusFilter]);
 
-  const openScheduleModal = (meeting: MeetingRequest) => {
+  const openSchedulePage = (meeting: MeetingRequest) => {
     setScheduleForm({
       scheduledAt: meeting.scheduledAt ? new Date(meeting.scheduledAt).toISOString().slice(0, 16) : '',
       meetingLink: meeting.meetingLink || '',
@@ -71,50 +107,197 @@ const AdminMeetingRequests: React.FC = () => {
       adminNotes: meeting.adminNotes || '',
     });
     setScheduleError(null);
-    setScheduleModal({ open: true, meeting });
+    setSchedulingMeeting(meeting);
   };
 
   const handleScheduleSubmit = async () => {
-    if (!scheduleModal.meeting) return;
+    if (!schedulingMeeting) return;
     if (!scheduleForm.scheduledAt || !scheduleForm.meetingLink) {
       setScheduleError('Date/time and meeting link are required.');
       return;
     }
     setScheduleSubmitting(true); setScheduleError(null);
     try {
-      await apiClient.patch(`/meeting-requests/${scheduleModal.meeting._id}/schedule`, scheduleForm);
-      setScheduleModal({ open: false, meeting: null });
+      await apiClient.patch(`/meeting-requests/${schedulingMeeting._id}/schedule`, scheduleForm);
+      setSchedulingMeeting(null);
       fetchMeetings();
     } catch (err: any) {
       setScheduleError(err?.response?.data?.message || err?.message || 'Failed to schedule meeting.');
     } finally { setScheduleSubmitting(false); }
   };
 
-  const handleCancel = async (id: string) => {
-    if (!window.confirm('Cancel this meeting request?')) return;
-    setActionId(id);
-    try {
-      await apiClient.patch(`/meeting-requests/${id}/cancel`, {});
-      fetchMeetings();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to cancel.');
-    } finally { setActionId(null); }
+  const handleCancel = (id: string) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Cancel Meeting Request',
+      message: 'Are you sure you want to cancel this meeting request? The supplier will be notified.',
+      confirmLabel: 'Yes, Cancel',
+      confirmCls: 'bg-[#dc2626] hover:bg-[#b91c1c]',
+      onConfirm: async () => {
+        setActionId(id);
+        try {
+          await apiClient.patch(`/meeting-requests/${id}/cancel`, {});
+          fetchMeetings();
+        } catch (err: any) {
+          alert(err?.response?.data?.message || 'Failed to cancel.');
+        } finally { setActionId(null); }
+      },
+    });
   };
 
-  const handleComplete = async (id: string) => {
-    if (!window.confirm('Mark this meeting as completed?')) return;
-    setActionId(id);
-    try {
-      await apiClient.patch(`/meeting-requests/${id}/complete`, {});
-      fetchMeetings();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to complete.');
-    } finally { setActionId(null); }
+  const handleComplete = (id: string) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Mark as Completed',
+      message: 'Confirm that this meeting has been completed?',
+      confirmLabel: 'Mark Completed',
+      confirmCls: 'bg-[#059669] hover:bg-[#047857]',
+      onConfirm: async () => {
+        setActionId(id);
+        try {
+          await apiClient.patch(`/meeting-requests/${id}/complete`, {});
+          fetchMeetings();
+        } catch (err: any) {
+          alert(err?.response?.data?.message || 'Failed to complete.');
+        } finally { setActionId(null); }
+      },
+    });
   };
 
+  // ── Full-page schedule form ───────────────────────────────────────────────
+  if (schedulingMeeting) {
+    return (
+      <>
+      <ConfirmPopup dialog={confirmDialog} onClose={closeConfirm} />
+      <div className="flex flex-col gap-6 max-w-2xl mx-auto">
+        <button
+          onClick={() => setSchedulingMeeting(null)}
+          className="flex items-center gap-2 text-sm font-semibold text-[#64748b] hover:text-[#0f172a] cursor-pointer w-fit"
+        >
+          <ArrowLeft size={16} /> Back to Meeting Requests
+        </button>
+
+        <div>
+          <h2 className="text-xl font-extrabold text-[#0f172a]">
+            {schedulingMeeting.status === 'SCHEDULED' ? 'Reschedule Meeting' : 'Schedule Meeting'}
+          </h2>
+          <p className="text-sm text-[#64748b] mt-1">{schedulingMeeting.serviceType}</p>
+        </div>
+
+        {/* Supplier info card */}
+        <div className="p-4 bg-[#f8fafc] rounded-[12px] border border-[#e2e8f0] flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-[#0284c7] flex items-center justify-center text-white font-bold text-sm shrink-0">
+            {schedulingMeeting.supplierName.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <p className="font-bold text-[#0f172a] text-sm">{schedulingMeeting.supplierName}</p>
+            <p className="text-xs text-[#64748b]">{schedulingMeeting.supplierEmail}</p>
+          </div>
+          {schedulingMeeting.message && (
+            <p className="ml-auto text-xs text-[#475569] italic max-w-xs text-right">"{schedulingMeeting.message}"</p>
+          )}
+        </div>
+
+        {/* Form */}
+        <div className="bg-white border border-[#eef2f6] rounded-[14px] p-6 flex flex-col gap-5">
+          <div>
+            <label className="block text-sm font-semibold text-[#334155] mb-1.5">
+              Date &amp; Time <span className="text-[#dc2626]">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduleForm.scheduledAt}
+              onChange={e => setScheduleForm(p => ({ ...p, scheduledAt: e.target.value }))}
+              className="w-full border border-[#e2e8f0] rounded-[10px] px-4 py-3 text-sm outline-none focus:border-[#0284c7] bg-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#334155] mb-2">
+              Platform <span className="text-[#dc2626]">*</span>
+            </label>
+            <div className="flex gap-4">
+              {(['zoom', 'google_meet'] as const).map(p => (
+                <label
+                  key={p}
+                  className={`flex items-center gap-2.5 cursor-pointer px-4 py-2.5 rounded-[10px] border text-sm font-semibold transition-all ${
+                    scheduleForm.meetingPlatform === p
+                      ? 'border-[#0284c7] bg-[#eff6ff] text-[#0284c7]'
+                      : 'border-[#e2e8f0] bg-white text-[#475569] hover:border-[#0284c7]'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="platform"
+                    value={p}
+                    checked={scheduleForm.meetingPlatform === p}
+                    onChange={() => setScheduleForm(prev => ({ ...prev, meetingPlatform: p }))}
+                    className="accent-[#0284c7]"
+                  />
+                  {p === 'zoom' ? 'Zoom' : 'Google Meet'}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#334155] mb-1.5">
+              Meeting Link <span className="text-[#dc2626]">*</span>
+            </label>
+            <input
+              type="url"
+              value={scheduleForm.meetingLink}
+              onChange={e => setScheduleForm(p => ({ ...p, meetingLink: e.target.value }))}
+              placeholder="https://zoom.us/j/... or https://meet.google.com/..."
+              className="w-full border border-[#e2e8f0] rounded-[10px] px-4 py-3 text-sm outline-none focus:border-[#0284c7] bg-white"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-[#334155] mb-1.5">
+              Notes for Supplier <span className="text-[#94a3b8] font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={scheduleForm.adminNotes}
+              onChange={e => setScheduleForm(p => ({ ...p, adminNotes: e.target.value }))}
+              placeholder="Any preparation tips or agenda items..."
+              rows={4}
+              className="w-full border border-[#e2e8f0] rounded-[10px] px-4 py-3 text-sm resize-y outline-none focus:border-[#0284c7] bg-white"
+            />
+          </div>
+
+          {scheduleError && (
+            <div className="flex items-start gap-2 p-3 bg-[#fef2f2] border border-[#fecaca] rounded-[10px] text-[#dc2626] text-sm">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" /> {scheduleError}
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={() => setSchedulingMeeting(null)}
+              className="px-5 py-2.5 rounded-[10px] border border-[#e2e8f0] bg-white text-[#475569] font-semibold text-sm cursor-pointer hover:bg-[#f8fafc] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleScheduleSubmit}
+              disabled={scheduleSubmitting}
+              className="flex-1 px-5 py-2.5 rounded-[10px] bg-[#0284c7] text-white font-bold text-sm cursor-pointer hover:bg-[#0369a1] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {scheduleSubmitting ? 'Saving…' : 'Confirm & Notify Supplier'}
+            </button>
+          </div>
+        </div>
+      </div>
+      </>
+    );
+  }
+
+  // ── Meeting list ──────────────────────────────────────────────────────────
   return (
+    <>
+    <ConfirmPopup dialog={confirmDialog} onClose={closeConfirm} />
     <div className="flex flex-col gap-4">
-      {/* Header + filters */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {STATUS_FILTERS.map(f => (
@@ -201,7 +384,7 @@ const AdminMeetingRequests: React.FC = () => {
                   <div className="flex gap-2">
                     {(m.status === 'PENDING' || m.status === 'SCHEDULED') && (
                       <button
-                        onClick={() => openScheduleModal(m)}
+                        onClick={() => openSchedulePage(m)}
                         className="flex items-center gap-1.5 bg-[#0284c7] text-white font-bold text-xs px-4 py-2 rounded-[8px] border-none cursor-pointer hover:bg-[#0369a1] transition-colors"
                       >
                         <Calendar size={13} /> {m.status === 'SCHEDULED' ? 'Reschedule' : 'Schedule'}
@@ -232,88 +415,8 @@ const AdminMeetingRequests: React.FC = () => {
           })}
         </div>
       )}
-
-      {/* Schedule modal */}
-      <Modal
-        isOpen={scheduleModal.open}
-        onClose={() => setScheduleModal({ open: false, meeting: null })}
-        title={`Schedule Meeting — ${scheduleModal.meeting?.serviceType || ''}`}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setScheduleModal({ open: false, meeting: null })}>Cancel</Button>
-            <Button onClick={handleScheduleSubmit} disabled={scheduleSubmitting}>
-              {scheduleSubmitting ? 'Saving...' : 'Confirm & Notify Supplier'}
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col gap-4 py-1">
-          {scheduleModal.meeting && (
-            <div className="p-3 bg-[#f8fafc] rounded-[8px] border border-[#e2e8f0] text-sm">
-              <span className="font-bold text-[#0f172a]">{scheduleModal.meeting.supplierName}</span>
-              <span className="text-[#64748b]"> · {scheduleModal.meeting.supplierEmail}</span>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-semibold text-[#334155] mb-1.5">Date &amp; Time <span className="text-[#dc2626]">*</span></label>
-            <input
-              type="datetime-local"
-              value={scheduleForm.scheduledAt}
-              onChange={e => setScheduleForm(p => ({ ...p, scheduledAt: e.target.value }))}
-              className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm outline-none focus:border-[#0284c7]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#334155] mb-1.5">Platform <span className="text-[#dc2626]">*</span></label>
-            <div className="flex gap-3">
-              {(['zoom', 'google_meet'] as const).map(p => (
-                <label key={p} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <input
-                    type="radio"
-                    name="platform"
-                    value={p}
-                    checked={scheduleForm.meetingPlatform === p}
-                    onChange={() => setScheduleForm(prev => ({ ...prev, meetingPlatform: p }))}
-                    className="accent-[#0284c7]"
-                  />
-                  {p === 'zoom' ? 'Zoom' : 'Google Meet'}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#334155] mb-1.5">Meeting Link <span className="text-[#dc2626]">*</span></label>
-            <input
-              type="url"
-              value={scheduleForm.meetingLink}
-              onChange={e => setScheduleForm(p => ({ ...p, meetingLink: e.target.value }))}
-              placeholder="https://zoom.us/j/... or https://meet.google.com/..."
-              className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm outline-none focus:border-[#0284c7]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#334155] mb-1.5">Notes for Supplier <span className="text-[#94a3b8] font-normal">(optional)</span></label>
-            <textarea
-              value={scheduleForm.adminNotes}
-              onChange={e => setScheduleForm(p => ({ ...p, adminNotes: e.target.value }))}
-              placeholder="Any preparation tips or agenda items..."
-              rows={3}
-              className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm resize-y outline-none focus:border-[#0284c7]"
-            />
-          </div>
-
-          {scheduleError && (
-            <div className="flex items-start gap-2 p-3 bg-[#fef2f2] border border-[#fecaca] rounded-[8px] text-[#dc2626] text-sm">
-              <AlertCircle size={16} className="shrink-0 mt-0.5" /> {scheduleError}
-            </div>
-          )}
-        </div>
-      </Modal>
     </div>
+    </>
   );
 };
 

@@ -6,7 +6,8 @@ export interface AdminStats {
   pendingResellers: number;
   pendingProducts: number;
   activeUsers: number;
-  totalProducts?: number;
+  totalProducts: number;
+  monthlySignups: { month: string; users: number }[];
 }
 
 export interface AdminSupplier {

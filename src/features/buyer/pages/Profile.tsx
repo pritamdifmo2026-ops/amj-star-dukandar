@@ -3,7 +3,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toast } from 'react-hot-toast';
 import { useSearchParams, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import {
-  User, Package, MapPin, CreditCard, Bell, Heart,
+  User, Package, MapPin, Bell, Heart,
   X, Mail, Phone, ShoppingBag, ShoppingCart,
   LogOut, ChevronRight, Star, Clock, Check, MessageCircle,
   Plus, Trash2, Edit2, CheckCircle2, BookUser, ClipboardList,
@@ -22,6 +22,7 @@ import { Camera, Loader2 } from 'lucide-react';
 import OrderList from '../components/OrderList';
 import { orderApi } from '@/features/order/services/order.api';
 import { addressApi } from '@/features/buyer/services/address.api';
+import { indiaStates, stateCityMap } from '@/utils/indiaAddressData';
 import Navbar from '@/features/landing/components/Navbar';
 import Modal from '@/shared/components/ui/Modal';
 import AccountOverviewSection from '@/features/buyer/components/AccountOverviewSection';
@@ -78,8 +79,13 @@ const Profile: React.FC = () => {
   const [enquiryForm, setEnquiryForm] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', message: '' });
   const [enquirySubmitting, setEnquirySubmitting] = useState(false);
   const [orderCount, setOrderCount] = useState(0);
+  const [totalOrderCount, setTotalOrderCount] = useState(0);
+  const [pendingOrderCount, setPendingOrderCount] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
   const [requirementsCount, setRequirementsCount] = useState(0);
-  const memberSince = 'January 2024';
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+    : '';
   const isEmailVerified = user?.isEmailVerified || false;
   const { socket } = useSocket();
   const [totalUnread, setTotalUnread] = useState(0);
@@ -160,7 +166,13 @@ const Profile: React.FC = () => {
   const fetchOrderCount = async () => {
     try {
       const res = await orderApi.list();
-      setOrderCount(res.data?.length ?? 0);
+      const all = res.data ?? [];
+      const DONE = new Set(['completed', 'delivered', 'cancelled']);
+      const PENDING_STATUSES = new Set(['pending', 'paid', 'processing', 'packed', 'shipped', 'awaiting_confirmation']);
+      setTotalOrderCount(all.length);
+      setOrderCount(all.filter((o: any) => !DONE.has(o.status)).length);
+      setPendingOrderCount(all.filter((o: any) => PENDING_STATUSES.has(o.status)).length);
+      setReviewCount(all.filter((o: any) => o.hasReview).length);
     } catch (err) {
       console.error('Failed to fetch order count');
     }
@@ -259,11 +271,15 @@ const Profile: React.FC = () => {
   };
 
   const updateAddressField = (field: string, value: string | boolean) => {
-    setAddressForm(prev => ({ ...prev, [field]: value }));
-    if (addressErrors[field]) {
+    if (field === 'state') {
+      setAddressForm(prev => ({ ...prev, state: value as string, city: '' }));
+    } else {
+      setAddressForm(prev => ({ ...prev, [field]: value }));
+    }
+    if (addressErrors[field as string]) {
       setAddressErrors(prev => {
         const next = { ...prev };
-        delete next[field];
+        delete next[field as string];
         return next;
       });
     }
@@ -300,10 +316,6 @@ const Profile: React.FC = () => {
   };
 
   const handleAddressEdit = (addr: any) => {
-    if (addr.isProfileAddress) {
-      toast('Use Add Another Address to save this in your address book.');
-      return;
-    }
     setAddressForm({
       fullName: addr.fullName || '',
       phone: addr.phone || '',
@@ -312,9 +324,10 @@ const Profile: React.FC = () => {
       city: addr.city || '',
       houseNo: addr.houseNo || '',
       area: addr.area || '',
-      isDefault: !!addr.isDefault,
+      isDefault: addr.isProfileAddress ? true : !!addr.isDefault,
     });
-    setEditingAddressId(addr._id);
+    // Profile addresses have no real _id — treat as new address creation
+    setEditingAddressId(addr.isProfileAddress ? null : addr._id);
     setShowAddressForm(true);
     setAddressErrors({});
   };
@@ -427,7 +440,7 @@ const Profile: React.FC = () => {
     { id: 'messages', label: 'Enquiries', icon: MessageCircle, badge: totalUnread },
     { id: 'wishlist', label: 'Wishlist', icon: Heart, badge: wishlistItems.length },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
-    { id: 'payments', label: 'Payment Methods', icon: CreditCard },
+
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'contactus', label: 'Contact Us', icon: MessageCircle },
   ];
@@ -560,12 +573,6 @@ const Profile: React.FC = () => {
                       <div className="flex items-center gap-2 text-xs text-white/70">
                         <Phone size={12} className="text-white/50 shrink-0" />
                         <span>{user?.phone || 'Not provided'}</span>
-                        <button
-                          className="text-[10px] font-bold text-white/40 bg-transparent border-none cursor-pointer hover:text-white p-0 transition-colors"
-                          onClick={() => toast('Phone update coming soon.')}
-                        >
-                          Update
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -575,10 +582,10 @@ const Profile: React.FC = () => {
               <div className="px-8 max-sm:px-4 -mt-8 relative z-20">
                 <div className="grid grid-cols-4 gap-3 mb-6 max-sm:grid-cols-2">
                   {[
-                    { icon: <ShoppingBag size={20} />, value: orderCount, label: 'Orders' },
+                    { icon: <ShoppingBag size={20} />, value: totalOrderCount, label: 'Orders' },
                     { icon: <Heart size={20} />, value: wishlistItems.length, label: 'Wishlist' },
-                    { icon: <Star size={20} />, value: 0, label: 'Reviews' },
-                    { icon: <Clock size={20} />, value: 0, label: 'Pending' },
+                    { icon: <Star size={20} />, value: reviewCount, label: 'Reviews' },
+                    { icon: <Clock size={20} />, value: pendingOrderCount, label: 'Pending' },
                   ].map((stat) => (
                     <div key={stat.label} className="bg-white border border-[#eef2f6] rounded-[14px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-3">
                       <div className="w-9 h-9 bg-[#fff7ed] rounded-[8px] flex items-center justify-center text-primary shrink-0">{stat.icon}</div>
@@ -764,26 +771,64 @@ const Profile: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-                  {[
-                    { field: 'fullName', label: 'Full Name', placeholder: 'Enter full name' },
-                    { field: 'phone', label: 'Phone Number', placeholder: '10-digit mobile number', numeric: true, maxLen: 10 },
-                    { field: 'pincode', label: 'Pincode', placeholder: '6-digit pincode', numeric: true, maxLen: 6 },
-                    { field: 'state', label: 'State', placeholder: 'State' },
-                    { field: 'city', label: 'City', placeholder: 'City' },
-                    { field: 'houseNo', label: 'House / Building', placeholder: 'House no. or building' },
-                  ].map(({ field, label, placeholder, numeric, maxLen }) => (
-                    <div key={field}>
-                      <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">{label}</label>
-                      <input
-                        value={(addressForm as any)[field]}
-                        placeholder={placeholder}
-                        maxLength={maxLen}
-                        onChange={e => updateAddressField(field, numeric ? e.target.value.replace(/\D/g, '') : e.target.value)}
-                        className={`${inputCls} ${addressErrors[field] ? 'border-[#dc2626] bg-[#fef2f2]' : ''}`}
-                      />
-                      {addressErrors[field] && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors[field]}</p>}
-                    </div>
-                  ))}
+                  {/* Full Name */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Full Name</label>
+                    <input value={addressForm.fullName} placeholder="Enter full name"
+                      onChange={e => updateAddressField('fullName', e.target.value)}
+                      className={inputCls(!!addressErrors.fullName)} />
+                    {addressErrors.fullName && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.fullName}</p>}
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Phone Number</label>
+                    <input value={addressForm.phone} placeholder="10-digit mobile number" maxLength={10}
+                      onChange={e => updateAddressField('phone', e.target.value.replace(/\D/g, ''))}
+                      className={inputCls(!!addressErrors.phone)} />
+                    {addressErrors.phone && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.phone}</p>}
+                  </div>
+
+                  {/* Pincode */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">Pincode</label>
+                    <input value={addressForm.pincode} placeholder="6-digit pincode" maxLength={6}
+                      onChange={e => updateAddressField('pincode', e.target.value.replace(/\D/g, ''))}
+                      className={inputCls(!!addressErrors.pincode)} />
+                    {addressErrors.pincode && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.pincode}</p>}
+                  </div>
+
+                  {/* State — dropdown */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">State</label>
+                    <select value={addressForm.state} onChange={e => updateAddressField('state', e.target.value)}
+                      className={`w-full border ${addressErrors.state ? 'border-[#dc2626] bg-[#fef2f2]' : 'border-[#e2e8f0]'} rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors bg-white appearance-none cursor-pointer`}>
+                      <option value="">Select state</option>
+                      {indiaStates.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    {addressErrors.state && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.state}</p>}
+                  </div>
+
+                  {/* City — dropdown, depends on state */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">City</label>
+                    <select value={addressForm.city} onChange={e => updateAddressField('city', e.target.value)}
+                      disabled={!addressForm.state}
+                      className={`w-full border ${addressErrors.city ? 'border-[#dc2626] bg-[#fef2f2]' : 'border-[#e2e8f0]'} rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors bg-white appearance-none ${!addressForm.state ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                      <option value="">{addressForm.state ? 'Select city' : 'Select state first'}</option>
+                      {(stateCityMap[addressForm.state] ?? []).map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    {addressErrors.city && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.city}</p>}
+                  </div>
+
+                  {/* House / Building */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1">House / Building</label>
+                    <input value={addressForm.houseNo} placeholder="House no. or building"
+                      onChange={e => updateAddressField('houseNo', e.target.value)}
+                      className={inputCls(!!addressErrors.houseNo)} />
+                    {addressErrors.houseNo && <p className="text-xs text-[#dc2626] mt-1 mb-0">{addressErrors.houseNo}</p>}
+                  </div>
                 </div>
 
                 <div className="mt-4">

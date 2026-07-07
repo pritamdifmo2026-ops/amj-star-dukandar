@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
 import { LayoutDashboard, ShoppingBag, CreditCard, History, LogOut, TrendingUp, Package, Users, Search, ArrowUpRight, Menu, Bell, Mail, LifeBuoy, Store, UserPlus, BarChart3, Settings as SettingsIcon, Handshake, Zap } from 'lucide-react';
@@ -18,8 +18,7 @@ import ResellerPerformance from '../components/ResellerPerformance';
 import ResellerActionCenter from '../components/ResellerActionCenter';
 
 const ResellerDashboard: React.FC = () => {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+const dispatch = useAppDispatch();
   const { profile } = useAppSelector(state => state.reseller);
   const { user } = useAppSelector(state => state.auth);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -87,7 +86,7 @@ const ResellerDashboard: React.FC = () => {
             <div className="w-20 h-20 bg-[#f1f5f9] rounded-full flex items-center justify-center"><ShoppingBag size={36} className="text-[#94a3b8]" /></div>
             <h3 className="text-base font-bold text-[#1e293b] m-0">No orders yet</h3>
             <p className="text-sm text-center m-0 max-w-[300px]">Once your customers start buying from your shop, they will appear here.</p>
-            <Button onClick={() => navigate('/products')}>Browse Products to Sell</Button>
+            <Button onClick={() => setActiveView('browse')}>Browse Products to Sell</Button>
           </div>
         </div>
 
@@ -170,7 +169,7 @@ const ResellerDashboard: React.FC = () => {
               <h1 className="text-[1.75rem] font-extrabold text-[#0f172a] m-0 mb-1">Welcome, {profile?.fullName || user?.name}</h1>
               <p className="text-[#64748b] m-0">Grow your business with AMJSTAR's high-quality supplier network.</p>
             </div>
-            <Button onClick={() => navigate('/products')} className="flex items-center gap-2">
+            <Button onClick={() => setActiveView('browse')} className="flex items-center gap-2">
               <Search size={18} /> Browse Products
             </Button>
           </header>

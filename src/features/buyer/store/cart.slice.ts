@@ -11,6 +11,10 @@ export interface CartItem {
   imageUrl?: string;
   moq: number;
   stock?: number;
+  gstRate?: number;
+  gstIncluded?: boolean;
+  supplierState?: string;
+  shippingRates?: { local: number; regional: number; national: number };
 }
 
 interface CartState {

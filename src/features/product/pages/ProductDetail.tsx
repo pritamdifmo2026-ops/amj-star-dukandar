@@ -38,7 +38,7 @@ const ProductDetail: React.FC = () => {
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const user = useAppSelector(state => state.auth.user);
-  const isAdmin = user?.role === 'admin';
+  const isNonBuyer = ['admin', 'supplier', 'reseller', 'superadmin'].includes(user?.role ?? '');
 
   React.useEffect(() => {
     if (id === 'undefined') { navigate('/'); return; }
@@ -62,7 +62,7 @@ const ProductDetail: React.FC = () => {
 
   const handleContactSupplier = () => {
     if (!product) return;
-    if (isAdmin) { setShowAdminModal(true); return; }
+    if (isNonBuyer) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`); return; }
     if (!user.name?.trim() || !user.email?.trim()) { setShowProfilePrompt(true); return; }
     setShowEnquiryModal(true);
@@ -120,14 +120,14 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
-    if (isAdmin) { setShowAdminModal(true); return; }
+    if (isNonBuyer) { setShowAdminModal(true); return; }
     if (isInCart) { navigate(ROUTES.CART); return; }
-    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage, moq: product.minOrderQty, stock: product.stock }));
+    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage, moq: product.minOrderQty, stock: product.stock, gstRate: product.gstRate, gstIncluded: product.gstIncluded }));
   };
 
   const handleBuyNow = () => {
     if (!product) return;
-    if (isAdmin) { setShowAdminModal(true); return; }
+    if (isNonBuyer) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
     navigate(ROUTES.CHECKOUT, {
       state: {
@@ -563,16 +563,16 @@ const ProductDetail: React.FC = () => {
       <Modal
         isOpen={showAdminModal}
         onClose={() => setShowAdminModal(false)}
-        title="Hey, Admin!"
+        title="Buyer Account Required"
         footer={<Button onClick={() => setShowAdminModal(false)}>Got it</Button>}
       >
         <div className="py-2 text-center">
-          <div className="text-4xl mb-4">👋</div>
+          <div className="text-4xl mb-4">🛒</div>
           <p className="text-base font-semibold text-[#0f172a] mb-3">
-            Looks like you're trying to shop as an Admin — that's a no-go!
+            This action is only available for buyer accounts.
           </p>
           <p className="text-sm text-[#64748b] leading-relaxed">
-            Admin accounts are kept separate from buyer activity. Admins can't place orders, add to cart, or chat with suppliers.
+            Suppliers, resellers, and admins have separate dashboards and cannot add to cart, place orders, or chat as a buyer. Please log in with a buyer account to continue.
           </p>
         </div>
       </Modal>

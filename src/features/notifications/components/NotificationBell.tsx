@@ -32,16 +32,16 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ viewAllPath = '/not
   const [localList, setLocalList] = useState<INotification[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const { data: fetched = [] } = useQuery<INotification[]>({
+  const { data: fetched } = useQuery<INotification[]>({
     queryKey: ['notifications'],
     queryFn: notificationApi.getAll,
     staleTime: 30_000,
     enabled: isAuthenticated,
   });
 
-  // Sync fetched data into local list
+  // Sync fetched data into local list — stable reference check avoids infinite loop
   useEffect(() => {
-    setLocalList(fetched);
+    if (fetched) setLocalList(fetched);
   }, [fetched]);
 
   // Listen for real-time socket events

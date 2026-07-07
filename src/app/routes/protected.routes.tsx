@@ -17,7 +17,7 @@ export const protectedRoutes: RouteObject[] = [
   {
     path: '/profile',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={['buyer']}>
         <Profile />
       </ProtectedRoute>
     ),

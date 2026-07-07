@@ -7,7 +7,6 @@ import VerifyOtp from '@/features/auth/pages/VerifyOtp';
 import Register from '@/features/auth/pages/Register';
 import VerifyEmail from '@/features/auth/pages/VerifyEmail';
 import Landing from '@/features/landing/pages/Landing';
-import ProductList from '@/features/product/pages/ProductList';
 import ProductDetail from '@/features/product/pages/ProductDetail';
 import AddProduct from '@/features/product/pages/AddProduct';
 import AdminLogin from '@/features/admin/pages/AdminLogin';
@@ -80,7 +79,7 @@ export const publicRoutes: RouteObject[] = [
   },
   {
     path: ROUTES.PRODUCT_LIST,
-    element: <ProductList />,
+    element: <Navigate to="/" replace />,
   },
   {
     path: ROUTES.PRODUCT_DETAIL,
