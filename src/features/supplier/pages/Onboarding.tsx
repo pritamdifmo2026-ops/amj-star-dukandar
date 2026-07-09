@@ -9,8 +9,9 @@ import supplierService from '../services/supplier.service';
 import { PLAN_LIST, formatINR } from '../constants/plans';
 import SupplierOnboardingLayout from '../layout/SupplierOnboardingLayout';
 import Button from '@/shared/components/ui/Button';
-import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Handshake, XCircle, Upload, Package, Landmark } from 'lucide-react';
+import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Handshake, XCircle, Upload, Package, Landmark, LocateFixed, Loader2 } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
+import { useLocateMe } from '@/shared/hooks/useLocateMe';
 
 const INDIA_STATES: Record<string, string[]> = {
   "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Tirupati", "Kakinada", "Rajahmundry"],
@@ -119,6 +120,22 @@ const Onboarding: React.FC = () => {
   const [fssaiCertificateUrl, setFssaiCertificateUrl] = useState('');
   const [isWomenEntrepreneur, setIsWomenEntrepreneur] = useState(false);
   const [annualTurnover, setAnnualTurnover] = useState('');
+
+  const { locate, locating, error: locateError } = useLocateMe();
+  const handleLocateMe = () => {
+    locate((geo) => {
+      const matchedState = Object.keys(INDIA_STATES).find(s => s.toLowerCase() === geo.state.toLowerCase()) || '';
+      const cityOptions = matchedState ? (INDIA_STATES[matchedState] ?? []) : [];
+      const matchedCity = cityOptions.find(c => c.toLowerCase() === geo.city.toLowerCase()) || '';
+
+      if (geo.pincode) setPinCode(geo.pincode);
+      if (matchedState) setState(matchedState);
+      if (matchedCity) setCity(matchedCity);
+      const addressLine = [geo.houseNo, geo.area].filter(Boolean).join(', ') || geo.formattedAddress;
+      if (addressLine) setAddress(addressLine);
+      setErrors(prev => ({ ...prev, address: '', pinCode: '', state: '', city: '' }));
+    });
+  };
   const [monthlyProductionCapacity, setMonthlyProductionCapacity] = useState('');
   const [taxFilingMethod, setTaxFilingMethod] = useState('');
   const [taxFilingDetails, setTaxFilingDetails] = useState<File | null>(null);
@@ -544,6 +561,19 @@ const Onboarding: React.FC = () => {
             <div className="flex flex-col gap-5">
               <StepHeader icon={<Building2 size={24} />} title="Business Details" desc="Where is your business registered?" />
 
+              <div className="flex justify-end -mt-2">
+                <button
+                  type="button"
+                  onClick={handleLocateMe}
+                  disabled={locating}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {locating ? <Loader2 size={14} className="animate-spin" /> : <LocateFixed size={14} />}
+                  {locating ? 'Detecting...' : 'Locate Me'}
+                </button>
+              </div>
+              {locateError && <p className="text-xs text-[#dc2626] -mt-2">{locateError}</p>}
+
               <div className="flex flex-col gap-1.5">
                 <label className={labelCls}>Registered Address <span className="text-[#dc2626]">*</span></label>
                 <textarea name="address" className={inputCls(!!errors.address)} value={address} onChange={handleCapitalizeChange(setAddress)} placeholder="Building, Street, Area" rows={3} />
@@ -707,7 +737,7 @@ const Onboarding: React.FC = () => {
                   <span>Is this a women-led / women-owned business?</span>
                 </label>
                 {isWomenEntrepreneur && (
-                  <p className="text-xs text-[#c2410c] ml-6 m-0">Women-led businesses receive priority onboarding support and platform visibility benefits.</p>
+                  <p className="text-xs text-[#c2410c] ml-6 m-0">Women-led businesses receive priority onboarding support.</p>
                 )}
               </div>
 

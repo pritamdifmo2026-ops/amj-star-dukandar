@@ -7,7 +7,7 @@ import {
   X, Mail, Phone, ShoppingBag, ShoppingCart,
   LogOut, ChevronRight, Star, Clock, Check, MessageCircle,
   Plus, Trash2, Edit2, CheckCircle2, BookUser, ClipboardList,
-  CheckCheck, Truck, Tag
+  CheckCheck, Truck, Tag, LocateFixed
 } from 'lucide-react';
 import { notificationApi, type INotification } from '@/features/notifications/notificationApi';
 import { setCredentials, logout } from '@/features/auth/store/auth.slice';
@@ -23,6 +23,7 @@ import OrderList from '../components/OrderList';
 import { orderApi } from '@/features/order/services/order.api';
 import { addressApi } from '@/features/buyer/services/address.api';
 import { indiaStates, stateCityMap } from '@/utils/indiaAddressData';
+import { useLocateMe } from '@/shared/hooks/useLocateMe';
 import Navbar from '@/features/landing/components/Navbar';
 import Modal from '@/shared/components/ui/Modal';
 import AccountOverviewSection from '@/features/buyer/components/AccountOverviewSection';
@@ -285,6 +286,25 @@ const Profile: React.FC = () => {
     }
   };
 
+  const { locate, locating, error: locateError } = useLocateMe();
+  const handleLocateMe = () => {
+    locate((geo) => {
+      const matchedState = indiaStates.find(s => s.toLowerCase() === geo.state.toLowerCase()) || '';
+      const cityOptions = matchedState ? (stateCityMap[matchedState] ?? []) : [];
+      const matchedCity = cityOptions.find(c => c.toLowerCase() === geo.city.toLowerCase()) || '';
+
+      setAddressForm(prev => ({
+        ...prev,
+        pincode: geo.pincode || prev.pincode,
+        state: matchedState || prev.state,
+        city: matchedCity || prev.city,
+        houseNo: geo.houseNo || prev.houseNo,
+        area: geo.area || geo.formattedAddress || prev.area,
+      }));
+      setAddressErrors({});
+    });
+  };
+
 
 
   const resetAddressForm = () => {
@@ -416,8 +436,16 @@ const Profile: React.FC = () => {
   };
 
   const handleEnquirySubmit = async () => {
-    if (!enquiryForm.name.trim() || !enquiryForm.phone.trim() || !enquiryForm.message.trim()) {
-      toast.error('Please fill in all required fields.');
+    if (enquiryForm.name.trim().length < 2) {
+      toast.error('Name must be at least 2 characters.');
+      return;
+    }
+    if (enquiryForm.phone.trim().length < 10) {
+      toast.error('Enter a valid phone number (at least 10 digits).');
+      return;
+    }
+    if (enquiryForm.message.trim().length < 10) {
+      toast.error('Please describe your query in at least 10 characters.');
       return;
     }
     setEnquirySubmitting(true);
@@ -425,8 +453,9 @@ const Profile: React.FC = () => {
       await adminService.submitEnquiry(enquiryForm);
       toast.success('Our team will contact you soon!');
       setEnquiryForm(prev => ({ ...prev, message: '' }));
-    } catch {
-      toast.error('Failed to submit. Please try again.');
+    } catch (err: any) {
+      const firstFieldError = err?.response?.data?.errors?.[0]?.message;
+      toast.error(firstFieldError || err?.response?.data?.message || 'Failed to submit. Please try again.');
     } finally {
       setEnquirySubmitting(false);
     }
@@ -763,12 +792,24 @@ const Profile: React.FC = () => {
 
             {showAddressForm && (
               <form onSubmit={handleAddressSubmit} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 mb-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                   <h4 className="text-sm font-extrabold text-[#0f172a] m-0">{editingAddressId ? 'Edit Address' : 'Add Address'}</h4>
-                  <button type="button" onClick={resetAddressForm} className="bg-transparent border-none text-[#64748b] hover:text-[#0f172a] p-0">
-                    <X size={18} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleLocateMe}
+                      disabled={locating}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {locating ? <Loader2 size={13} className="animate-spin" /> : <LocateFixed size={13} />}
+                      {locating ? 'Detecting...' : 'Locate Me'}
+                    </button>
+                    <button type="button" onClick={resetAddressForm} className="bg-transparent border-none text-[#64748b] hover:text-[#0f172a] p-0">
+                      <X size={18} />
+                    </button>
+                  </div>
                 </div>
+                {locateError && <p className="text-xs text-[#dc2626] mb-3 -mt-2">{locateError}</p>}
 
                 <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
                   {/* Full Name */}
@@ -1075,8 +1116,9 @@ const Profile: React.FC = () => {
                     onChange={e => setEnquiryForm(prev => ({ ...prev, message: e.target.value }))}
                     rows={5}
                     className={inputCls() + ' resize-y'}
-                    placeholder="Describe your problem, question, or enquiry..."
+                    placeholder="Describe your problem, question, or enquiry... (min. 10 characters)"
                   />
+                  <p className="text-xs text-[#94a3b8] mt-1 mb-0">{enquiryForm.message.trim().length}/10 minimum characters</p>
                 </div>
                 <button
                   type="button"

@@ -22,6 +22,7 @@ const AVAILABLE_PERMISSIONS = [
   { id: 'platform_settings', label: 'Platform Settings' },
   { id: 'pages_management', label: 'Pages Management' },
   { id: 'requirement_management', label: 'Requirement Management' },
+  { id: 'meeting_requests', label: 'Meeting Requests' },
 ];
 
 const ControlAuthority: React.FC = () => {
@@ -203,6 +204,7 @@ const ControlAuthority: React.FC = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
         title={editingAdmin ? 'Edit Sub-Admin' : 'Invite Sub-Admin'}
+        widthClass="w-[92%] max-w-[640px]"
         footer={
           <>
             <Button variant="secondary" onClick={closeModal}>Cancel</Button>
@@ -240,7 +242,7 @@ const ControlAuthority: React.FC = () => {
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-3">Permissions</label>
-            <div className="grid grid-cols-2 gap-3 max-h-[250px] overflow-y-auto p-1">
+            <div className="grid grid-cols-3 max-sm:grid-cols-2 gap-3 max-h-[420px] overflow-y-auto p-1">
               {AVAILABLE_PERMISSIONS.map(perm => (
                 <label key={perm.id} className="flex items-start gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
                   <input

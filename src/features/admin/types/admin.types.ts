@@ -28,7 +28,15 @@ export interface AdminSupplier {
   tier?: string;
   userId?: { name: string; email: string; phone: string };
   autoLiveProducts?: boolean;
-  subscription?: { status?: string; tier?: string };
+  subscription?: {
+    status?: 'NONE' | 'ACTIVE' | 'EXPIRED';
+    tier?: string;
+    price?: number;
+    gstAmount?: number;
+    amountPaid?: number;
+    startDate?: string;
+    expiryDate?: string;
+  };
   pendingUpgrade?: {
     status?: 'NONE' | 'PAYMENT_PENDING' | 'VERIFICATION_PENDING';
     targetTier?: string;
@@ -57,6 +65,8 @@ export interface AdminSupplier {
     taxFilingMethod?: string;
     taxFilingDetails?: string;
     taxPaymentsCompliance?: string;
+    returnPolicyType?: 'refund' | 'replacement' | 'both' | 'custom';
+    returnPolicyCustomTerms?: string;
   };
   banks?: {
     accountHolderName: string;

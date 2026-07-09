@@ -464,12 +464,79 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
             </div>
           </div>
           <div className="p-6 border-b border-[#f1f5f9]">
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Subscription Plan</h3>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              <DetailItem label="Plan Selected">
+                <span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">
+                  {selectedSupplier.subscription?.tier || selectedSupplier.tier || 'N/A'}
+                </span>
+              </DetailItem>
+              <DetailItem label="Payment Status">
+                {selectedSupplier.subscription?.status ? (
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold border ${
+                    selectedSupplier.subscription.status === 'ACTIVE' ? 'bg-[#ecfdf5] text-[#059669] border-[#a7f3d0]' :
+                    selectedSupplier.subscription.status === 'EXPIRED' ? 'bg-[#fef2f2] text-[#dc2626] border-[#fca5a5]' :
+                    'bg-[#f8fafc] text-[#64748b] border-[#e2e8f0]'
+                  }`}>
+                    {selectedSupplier.subscription.status}
+                  </span>
+                ) : (
+                  <span className="text-[#94a3b8] text-sm">N/A</span>
+                )}
+              </DetailItem>
+              <DetailItem label="Plan Price">
+                {selectedSupplier.subscription?.price != null ? `₹${formatIndianNumber(selectedSupplier.subscription.price)}` : 'N/A'}
+              </DetailItem>
+              <DetailItem label="GST Amount">
+                {selectedSupplier.subscription?.gstAmount != null ? `₹${formatIndianNumber(selectedSupplier.subscription.gstAmount)}` : 'N/A'}
+              </DetailItem>
+              <DetailItem label="Total Amount Paid">
+                {selectedSupplier.subscription?.amountPaid != null ? (
+                  <span className="font-bold text-[#059669]">₹{formatIndianNumber(selectedSupplier.subscription.amountPaid)}</span>
+                ) : (
+                  <span className="text-[#dc2626] font-semibold">Not paid yet</span>
+                )}
+              </DetailItem>
+              <DetailItem label="Plan Validity">
+                {selectedSupplier.subscription?.startDate && selectedSupplier.subscription?.expiryDate
+                  ? `${new Date(selectedSupplier.subscription.startDate).toLocaleDateString('en-IN')} — ${new Date(selectedSupplier.subscription.expiryDate).toLocaleDateString('en-IN')}`
+                  : 'N/A'}
+              </DetailItem>
+            </div>
+          </div>
+          <div className="p-6 border-b border-[#f1f5f9]">
             <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Location & About</h3>
             <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
               <DetailItem label="Full Address" span2>{selectedSupplier.businessDetails?.address}, {selectedSupplier.businessDetails?.city}, {selectedSupplier.businessDetails?.state} - {selectedSupplier.businessDetails?.pinCode}</DetailItem>
               <DetailItem label="About Company" span2>
                 <p className="text-sm text-[#475569] leading-relaxed m-0">{selectedSupplier.businessDetails?.about || 'No description provided'}</p>
               </DetailItem>
+            </div>
+          </div>
+          <div className="p-6 border-b border-[#f1f5f9]">
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Dispute Resolution Policy</h3>
+            <div className="grid grid-cols-2 gap-5 max-sm:grid-cols-1">
+              <DetailItem label="Policy Type">
+                {selectedSupplier.businessDetails?.returnPolicyType ? (
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd]">
+                    {{
+                      refund: 'Refund',
+                      replacement: 'Replacement',
+                      both: 'Both (Refund or Replacement)',
+                      return_available: 'Return Available',
+                      no_return: 'No Return',
+                      custom: 'Custom',
+                    }[selectedSupplier.businessDetails.returnPolicyType] || selectedSupplier.businessDetails.returnPolicyType}
+                  </span>
+                ) : (
+                  <span className="text-sm text-[#dc2626] font-semibold">Not set</span>
+                )}
+              </DetailItem>
+              {selectedSupplier.businessDetails?.returnPolicyType === 'custom' && (
+                <DetailItem label="Custom Terms" span2>
+                  <p className="text-sm text-[#475569] leading-relaxed m-0">{selectedSupplier.businessDetails?.returnPolicyCustomTerms || 'No terms provided'}</p>
+                </DetailItem>
+              )}
             </div>
           </div>
           {selectedSupplier.businessDetails?.isFoodSupplier && (

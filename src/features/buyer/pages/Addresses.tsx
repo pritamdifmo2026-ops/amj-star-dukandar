@@ -4,10 +4,11 @@ import {
   Plus, Phone,
   Trash2, CheckCircle2,
   ChevronRight, ArrowLeft, Loader2,
-  BookUser, Edit2
+  BookUser, Edit2, LocateFixed
 } from 'lucide-react';
 import { addressApi } from '@/features/buyer/services/address.api';
 import { indiaStates, stateCityMap } from '@/utils/indiaAddressData';
+import { useLocateMe } from '@/shared/hooks/useLocateMe';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
 
@@ -31,6 +32,25 @@ const Addresses: React.FC = () => {
     fullName: '', phone: '', pincode: '', state: '', city: '', houseNo: '', area: '', isDefault: false
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { locate, locating, error: locateError } = useLocateMe();
+
+  const handleLocateMe = () => {
+    locate((geo) => {
+      const matchedState = indiaStates.find(s => s.toLowerCase() === geo.state.toLowerCase()) || '';
+      const cityOptions = matchedState ? (stateCityMap[matchedState] ?? []) : [];
+      const matchedCity = cityOptions.find(c => c.toLowerCase() === geo.city.toLowerCase()) || '';
+
+      setForm(prev => ({
+        ...prev,
+        pincode: geo.pincode || prev.pincode,
+        state: matchedState || prev.state,
+        city: matchedCity || prev.city,
+        houseNo: geo.houseNo || prev.houseNo,
+        area: geo.area || geo.formattedAddress || prev.area,
+      }));
+      setErrors({});
+    });
+  };
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -175,7 +195,19 @@ const Addresses: React.FC = () => {
               >
                 <ArrowLeft size={18} /> Back to My Addresses
               </button>
-              <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-6">{editingId ? 'Edit Address' : 'Add New Address'}</h2>
+              <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+                <h2 className="text-base font-extrabold text-[#0f172a] m-0">{editingId ? 'Edit Address' : 'Add New Address'}</h2>
+                <button
+                  type="button"
+                  onClick={handleLocateMe}
+                  disabled={locating}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {locating ? <Loader2 size={14} className="animate-spin" /> : <LocateFixed size={14} />}
+                  {locating ? 'Detecting...' : 'Locate Me'}
+                </button>
+              </div>
+              {locateError && <p className="text-xs text-[#dc2626] mb-4 -mt-3">{locateError}</p>}
 
               <form onSubmit={handleSave}>
                 <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1 mb-4">
