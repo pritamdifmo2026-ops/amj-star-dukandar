@@ -3,7 +3,7 @@ import { orderApi } from '@/features/order/services/order.api';
 import apiClient from '@/api/client';
 import {
   ArrowLeft, Phone, Mail, Package, Truck, Boxes, CheckCircle, AlertTriangle,
-  Clock, XCircle, Download, Star, Upload, X, ShieldCheck, Wifi, Link2,
+  Clock, XCircle, Download, Star, Upload, X, ShieldCheck, Wifi, Link2, MapPin,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -391,6 +391,34 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           )}
         </div>
       </div>
+
+      {/* Delivery address — supplier needs this to ship the order */}
+      {isSupplier && (
+        <div className={`${card} p-5`}>
+          <p className={sectionTitle}>Delivery Address</p>
+          {snap.buyerAddress?.fullAddress || snap.buyerAddress?.city ? (
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] flex items-center justify-center shrink-0">
+                <MapPin size={16} className="text-[#059669]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-[#0f172a] m-0 mb-1">{snap.buyerAddress?.fullName || contactName}</p>
+                <p className="text-sm text-[#475569] m-0 leading-relaxed">
+                  {snap.buyerAddress?.fullAddress}
+                  {snap.buyerAddress?.city && <>, {snap.buyerAddress.city}</>}
+                  {snap.buyerAddress?.state && <>, {snap.buyerAddress.state}</>}
+                  {snap.buyerAddress?.pincode && <> - {snap.buyerAddress.pincode}</>}
+                </p>
+                {snap.buyerAddress?.phone && (
+                  <p className="text-xs text-[#64748b] m-0 mt-1.5">📞 {snap.buyerAddress.phone}</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-[#94a3b8] m-0">No delivery address on file for this order.</p>
+          )}
+        </div>
+      )}
 
       {/* Order summary */}
       <div className={`${card} p-5`}>
