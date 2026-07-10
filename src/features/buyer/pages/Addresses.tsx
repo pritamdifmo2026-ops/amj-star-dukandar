@@ -150,7 +150,7 @@ const Addresses: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#f8fafc]">
         <Navbar />
-        <div className="flex flex-col items-center justify-center py-24 gap-3 text-[#64748b]">
+        <div className="flex flex-col items-center justify-center py-24 gap-3 text-[#64748b] max-lg:pt-[calc(56px+env(safe-area-inset-top,0px))]">
           <Loader2 size={48} className="animate-spin text-primary" />
           <p className="text-sm m-0">Loading addresses...</p>
         </div>
@@ -162,7 +162,7 @@ const Addresses: React.FC = () => {
   return (
     <div className={redirectPath ? 'h-screen flex flex-col bg-[#f8fafc] overflow-hidden' : 'min-h-screen bg-[#f8fafc]'}>
       {!redirectPath && <Navbar />}
-      <main className={redirectPath ? 'flex-1 overflow-y-auto py-8 px-4' : 'py-10 px-4'}>
+      <main className={(redirectPath ? 'flex-1 overflow-y-auto py-8 px-4' : 'py-10 px-4') + (redirectPath ? '' : ' max-lg:pt-[calc(56px+env(safe-area-inset-top,0px))]')}>
         <div className="max-w-[800px] mx-auto">
           {/* Back button */}
           <button

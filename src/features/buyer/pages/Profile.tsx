@@ -501,7 +501,7 @@ const Profile: React.FC = () => {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Navbar />
-      <div className="flex flex-1 min-h-0 bg-[#f8fafc] max-lg:flex-col">
+      <div className="flex flex-1 min-h-0 bg-[#f8fafc] max-lg:flex-col max-lg:pt-[calc(56px+env(safe-area-inset-top,0px))]">
         <aside className="w-[260px] max-lg:w-full bg-white border-r border-[#eef2f6] flex flex-col shrink-0 max-lg:border-r-0 max-lg:border-b">
           <div className="flex items-center justify-between p-5 border-b border-[#f1f5f9] max-lg:py-3 max-lg:px-4">
             <div className="flex items-center gap-3">

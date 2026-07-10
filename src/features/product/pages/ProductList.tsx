@@ -271,7 +271,7 @@ const ProductList: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-cream">
       <Navbar />
 
-      <main className="flex-1 py-8 pb-12">
+      <main className="flex-1 py-8 pb-12 max-lg:pt-[calc(56px+env(safe-area-inset-top,0px))]">
         <div className="w-full max-w-[var(--width-container)] mx-auto px-8 max-md:px-4">
 
           {/* Header row */}

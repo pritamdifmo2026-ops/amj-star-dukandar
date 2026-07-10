@@ -250,6 +250,7 @@ const AdminDashboard: React.FC = () => {
         brandColor="#0284c7"
         user={user || undefined}
         theme="admin"
+        hideFooterOnMobile
       />
 
       <main className={`flex-1 p-8 transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] max-lg:ml-0 max-lg:pt-[calc(72px+env(safe-area-inset-top,0px))] max-lg:px-4 max-lg:pb-4 ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'}`}>

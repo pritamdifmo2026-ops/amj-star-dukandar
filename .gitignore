@@ -26,3 +26,11 @@ dist-ssr
 # Project specific
 airbnbstays
 
+# SSH keys / credentials — never commit these
+*.pem
+*.ppk
+*.key
+id_rsa*
+id_ed25519*
+.ssh/
+

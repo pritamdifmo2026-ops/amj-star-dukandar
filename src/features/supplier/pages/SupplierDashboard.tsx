@@ -306,6 +306,7 @@ const SupplierDashboard: React.FC = () => {
         onLogout={handleLogout} isSidebarOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         brandColor="#e65c00" user={user || undefined} profile={profile || undefined}
+        hideFooterOnMobile
       />
 
       <header

@@ -29,6 +29,8 @@ interface SidebarProps {
   user?: { name?: string; email?: string; avatar?: string };
   profile?: { fullName?: string; businessName?: string; storeName?: string };
   theme?: 'default' | 'admin' | 'dark';
+  /** Hide the profile/sign-out footer on mobile — set when the page's mobile header already has its own avatar dropdown with sign-out, to avoid showing it twice. */
+  hideFooterOnMobile?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -46,6 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   user,
   profile,
   theme = 'default',
+  hideFooterOnMobile = false,
 }) => {
   const navigate = useNavigate();
   const [showSoonModal, setShowSoonModal] = React.useState(false);
@@ -206,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Footer */}
-      <div className="mt-auto pt-8 flex flex-col gap-6">
+      <div className={['mt-auto pt-8 flex flex-col gap-6', hideFooterOnMobile && 'max-lg:hidden'].filter(Boolean).join(' ')}>
         <div className={['flex items-center gap-4 px-2', !isSidebarOpen && 'justify-center px-0'].join(' ')}>
           <div className="w-11 h-11 bg-gradient-to-br from-slate-800 to-slate-900 border border-white/10 rounded-[8px] flex items-center justify-center font-extrabold text-slate-100 flex-shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.1)]">
             {displayName.charAt(0).toUpperCase()}

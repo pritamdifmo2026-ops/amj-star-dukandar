@@ -82,7 +82,7 @@ const VerifiedManufacturers: React.FC = () => {
       <Navbar />
 
       {/* Header and Search */}
-      <div className="bg-white border-b border-slate-100 py-4 px-4">
+      <div className="bg-white border-b border-slate-100 py-4 px-4 max-lg:pt-[calc(56px+env(safe-area-inset-top,0px))]">
         <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col gap-1 w-full md:w-auto">
             <h1 className="text-2xl font-extrabold text-slate-900 flex items-center gap-2">

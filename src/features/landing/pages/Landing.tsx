@@ -157,7 +157,7 @@ const Landing: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
 
-      <main>
+      <main className="max-lg:pt-[calc(56px+env(safe-area-inset-top,0px))]">
         <div className="w-full max-w-[1600px] mx-auto px-0 sm:px-8">
           <BannerSlider />
         </div>
