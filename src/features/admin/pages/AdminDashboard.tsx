@@ -72,7 +72,6 @@ const AdminDashboard: React.FC = () => {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
 
   const mobileDropdownRef = React.useRef<HTMLDivElement>(null);
-  const desktopDropdownRef = React.useRef<HTMLDivElement>(null);
 
   const displayName = user?.name || 'Admin';
   const displayEmail = user?.email || 'admin@amjstar.com';
@@ -80,8 +79,7 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const clickedOutsideMobile = !mobileDropdownRef.current || !mobileDropdownRef.current.contains(e.target as Node);
-      const clickedOutsideDesktop = !desktopDropdownRef.current || !desktopDropdownRef.current.contains(e.target as Node);
-      if (clickedOutsideMobile && clickedOutsideDesktop) {
+      if (clickedOutsideMobile) {
         setAdminMenuOpen(false);
       }
     };
@@ -259,31 +257,6 @@ const AdminDashboard: React.FC = () => {
           <h2 className="text-xl font-extrabold text-[#0f172a] m-0">{tabLabel[activeTab] || ''}</h2>
           <div className="hidden lg:flex items-center gap-3">
             <NotificationBell />
-            {/* Desktop Admin Avatar Dropdown */}
-            <div className="relative flex items-center" ref={desktopDropdownRef}>
-              <button
-                onClick={() => setAdminMenuOpen(prev => !prev)}
-                className="w-8 h-8 rounded-full bg-[#0284c7]/10 text-[#0284c7] border border-[#0284c7]/20 flex items-center justify-center font-bold text-xs cursor-pointer focus:outline-none transition-all hover:bg-[#0284c7]/20 hover:scale-105 active:scale-95"
-              >
-                {displayName[0]?.toUpperCase() || 'A'}
-              </button>
-
-              {adminMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-[#e2e8f0] rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.08)] py-1.5 z-50 animate-fade-in">
-                  <div className="px-4 py-2 border-b border-[#f1f5f9]">
-                    <p className="font-bold text-[#0f172a] text-xs truncate m-0">{displayName}</p>
-                    <p className="text-[10px] text-[#64748b] truncate m-0 mt-0.5">{displayEmail}</p>
-                  </div>
-                  <button
-                    onClick={() => { setShowLogoutModal(true); setAdminMenuOpen(false); }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-left border-none bg-transparent hover:bg-[#fef2f2] hover:text-[#dc2626] text-xs text-[#475569] font-medium cursor-pointer transition-colors"
-                  >
-                    <LogOut size={14} className="text-[#64748b]" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </header>
 
