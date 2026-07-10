@@ -28,17 +28,22 @@ const Navbar: React.FC = () => {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const navigate = useNavigate();
-  const userMenuRef = React.useRef<HTMLDivElement>(null);
+  const desktopMenuRef = React.useRef<HTMLDivElement>(null);
+  const mobileMenuRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     categoryService.getAll().then(res => {
       if (res.categories) setCategories(res.categories);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   React.useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+      const clickedOutsideDesktop = !desktopMenuRef.current || !desktopMenuRef.current.contains(e.target as Node);
+      const clickedOutsideMobile = !mobileMenuRef.current || !mobileMenuRef.current.contains(e.target as Node);
+      if (clickedOutsideDesktop && clickedOutsideMobile) {
+        setUserMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -62,7 +67,7 @@ const Navbar: React.FC = () => {
           const res = await svc.getProfile();
           const { setSupplierProfile } = await import('@/features/supplier/store/supplier.slice');
           if (res.success && res.supplier) dispatch(setSupplierProfile(res.supplier));
-        } catch {}
+        } catch { }
       })();
     }
   }, [isSupplier, supplierProfile, dispatch]);
@@ -75,15 +80,27 @@ const Navbar: React.FC = () => {
           const data = await svc.getProfile();
           const { setResellerProfile } = await import('@/features/reseller/store/reseller.slice');
           if (data) dispatch(setResellerProfile(data));
-        } catch {}
+        } catch { }
       })();
     }
   }, [isReseller, resellerProfile, dispatch]);
 
   React.useEffect(() => { if (isAuth) dispatch(fetchCart()); }, [isAuth, dispatch]);
 
+  React.useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
   const handleSignOut = () => {
     dispatch(logout());
+    setMobileOpen(false);
     if (isAdmin) window.location.href = '/';
     else { navigate(ROUTES.HOME); setShowLogoutModal(false); setUserMenuOpen(false); }
   };
@@ -98,7 +115,7 @@ const Navbar: React.FC = () => {
   const dropdownItemCls = "block w-full px-4 py-3 text-left border-none bg-transparent text-heading text-xs no-underline rounded-[8px] cursor-pointer hover:bg-gray-50 hover:text-primary";
 
   return (
-    <header className="sticky top-0 z-[1000] bg-cream">
+    <>
       {/* Top strip */}
       <div className="hidden sm:block bg-cream border-b border-border py-0.5">
         <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
@@ -117,125 +134,212 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Main navbar */}
-      <nav className="bg-surface py-1 border-b border-border">
-        <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
-          <Link to={ROUTES.HOME} className="no-underline">
-            <img src={logo} alt="AMJSTAR Logo" className="h-[38px] rounded-full object-contain" />
-          </Link>
+      <header
+        className="fixed lg:sticky top-0 left-0 right-0 w-full z-[1000] bg-surface"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)'
+        }}
+      >
+        {/* Main navbar */}
+        <nav className="bg-surface h-14 lg:h-auto border-b border-border flex items-stretch lg:items-center lg:py-1">
+          <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 w-full flex justify-between items-center h-full">
+            {/* Desktop-only Logo */}
+            <Link to={ROUTES.HOME} className="hidden lg:flex items-center no-underline h-full">
+              <img src={logo} alt="AMJSTAR Logo" className="block h-9 w-9 lg:h-10 lg:w-10 rounded-full object-contain" />
+            </Link>
 
-          <div className="hidden lg:block flex-1 max-w-[760px] mx-3 sm:mx-6">
-            <SearchBar categories={categories} />
-          </div>
+            {/* Desktop-only SearchBar */}
+            <div className="hidden lg:block flex-1 max-w-[760px] mx-3 sm:mx-6">
+              <SearchBar categories={categories} />
+            </div>
 
-          <div className="flex items-center gap-4">
-            {isAuth ? (
-              <div className="relative cursor-pointer flex items-center gap-2" onClick={() => setUserMenuOpen(p => !p)} ref={userMenuRef}>
-                <span className="font-semibold text-heading text-[11px] border border-[#d1a97a] rounded-[6px] px-3 py-1 bg-[#fdf6ee]">{displayName}</span>
-                {userMenuOpen && (
-                  <div className="absolute top-full right-0 mt-3 bg-cream border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] min-w-[200px] p-2 z-10">
-                    {isSupplier ? (
-                      <Link to="/supplier/onboarding" className={dropdownItemCls}>
-                        <LayoutDashboard size={14} className="inline mr-2" />Dashboard
-                      </Link>
-                    ) : isReseller ? (
-                      <Link to="/reseller/dashboard" className={dropdownItemCls}>
-                        <LayoutDashboard size={14} className="inline mr-2" />Dashboard
-                      </Link>
-                    ) : isAdmin ? (
-                      <Link to="/admin/dashboard" className={dropdownItemCls}>
-                        <LayoutDashboard size={14} className="inline mr-2" />Control Panel
-                      </Link>
-                    ) : (
-                      <Link to="/profile" className={dropdownItemCls}>
-                        <User size={14} className="inline mr-2" />Profile
-                      </Link>
-                    )}
-                    <button className={dropdownItemCls} onClick={() => setShowLogoutModal(true)}>
-                      <LogOut size={14} className="inline mr-2" />Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="hidden lg:flex items-center gap-5">
-                <Link to="/about" className={`${navLinkCls} flex items-center gap-1`}>
-                  <Info size={12} /> About
-                </Link>
-                <Link to={ROUTES.BUYERS} className={`${navLinkCls} flex items-center gap-1`}>
-                  <ShoppingBag size={12} /> For Buyers
-                </Link>
-                <Link to={ROUTES.RESELLERS} className={`${navLinkCls} flex items-center gap-1`}>
-                  <RefreshCw size={12} /> For Resellers
-                </Link>
-                <Link to={ROUTES.SUPPLIERS} className={`${navLinkCls} flex items-center gap-1`}>
-                  <Factory size={12} /> For Suppliers
-                </Link>
-                <Link to={`${ROUTES.LOGIN}?mode=buyer`}
-                  className="bg-heading text-white px-[18px] py-1.5 rounded-full no-underline font-semibold text-[11px] transition-all ml-2 hover:opacity-90 hover:-translate-y-px">
-                  Join Free
-                </Link>
-              </div>
-            )}
-            {isAuth && <NotificationBell />}
-            {isAuth && !isSupplier && !isReseller && !isAdmin && (
-              <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate('/profile?tab=cart')}>
-                <ShoppingCart size={20} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-surface" />
-                )}
-              </div>
-            )}
-            <button
-              className="flex lg:hidden bg-transparent border-none text-heading cursor-pointer p-1 hover:text-primary transition-colors"
-              onClick={() => setIsMobileSearchOpen(true)}
-            >
-              <Search size={20} />
-            </button>
-            <button className="flex lg:hidden bg-transparent border-none text-heading cursor-pointer p-1" onClick={() => setMobileOpen(p => !p)}>
-              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Category bar — desktop only */}
-      <div className="hidden lg:block bg-surface border-b border-border">
-        <div className="max-w-[var(--width-container)] mx-auto px-8 flex items-center gap-6">
-          <div className="flex items-center gap-5 flex-1">
-            {categories.map(cat => {
-              const hasSubs = cat.subcategories?.length > 0;
-              return (
-                <div key={cat._id} className="relative py-1 group">
-                  <Link
-                    to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                    className="flex items-center gap-1.5 text-body no-underline text-[11px] font-semibold transition-colors group-hover:text-primary whitespace-nowrap"
-                  >
-                    <span>{cat.name}</span>
-                    {hasSubs && <ChevronDown size={12} />}
-                  </Link>
-                  {hasSubs && (
-                    <div className="absolute top-full left-0 min-w-[200px] bg-white border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] p-2 z-[100] opacity-0 invisible translate-y-2.5 transition-all group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
-                      {cat.subcategories.map((sub: any) => (
-                        <Link key={sub._id}
-                          to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                          className="block px-3 py-2 text-heading no-underline text-xs rounded-[6px] transition-all hover:bg-slate-50 hover:text-primary hover:pl-4">
-                          {sub.name}
+            {/* Desktop-only Navigation and Profile */}
+            <div className="hidden lg:flex items-center gap-4">
+              {isAuth ? (
+                <div className="relative flex items-center gap-2" ref={desktopMenuRef}>
+                  <span className="font-semibold text-heading text-[11px] border border-[#d1a97a] rounded-[6px] px-3 py-1 bg-[#fdf6ee] cursor-pointer select-none" onClick={() => setUserMenuOpen(p => !p)}>{displayName}</span>
+                  {userMenuOpen && (
+                    <div className="absolute top-full right-0 mt-3 bg-cream border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] min-w-[200px] p-2 z-10" onClick={e => e.stopPropagation()}>
+                      {isSupplier ? (
+                        <Link to="/supplier/onboarding" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <LayoutDashboard size={14} className="inline mr-2" />Dashboard
                         </Link>
-                      ))}
+                      ) : isReseller ? (
+                        <Link to="/reseller/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <LayoutDashboard size={14} className="inline mr-2" />Dashboard
+                        </Link>
+                      ) : isAdmin ? (
+                        <Link to="/admin/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <LayoutDashboard size={14} className="inline mr-2" />Control Panel
+                        </Link>
+                      ) : (
+                        <Link to="/profile" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <User size={14} className="inline mr-2" />Profile
+                        </Link>
+                      )}
+                      <button className={dropdownItemCls} onClick={() => { setShowLogoutModal(true); setUserMenuOpen(false); }}>
+                        <LogOut size={14} className="inline mr-2" />Sign Out
+                      </button>
                     </div>
                   )}
                 </div>
-              );
-            })}
+              ) : (
+                <div className="hidden lg:flex items-center gap-5">
+                  <Link to="/about" className={`${navLinkCls} flex items-center gap-1`}>
+                    <Info size={12} /> About
+                  </Link>
+                  <Link to={ROUTES.BUYERS} className={`${navLinkCls} flex items-center gap-1`}>
+                    <ShoppingBag size={12} /> For Buyers
+                  </Link>
+                  <Link to={ROUTES.RESELLERS} className={`${navLinkCls} flex items-center gap-1`}>
+                    <RefreshCw size={12} /> For Resellers
+                  </Link>
+                  <Link to={ROUTES.SUPPLIERS} className={`${navLinkCls} flex items-center gap-1`}>
+                    <Factory size={12} /> For Suppliers
+                  </Link>
+                  <Link to={`${ROUTES.LOGIN}?mode=buyer`}
+                    className="bg-heading text-white px-[18px] py-1.5 rounded-full no-underline font-semibold text-[11px] transition-all ml-2 hover:opacity-90 hover:-translate-y-px">
+                    Join Free
+                  </Link>
+                </div>
+              )}
+              {isAuth && <NotificationBell />}
+              {isAuth && !isSupplier && !isReseller && !isAdmin && (
+                <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate('/profile?tab=cart')}>
+                  <ShoppingCart size={20} />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-surface" />
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Mobile-only Layout */}
+            <div className="flex lg:hidden items-center justify-between w-full h-full gap-2">
+              {/* Left: Hamburger menu */}
+              <button
+                className="bg-transparent border-none text-heading cursor-pointer p-1 flex items-center justify-center shrink-0"
+                onClick={() => setMobileOpen(p => !p)}
+              >
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+
+              {/* Logo */}
+              <Link to={ROUTES.HOME} className="flex items-center no-underline shrink-0">
+                <img src={logo} alt="AMJSTAR Logo" className="block h-9 w-9 rounded-full object-contain" />
+              </Link>
+
+              {/* Search Bar */}
+              <div
+                onClick={() => setIsMobileSearchOpen(true)}
+                className="flex-1 flex items-center bg-gray-50 border border-gray-200 rounded-full h-9 px-3 cursor-pointer shrink min-w-0"
+              >
+                <Search size={14} className="text-gray-400 mr-1.5 shrink-0" />
+                <span className="text-gray-400 text-xs truncate">Search products, suppliers...</span>
+              </div>
+
+              {/* Right actions: Avatar, Notification, Cart */}
+              <div className="flex items-center gap-2.5 shrink-0">
+                {isAuth ? (
+                  <div className="relative flex items-center" ref={mobileMenuRef}>
+                    <span className="w-8 h-8 rounded-full bg-[#fdf6ee] border border-[#d1a97a] text-[#b38040] font-semibold text-xs flex items-center justify-center select-none cursor-pointer" onClick={() => setUserMenuOpen(p => !p)}>
+                      {displayName[0]?.toUpperCase() || 'U'}
+                    </span>
+                    {userMenuOpen && (
+                      <div className="absolute top-[calc(100%+8px)] right-0 mt-1 bg-cream border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] min-w-[180px] p-2 z-[1001]" onClick={e => e.stopPropagation()}>
+                        {isSupplier ? (
+                          <Link to="/supplier/onboarding" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                            <LayoutDashboard size={14} className="inline mr-2" />Dashboard
+                          </Link>
+                        ) : isReseller ? (
+                          <Link to="/reseller/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                            <LayoutDashboard size={14} className="inline mr-2" />Dashboard
+                          </Link>
+                        ) : isAdmin ? (
+                          <Link to="/admin/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                            <LayoutDashboard size={14} className="inline mr-2" />Control Panel
+                          </Link>
+                        ) : (
+                          <Link to="/profile" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                            <User size={14} className="inline mr-2" />Profile
+                          </Link>
+                        )}
+                        <button className={dropdownItemCls} onClick={() => { setShowLogoutModal(true); setUserMenuOpen(false); }}>
+                          <LogOut size={14} className="inline mr-2" />Sign Out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    to={`${ROUTES.LOGIN}?mode=buyer`}
+                    className="w-8 h-8 rounded-full bg-gray-50 border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                  >
+                    <User size={14} />
+                  </Link>
+                )}
+
+                {isAuth && <NotificationBell />}
+
+                {isAuth && !isSupplier && !isReseller && !isAdmin && (
+                  <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate('/profile?tab=cart')}>
+                    <ShoppingCart size={18} />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full border border-surface" />
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-6 border-l border-border pl-6">
-            <Link to="/verified-manufacturers" className="text-[11px] font-medium text-heading no-underline whitespace-nowrap hover:text-primary">
-              Verified manufacturers
-            </Link>
+        </nav>
+
+        {/* Category bar — desktop only */}
+        <div className="hidden lg:block bg-surface border-b border-border">
+          <div className="max-w-[var(--width-container)] mx-auto px-8 flex items-center gap-6">
+            <div className="flex items-center gap-5 flex-1">
+              {categories.map(cat => {
+                const hasSubs = cat.subcategories?.length > 0;
+                return (
+                  <div key={cat._id} className="relative py-1 group">
+                    <Link
+                      to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                      className="flex items-center gap-1.5 text-body no-underline text-[11px] font-semibold transition-colors group-hover:text-primary whitespace-nowrap"
+                    >
+                      <span>{cat.name}</span>
+                      {hasSubs && <ChevronDown size={12} />}
+                    </Link>
+                    {hasSubs && (
+                      <div className="absolute top-full left-0 min-w-[200px] bg-white border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] p-2 z-[100] opacity-0 invisible translate-y-2.5 transition-all group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
+                        {cat.subcategories.map((sub: any) => (
+                          <Link key={sub._id}
+                            to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                            className="block px-3 py-2 text-heading no-underline text-xs rounded-[6px] transition-all hover:bg-slate-50 hover:text-primary hover:pl-4">
+                            {sub.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-6 border-l border-border pl-6">
+              <Link to="/verified-manufacturers" className="text-[11px] font-medium text-heading no-underline whitespace-nowrap hover:text-primary">
+                Verified manufacturers
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Spacer to prevent content overlap on mobile/tablet because the header is fixed */}
+      <div
+        className="lg:hidden"
+        style={{
+          height: 'calc(3.5rem + env(safe-area-inset-top, 0px))'
+        }}
+      />
 
       {/* Mobile menu overlay */}
       <div
@@ -243,10 +347,16 @@ const Navbar: React.FC = () => {
         onClick={() => setMobileOpen(false)}
       >
         <div
-          className={`absolute top-0 right-0 bottom-0 w-[300px] bg-surface flex flex-col transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          className={`fixed top-0 left-0 bottom-0 w-[300px] h-[100dvh] bg-surface flex flex-col transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
           onClick={e => e.stopPropagation()}
         >
-          <header className="px-6 py-6 border-b border-border flex justify-between items-center">
+          <header
+            className="px-6 border-b border-border flex justify-between items-center"
+            style={{
+              paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))',
+              paddingBottom: '1.5rem'
+            }}
+          >
             {isAuth ? (
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
@@ -388,7 +498,7 @@ const Navbar: React.FC = () => {
           onClose={() => setIsMobileSearchOpen(false)}
         />
       )}
-    </header>
+    </>
   );
 };
 

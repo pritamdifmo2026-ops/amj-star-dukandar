@@ -132,7 +132,15 @@ const dispatch = useAppDispatch();
   return (
     <div className="flex min-h-screen bg-white overflow-x-hidden w-full relative max-lg:flex-col">
       {/* Mobile Header */}
-      <header className="hidden max-lg:flex items-center justify-between px-4 py-3 bg-white border-b border-[#eef2f6] sticky top-0 z-30">
+      <header
+        className="hidden max-lg:flex fixed top-0 left-0 right-0 z-30 bg-white px-4 h-14 border-b border-[#eef2f6] items-center justify-between w-full shrink-0"
+        style={{
+          transform: 'translate3d(0,0,0)',
+          WebkitTransform: 'translate3d(0,0,0)',
+          willChange: 'transform',
+          paddingTop: 'env(safe-area-inset-top, 0px)'
+        }}
+      >
         <button className="w-9 h-9 flex items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#475569] border-none cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
           <Menu size={20} />
         </button>
@@ -144,7 +152,7 @@ const dispatch = useAppDispatch();
       </header>
 
       {isSidebarOpen && window.innerWidth <= 1024 && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.4)] z-40 max-lg:block hidden" onClick={() => setIsSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-transparent z-40 max-lg:block hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
 
       <Sidebar
@@ -162,7 +170,7 @@ const dispatch = useAppDispatch();
         profile={profile || undefined}
       />
 
-      <main className="flex-1 ml-[260px] p-10 transition-all max-lg:ml-0 max-lg:p-4">
+      <main className="flex-1 ml-[260px] p-10 transition-all max-lg:ml-0 max-lg:pt-[calc(72px+env(safe-area-inset-top,0px))] max-lg:px-4 max-lg:pb-4">
         {activeView === 'overview' && (
           <header className="flex justify-between items-start mb-8 max-sm:flex-col max-sm:gap-4">
             <div>

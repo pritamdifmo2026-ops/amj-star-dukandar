@@ -164,7 +164,13 @@ const MobileSearchOverlay: React.FC<MobileSearchOverlayProps> = ({ categories, o
       `}</style>
 
       {/* Header section */}
-      <header className="bg-surface border-b border-border py-3 px-4 flex items-center justify-between shadow-sm shrink-0">
+      <header
+        className="bg-surface border-b border-border px-4 flex items-center justify-between shadow-sm shrink-0"
+        style={{
+          paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
+          paddingBottom: '0.75rem'
+        }}
+      >
         <button
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-cream transition-colors text-heading border-none bg-transparent cursor-pointer"

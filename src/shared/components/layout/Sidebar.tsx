@@ -78,7 +78,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         isAdmin ? 'bg-[#020617] border-r-[rgba(230,92,0,0.1)]' : 'bg-slate-900',
         isSidebarOpen ? 'w-[280px]' : 'w-24',
         // mobile: hidden off-screen, shown when open
-        'max-lg:!w-[280px] max-lg:left-[-280px] max-lg:data-[open=true]:left-0 max-lg:data-[open=true]:shadow-[30px_0_60px_rgba(0,0,0,0.5)]',
+        'max-lg:!w-[280px] max-lg:left-[-280px] max-lg:data-[open=true]:left-0 max-lg:data-[open=true]:shadow-none max-lg:shadow-none',
       ].filter(Boolean).join(' ')}
       data-open={isSidebarOpen}
       style={{ '--brand-color': brandColor } as React.CSSProperties}

@@ -111,7 +111,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ viewAllPath = '/not
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-3 w-80 bg-white border border-border rounded-[10px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] z-[1100] overflow-hidden">
+        <div className="absolute right-[-40px] sm:right-0 top-full mt-3 w-80 bg-white border border-border rounded-[10px] shadow-[0_10px_30px_rgba(0,0,0,0.12)] z-[1100] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <span className="font-semibold text-heading text-sm">Notifications</span>

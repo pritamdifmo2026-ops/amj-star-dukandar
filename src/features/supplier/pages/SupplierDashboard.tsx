@@ -79,6 +79,26 @@ const SupplierDashboard: React.FC = () => {
   const [emailVerifySending, setEmailVerifySending] = useState(false);
   const [emailVerifySentTo, setEmailVerifySentTo] = useState('');
 
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const mobileDropdownRef = React.useRef<HTMLDivElement>(null);
+  const desktopDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const displayName = profile?.businessName || 'Supplier';
+  const displayEmail = user?.email || profile?.businessDetails?.email || 'supplier@amjstar.com';
+  const initial = displayName[0]?.toUpperCase() || 'S';
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const clickedOutsideMobile = !mobileDropdownRef.current || !mobileDropdownRef.current.contains(e.target as Node);
+      const clickedOutsideDesktop = !desktopDropdownRef.current || !desktopDropdownRef.current.contains(e.target as Node);
+      if (clickedOutsideMobile && clickedOutsideDesktop) {
+        setAvatarMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   const { data: unreadEnquiries = 0 } = useQuery<number>({
     queryKey: ['chat', 'unreadCount'],
     queryFn: () => chatApi.getUnreadCount(),
@@ -290,22 +310,85 @@ const SupplierDashboard: React.FC = () => {
         brandColor="#e65c00" user={user || undefined} profile={profile || undefined}
       />
 
-      <header className="hidden max-lg:flex sticky top-0 z-[100] bg-white px-4 py-3 border-b border-[#f1f5f9] items-center justify-between w-full shrink-0">
+      <header
+        className="hidden max-lg:flex fixed top-0 left-0 right-0 z-[100] bg-white px-4 h-14 border-b border-[#f1f5f9] items-center justify-between w-full shrink-0"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)'
+        }}
+      >
         <button onClick={() => setIsSidebarOpen(true)} aria-label="Open menu" className="bg-[#f8fafc] border border-[#e2e8f0] text-[#475569] w-10 h-10 rounded-[10px] flex items-center justify-center cursor-pointer">
           <Menu size={20} />
         </button>
-        <div className="font-extrabold text-base text-[#0f172a]">Supplier Hub</div>
-        <NotificationBell viewAllPath="/supplier/dashboard?tab=notifications" />
+
+        {/* Branding Logo & Title */}
+        <div className="flex items-center gap-1.5">
+          <img src={logo} alt="AMJ Logo" className="h-7 w-7 rounded-full object-contain" />
+          <span className="font-extrabold text-[#0f172a] text-xs sm:text-sm tracking-tight">Supplier Hub</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <NotificationBell viewAllPath="/supplier/dashboard?tab=notifications" />
+          {/* Mobile Avatar Dropdown */}
+          <div className="relative flex items-center" ref={mobileDropdownRef}>
+            <button
+              onClick={() => setAvatarMenuOpen(prev => !prev)}
+              className="w-8 h-8 rounded-full bg-[#e65c00]/10 text-[#e65c00] border border-[#e65c00]/20 flex items-center justify-center font-bold text-xs cursor-pointer focus:outline-none transition-all hover:bg-[#e65c00]/20 hover:scale-105 active:scale-95"
+            >
+              {initial}
+            </button>
+
+            {avatarMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-[#e2e8f0] rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.08)] py-1.5 z-[1001] animate-fade-in">
+                <div className="px-4 py-2 border-b border-[#f1f5f9]">
+                  <p className="font-bold text-[#0f172a] text-xs truncate m-0">{displayName}</p>
+                  <p className="text-[10px] text-[#64748b] truncate m-0 mt-0.5">{displayEmail}</p>
+                </div>
+                <button
+                  onClick={() => { setShowLogoutModal(true); setAvatarMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-left border-none bg-transparent hover:bg-[#fef2f2] hover:text-[#dc2626] text-xs text-[#475569] font-medium cursor-pointer transition-colors"
+                >
+                  <LogOut size={14} className="text-[#64748b]" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       {isSidebarOpen && isMobile && (
-        <div className="fixed inset-0 bg-[rgba(15,23,42,0.4)] backdrop-blur-[4px] z-[999] animate-fade-in" onClick={() => setIsSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-transparent z-[999]" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      <main className={`flex-1 transition-all duration-300 max-w-full overflow-x-hidden max-lg:ml-0 max-lg:p-4 max-lg:w-full ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'} p-10`}>
-        {/* Desktop top-right notification bell (mobile has it in the header) */}
-        <div className="hidden lg:flex justify-end mb-4">
+      <main className={`flex-1 transition-all duration-300 max-w-full overflow-x-hidden max-lg:ml-0 max-lg:pt-[calc(72px+env(safe-area-inset-top,0px))] max-lg:px-4 max-lg:pb-4 max-lg:w-full ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'} p-10`}>
+        {/* Desktop top-right notification bell and avatar dropdown */}
+        <div className="hidden lg:flex justify-end items-center gap-3 mb-4">
           <NotificationBell viewAllPath="/supplier/dashboard?tab=notifications" />
+          {/* Desktop Avatar Dropdown */}
+          <div className="relative flex items-center" ref={desktopDropdownRef}>
+            <button
+              onClick={() => setAvatarMenuOpen(prev => !prev)}
+              className="w-8 h-8 rounded-full bg-[#e65c00]/10 text-[#e65c00] border border-[#e65c00]/20 flex items-center justify-center font-bold text-xs cursor-pointer focus:outline-none transition-all hover:bg-[#e65c00]/20 hover:scale-105 active:scale-95"
+            >
+              {initial}
+            </button>
+
+            {avatarMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-[#e2e8f0] rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.08)] py-1.5 z-50 animate-fade-in">
+                <div className="px-4 py-2 border-b border-[#f1f5f9]">
+                  <p className="font-bold text-[#0f172a] text-xs truncate m-0">{displayName}</p>
+                  <p className="text-[10px] text-[#64748b] truncate m-0 mt-0.5">{displayEmail}</p>
+                </div>
+                <button
+                  onClick={() => { setShowLogoutModal(true); setAvatarMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-left border-none bg-transparent hover:bg-[#fef2f2] hover:text-[#dc2626] text-xs text-[#475569] font-medium cursor-pointer transition-colors"
+                >
+                  <LogOut size={14} className="text-[#64748b]" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {error && (
@@ -334,8 +417,8 @@ const SupplierDashboard: React.FC = () => {
 
         {/* Unverified email banner */}
         {(() => {
-          const supplierEmail = user?.email || (profile as any)?.user?.email || (profile as any)?.businessDetails?.email;
-          const isVerified = user?.isEmailVerified || (profile as any)?.user?.isEmailVerified;
+          const supplierEmail = user?.email || profile?.user?.email || profile?.businessDetails?.email;
+          const isVerified = user?.isEmailVerified || profile?.user?.isEmailVerified;
           if (!supplierEmail || isVerified) return null;
           const handleSendVerification = async () => {
             setEmailVerifySending(true);

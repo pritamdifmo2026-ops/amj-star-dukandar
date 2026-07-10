@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
@@ -69,6 +69,25 @@ const AdminDashboard: React.FC = () => {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth > 1024);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+
+  const mobileDropdownRef = React.useRef<HTMLDivElement>(null);
+  const desktopDropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const displayName = user?.name || 'Admin';
+  const displayEmail = user?.email || 'admin@amjstar.com';
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const clickedOutsideMobile = !mobileDropdownRef.current || !mobileDropdownRef.current.contains(e.target as Node);
+      const clickedOutsideDesktop = !desktopDropdownRef.current || !desktopDropdownRef.current.contains(e.target as Node);
+      if (clickedOutsideMobile && clickedOutsideDesktop) {
+        setAdminMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const { data: newEnquiryCount = 0 } = useQuery<number>({
     queryKey: ['admin', 'enquiry', 'count'],
@@ -165,20 +184,58 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc] overflow-x-hidden w-full relative max-lg:flex-col">
-      <header className="hidden max-lg:flex items-center justify-between px-4 py-3 bg-white border-b border-[#eef2f6] sticky top-0 z-30">
+      <header
+        className="hidden max-lg:flex fixed top-0 left-0 right-0 z-30 bg-white px-4 h-14 border-b border-[#eef2f6] items-center justify-between w-full shrink-0"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)'
+        }}
+      >
         <button
           className="w-9 h-9 flex items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#475569] border-none cursor-pointer"
           onClick={() => setIsSidebarOpen(true)}
         >
           <Menu size={20} />
         </button>
-        <div className="font-bold text-[#0f172a] text-sm">AMJ Admin</div>
-        <NotificationBell />
+
+        {/* Branding Logo & Title */}
+        <div className="flex items-center gap-1.5">
+          <img src={logo} alt="AMJ Logo" className="h-7 w-7 rounded-full object-contain" />
+          <span className="font-extrabold text-[#0f172a] text-xs sm:text-sm tracking-tight">AMJ Admin</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          {/* Mobile Admin Avatar Dropdown */}
+          <div className="relative flex items-center" ref={mobileDropdownRef}>
+            <button
+              onClick={() => setAdminMenuOpen(prev => !prev)}
+              className="w-8 h-8 rounded-full bg-[#0284c7]/10 text-[#0284c7] border border-[#0284c7]/20 flex items-center justify-center font-bold text-xs cursor-pointer focus:outline-none transition-all hover:bg-[#0284c7]/20 hover:scale-105 active:scale-95"
+            >
+              {displayName[0]?.toUpperCase() || 'A'}
+            </button>
+
+            {adminMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-[#e2e8f0] rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.08)] py-1.5 z-50 animate-fade-in">
+                <div className="px-4 py-2 border-b border-[#f1f5f9]">
+                  <p className="font-bold text-[#0f172a] text-xs truncate m-0">{displayName}</p>
+                  <p className="text-[10px] text-[#64748b] truncate m-0 mt-0.5">{displayEmail}</p>
+                </div>
+                <button
+                  onClick={() => { setShowLogoutModal(true); setAdminMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-left border-none bg-transparent hover:bg-[#fef2f2] hover:text-[#dc2626] text-xs text-[#475569] font-medium cursor-pointer transition-colors"
+                >
+                  <LogOut size={14} className="text-[#64748b]" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </header>
 
       {isSidebarOpen && window.innerWidth <= 1024 && (
         <div
-          className="fixed inset-0 bg-[rgba(0,0,0,0.4)] z-40 max-lg:block hidden"
+          className="fixed inset-0 bg-transparent z-40 max-lg:block hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -197,10 +254,37 @@ const AdminDashboard: React.FC = () => {
         theme="admin"
       />
 
-      <main className={`flex-1 p-8 transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] max-lg:ml-0 max-lg:p-4 ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'}`}>
+      <main className={`flex-1 p-8 transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] max-lg:ml-0 max-lg:pt-[calc(72px+env(safe-area-inset-top,0px))] max-lg:px-4 max-lg:pb-4 ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'}`}>
         <header className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-xl font-extrabold text-[#0f172a] m-0">{tabLabel[activeTab] || ''}</h2>
-          <div className="hidden lg:block"><NotificationBell /></div>
+          <div className="hidden lg:flex items-center gap-3">
+            <NotificationBell />
+            {/* Desktop Admin Avatar Dropdown */}
+            <div className="relative flex items-center" ref={desktopDropdownRef}>
+              <button
+                onClick={() => setAdminMenuOpen(prev => !prev)}
+                className="w-8 h-8 rounded-full bg-[#0284c7]/10 text-[#0284c7] border border-[#0284c7]/20 flex items-center justify-center font-bold text-xs cursor-pointer focus:outline-none transition-all hover:bg-[#0284c7]/20 hover:scale-105 active:scale-95"
+              >
+                {displayName[0]?.toUpperCase() || 'A'}
+              </button>
+
+              {adminMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-[#e2e8f0] rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.08)] py-1.5 z-50 animate-fade-in">
+                  <div className="px-4 py-2 border-b border-[#f1f5f9]">
+                    <p className="font-bold text-[#0f172a] text-xs truncate m-0">{displayName}</p>
+                    <p className="text-[10px] text-[#64748b] truncate m-0 mt-0.5">{displayEmail}</p>
+                  </div>
+                  <button
+                    onClick={() => { setShowLogoutModal(true); setAdminMenuOpen(false); }}
+                    className="w-full flex items-center gap-2 px-4 py-2 text-left border-none bg-transparent hover:bg-[#fef2f2] hover:text-[#dc2626] text-xs text-[#475569] font-medium cursor-pointer transition-colors"
+                  >
+                    <LogOut size={14} className="text-[#64748b]" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </header>
 
         {/* Admin login alert: suppliers awaiting physical verification for an upgrade */}
@@ -318,6 +402,7 @@ const AdminDashboard: React.FC = () => {
         message={messageModal.message}
         type={messageModal.type}
       />
+
     </div>
   );
 };

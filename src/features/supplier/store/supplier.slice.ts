@@ -56,6 +56,44 @@ export interface PendingUpgrade {
   paidAt?: string;
 }
 
+export interface BusinessDetails {
+  address?: string;
+  pinCode?: string;
+  state?: string;
+  city?: string;
+  gstin?: string;
+  pan?: string;
+  email?: string;
+  about?: string;
+  description?: string;
+  yearOfEstablishment?: string;
+  ownerName?: string;
+  isWomenEntrepreneur?: boolean;
+  isFoodSupplier?: boolean;
+  fssaiLicenseNumber?: string;
+  fssaiCertificate?: string;
+  panDocument?: string;
+  gstinDocument?: string;
+  annualTurnover?: number;
+  monthlyProductionCapacity?: number;
+  taxFilingMethod?: string;
+  taxFilingDetails?: string;
+  taxPaymentsCompliance?: string;
+  returnPolicyType?: string;
+  returnPolicyCustomTerms?: string;
+  website?: string;
+}
+
+export interface SupplierUser {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
+  avatar?: string;
+}
+
 interface SupplierProfile {
   _id?: string;
   businessName: string;
@@ -71,6 +109,8 @@ interface SupplierProfile {
   subscription?: Subscription;
   pendingUpgrade?: PendingUpgrade;
   maxProducts?: number;
+  businessDetails?: BusinessDetails;
+  user?: SupplierUser;
 }
 
 interface SupplierState {

@@ -25,9 +25,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 const fmt = (n: number) =>
   n >= 1_00_00_000 ? `\u20B9${(n / 1_00_00_000).toFixed(1)}Cr`
-  : n >= 1_00_000 ? `\u20B9${(n / 1_00_000).toFixed(1)}L`
-  : n >= 1_000 ? `\u20B9${(n / 1_000).toFixed(1)}K`
-  : `\u20B9${n}`;
+    : n >= 1_00_000 ? `\u20B9${(n / 1_00_000).toFixed(1)}L`
+      : n >= 1_000 ? `\u20B9${(n / 1_000).toFixed(1)}K`
+        : `\u20B9${n}`;
 
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
   const growthData = (stats.monthlySignups ?? []).map(m => ({ name: m.month, users: m.users }));
