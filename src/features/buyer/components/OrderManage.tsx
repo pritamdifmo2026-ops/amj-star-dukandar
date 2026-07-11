@@ -775,14 +775,12 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
       )}
 
       {/* ── BUYER action panel (non-dispute) ───────────────────────────────── */}
-      {!isSupplier && ['shipped', 'awaiting_confirmation', 'delivered'].includes(order.status) && (
+      {!isSupplier && order.status === 'awaiting_confirmation' && (
         <div className={`${card} p-5`}>
           <p className={sectionTitle}>Confirm Your Order</p>
-          {order.status === 'awaiting_confirmation' && (
-            <div className="flex items-center gap-2 bg-[#faf5ff] border border-[#d8b4fe] rounded-[8px] px-3 py-2 text-xs text-[#7e22ce] font-semibold mb-3">
-              <Clock size={13} /> The supplier marked this delivered. Please confirm within 72 hours.
-            </div>
-          )}
+          <div className="flex items-center gap-2 bg-[#faf5ff] border border-[#d8b4fe] rounded-[8px] px-3 py-2 text-xs text-[#7e22ce] font-semibold mb-3">
+            <Clock size={13} /> The supplier marked this delivered. Please confirm within 72 hours.
+          </div>
           {confirmMode === 'idle' && (
             <div className="flex gap-3">
               <button onClick={() => setConfirmMode('ticket')} className="flex-1 flex flex-col items-center gap-2 p-4 border-2 border-[#fca5a5] bg-[#fef2f2] rounded-[12px] cursor-pointer hover:bg-[#fee2e2]">

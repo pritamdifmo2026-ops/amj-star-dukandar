@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, Clock, Filter, ArrowLeft } from 'lucide-react';
+import { CheckCircle, XCircle, Filter, ArrowLeft, Search, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Button from '@/shared/components/ui/Button';
 import adminService from '../services/admin.service';
+import { useSocket } from '@/shared/contexts/SocketContext';
+import { useDebounce } from '@/shared/hooks/useDebounce';
+
+const INITIAL_LIMIT = 10;
+const LOAD_STEP = 20;
 
 const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9]";
 const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
@@ -12,7 +17,6 @@ const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155]";
 const statusBadge = (status: string) => {
   const map: Record<string, string> = {
     pending: 'bg-[#fffbeb] text-[#d97706]',
-    approved: 'bg-[#eff6ff] text-[#1d4ed8]',
     rejected: 'bg-[#fef2f2] text-[#dc2626]',
     completed: 'bg-[#ecfdf5] text-[#059669]',
   };
@@ -25,18 +29,46 @@ const statusBadge = (status: string) => {
 
 const AdminWithdrawals: React.FC = () => {
   const qc = useQueryClient();
+  const { socket } = useSocket();
   const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState('');
-  const [actionState, setActionState] = useState<'approve' | 'reject' | 'complete' | null>(null);
+  const [dateFilter, setDateFilter] = useState('');
+  const [amountFilter, setAmountFilter] = useState('');
+  const [limit, setLimit] = useState(INITIAL_LIMIT);
+  const debouncedAmount = useDebounce(amountFilter, 400);
+  const [actionState, setActionState] = useState<'approve' | 'reject' | null>(null);
   const [transactionId, setTransactionId] = useState('');
   const [adminNote, setAdminNote] = useState('');
 
   const requestId = searchParams.get('id');
 
-  const { data: withdrawals = [], isLoading } = useQuery({
-    queryKey: ['admin', 'withdrawals', statusFilter],
-    queryFn: () => adminService.getWithdrawals(statusFilter || undefined),
+  // Reset to the first page whenever a filter changes.
+  useEffect(() => { setLimit(INITIAL_LIMIT); }, [statusFilter, dateFilter, debouncedAmount]);
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['admin', 'withdrawals', statusFilter, dateFilter, debouncedAmount, limit],
+    queryFn: () => adminService.getWithdrawals({
+      status: statusFilter || undefined,
+      date: dateFilter || undefined,
+      amount: debouncedAmount || undefined,
+      limit,
+    }),
+    placeholderData: (prev) => prev, // keep current rows visible while loading more
   });
+  const withdrawals = data?.withdrawals ?? [];
+  const total = data?.total ?? 0;
+
+  // Refresh the list in real time when a new withdrawal request arrives.
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (n: any) => {
+      if (n?.link?.includes('tab=withdrawals') || n?.title?.toLowerCase().includes('withdrawal')) {
+        qc.invalidateQueries({ queryKey: ['admin', 'withdrawals'] });
+      }
+    };
+    socket.on('bell_notification', handler);
+    return () => { socket.off('bell_notification', handler); };
+  }, [socket, qc]);
 
   const selectedWithdrawal = withdrawals.find((w: any) => w._id === requestId) || null;
 
@@ -56,10 +88,10 @@ const AdminWithdrawals: React.FC = () => {
   };
 
   const mutation = useMutation({
-    mutationFn: (variables: { id: string; action: 'approve' | 'reject' | 'complete'; adminNote?: string; transactionId?: string }) =>
+    mutationFn: (variables: { id: string; action: 'approve' | 'reject'; adminNote?: string; transactionId?: string }) =>
       adminService.processWithdrawal(variables.id, variables.action, variables.adminNote, variables.transactionId),
     onSuccess: (_, variables) => {
-      const labels = { approve: 'Approved', reject: 'Rejected', complete: 'Marked complete' };
+      const labels = { approve: 'Approved & completed', reject: 'Rejected' };
       toast.success(`${labels[variables.action]} successfully`);
       closeDetails();
       qc.invalidateQueries({ queryKey: ['admin', 'withdrawals'] });
@@ -148,7 +180,7 @@ const AdminWithdrawals: React.FC = () => {
               )}
               {selectedWithdrawal.adminNote && (
                 <div className="text-sm">
-                  <span className="text-[#0369a1] font-semibold">Admin Note: </span>
+                  <span className="text-[#0369a1] font-semibold">{selectedWithdrawal.status === 'rejected' ? 'Rejection reason: ' : 'Admin Note: '}</span>
                   <span className="text-[#334155] italic">"{selectedWithdrawal.adminNote}"</span>
                 </div>
               )}
@@ -161,11 +193,9 @@ const AdminWithdrawals: React.FC = () => {
               <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 flex justify-between items-center">
                 <span>
                   Action: {actionState === 'approve' ? (
-                    <span className="text-[#059669]">Approve Withdrawal</span>
-                  ) : actionState === 'reject' ? (
-                    <span className="text-[#dc2626]">Reject Withdrawal</span>
+                    <span className="text-[#059669]">Approve &amp; Complete Withdrawal</span>
                   ) : (
-                    <span className="text-[#1d4ed8]">Mark as Completed</span>
+                    <span className="text-[#dc2626]">Reject Withdrawal</span>
                   )}
                 </span>
                 <button
@@ -190,7 +220,7 @@ const AdminWithdrawals: React.FC = () => {
                     required
                   />
                   <p className="text-[11px] text-[#64748b]">
-                    Enter the transaction ID of the bank transfer to confirm the payment details.
+                    Enter the bank transfer reference / UTR. This confirms the payout and marks the withdrawal as <strong>completed</strong> in one step.
                   </p>
                 </div>
               )}
@@ -230,32 +260,20 @@ const AdminWithdrawals: React.FC = () => {
               </div>
             </div>
           ) : (
-            (selectedWithdrawal.status === 'pending' || selectedWithdrawal.status === 'approved') && (
+            selectedWithdrawal.status === 'pending' && (
               <div className="border-t border-[#f1f5f9] pt-5 flex gap-3">
-                {selectedWithdrawal.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() => setActionState('approve')}
-                      className="flex-1 flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-[#059669] px-4 py-2.5 rounded-[8px] cursor-pointer hover:bg-[#047857] transition-colors border-none"
-                    >
-                      <CheckCircle size={16} /> Approve
-                    </button>
-                    <button
-                      onClick={() => setActionState('reject')}
-                      className="flex-1 flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-[#dc2626] px-4 py-2.5 rounded-[8px] cursor-pointer hover:bg-[#b91c1c] transition-colors border-none"
-                    >
-                      <XCircle size={16} /> Reject
-                    </button>
-                  </>
-                )}
-                {selectedWithdrawal.status === 'approved' && (
-                  <button
-                    onClick={() => setActionState('complete')}
-                    className="flex-1 flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-[#1d4ed8] px-4 py-2.5 rounded-[8px] cursor-pointer hover:bg-[#1e40af] transition-colors border-none"
-                  >
-                    <Clock size={16} /> Mark Complete
-                  </button>
-                )}
+                <button
+                  onClick={() => setActionState('approve')}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-[#059669] px-4 py-2.5 rounded-[8px] cursor-pointer hover:bg-[#047857] transition-colors border-none"
+                >
+                  <CheckCircle size={16} /> Approve &amp; Complete
+                </button>
+                <button
+                  onClick={() => setActionState('reject')}
+                  className="flex-1 flex items-center justify-center gap-1.5 text-sm font-bold text-white bg-[#dc2626] px-4 py-2.5 rounded-[8px] cursor-pointer hover:bg-[#b91c1c] transition-colors border-none"
+                >
+                  <XCircle size={16} /> Reject
+                </button>
               </div>
             )
           )}
@@ -269,7 +287,7 @@ const AdminWithdrawals: React.FC = () => {
       <div className="flex items-center gap-3 mb-5 flex-wrap animate-fade-in">
         <Filter size={16} className="text-[#64748b]" />
         <span className="text-sm font-semibold text-[#475569]">Filter:</span>
-        {['', 'pending', 'approved', 'rejected', 'completed'].map(s => (
+        {['', 'pending', 'completed', 'rejected'].map(s => (
           <button
             key={s || 'all'}
             onClick={() => setStatusFilter(s)}
@@ -282,6 +300,35 @@ const AdminWithdrawals: React.FC = () => {
             {s ? s.toUpperCase() : 'ALL'}
           </button>
         ))}
+      </div>
+
+      {/* Search by date & amount */}
+      <div className="flex items-center gap-3 mb-5 flex-wrap animate-fade-in">
+        <Search size={16} className="text-[#64748b]" />
+        <span className="text-sm font-semibold text-[#475569]">Search:</span>
+        <input
+          type="date"
+          value={dateFilter}
+          onChange={e => setDateFilter(e.target.value)}
+          className="text-sm text-[#334155] border border-[#e2e8f0] rounded-[8px] px-3 py-1.5 outline-none focus:border-primary bg-white"
+          aria-label="Filter by requested date"
+        />
+        <input
+          type="number"
+          value={amountFilter}
+          onChange={e => setAmountFilter(e.target.value)}
+          placeholder="Amount ₹"
+          className="text-sm text-[#334155] border border-[#e2e8f0] rounded-[8px] px-3 py-1.5 outline-none focus:border-primary bg-white w-32"
+          aria-label="Filter by amount"
+        />
+        {(dateFilter || amountFilter) && (
+          <button
+            onClick={() => { setDateFilter(''); setAmountFilter(''); }}
+            className="flex items-center gap-1 text-xs font-semibold text-[#64748b] hover:text-[#dc2626] border-none bg-transparent cursor-pointer"
+          >
+            <X size={14} /> Clear
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -321,7 +368,7 @@ const AdminWithdrawals: React.FC = () => {
                     <td className={tdCls}>
                       <button
                         onClick={() => openRequest(w)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-[6px] cursor-pointer hover:bg-primary/20 transition-all"
+                        className="flex items-center gap-1.5 text-xs font-bold text-[#1d4ed8] bg-[#eff6ff] border border-[#dbeafe] px-3 py-1.5 rounded-[6px] cursor-pointer hover:bg-[#dbeafe] transition-all"
                       >
                         Open Request
                       </button>
@@ -331,6 +378,20 @@ const AdminWithdrawals: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Load more (older) entries */}
+      {withdrawals.length < total && (
+        <div className="flex flex-col items-center gap-1.5 mt-5">
+          <button
+            onClick={() => setLimit(l => l + LOAD_STEP)}
+            disabled={isFetching}
+            className="text-sm font-bold text-[#1d4ed8] bg-[#eff6ff] border border-[#dbeafe] px-5 py-2.5 rounded-[8px] cursor-pointer hover:bg-[#dbeafe] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isFetching ? 'Loading…' : 'Load previous transaction data'}
+          </button>
+          <span className="text-xs text-[#94a3b8]">Showing {withdrawals.length} of {total}</span>
         </div>
       )}
     </div>

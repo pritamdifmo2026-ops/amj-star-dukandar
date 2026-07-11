@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
+import TransactionDetailsModal from './TransactionDetailsModal';
 import walletApi from '../services/wallet.api';
 import supplierService from '../services/supplier.service';
 import { useSocket } from '@/shared/contexts/SocketContext';
@@ -61,6 +62,8 @@ const SupplierWallet: React.FC = () => {
   const [selectedBankId, setSelectedBankId] = useState<string | null>(null);
   const [amountTouched, setAmountTouched] = useState(false);
   const [txPage, setTxPage] = useState(1);
+  const [detailTx, setDetailTx] = useState<any | null>(null);
+  const [detailWithdrawal, setDetailWithdrawal] = useState<any | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -289,7 +292,13 @@ const SupplierWallet: React.FC = () => {
                 <div className={`text-sm font-bold shrink-0 ${tx.type === 'topup' ? 'text-[#059669]' : 'text-[#dc2626]'}`}>
                   {tx.type === 'topup' ? '+' : '-'}₹{tx.amount.toFixed(2)}
                 </div>
-                <div className="text-xs text-[#94a3b8] shrink-0">{new Date(tx.createdAt).toLocaleDateString()}</div>
+                <div className="text-xs text-[#94a3b8] shrink-0 hidden sm:block">{new Date(tx.createdAt).toLocaleDateString()}</div>
+                <button
+                  onClick={() => setDetailTx(tx)}
+                  className="text-xs font-semibold text-[#7c3aed] hover:underline shrink-0 border-none bg-transparent cursor-pointer px-1"
+                >
+                  Details
+                </button>
               </div>
             ))}
             {txData?.totalPages > 1 && (
@@ -315,13 +324,18 @@ const SupplierWallet: React.FC = () => {
                   <div className="text-xs text-[#64748b]">{w.bankDetails?.bankName} • {w.bankDetails?.accountNumber?.slice(-4).padStart(w.bankDetails.accountNumber.length, '•')}</div>
                 </div>
                 <div className={`text-xs font-bold px-2 py-1 rounded-full ${w.status === 'completed' ? 'bg-[#ecfdf5] text-[#059669]' :
-                    w.status === 'approved' ? 'bg-[#eff6ff] text-[#1d4ed8]' :
-                      w.status === 'rejected' ? 'bg-[#fef2f2] text-[#dc2626]' :
-                        'bg-[#fffbeb] text-[#d97706]'
+                  w.status === 'rejected' ? 'bg-[#fef2f2] text-[#dc2626]' :
+                    'bg-[#fffbeb] text-[#d97706]'
                   }`}>
                   {w.status.toUpperCase()}
                 </div>
-                <div className="text-xs text-[#94a3b8]">{new Date(w.requestedAt).toLocaleDateString()}</div>
+                <div className="text-xs text-[#94a3b8] hidden sm:block">{new Date(w.requestedAt).toLocaleDateString()}</div>
+                <button
+                  onClick={() => setDetailWithdrawal(w)}
+                  className="text-xs font-semibold text-[#7c3aed] hover:underline shrink-0 border-none bg-transparent cursor-pointer px-1"
+                >
+                  Details
+                </button>
               </div>
             ))}
           </div>
@@ -331,12 +345,11 @@ const SupplierWallet: React.FC = () => {
       {/* Top-up Modal */}
       <Modal isOpen={showTopupModal} onClose={() => setShowTopupModal(false)} title="Top Up Wallet">
         <div className="flex flex-col gap-4 p-1">
-          <p className="text-sm text-[#64748b]">Add funds to your AMJSTAR wallet to cover commissions on POs.</p>
+          <p className="text-sm text-[#64748b]">Add funds to your AMJSTAR Wallet to cover commissions on POs, listing charges, and plan renewals.</p>
           <div>
             <label className="block text-xs font-bold uppercase text-[#94a3b8] tracking-wider mb-2">Amount (₹)</label>
             <input
               type="text"
-              inputMode="numeric"
               value={topupAmount}
               onChange={e => setTopupAmount(e.target.value.replace(/\D/g, ''))}
               placeholder="e.g. 1000"
@@ -382,8 +395,8 @@ const SupplierWallet: React.FC = () => {
               onBlur={() => setAmountTouched(true)}
               placeholder={`Min ₹${minWithdrawal}`}
               className={`w-full border rounded-[10px] px-4 py-3 text-base font-semibold outline-none transition-colors ${amountTouched && validateWithdrawAmount(withdrawAmount, minWithdrawal, maxWithdrawable)
-                  ? 'border-[#ef4444] bg-[#fef2f2] focus:border-[#ef4444]'
-                  : 'border-[#e2e8f0] focus:border-[#e65c00]'
+                ? 'border-[#ef4444] bg-[#fef2f2] focus:border-[#ef4444]'
+                : 'border-[#e2e8f0] focus:border-[#e65c00]'
                 }`}
             />
             {amountTouched && validateWithdrawAmount(withdrawAmount, minWithdrawal, maxWithdrawable) && (
@@ -426,8 +439,8 @@ const SupplierWallet: React.FC = () => {
                       type="button"
                       onClick={() => setSelectedBankId(b._id)}
                       className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-[12px] border-2 text-left transition-all ${isSelected
-                          ? 'border-[#e65c00] bg-[#fff7ed]'
-                          : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'
+                        ? 'border-[#e65c00] bg-[#fff7ed]'
+                        : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'
                         }`}
                     >
                       {/* Bank icon */}
@@ -489,6 +502,13 @@ const SupplierWallet: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      <TransactionDetailsModal
+        tx={detailTx}
+        withdrawal={detailWithdrawal}
+        withdrawals={withdrawalData?.withdrawals || []}
+        onClose={() => { setDetailTx(null); setDetailWithdrawal(null); }}
+      />
     </div>
   );
 };

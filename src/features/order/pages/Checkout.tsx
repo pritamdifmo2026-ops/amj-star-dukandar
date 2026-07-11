@@ -148,6 +148,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         paymentMethod,
         buyNow: isBuyNow,
         addressSnapshot,
+        shippingCost: totalShipping,
       });
 
       const orders = res.data.orders || [];

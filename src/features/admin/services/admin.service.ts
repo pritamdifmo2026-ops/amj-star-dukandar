@@ -225,13 +225,18 @@ const adminService = {
     return response.data.settings;
   },
 
-  getWithdrawals: async (status?: string) => {
-    const params = status ? { status } : {};
+  getWithdrawals: async (opts: { status?: string; date?: string; amount?: string; limit?: number; skip?: number } = {}) => {
+    const params: Record<string, string | number> = {};
+    if (opts.status) params.status = opts.status;
+    if (opts.date) params.date = opts.date;
+    if (opts.amount) params.amount = opts.amount;
+    if (opts.limit != null) params.limit = opts.limit;
+    if (opts.skip != null) params.skip = opts.skip;
     const response = await api.get('/admin/withdrawals', { params });
-    return response.data.withdrawals;
+    return response.data as { withdrawals: any[]; total: number };
   },
 
-  processWithdrawal: async (id: string, action: 'approve' | 'reject' | 'complete', adminNote?: string, transactionId?: string) => {
+  processWithdrawal: async (id: string, action: 'approve' | 'reject', adminNote?: string, transactionId?: string) => {
     const response = await api.patch(`/admin/withdrawals/${id}/process`, { action, adminNote, transactionId });
     return response.data.withdrawal;
   },

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import ScrollToTop from '@/shared/components/navigation/ScrollToTop';
+import ScrollManager from '@/shared/components/navigation/ScrollManager';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setCredentials, logout } from '@/features/auth/store/auth.slice';
 import authService from '@/features/auth/services/auth.service';
@@ -34,7 +34,7 @@ const RootLayout: React.FC = () => {
 
   return (
     <>
-      <ScrollToTop />
+      <ScrollManager />
       <Outlet />
       {userRole !== 'admin' && <FloatingChat />}
     </>

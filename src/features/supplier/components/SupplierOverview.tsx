@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { ShieldCheck, Zap, Plus, AlertTriangle, Wallet, Receipt, IndianRupee, ShoppingBag, PackageCheck } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
+import { getGreeting } from '@/shared/utils/greeting';
 import SupplierStats from './SupplierStats';
 import { useQuery } from '@tanstack/react-query';
 import walletApi from '../services/wallet.api';
@@ -48,24 +49,6 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
   const fmt = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
   const money = (n: number) => `₹${fmt(n || 0)}`;
 
-  const getGreeting = () => {
-    const now = new Date();
-    let istHours = now.getUTCHours() + 5;
-    let istMinutes = now.getUTCMinutes() + 30;
-    if (istMinutes >= 60) {
-      istHours += 1;
-      istMinutes -= 60;
-    }
-    istHours = istHours % 24;
-
-    if (istHours >= 4 && istHours < 12) {
-      return "Good morning";
-    } else if (istHours >= 12 && istHours < 17) {
-      return "Good afternoon";
-    } else {
-      return "Good day to you";
-    }
-  };
 
   const { salesTrend, orderStatusData, topProductData } = useMemo(() => {
     const monthMap = new Map<string, { month: string; sales: number; orders: number }>();

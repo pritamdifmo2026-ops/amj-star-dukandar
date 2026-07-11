@@ -5,6 +5,8 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
 import type { AdminStats } from '../types/admin.types';
+import { getGreeting } from '@/shared/utils/greeting';
+import { useAppSelector } from '@/store/hooks';
 
 interface DashboardOverviewProps {
   stats: AdminStats;
@@ -30,6 +32,7 @@ const fmt = (n: number) =>
         : `\u20B9${n}`;
 
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
+  const adminName = useAppSelector(state => state.auth.user?.name) || 'Admin';
   const growthData = (stats.monthlySignups ?? []).map(m => ({ name: m.month, users: m.users }));
   const revenueData = (stats.monthlyRevenue ?? []).map(m => ({ name: m.month, gmv: m.gmv, commission: m.commission }));
 
@@ -66,6 +69,11 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Time-of-day greeting */}
+      <h1 className="text-[1.75rem] text-[#0f172a] font-extrabold tracking-tight max-sm:text-2xl m-0">
+        {getGreeting()} {adminName}!
+      </h1>
+
       {/* User + order stat cards */}
       <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1">
         {statCards.map(({ icon, label, val, cls }) => (

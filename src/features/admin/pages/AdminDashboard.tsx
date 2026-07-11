@@ -37,7 +37,7 @@ import adminService from '../services/admin.service';
 import { Navigate } from 'react-router-dom';
 
 const tabLabel: Record<string, string> = {
-  stats: 'Platform Overview',
+  stats: '',
   suppliers: 'Supplier Verifications',
   'supplier-detail': 'Supplier Profile',
   'supplier-products': 'Supplier Products',
