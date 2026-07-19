@@ -73,8 +73,48 @@ const Suppliers: React.FC = () => (
         </div>
       </section>
 
+      {/* Simple Listing Pricing Section */}
+      <section className="py-16 bg-white border-b border-[#e2e8f0]">
+        <div className="max-w-[var(--width-container)] mx-auto px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-[28px] font-extrabold text-heading mb-3">Simple Listing Pricing</h2>
+            <p className="text-[18px] text-body max-w-[600px] mx-auto">Grow your catalog without expensive listing fees.</p>
+          </div>
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-12 max-w-[900px] mx-auto">
+            <div className="text-left flex-1">
+              <h3 className="text-[24px] font-extrabold text-heading mb-2">List Products Starting at Just ₹10 Each</h3>
+              <p className="text-[16px] text-body mb-6">Grow your online wholesale catalog without high upfront costs.</p>
+              
+              <div className="flex items-center gap-2 mb-4">
+                <div className="text-[48px] font-extrabold text-primary leading-none">₹10</div>
+                <div className="text-[18px] font-bold text-body mt-2">per product / month</div>
+              </div>
+              
+              <div className="inline-block bg-cream text-heading font-medium px-4 py-1.5 rounded-full text-[14px]">
+                Minimum monthly charge ₹499
+              </div>
+            </div>
+            
+            <div className="flex-1 flex flex-col justify-center gap-5">
+              {[
+                'Zero hidden setup or onboarding fees',
+                'Reach thousands of verified buyers',
+                'Add or remove products anytime',
+                'Pay only for what you list'
+              ].map((feature, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <CheckCircle size={22} className="text-primary shrink-0" />
+                  <span className="text-[16px] font-medium text-body">{feature}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Subscription Plans Section */}
-      <section className="py-16 bg-white">
+      <section className="py-20 bg-[#f8fafc]">
         <div className="max-w-[var(--width-container)] mx-auto px-8">
           <div className="text-center mb-14">
             <h2 className="text-[28px] font-extrabold text-heading mb-3">Subscription Plans</h2>
