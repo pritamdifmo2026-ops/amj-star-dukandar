@@ -14,7 +14,7 @@ const stepCards = [
 const perks = [
   { title: 'Factory Direct Pricing', desc: 'Cut out the middlemen and buy directly from manufacturers at true wholesale rates.' },
   { title: 'Quality Guarantee', desc: 'Our "Star Verified" program ensures you only deal with manufacturers who meet high quality standards.' },
-  { title: 'Flexible Credits', desc: 'Apply for business credit and pay for your inventory later as you grow your sales.' },
+  { title: 'Negotiate Better Prices', desc: 'Send quotation requests to suppliers, receive competitive offers, and choose the best price for your business.' },
   { title: '24/7 Support', desc: 'Dedicated account managers to help you with sourcing, logistics, and any issues you face.' },
 ];
 
