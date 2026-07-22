@@ -48,7 +48,13 @@ const ResellerBrowseProducts: React.FC = () => {
 
   const confirmRequest = async () => {
     if (!selectedProduct) return;
-    const productId = selectedProduct._id;
+    const productId = selectedProduct._id || selectedProduct.id;
+    
+    if (!productId) {
+      toast.error('Invalid product data. Missing ID.');
+      return;
+    }
+
     try {
       setRequestingId(productId);
       setIsModalOpen(false);
@@ -110,10 +116,11 @@ const ResellerBrowseProducts: React.FC = () => {
                 </thead>
                 <tbody>
                   {paginatedProducts.map(product => {
-                    const status = requestStatuses[product._id];
+                    const productId = product._id || product.id;
+                    const status = requestStatuses[productId];
                     const supplier = product.supplierId || {};
                     return (
-                      <tr key={product._id} className="hover:bg-[#fafbfc]">
+                      <tr key={productId} className="hover:bg-[#fafbfc]">
                         <td className={tdCls}>
                           <div className="flex items-center gap-3">
                             <div className="w-11 h-11 rounded-[8px] overflow-hidden border border-[#f1f5f9] bg-[#f8fafc] flex items-center justify-center shrink-0">
@@ -137,8 +144,8 @@ const ResellerBrowseProducts: React.FC = () => {
                         </td>
                         <td className={`${tdCls} text-right`}>
                           {status ? <StatusBadge status={status} /> : (
-                            <Button size="sm" onClick={() => handleRequestClick(product)} disabled={requestingId === product._id} className="flex items-center gap-1.5">
-                              {requestingId === product._id ? '...' : 'Request'} <ExternalLink size={13} />
+                            <Button size="sm" onClick={() => handleRequestClick(product)} disabled={requestingId === productId} className="flex items-center gap-1.5">
+                              {requestingId === productId ? '...' : 'Request'} <ExternalLink size={13} />
                             </Button>
                           )}
                         </td>
@@ -153,10 +160,11 @@ const ResellerBrowseProducts: React.FC = () => {
           {/* Mobile Cards */}
           <div className="hidden max-md:flex flex-col gap-3 mb-5">
             {paginatedProducts.map(product => {
-              const status = requestStatuses[product._id];
+              const productId = product._id || product.id;
+              const status = requestStatuses[productId];
               const supplier = product.supplierId || {};
               return (
-                <div key={product._id} className="bg-white border border-[#eef2f6] rounded-[10px] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                <div key={productId} className="bg-white border border-[#eef2f6] rounded-[10px] p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-14 h-14 rounded-[8px] overflow-hidden border border-[#f1f5f9] bg-[#f8fafc] flex items-center justify-center shrink-0">
                       {product.images?.[0] ? <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" /> : <Package size={22} className="text-[#94a3b8]" />}
@@ -173,8 +181,8 @@ const ResellerBrowseProducts: React.FC = () => {
                   </div>
                   <div>
                     {status ? <StatusBadge status={status} /> : (
-                      <button className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:bg-primary-dark" onClick={() => handleRequestClick(product)} disabled={requestingId === product._id}>
-                        {requestingId === product._id ? 'Processing...' : 'Request to Add'}
+                      <button className="w-full py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:bg-primary-dark" onClick={() => handleRequestClick(product)} disabled={requestingId === productId}>
+                        {requestingId === productId ? 'Processing...' : 'Request to Add'}
                       </button>
                     )}
                   </div>

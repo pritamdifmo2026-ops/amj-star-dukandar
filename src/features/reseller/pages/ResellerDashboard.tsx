@@ -16,6 +16,7 @@ import ResellerSettings from '../components/ResellerSettings';
 import ResellerStorefront from '../components/ResellerStorefront';
 import ResellerPerformance from '../components/ResellerPerformance';
 import ResellerActionCenter from '../components/ResellerActionCenter';
+import ResellerLeads from '../components/ResellerLeads';
 
 const ResellerDashboard: React.FC = () => {
 const dispatch = useAppDispatch();
@@ -185,7 +186,7 @@ const dispatch = useAppDispatch();
 
         {activeView === 'overview' && renderOverview()}
         {activeView === 'storefront' && <ResellerStorefront />}
-        {activeView === 'leads' && <PlaceholderView title="Leads Management" icon={UserPlus} description="Track your potential buyers, their interests, and contact history." />}
+        {activeView === 'leads' && <ResellerLeads />}
         {activeView === 'tasks' && <ResellerActionCenter />}
         {activeView === 'browse' && <ResellerBrowseProducts />}
         {activeView === 'my-products' && <ResellerMyProducts />}
