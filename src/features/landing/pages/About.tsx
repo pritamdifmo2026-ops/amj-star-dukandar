@@ -42,7 +42,6 @@ const About: React.FC = () => {
   const vals  = data?.sections.find(s => s.type === 'about-values');
 
   const hm = hero?.meta  ?? {};
-  const sm = story?.meta ?? {};
   const vm = vals?.meta  ?? {};
 
   const values = [

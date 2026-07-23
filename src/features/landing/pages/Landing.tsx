@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShieldCheck, Truck, BadgeCheck, Sprout, Cpu, Utensils,
-  Armchair, Home, Settings, Shirt, Layers
+  Armchair, Home, Settings, Shirt, Layers, Store, MapPin
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
@@ -13,6 +13,7 @@ import Footer from '../components/Footer';
 import { ROUTES } from '@/shared/constants/routes';
 import { productApi } from '@/features/product/services/product.api';
 import categoryService from '@/features/product/services/category.service';
+import resellerService from '@/features/reseller/services/reseller.service';
 import type { Product } from '@/features/product/types';
 
 const getCategoryIcon = (name: string) => {
@@ -129,20 +130,71 @@ const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolea
   );
 };
 
+const ResellerProductsSection: React.FC<{ products: any[]; loading: boolean }> = ({ products, loading }) => {
+  if (loading || products.length === 0) return null;
+  return (
+    <section className="py-10 mb-6 bg-gradient-to-b from-[#fff7ed] to-white border-b border-[#f0f0f0]">
+      <div className={containerCls}>
+        <div className="flex justify-between items-center mb-6 border-l-[6px] border-[#e65c00] pl-4">
+          <h2 className="text-xl font-extrabold text-[#e65c00]">Top Picks from Verified Resellers</h2>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-6 pt-2 px-2 -mx-2" style={{ scrollbarWidth: 'none' }}>
+          {products.map(p => {
+            const productName = p.customTitle || p.product?.name || 'Reseller Product';
+            const price = p.sellingPrice || p.product?.basePrice || 0;
+            const themeColor = p.reseller?.storefront?.themeColor || '#e65c00';
+            const storeSlug = p.reseller?.storeSlug || '';
+            const location = [p.reseller?.storeCity, p.reseller?.state].filter(Boolean).join(', ');
+            
+            return (
+              <Link
+                key={p._id}
+                to={`/store/${storeSlug}`}
+                className="no-underline flex-shrink-0 w-[240px] bg-white rounded-[14px] border border-[#fed7aa] overflow-hidden hover:shadow-[0_12px_24px_rgba(230,92,0,0.12)] hover:-translate-y-1.5 transition-all duration-300 group"
+              >
+                <div className="aspect-[4/3] bg-[#f8fafc] relative overflow-hidden">
+                  <img src={p.product?.images?.[0] || PLACEHOLDER} alt={productName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/50 text-[10px] font-extrabold flex items-center gap-1 shadow-sm" style={{ color: themeColor }}>
+                    <ShieldCheck size={12} /> Reseller
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-10">
+                    <p className="text-white text-xs font-extrabold truncate mb-0.5 flex items-center gap-1"><Store size={12} className="opacity-80" /> {p.reseller?.storeName || 'Store'}</p>
+                    {location && <p className="text-white/80 text-[10px] truncate m-0 flex items-center gap-1"><MapPin size={10} className="opacity-70" /> {location}</p>}
+                  </div>
+                </div>
+                <div className="p-4 flex flex-col h-[100px]">
+                  <h4 className="text-[#0f172a] text-sm font-bold mb-auto line-clamp-2 leading-snug">{productName}</h4>
+                  <div className="flex justify-between items-end mt-2">
+                    <span className="text-lg font-black leading-none" style={{ color: themeColor }}>₹{price.toLocaleString('en-IN')}</span>
+                    <span className="text-[10px] text-[#64748b] font-semibold bg-[#f1f5f9] px-2 py-0.5 rounded-md">MOQ: {p.product?.moq || 1} {p.product?.unit}</span>
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const Landing: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [resellerProducts, setResellerProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [prodRes, catRes] = await Promise.all([
+        const [prodRes, catRes, resProdRes] = await Promise.all([
           productApi.list({ pageSize: 100 }),
-          categoryService.getAll()
+          categoryService.getAll(),
+          resellerService.getGlobalResellerProducts().catch(() => ({ products: [] }))
         ]);
         setProducts(prodRes.data || []);
         if (catRes.categories) setCategories(catRes.categories);
+        if (resProdRes.products) setResellerProducts(resProdRes.products);
       } catch { }
       finally { setLoading(false); }
     };
@@ -162,6 +214,8 @@ const Landing: React.FC = () => {
           <BannerSlider />
         </div>
         <Hero />
+
+        <ResellerProductsSection products={resellerProducts} loading={loading} />
 
         {categories.slice(0, 4).map(cat => (
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />

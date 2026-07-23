@@ -9,6 +9,7 @@ const ResellerSupplierPartners: React.FC = () => {
   const [partners, setPartners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => { fetchPartners(); }, []);
 
@@ -16,9 +17,15 @@ const ResellerSupplierPartners: React.FC = () => {
     setLoading(true);
     try {
       const data = await resellerService.getRequests();
-      const approved = data.requests.filter((r: any) => r.status === 'APPROVED');
+      const requests = data.requests || [];
+      const approved = requests.filter((r: any) => r.status === 'APPROVED');
       const supplierMap = new Map();
+      let skippedCount = 0;
       approved.forEach((req: any) => {
+        if (!req.supplier || !req.product) {
+          skippedCount++;
+          return;
+        }
         if (!supplierMap.has(req.supplier._id)) {
           supplierMap.set(req.supplier._id, { ...req.supplier, products: [req.product.name], joinedAt: req.respondedAt });
         } else {
@@ -26,11 +33,16 @@ const ResellerSupplierPartners: React.FC = () => {
         }
       });
       setPartners(Array.from(supplierMap.values()));
-    } catch (err) { console.error('Failed to fetch supplier partners', err); }
+      setDebugInfo(`Total: ${requests.length}, Approved: ${approved.length}, Skipped: ${skippedCount}, Mapped: ${supplierMap.size}`);
+    } catch (err: any) { 
+      console.error('Failed to fetch supplier partners', err); 
+      setDebugInfo(`Error: ${err.message}`);
+    }
     finally { setLoading(false); }
   };
 
   const filteredPartners = partners.filter(p =>
+    !searchTerm ||
     p.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -55,6 +67,7 @@ const ResellerSupplierPartners: React.FC = () => {
           <Handshake size={48} strokeWidth={1.5} />
           <h3 className="text-lg font-bold text-[#1e293b] m-0">No supplier partners yet</h3>
           <p className="text-sm m-0">{searchTerm ? 'Try adjusting your search.' : 'Approved suppliers will appear here once you request and get approved.'}</p>
+          <div className="text-xs text-red-500 mt-4">Debug: {debugInfo}</div>
         </div>
       ) : (
         <div className="bg-white rounded-[10px] border border-[#eef2f6] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">

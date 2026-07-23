@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Search, Filter, MessageCircle, Mail, Phone, MoreVertical, CheckCircle2, Clock, XCircle, ArrowRight, Users } from 'lucide-react';
-import Button from '@/shared/components/ui/Button';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, MessageCircle, Mail, Phone, MoreVertical, CheckCircle2, Clock, XCircle, Users } from 'lucide-react';
+import resellerService, { type Lead as ApiLead } from '../services/reseller.service';
 
 interface Lead {
   id: string;
@@ -8,53 +8,21 @@ interface Lead {
   phone: string;
   email: string;
   productName: string;
-  productImage?: string;
   date: string;
   status: 'new' | 'contacted' | 'converted' | 'lost';
   notes?: string;
 }
 
-// Dummy data for leads
-const DUMMY_LEADS: Lead[] = [
-  {
-    id: 'L-1001',
-    customerName: 'Rahul Verma',
-    phone: '+91 9876543210',
-    email: 'rahul.v@example.com',
-    productName: 'Premium Cotton Bedsheet Set',
-    date: '2026-07-20T10:30:00Z',
-    status: 'new',
-  },
-  {
-    id: 'L-1002',
-    customerName: 'Priya Sharma',
-    phone: '+91 9876543211',
-    email: 'priya.s@example.com',
-    productName: 'Handcrafted Wooden Vase',
-    date: '2026-07-19T14:15:00Z',
-    status: 'contacted',
-    notes: 'Asked for bulk pricing on 50 units. Sent quotation.',
-  },
-  {
-    id: 'L-1003',
-    customerName: 'Amit Singh',
-    phone: '+91 9876543212',
-    email: 'amit.s@example.com',
-    productName: 'Organic Green Tea (Bulk)',
-    date: '2026-07-18T09:45:00Z',
-    status: 'converted',
-  },
-  {
-    id: 'L-1004',
-    customerName: 'Neha Gupta',
-    phone: '+91 9876543213',
-    email: 'neha.g@example.com',
-    productName: 'Designer Ceramic Plates',
-    date: '2026-07-15T16:20:00Z',
-    status: 'lost',
-    notes: 'Price was out of budget for the customer.',
-  }
-];
+const mapLead = (l: ApiLead): Lead => ({
+  id: l._id,
+  customerName: l.customerName,
+  phone: l.phone,
+  email: l.email || '',
+  productName: l.productName || 'General enquiry',
+  date: l.createdAt,
+  status: l.status,
+  notes: l.notes || l.message,
+});
 
 const statusStyles = {
   new: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -71,20 +39,39 @@ const statusIcons = {
 };
 
 const ResellerLeads: React.FC = () => {
-  const [leads, setLeads] = useState<Lead[]>(DUMMY_LEADS);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  useEffect(() => { fetchLeads(); }, []);
+
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const data = await resellerService.getLeads();
+      setLeads((data.leads || []).map(mapLead));
+    } catch (err) { console.error('Failed to fetch leads', err); }
+    finally { setLoading(false); }
+  };
+
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           lead.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           lead.phone.includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const updateLeadStatus = (id: string, newStatus: Lead['status']) => {
+  const updateLeadStatus = async (id: string, newStatus: Lead['status']) => {
+    const previous = leads;
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
+    try {
+      await resellerService.updateLead(id, { status: newStatus });
+    } catch (err) {
+      console.error('Failed to update lead status', err);
+      setLeads(previous);
+    }
   };
 
   return (
@@ -156,7 +143,11 @@ const ResellerLeads: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredLeads.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">Loading leads...</td>
+                </tr>
+              ) : filteredLeads.length > 0 ? (
                 filteredLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-gray-50 transition-colors group">
                     <td className="px-6 py-4 align-top">

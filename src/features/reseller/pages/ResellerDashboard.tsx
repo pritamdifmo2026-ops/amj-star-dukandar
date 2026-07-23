@@ -7,7 +7,6 @@ import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
 import logo from '@/assets/logoo.png';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
-import PlaceholderView from '@/features/supplier/components/PlaceholderView';
 import ResellerBrowseProducts from '../components/ResellerBrowseProducts';
 import ResellerMyProducts from '../components/ResellerMyProducts';
 import ResellerHistory from '../components/ResellerHistory';
@@ -17,6 +16,9 @@ import ResellerStorefront from '../components/ResellerStorefront';
 import ResellerPerformance from '../components/ResellerPerformance';
 import ResellerActionCenter from '../components/ResellerActionCenter';
 import ResellerLeads from '../components/ResellerLeads';
+import ResellerOrders from '../components/ResellerOrders';
+import ResellerPayouts from '../components/ResellerPayouts';
+import resellerService from '../services/reseller.service';
 
 const ResellerDashboard: React.FC = () => {
 const dispatch = useAppDispatch();
@@ -55,10 +57,36 @@ const dispatch = useAppDispatch();
   const handleLogout = () => setShowLogoutModal(true);
   const confirmLogout = () => { dispatch(logout()); window.location.href = '/'; };
 
+  const [overview, setOverview] = useState({ totalEarned: 0, totalOrders: 0, activeOrders: 0, sharedProducts: 0 });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [walletRes, ordersRes, requestsRes] = await Promise.allSettled([
+        resellerService.getWallet(),
+        resellerService.getOrders(),
+        resellerService.getRequests(),
+      ]);
+      if (cancelled) return;
+      const orders = ordersRes.status === 'fulfilled' ? (ordersRes.value.orders || []) : [];
+      setOverview({
+        totalEarned: walletRes.status === 'fulfilled' ? (walletRes.value.wallet?.totalEarned || 0) : 0,
+        totalOrders: orders.length,
+        activeOrders: orders.filter((o: any) => !['completed', 'cancelled'].includes(o.status)).length,
+        sharedProducts: requestsRes.status === 'fulfilled'
+          ? (requestsRes.value.requests || []).filter((r: any) => r.status === 'APPROVED').length
+          : 0,
+      });
+      setRecentOrders(orders.slice(0, 4));
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const statsData = [
-    { label: 'Total Earnings', val: '₹0.00', sub: '+0% this month', icon: <TrendingUp size={22} />, iconCls: 'bg-[#f0f9ff] text-[#0369a1]' },
-    { label: 'Total Orders', val: '0', sub: '0 active now', icon: <ShoppingBag size={22} />, iconCls: 'bg-[#f0fdf4] text-[#15803d]' },
-    { label: 'Shared Products', val: '0', sub: 'Items in your shop', icon: <Package size={22} />, iconCls: 'bg-[#fdf2f8] text-[#be185d]' },
+    { label: 'Total Earnings', val: `₹${overview.totalEarned.toLocaleString('en-IN')}`, sub: 'Lifetime commission', icon: <TrendingUp size={22} />, iconCls: 'bg-[#f0f9ff] text-[#0369a1]' },
+    { label: 'Total Orders', val: String(overview.totalOrders), sub: `${overview.activeOrders} active now`, icon: <ShoppingBag size={22} />, iconCls: 'bg-[#f0fdf4] text-[#15803d]' },
+    { label: 'Shared Products', val: String(overview.sharedProducts), sub: 'Items in your shop', icon: <Package size={22} />, iconCls: 'bg-[#fdf2f8] text-[#be185d]' },
     { label: 'Customer Reach', val: String(profile?.reach || 'N/A'), sub: 'Target Market', icon: <Users size={22} />, iconCls: 'bg-[#fff7ed] text-[#c2410c]' },
   ];
 
@@ -83,12 +111,34 @@ const dispatch = useAppDispatch();
             <h2 className="text-base font-extrabold text-[#0f172a] m-0">Recent Orders</h2>
             <button className="text-xs text-primary font-bold bg-none border-none cursor-pointer" onClick={() => setActiveView('orders')}>View All</button>
           </div>
-          <div className="flex flex-col items-center gap-3 py-12 text-[#64748b]">
-            <div className="w-20 h-20 bg-[#f1f5f9] rounded-full flex items-center justify-center"><ShoppingBag size={36} className="text-[#94a3b8]" /></div>
-            <h3 className="text-base font-bold text-[#1e293b] m-0">No orders yet</h3>
-            <p className="text-sm text-center m-0 max-w-[300px]">Once your customers start buying from your shop, they will appear here.</p>
-            <Button onClick={() => setActiveView('browse')}>Browse Products to Sell</Button>
-          </div>
+          {recentOrders.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-[#64748b]">
+              <div className="w-20 h-20 bg-[#f1f5f9] rounded-full flex items-center justify-center"><ShoppingBag size={36} className="text-[#94a3b8]" /></div>
+              <h3 className="text-base font-bold text-[#1e293b] m-0">No orders yet</h3>
+              <p className="text-sm text-center m-0 max-w-[300px]">Once your customers start buying from your shop, they will appear here.</p>
+              <Button onClick={() => setActiveView('browse')}>Browse Products to Sell</Button>
+            </div>
+          ) : (
+            <div className="flex flex-col divide-y divide-[#f1f5f9]">
+              {recentOrders.map((order: any) => (
+                <button
+                  key={order._id}
+                  onClick={() => setActiveView('orders')}
+                  className="flex items-center gap-4 py-3.5 text-left bg-transparent border-none cursor-pointer hover:bg-[#fafbfc] px-1 rounded"
+                >
+                  <div className="w-10 h-10 bg-[#f0fdf4] text-[#15803d] rounded-[8px] flex items-center justify-center shrink-0"><ShoppingBag size={18} /></div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-bold text-[#0f172a] block truncate">{order.orderNumber}</span>
+                    <span className="text-xs text-[#64748b] truncate block">{order.buyerId?.name || 'Customer'} · {order.items?.[0]?.name}</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-sm font-extrabold text-[#0f172a] block">₹{order.totalAmount?.toLocaleString('en-IN')}</span>
+                    <span className="text-[11px] text-[#64748b] capitalize">{String(order.status || '').replace(/_/g, ' ')}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-4">
@@ -190,8 +240,8 @@ const dispatch = useAppDispatch();
         {activeView === 'tasks' && <ResellerActionCenter />}
         {activeView === 'browse' && <ResellerBrowseProducts />}
         {activeView === 'my-products' && <ResellerMyProducts />}
-        {activeView === 'orders' && <PlaceholderView title="Customer Orders" icon={ShoppingBag} description="Track your customer orders, shipping status, and delivery details." />}
-        {activeView === 'payouts' && <PlaceholderView title="Earnings & Payouts" icon={CreditCard} description="Monitor your accumulated commission and manage your withdrawal requests." />}
+        {activeView === 'orders' && <ResellerOrders />}
+        {activeView === 'payouts' && <ResellerPayouts />}
         {activeView === 'performance' && <ResellerPerformance />}
         {activeView === 'supplier-partners' && <ResellerSupplierPartners />}
         {activeView === 'history' && <ResellerHistory />}
