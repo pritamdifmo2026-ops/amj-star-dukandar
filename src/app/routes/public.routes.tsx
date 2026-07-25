@@ -23,6 +23,9 @@ import Contact from '@/features/landing/pages/Contact';
 import Terms from '@/features/landing/pages/Terms';
 import Privacy from '@/features/landing/pages/Privacy';
 import VerifiedManufacturers from '@/features/landing/pages/VerifiedManufacturers';
+import HelpBuyers from '@/features/landing/pages/HelpBuyers';
+import HelpSuppliers from '@/features/landing/pages/HelpSuppliers';
+import HelpResellers from '@/features/landing/pages/HelpResellers';
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -60,6 +63,18 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/verified-manufacturers',
     element: <VerifiedManufacturers />,
+  },
+  {
+    path: '/help/buyers',
+    element: <HelpBuyers />,
+  },
+  {
+    path: '/help/suppliers',
+    element: <HelpSuppliers />,
+  },
+  {
+    path: '/help/resellers',
+    element: <HelpResellers />,
   },
   {
     element: <AuthLayout />,

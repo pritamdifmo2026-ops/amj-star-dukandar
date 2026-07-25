@@ -47,6 +47,13 @@ const SubscriptionActivation: React.FC = () => {
       if (!loaded) throw new Error('Payment gateway failed to load. Check your connection.');
 
       const order = await supplierService.createSubscriptionOrder();
+      
+      if (order.mockSuccess) {
+        if (order.supplier) dispatch(setSupplierProfile(order.supplier));
+        toast.success(`${plan.name} activated!`);
+        setPaying(false);
+        return;
+      }
 
       await new Promise<void>((resolve, reject) => {
         const rzp = new (window as any).Razorpay({

@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart,
-  CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck, RotateCcw, Store
+  CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck, RotateCcw, Store,
+  Facebook, Instagram, Twitter, Linkedin
 } from 'lucide-react';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
@@ -219,18 +220,18 @@ const ProductDetail: React.FC = () => {
             {/* Product info */}
             <div className="flex flex-col mt-4 lg:mt-0">
               {/* Badges */}
-              <div className="flex gap-2 mb-4 flex-wrap">
+              <div className="flex gap-2 mb-5 flex-wrap">
                 {product.isVerified && (
-                  <span className="bg-[#e8f5e9] text-[#2e7d32] text-[11px] font-bold px-2.5 py-1 rounded-[4px] flex items-center gap-1 uppercase">
-                    <ShieldCheck size={13} /> Verified Supplier
+                  <span className="bg-[#f0fdf4] text-[#15803d] border border-[#bbf7d0] text-[11px] font-extrabold px-3 py-1.5 rounded-md flex items-center gap-1.5 uppercase tracking-wide">
+                    <ShieldCheck size={22} strokeWidth={2.5} /> Verified Supplier
                   </span>
                 )}
                 {product.isGSTVerified && (
-                  <span className="bg-[#eff6ff] text-[#1d4ed8] text-[11px] font-bold px-2.5 py-1 rounded-[4px] flex items-center gap-1 uppercase">
-                    <BadgeCheck size={13} /> GST Verified
+                  <span className="bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe] text-[11px] font-extrabold px-3 py-1.5 rounded-md flex items-center gap-1.5 uppercase tracking-wide">
+                    <BadgeCheck size={22} strokeWidth={2.5} /> GST Verified
                   </span>
                 )}
-                <span className="bg-cream text-body text-[11px] font-semibold px-2.5 py-1 rounded-[4px] uppercase">
+                <span className="bg-orange-50 text-[#c2410c] border border-orange-200 text-[11px] font-extrabold px-3 py-1.5 rounded-md uppercase tracking-wide flex items-center">
                   {product.category}
                 </span>
               </div>
@@ -315,21 +316,63 @@ const ProductDetail: React.FC = () => {
               </div>
 
               {/* Minimal supplier card */}
-              <div className="bg-surface border border-border p-4 rounded-[var(--radius-md)] flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-lg shrink-0">
-                  {(product.supplierName || 'S')[0].toUpperCase()}
+              <div className="bg-surface border border-border p-4 rounded-[var(--radius-md)] flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-extrabold text-lg shrink-0">
+                    {(product.supplierName || 'S')[0].toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-heading truncate m-0 mb-0.5">{product.supplierName}</p>
+                    {(product.supplierCity || product.supplierState) && (
+                      <p className="text-xs text-muted flex items-center gap-1 m-0">
+                        <MapPin size={11} /> {[product.supplierCity, product.supplierState].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-heading truncate">{product.supplierName}</p>
-                  {(product.supplierCity || product.supplierState) && (
-                    <p className="text-xs text-muted flex items-center gap-1 mt-0.5">
-                      <MapPin size={11} /> {[product.supplierCity, product.supplierState].filter(Boolean).join(', ')}
-                    </p>
+
+                <div className="flex items-center justify-center gap-2.5 w-full sm:w-auto sm:flex-1 order-last sm:order-none mt-2 sm:mt-0">
+                  {product.supplier?.socialMedia?.facebook && (
+                    <a href={product.supplier.socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="w-[34px] h-[34px] rounded-full bg-[#f8f7f5] flex items-center justify-center text-slate-600 transition-colors border border-gray-200 hover:text-primary hover:border-primary hover:bg-primary/5">
+                      <Facebook size={16} strokeWidth={2} />
+                    </a>
+                  )}
+                  {product.supplier?.socialMedia?.twitter && (
+                    <a href={product.supplier.socialMedia.twitter} target="_blank" rel="noopener noreferrer" className="w-[34px] h-[34px] rounded-full bg-[#f8f7f5] flex items-center justify-center text-slate-600 transition-colors border border-gray-200 hover:text-primary hover:border-primary hover:bg-primary/5">
+                      <Twitter size={16} strokeWidth={2} />
+                    </a>
+                  )}
+                  {product.supplier?.socialMedia?.linkedin && (
+                    <a href={product.supplier.socialMedia.linkedin} target="_blank" rel="noopener noreferrer" className="w-[34px] h-[34px] rounded-full bg-[#f8f7f5] flex items-center justify-center text-slate-600 transition-colors border border-gray-200 hover:text-primary hover:border-primary hover:bg-primary/5">
+                      <Linkedin size={16} strokeWidth={2} />
+                    </a>
+                  )}
+                  {product.supplier?.socialMedia?.instagram && (
+                    <a href={product.supplier.socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="w-[34px] h-[34px] rounded-full bg-[#f8f7f5] flex items-center justify-center text-slate-600 transition-colors border border-gray-200 hover:text-primary hover:border-primary hover:bg-primary/5">
+                      <Instagram size={16} strokeWidth={2} />
+                    </a>
+                  )}
+                  {(!product.supplier?.socialMedia?.facebook && !product.supplier?.socialMedia?.twitter && !product.supplier?.socialMedia?.linkedin && !product.supplier?.socialMedia?.instagram) && (
+                    <div className="flex items-center justify-center gap-2.5">
+                      <a href="#" className="w-[34px] h-[34px] rounded-full bg-[#f8f7f5] flex items-center justify-center text-slate-600 transition-colors border border-gray-200 hover:text-primary hover:border-primary hover:bg-primary/5">
+                        <Facebook size={16} strokeWidth={2} />
+                      </a>
+                      <a href="#" className="w-[34px] h-[34px] rounded-full bg-[#f8f7f5] flex items-center justify-center text-slate-600 transition-colors border border-gray-200 hover:text-primary hover:border-primary hover:bg-primary/5">
+                        <Twitter size={16} strokeWidth={2} />
+                      </a>
+                      <a href="#" className="w-[34px] h-[34px] rounded-full bg-[#f8f7f5] flex items-center justify-center text-slate-600 transition-colors border border-gray-200 hover:text-primary hover:border-primary hover:bg-primary/5">
+                        <Linkedin size={16} strokeWidth={2} />
+                      </a>
+                      <a href="#" className="w-[34px] h-[34px] rounded-full bg-[#f8f7f5] flex items-center justify-center text-slate-600 transition-colors border border-gray-200 hover:text-primary hover:border-primary hover:bg-primary/5">
+                        <Instagram size={16} strokeWidth={2} />
+                      </a>
+                    </div>
                   )}
                 </div>
+
                 <button
                   onClick={() => setActiveTab('company')}
-                  className="text-xs text-primary font-semibold bg-transparent border-none cursor-pointer shrink-0 hover:underline"
+                  className="text-sm text-primary font-bold bg-transparent border-none cursor-pointer shrink-0 hover:underline m-0"
                 >
                   Company Info
                 </button>

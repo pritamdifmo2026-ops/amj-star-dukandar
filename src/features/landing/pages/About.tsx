@@ -1,8 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ShieldCheck, TrendingUp, Handshake, ImageIcon } from 'lucide-react';
+import { ShieldCheck, TrendingUp, Handshake, ImageIcon, Quote } from 'lucide-react';
 import MainLayout from '@/shared/layout/MainLayout';
 import api from '@/api/client';
+import logo from '@/assets/logoo.png';
 
 interface Section {
   id: string;
@@ -37,17 +38,17 @@ const About: React.FC = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const hero  = data?.sections.find(s => s.type === 'about-hero');
+  const hero = data?.sections.find(s => s.type === 'about-hero');
   const story = data?.sections.find(s => s.type === 'about-story');
-  const vals  = data?.sections.find(s => s.type === 'about-values');
+  const vals = data?.sections.find(s => s.type === 'about-values');
 
-  const hm = hero?.meta  ?? {};
-  const vm = vals?.meta  ?? {};
+  const hm = hero?.meta ?? {};
+  const vm = vals?.meta ?? {};
 
   const values = [
-    { title: vm.v1Title ?? 'Absolute Trust',     desc: vm.v1Desc ?? '' },
-    { title: vm.v2Title ?? 'Growth First',        desc: vm.v2Desc ?? '' },
-    { title: vm.v3Title ?? 'Solid Partnerships',  desc: vm.v3Desc ?? '' },
+    { title: vm.v1Title ?? 'Absolute Trust', desc: vm.v1Desc ?? '' },
+    { title: vm.v2Title ?? 'Growth First', desc: vm.v2Desc ?? '' },
+    { title: vm.v3Title ?? 'Solid Partnerships', desc: vm.v3Desc ?? '' },
   ];
 
   return (
@@ -105,54 +106,99 @@ const About: React.FC = () => {
               <h2 className="text-3xl font-extrabold text-[#0f172a] mb-6">
                 Empowering Businesses to Learn and Grow
               </h2>
-              <p className="text-[#475569] text-sm leading-[1.9] mb-5">
-                "As a teacher, my life has been dedicated to guiding individuals and helping them unlock their true potential. AMJSTAR was built on this very foundation of education and empowerment. We noticed that small-scale manufacturers and resellers had the ambition but lacked a trustworthy platform to connect and scale."
-              </p>
-              <p className="text-[#475569] text-sm leading-[1.9]">
-                "Our vision is to build a transparent, secure, and thriving B2B ecosystem. We want every business, no matter how small, to have access to a national market, just as every student deserves access to quality education. AMJSTAR is that platform—your partner in growth."
+              <p className="text-[#475569] text-sm leading-[1.9] mb-10">
+                "AMJSTAR is built on the foundation of education and empowerment. Our vision is to create a transparent, secure, and thriving B2B ecosystem where every small business can access a national market and unlock its true potential."
               </p>
             </div>
 
             {/* Our Story Section */}
             <div>
-              <h3 className="text-2xl font-extrabold text-[#0f172a] mb-5">{story?.heading ?? 'Our Story'}</h3>
-              <p className="text-[#475569] text-sm leading-[1.9] mb-5">
-                {story?.text ?? 'Founded in 2024, AMJSTAR started with a simple observation: the wholesale market was fragmented and difficult to navigate for small-scale resellers and growing manufacturers.'}
-              </p>
+              <h3 className="text-2xl font-extrabold text-[#0f172a] mb-4">{story?.heading ?? 'Our Story'}</h3>
               <p className="text-[#475569] text-sm leading-[1.9]">
-                {story?.body ?? "Today, we are proud to be one of India's fastest-growing B2B platforms, serving thousands of partners across the country with a focus on quality, speed, and reliability."}
+                {story?.text ?? "Founded to bridge the gap in a fragmented wholesale market, AMJSTAR is a digital ecosystem where trust is the primary currency. Today, we empower thousands of partners across India with quality, speed, and reliability."}
               </p>
             </div>
           </div>
 
           {/* Right Side: Large Photo & Details */}
           <div className="relative mt-8 lg:mt-0 flex flex-col items-center lg:items-end">
-            <div className="w-full max-w-[460px]">
-              <div className="bg-white rounded-[24px] p-4 border border-gray-100 w-full shadow-none">
-                <div className="w-full h-[540px] rounded-[18px] overflow-hidden bg-gray-50">
-                  <img 
-                    src="/images/kuldeep-redhu.jpg" 
-                    alt="Kuldeep Redhu" 
-                    className="w-full h-full object-cover object-center scale-[1.03] hover:scale-[1.08] transition-transform duration-700"
+            <div className="w-full max-w-[460px] flex flex-col items-center">
+              <div className="relative mb-8">
+                <div className="relative w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] rounded-full overflow-hidden bg-white border border-gray-200 mx-auto shadow-sm">
+                  <img
+                    src="/images/kuldeep-redhu.jpg"
+                    alt="Kuldeep Redhu"
+                    className="w-full h-full object-cover object-left translate-x-8 sm:translate-x-12 hover:scale-105 transition-transform duration-700"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
-                      target.parentElement!.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center text-primary/50"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg><span class="mt-4 font-bold text-lg">Image Not Found</span></div>';
+                      target.parentElement!.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center text-primary/50"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg><span class="mt-4 font-bold text-lg">Not Found</span></div>';
                     }}
                   />
                 </div>
-                
-                {/* Info Card Below Image */}
-                <div className="text-center mt-8 mb-5">
-                  <h3 className="text-3xl font-black text-gray-900 tracking-tight">Mr. Kuldeep Redhu</h3>
-                  <div className="inline-flex items-center justify-center mt-4 space-x-3">
-                    <span className="h-px w-8 bg-primary/30"></span>
-                    <p className="text-sm text-primary font-bold tracking-widest uppercase">Director & Founder</p>
-                    <span className="h-px w-8 bg-primary/30"></span>
-                  </div>
+              </div>
+
+              {/* Info Text Below Image */}
+              <div className="text-center mt-2 mb-5">
+                <h3 className="text-3xl font-display font-normal text-gray-900 tracking-tight m-0">Mr. Khuldeep Redhu</h3>
+                <div className="inline-flex items-center justify-center mt-4 space-x-3">
+                  <span className="h-px w-8 bg-primary/30"></span>
+                  <p className="text-xs text-primary font-bold tracking-widest uppercase m-0">Director</p>
+                  <span className="h-px w-8 bg-primary/30"></span>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Leadership Vision ────────────────────────────────────────── */}
+      <section className="bg-white pb-16 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+
+            {/* Founder Quote */}
+            <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              <div className="flex-shrink-0">
+                <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 bg-white flex items-center justify-center">
+                  <img src={logo} alt="AMJSTAR Logo" className="w-full h-full object-cover scale-[2]" />
+                </div>
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex gap-2 mb-4">
+                  <Quote className="w-5 h-5 text-orange-400/40 fill-current flex-shrink-0 mt-0.5" />
+                  <p className="text-[#334155] text-sm md:text-base italic font-medium leading-relaxed">
+                    We believe that every business, no matter how small, deserves a global platform to shine. AMJSTAR is that <span className="whitespace-nowrap">stage.<Quote className="w-5 h-5 text-orange-400/40 fill-current rotate-180 inline-block ml-1 -mt-1" /></span>
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-[#0f172a] font-bold text-sm m-0">Mr. Manish Jangra</h4>
+                  <p className="text-primary text-xs font-semibold mt-0.5 m-0">Founder, AMJSTAR</p>
+                </div>
+              </div>
+            </div>
+
+            {/* CFO Quote */}
+            <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              <div className="flex-shrink-0">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-orange-400 text-white flex items-center justify-center font-bold text-xl">
+                  U
+                </div>
+              </div>
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex gap-2 mb-4">
+                  <Quote className="w-5 h-5 text-orange-400/40 fill-current flex-shrink-0 mt-0.5" />
+                  <p className="text-[#334155] text-sm md:text-base italic font-medium leading-relaxed">
+                    Restructuring India's B2B ecosystem with a transparent, tech-driven supply chain to empower every <span className="whitespace-nowrap">stakeholder.<Quote className="w-5 h-5 text-orange-400/40 fill-current rotate-180 inline-block ml-1 -mt-1" /></span>
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-[#0f172a] font-bold text-sm m-0">Mrs. Umesh Jangra</h4>
+                  <p className="text-primary text-xs font-semibold mt-0.5 m-0">CFO & Director, AMJSTAR</p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

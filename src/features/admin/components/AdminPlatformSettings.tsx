@@ -26,6 +26,7 @@ const AdminPlatformSettings: React.FC = () => {
   });
 
   const [form, setForm] = useState({ minimumWalletBalance: '', minimumWithdrawalAmount: '', contactPhone: '' });
+  const [socialForm, setSocialForm] = useState({ facebook: '', twitter: '', linkedin: '', instagram: '' });
   const [phoneError, setPhoneError] = useState('');
 
   const [planForm, setPlanForm] = useState({ VERIFIED: '2100', GAMMA: '21000', BETA: '51000' });
@@ -37,6 +38,12 @@ const AdminPlatformSettings: React.FC = () => {
         minimumWalletBalance: String(settings.minimumWalletBalance),
         minimumWithdrawalAmount: String(settings.minimumWithdrawalAmount),
         contactPhone: settings.contactPhone || '',
+      });
+      setSocialForm({
+        facebook: settings.socialMedia?.facebook || '',
+        twitter: settings.socialMedia?.twitter || '',
+        linkedin: settings.socialMedia?.linkedin || '',
+        instagram: settings.socialMedia?.instagram || '',
       });
       setPlanForm({
         VERIFIED: String(settings.planPrices?.VERIFIED ?? PLAN_DEFAULTS.VERIFIED),
@@ -70,7 +77,8 @@ const AdminPlatformSettings: React.FC = () => {
       minimumWalletBalance: Number(form.minimumWalletBalance),
       minimumWithdrawalAmount: Number(form.minimumWithdrawalAmount),
       contactPhone: form.contactPhone,
-    }),
+      socialMedia: socialForm,
+    } as any),
     onSuccess: () => {
       toast.success('Platform settings saved');
       qc.invalidateQueries({ queryKey: ['admin', 'platformSettings'] });
@@ -154,6 +162,23 @@ const AdminPlatformSettings: React.FC = () => {
               ? <p className="text-xs text-[#dc2626] mt-1.5 font-medium">{phoneError}</p>
               : <p className="text-xs text-[#94a3b8] mt-1.5">10-digit Indian mobile number. Shown to suppliers as "Call AMJSTAR".</p>
             }
+          </div>
+
+          <div>
+            <label className={labelCls}>Facebook Link</label>
+            <input type="url" value={socialForm.facebook} onChange={e => setSocialForm(p => ({ ...p, facebook: e.target.value }))} className={inputCls} placeholder="https://facebook.com/..." />
+          </div>
+          <div>
+            <label className={labelCls}>Twitter Link</label>
+            <input type="url" value={socialForm.twitter} onChange={e => setSocialForm(p => ({ ...p, twitter: e.target.value }))} className={inputCls} placeholder="https://twitter.com/..." />
+          </div>
+          <div>
+            <label className={labelCls}>LinkedIn Link</label>
+            <input type="url" value={socialForm.linkedin} onChange={e => setSocialForm(p => ({ ...p, linkedin: e.target.value }))} className={inputCls} placeholder="https://linkedin.com/in/..." />
+          </div>
+          <div>
+            <label className={labelCls}>Instagram Link</label>
+            <input type="url" value={socialForm.instagram} onChange={e => setSocialForm(p => ({ ...p, instagram: e.target.value }))} className={inputCls} placeholder="https://instagram.com/..." />
           </div>
 
           <Button

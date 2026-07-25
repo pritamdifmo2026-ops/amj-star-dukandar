@@ -160,6 +160,43 @@ const adminService = {
     return response.data;
   },
 
+  // ── Help Requests ──
+  submitHelpRequest: async (data: { name: string; phone: string; email: string; subject: string; message: string; userRole: string }) => {
+    const response = await api.post('/help-requests', data);
+    return response.data;
+  },
+
+  getHelpRequests: async () => {
+    const response = await api.get('/help-requests');
+    return response.data.helpRequests as Array<{
+      _id: string;
+      name: string;
+      phone: string;
+      email: string;
+      subject: string;
+      message: string;
+      status: 'new' | 'read' | 'resolved';
+      userRole: 'buyer' | 'supplier' | 'reseller';
+      adminNotes?: string;
+      createdAt: string;
+    }>;
+  },
+
+  getNewHelpRequestsCount: async (): Promise<number> => {
+    const response = await api.get('/help-requests/count/new');
+    return response.data.count;
+  },
+
+  updateHelpRequestStatus: async (id: string, status: string, adminNotes?: string) => {
+    const response = await api.patch(`/help-requests/${id}/status`, { status, adminNotes });
+    return response.data.helpRequest;
+  },
+
+  replyToHelpRequest: async (id: string, subject: string, body: string) => {
+    const response = await api.post(`/help-requests/${id}/reply`, { subject, body });
+    return response.data.helpRequest;
+  },
+
   getEarnings: async () => {
     const response = await api.get('/admin/earnings');
     return response.data as { rows: any[]; totals: { totalCommissionEarned: number; totalFrozen: number; totalSupplierEarned: number; totalListingFeesEarned: number; totalAmjEarned: number } };

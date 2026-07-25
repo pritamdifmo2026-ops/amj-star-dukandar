@@ -4,12 +4,33 @@ import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from 'luc
 import appConfig from '@/config/app.config';
 import logo from '@/assets/logoo.png';
 import { ROUTES } from '@/shared/constants/routes';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/api/client';
+
+const fetchSettings = async () => {
+  const res = await api.get('/settings/platform');
+  return res.data.settings;
+};
 
 const colTitleCls = "text-[0.78rem] sm:text-[0.82rem] font-bold uppercase tracking-wider text-[oklch(0.18_0.02_240)] mb-4 sm:mb-5";
 const linkCls = "text-[oklch(0.40_0.02_240)] text-[0.78rem] sm:text-[0.82rem] no-underline transition-colors hover:text-primary hover:underline inline-block";
 
-const Footer: React.FC = () => (
-  <footer className="bg-[oklch(0.98_0.01_80)] text-[oklch(0.25_0.02_240)] font-sans border-t border-[oklch(0.92_0.01_80)]">
+
+const Footer: React.FC = () => {
+  const { data: settings } = useQuery({
+    queryKey: ['public', 'platformSettings'],
+    queryFn: fetchSettings,
+  });
+
+  const socialLinks = [
+    { Icon: Facebook, label: 'Facebook', url: settings?.socialMedia?.facebook },
+    { Icon: Twitter, label: 'Twitter', url: settings?.socialMedia?.twitter },
+    { Icon: Linkedin, label: 'LinkedIn', url: settings?.socialMedia?.linkedin },
+    { Icon: Instagram, label: 'Instagram', url: settings?.socialMedia?.instagram },
+  ].filter(s => !!s.url);
+
+  return (
+    <footer className="bg-[oklch(0.98_0.01_80)] text-[oklch(0.25_0.02_240)] font-sans border-t border-[oklch(0.92_0.01_80)]">
     {/* Main footer */}
     <div className="py-10 sm:py-14 pb-6 sm:pb-8">
       <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-6 md:px-8">
@@ -25,13 +46,8 @@ const Footer: React.FC = () => (
               India's leading B2B wholesale marketplace connecting verified buyers with trusted suppliers across the nation. Trade globally, connect locally.
             </p>
             <div className="flex gap-2 mt-1">
-              {[
-                { Icon: Facebook, label: 'Facebook' },
-                { Icon: Twitter, label: 'Twitter' },
-                { Icon: Linkedin, label: 'LinkedIn' },
-                { Icon: Instagram, label: 'Instagram' },
-              ].map(({ Icon, label }) => (
-                <a key={label} href="#" aria-label={label}
+              {socialLinks.map(({ Icon, label, url }) => (
+                <a key={label} href={url} target="_blank" rel="noopener noreferrer" aria-label={label}
                   className="w-7 h-7 sm:w-8 sm:h-8 rounded-[4px] bg-[oklch(0.95_0.01_80)] border border-[oklch(0.90_0.01_80)] flex items-center justify-center text-[oklch(0.40_0.02_240)] no-underline transition-all hover:bg-primary hover:text-white hover:border-primary">
                   <Icon size={15} />
                 </a>
@@ -111,7 +127,8 @@ const Footer: React.FC = () => (
       </div>
     </div>
   </footer>
-);
+  );
+};
 
 export default Footer;
 

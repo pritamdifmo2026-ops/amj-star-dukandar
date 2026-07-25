@@ -60,6 +60,22 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
   const [emailLinkSent, setEmailLinkSent] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
+  // Social media
+  const [socialForm, setSocialForm] = useState({
+    facebook: profile?.socialMedia?.facebook || '',
+    twitter: profile?.socialMedia?.twitter || '',
+    linkedin: profile?.socialMedia?.linkedin || '',
+    instagram: profile?.socialMedia?.instagram || '',
+  });
+
+  const updateSocialMediaMutation = useMutation({
+    mutationFn: (data: any) => supplierService.updateSocialMedia(data),
+    onSuccess: () => {
+      toast.success('Social media links updated!');
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update social media links'),
+  });
+
   // Phone update flow
   const [editingPhone, setEditingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState('');
@@ -304,6 +320,36 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Social Media Links */}
+            <div className="pt-4 mt-2 border-t border-[#f1f5f9]">
+              <h4 className="text-sm font-bold text-[#1e293b] mb-4">Social Media Links</h4>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className={labelCls}>Facebook Link</label>
+                  <input type="url" value={socialForm.facebook} onChange={e => setSocialForm(p => ({ ...p, facebook: e.target.value }))} className={inputCls} placeholder="https://facebook.com/..." />
+                </div>
+                <div>
+                  <label className={labelCls}>Twitter Link</label>
+                  <input type="url" value={socialForm.twitter} onChange={e => setSocialForm(p => ({ ...p, twitter: e.target.value }))} className={inputCls} placeholder="https://twitter.com/..." />
+                </div>
+                <div>
+                  <label className={labelCls}>LinkedIn Link</label>
+                  <input type="url" value={socialForm.linkedin} onChange={e => setSocialForm(p => ({ ...p, linkedin: e.target.value }))} className={inputCls} placeholder="https://linkedin.com/in/..." />
+                </div>
+                <div>
+                  <label className={labelCls}>Instagram Link</label>
+                  <input type="url" value={socialForm.instagram} onChange={e => setSocialForm(p => ({ ...p, instagram: e.target.value }))} className={inputCls} placeholder="https://instagram.com/..." />
+                </div>
+                <button 
+                  className={`${primaryBtnCls} w-fit mt-2`} 
+                  onClick={() => updateSocialMediaMutation.mutate(socialForm)}
+                  disabled={updateSocialMediaMutation.isPending}
+                >
+                  {updateSocialMediaMutation.isPending ? 'Saving...' : 'Save Social Links'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -45,6 +45,7 @@ const mapProduct = (item: any): Product => {
     supplierReturnPolicyCustomTerms: item.supplierId?.businessDetails?.returnPolicyCustomTerms,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
+    supplier: item.supplierId && typeof item.supplierId === 'object' ? item.supplierId : undefined,
     supplierDetails: item.supplierId && typeof item.supplierId === 'object' ? {
       businessName: item.supplierId.businessName,
       gstin: item.supplierId.businessDetails?.gstin || item.supplierId.businessDetails?.gstNumber,

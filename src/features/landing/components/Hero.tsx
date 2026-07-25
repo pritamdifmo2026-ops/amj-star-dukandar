@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants/routes';
 import { ArrowRight } from 'lucide-react';
-import heroImage from '@/assets/images/image.png';
+import heroImage from '@/assets/images/user.png';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
 import Modal from '@/shared/components/ui/Modal';
@@ -98,14 +98,14 @@ const Hero: React.FC = () => {
             <Link
               to={`${ROUTES.LOGIN}?mode=buyer`}
               onClick={handleBuyerClick}
-              className="flex-1 justify-center bg-primary text-white px-6 py-3 max-[640px]:px-3 max-[640px]:py-2 max-[640px]:text-xs text-sm font-semibold rounded-full no-underline flex items-center gap-2 transition-all hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-10px_var(--color-primary)] whitespace-nowrap"
+              className="justify-center bg-primary text-white min-w-[240px] px-10 py-4 max-[640px]:px-6 max-[640px]:py-3.5 max-[640px]:text-base text-[18px] font-bold rounded-full no-underline flex items-center gap-2 transition-all hover:bg-primary-dark whitespace-nowrap shadow-md"
             >
-              Join as Buyer <ArrowRight size={18} className="max-[640px]:w-4 max-[640px]:h-4" />
+              Join as Buyer <ArrowRight size={20} className="max-[640px]:w-5 max-[640px]:h-5" />
             </Link>
             <Link
               to={`${ROUTES.LOGIN}?mode=seller`}
               onClick={handleSupplierClick}
-              className="flex-1 justify-center text-center bg-cream text-heading px-6 py-3 max-[640px]:px-3 max-[640px]:py-2 max-[640px]:text-xs text-sm font-semibold rounded-full no-underline border border-border transition-all hover:border-heading hover:bg-[#f8f8f8] whitespace-nowrap"
+              className="justify-center text-center bg-[#1e293b] text-white min-w-[240px] px-10 py-4 max-[640px]:px-6 max-[640px]:py-3.5 max-[640px]:text-base text-[18px] font-bold rounded-full no-underline transition-all hover:bg-[#0f172a] whitespace-nowrap shadow-md"
             >
               Become a Supplier
             </Link>

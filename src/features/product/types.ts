@@ -38,6 +38,7 @@ export interface Product {
   supplierReturnPolicyCustomTerms?: string;
   createdAt: string;
   updatedAt: string;
+  supplier?: any;
   supplierDetails?: {
     businessName?: string;
     nature?: string;

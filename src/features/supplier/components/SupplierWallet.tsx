@@ -118,6 +118,7 @@ const SupplierWallet: React.FC = () => {
       if (!loaded) throw new Error('Payment gateway failed to load. Check your connection.');
 
       const order = await walletApi.createTopupOrder(amount);
+      if (order.mockSuccess) return;
 
       return new Promise<void>((resolve, reject) => {
         const rzp = new (window as any).Razorpay({

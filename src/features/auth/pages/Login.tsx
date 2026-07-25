@@ -35,6 +35,7 @@ const Login: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [suggestedMode, setSuggestedMode] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = (searchParams.get('mode') || 'buyer') as keyof typeof modeConfig;
@@ -62,10 +63,14 @@ const Login: React.FC = () => {
     }
     try {
       setLoading(true);
-      await authService.sendOtp({ phone });
+      setSuggestedMode(null);
+      await authService.sendOtp({ phone, mode });
       navigate(`/verify-otp?phone=${phone}&mode=${mode}`);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
+      if (err.response?.data?.suggestedMode) {
+        setSuggestedMode(err.response.data.suggestedMode);
+      }
     } finally {
       setLoading(false);
     }
@@ -126,14 +131,29 @@ const Login: React.FC = () => {
               </span>
             )}
           </div>
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 rounded-xl bg-red-50 text-red-600 text-[13.5px] font-medium border border-red-100 flex items-start gap-2 shadow-sm animate-in fade-in slide-in-from-top-2">
+              <span className="mt-0.5">⚠️</span>
+              <div>
+                <span>{error}</span>
+                {suggestedMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuggestedMode(null);
+                      setError('');
+                      navigate(`/login?mode=${suggestedMode}`);
+                    }}
+                    className="ml-2 font-bold underline bg-transparent border-none text-red-700 cursor-pointer p-0"
+                  >
+                    Click here to login as {suggestedMode === 'seller' ? 'supplier' : suggestedMode}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-
-        {error && (
-          <div className="flex items-start gap-2 text-[13px] font-semibold bg-red-50 text-red-600 px-4 py-3 rounded-[10px] border border-red-200">
-            <span className="shrink-0 mt-0.5">⚠</span>
-            <span>{error}</span>
-          </div>
-        )}
 
         <button
           type="submit"

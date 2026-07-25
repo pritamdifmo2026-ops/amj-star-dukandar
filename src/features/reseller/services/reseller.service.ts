@@ -131,11 +131,6 @@ const resellerService = {
     return response.data;
   },
 
-  getGlobalResellerProducts: async () => {
-    const response = await apiClient.get('/partnership/public/products');
-    return response.data;
-  },
-
   getPublicStore: async (slug: string): Promise<PublicStoreData> => {
     const response = await apiClient.get(`/reseller/public/${slug}`);
     return response.data;

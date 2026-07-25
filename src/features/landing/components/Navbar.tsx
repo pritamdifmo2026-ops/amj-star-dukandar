@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -26,6 +26,18 @@ const Navbar: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const helpRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (helpRef.current && !helpRef.current.contains(event.target as Node)) {
+        setIsHelpOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const navigate = useNavigate();
   const desktopMenuRef = React.useRef<HTMLDivElement>(null);
@@ -111,7 +123,7 @@ const Navbar: React.FC = () => {
       ? (resellerProfile?.fullName || resellerProfile?.storeName || user?.name || 'Reseller')
       : (user?.name || 'User');
 
-  const navLinkCls = "text-[11px] font-medium text-heading no-underline transition-colors hover:text-primary whitespace-nowrap";
+  const navLinkCls = "text-[13px] font-bold text-heading no-underline transition-colors hover:text-primary whitespace-nowrap";
   const dropdownItemCls = "block w-full px-4 py-3 text-left border-none bg-transparent text-heading text-xs no-underline rounded-[8px] cursor-pointer hover:bg-gray-50 hover:text-primary";
 
   return (
@@ -129,6 +141,8 @@ const Navbar: React.FC = () => {
                 <span className="text-border">|</span>
               </>
             )}
+            <button onClick={() => setIsHelpOpen(true)} className="text-[9px] bg-transparent border-none p-0 cursor-pointer text-body no-underline hover:text-primary">Help</button>
+            <span className="text-border">|</span>
             <Link to="/contact" className="text-[9px] text-body no-underline hover:text-primary">Contact Us</Link>
           </div>
         </div>
@@ -197,9 +211,11 @@ const Navbar: React.FC = () => {
                   <Link to={ROUTES.SUPPLIERS} className={`${navLinkCls} flex items-center gap-1`}>
                     <Factory size={12} /> For Suppliers
                   </Link>
-                  <Link to={`${ROUTES.LOGIN}?mode=buyer`}
-                    className="bg-heading text-white px-[18px] py-1.5 rounded-full no-underline font-semibold text-[11px] transition-all ml-2 hover:opacity-90 hover:-translate-y-px">
-                    Join Free
+                  <Link
+                    to="/login"
+                    className="bg-heading text-white px-[20px] py-1.5 rounded-xl font-bold text-[13px] transition-all hover:opacity-90 hover:-translate-y-px ml-2 no-underline"
+                  >
+                    Sign In
                   </Link>
                 </div>
               )}
@@ -398,13 +414,12 @@ const Navbar: React.FC = () => {
                   <Link to={ROUTES.BUYERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><ShoppingBag size={18} /><span>For Buyers</span></Link>
                   <Link to={ROUTES.SUPPLIERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><Store size={18} /><span>For Suppliers</span></Link>
                   <Link to={ROUTES.RESELLERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><Truck size={18} /><span>For Resellers</span></Link>
-                  <Link
-                    to={`${ROUTES.LOGIN}?mode=buyer`}
-                    className="mt-3 flex items-center justify-center gap-2 w-full py-3 bg-heading text-white rounded-[8px] no-underline font-semibold text-sm"
-                    onClick={() => setMobileOpen(false)}
+                  <button
+                    onClick={() => setIsHelpOpen(true)}
+                    className="mt-3 flex items-center justify-center w-full py-3 bg-heading text-white rounded-[8px] font-semibold text-sm transition-all hover:opacity-90"
                   >
-                    Join Free
-                  </Link>
+                    Sign In
+                  </button>
                 </>
               )}
             </div>
@@ -480,6 +495,52 @@ const Navbar: React.FC = () => {
 
       <MessageModal isOpen={showSoonModal} onClose={() => setShowSoonModal(false)} title="Coming Soon"
         message="We are currently updating our cart and checkout system. Please check back soon!" type="info" />
+
+      <Modal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="How can we help you?" widthClass="max-w-[500px]">
+        <div className="flex flex-col gap-3 py-2">
+          <Link
+            to="/help/buyers"
+            onClick={() => { setIsHelpOpen(false); setMobileOpen(false); }}
+            className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/40 hover:bg-primary/5 transition-all group no-underline"
+          >
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <ShoppingBag size={20} className="text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-base font-bold text-heading m-0 mb-1 group-hover:text-primary transition-colors">Help for Buyers</p>
+              <p className="text-xs text-body m-0 leading-relaxed">Order tracking, sourcing requests, minimum order quantities, and buyer FAQs.</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/help/suppliers"
+            onClick={() => { setIsHelpOpen(false); setMobileOpen(false); }}
+            className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-[#8b5cf6]/40 hover:bg-[#8b5cf6]/5 transition-all group no-underline"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#f5f3ff] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <Factory size={20} className="text-[#8b5cf6]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-base font-bold text-heading m-0 mb-1 group-hover:text-[#8b5cf6] transition-colors">Help for Suppliers</p>
+              <p className="text-xs text-body m-0 leading-relaxed">Account verifications, catalog management, commission setup, and payments.</p>
+            </div>
+          </Link>
+
+          <Link
+            to="/help/resellers"
+            onClick={() => { setIsHelpOpen(false); setMobileOpen(false); }}
+            className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-[#06b6d4]/40 hover:bg-[#06b6d4]/5 transition-all group no-underline"
+          >
+            <div className="w-12 h-12 rounded-full bg-[#ecfeff] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <RefreshCw size={20} className="text-[#06b6d4]" />
+            </div>
+            <div className="flex-1">
+              <p className="text-base font-bold text-heading m-0 mb-1 group-hover:text-[#06b6d4] transition-colors">Help for Resellers</p>
+              <p className="text-xs text-body m-0 leading-relaxed">Storefront personalization, finding supplier partners, and handling leads.</p>
+            </div>
+          </Link>
+        </div>
+      </Modal>
 
       <Modal isOpen={showLogoutModal} onClose={() => setShowLogoutModal(false)} title="Sign Out"
         footer={

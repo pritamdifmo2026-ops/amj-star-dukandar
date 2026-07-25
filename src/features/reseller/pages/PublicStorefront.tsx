@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  Store, MapPin, Globe, Mail, ShieldCheck, ChevronDown, ChevronUp,
-  Package, Calendar, TrendingUp, Award, Building2, ArrowUpRight,
-  Factory, Star, CheckCircle, Share2, Copy, Check,
-  LayoutGrid, List, X, Instagram, Facebook, Twitter, PhoneCall, Send, ShoppingBag, CheckCircle2
+  Store, MapPin, ShieldCheck, ChevronDown, ChevronUp,
+  Package, Calendar, Building2, ArrowUpRight,
+  Share2, Copy, Check,
+  LayoutGrid, List, X, Instagram, Facebook, Twitter, PhoneCall, Send, CheckCircle2
 } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
-import Modal from '@/shared/components/ui/Modal';
 import resellerService, { type PublicStoreData } from '../services/reseller.service';
-import { useAppSelector } from '@/store/hooks';
+
 
 type StoreProduct = PublicStoreData['products'][number];
 
@@ -189,17 +188,8 @@ const PublicStorefront: React.FC = () => {
   const [leadSuccess, setLeadSuccess] = useState(false);
 
   // Auth and Checkout State
-  const isAuthenticated = useAppSelector((state: any) => state.auth.isAuthenticated);
-  const authUser = useAppSelector((state: any) => state.auth.user);
+
   
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutProduct, setCheckoutProduct] = useState<StoreProduct | null>(null);
-  const [checkoutForm, setCheckoutForm] = useState({ 
-    quantity: 1, 
-    address: { fullAddress: '', city: '', state: '', pincode: '' } 
-  });
-  const [checkoutError, setCheckoutError] = useState('');
-  const [checkoutSuccess, setCheckoutSuccess] = useState('');
 
   const storeUrl = window.location.href;
 
@@ -267,45 +257,6 @@ const PublicStorefront: React.FC = () => {
     }
   };
 
-  const openCheckoutModal = (product: StoreProduct) => {
-    if (!isAuthenticated) {
-      navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
-      return;
-    }
-    setCheckoutProduct(product);
-    setCheckoutForm({
-      quantity: product.moq || 1,
-      address: authUser?.address || { fullAddress: '', city: '', state: '', pincode: '' }
-    });
-    setCheckoutError('');
-    setCheckoutSuccess('');
-    setShowCheckoutModal(true);
-  };
-
-  const submitCheckout = async () => {
-    setCheckoutError('');
-    if (!checkoutForm.address.fullAddress.trim() || !checkoutForm.address.city.trim() || !checkoutForm.address.pincode.trim()) {
-      setCheckoutError('Please provide a complete delivery address.');
-      return;
-    }
-    if (checkoutForm.quantity < (checkoutProduct?.moq || 1)) {
-      setCheckoutError(`Minimum order quantity is ${checkoutProduct?.moq || 1}`);
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await resellerService.submitStoreOrder(slug, {
-        partnershipId: checkoutProduct?.partnershipId,
-        quantity: checkoutForm.quantity,
-        addressSnapshot: checkoutForm.address,
-      });
-      setCheckoutSuccess('Order placed successfully! The reseller will process it shortly.');
-    } catch (err: any) {
-      setCheckoutError(err?.response?.data?.message || 'Failed to place order');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   if (loading) return <Skeleton />;
 
@@ -467,7 +418,7 @@ const PublicStorefront: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
                   {filteredProducts.map((product: any) => (
                     <div key={product.partnershipId} className="flex flex-col bg-white rounded-[12px] border border-[#eef2f6] overflow-hidden transition-all duration-300 h-full hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] group">
-                      <div className="relative aspect-[4/3] sm:aspect-square bg-[#f8fafc] overflow-hidden cursor-pointer" onClick={() => openCheckoutModal(product)}>
+                      <div className="relative aspect-[4/3] sm:aspect-square bg-[#f8fafc] overflow-hidden">
                         {product.images?.[0] ? (
                           <img
                             src={product.images[0]}
@@ -499,22 +450,12 @@ const PublicStorefront: React.FC = () => {
                             MOQ: {product.moq || 1} {product.unit}
                           </span>
                         </div>
-                        </div>
-                        <div className="flex flex-col gap-1.5 w-full mt-auto">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openCheckoutModal(product); }}
-                            className="w-full text-[11px] sm:text-xs font-bold py-1.5 sm:py-2 rounded-[8px] text-white hover:opacity-90 transition-all cursor-pointer border-none shadow-sm"
-                            style={{ backgroundColor: themeColor }}
-                          >
-                            Buy Now
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); openLeadModal(product); }}
-                            className="w-full text-[11px] sm:text-xs font-bold py-1.5 sm:py-2 rounded-[8px] bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa] hover:bg-[#e65c00] hover:text-white transition-all cursor-pointer"
-                          >
-                            For Bulk Purchase
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => openLeadModal(product)}
+                          className="w-full text-[11px] sm:text-xs font-bold py-1.5 sm:py-2 rounded-[8px] bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa] hover:bg-[#e65c00] hover:text-white transition-all cursor-pointer"
+                        >
+                          For Bulk Purchase
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -526,7 +467,7 @@ const PublicStorefront: React.FC = () => {
                       key={product.partnershipId}
                       className="bg-white rounded-[12px] border border-[#eef2f6] p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)] transition-all"
                     >
-                      <div className="w-16 h-16 max-[520px]:w-14 max-[520px]:h-14 rounded-[8px] overflow-hidden bg-[#f1f5f9] shrink-0 cursor-pointer" onClick={() => openCheckoutModal(product)}>
+                      <div className="w-16 h-16 max-[520px]:w-14 max-[520px]:h-14 rounded-[8px] overflow-hidden bg-[#f1f5f9] shrink-0">
                         {product.images?.[0] ? (
                           <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
@@ -540,9 +481,8 @@ const PublicStorefront: React.FC = () => {
                       </div>
                       <div className="text-right shrink-0 flex flex-col items-end gap-2">
                         <p className="text-base font-extrabold m-0" style={{ color: themeColor }}>₹{(product.price || 0).toLocaleString('en-IN')}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <button onClick={(e) => { e.stopPropagation(); openCheckoutModal(product); }} className="text-[11px] font-bold text-white px-4 py-1.5 rounded-[6px] cursor-pointer hover:opacity-90 transition-all border-none shadow-sm" style={{ backgroundColor: themeColor }}>Buy Now</button>
-                          <button onClick={(e) => { e.stopPropagation(); openLeadModal(product); }} className="text-[11px] font-bold bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa] px-3 py-1.5 rounded-[6px] cursor-pointer hover:bg-[#e65c00] hover:text-white transition-all">For Bulk Purchase</button>
+                        <div className="flex items-center mt-1">
+                          <button onClick={() => openLeadModal(product)} className="text-[11px] font-bold bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa] px-3 py-1.5 rounded-[6px] cursor-pointer hover:bg-[#e65c00] hover:text-white transition-all">For Bulk Purchase</button>
                         </div>
                       </div>
                     </div>
@@ -749,73 +689,13 @@ const PublicStorefront: React.FC = () => {
         </div>
       )}
 
-      {/* Checkout Modal */}
-      <Modal isOpen={showCheckoutModal} onClose={() => setShowCheckoutModal(false)} title="Complete Purchase" maxWidth="md">
-        {checkoutSuccess ? (
-          <div className="p-8 flex flex-col items-center text-center gap-4">
-            <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center"><CheckCircle2 size={32}/></div>
-            <h3 className="text-xl font-bold text-gray-900 m-0">Order Placed!</h3>
-            <p className="text-gray-500 m-0 text-sm">{checkoutSuccess}</p>
-            <Button onClick={() => setShowCheckoutModal(false)} className="mt-4 w-full" style={{ backgroundColor: themeColor }}>Continue Shopping</Button>
-          </div>
-        ) : (
-          <div className="p-4 sm:p-6">
-            <div className="flex gap-4 mb-5 pb-5 border-b border-gray-100">
-              <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0 border border-gray-200">
-                <img src={checkoutProduct?.images?.[0]} alt={checkoutProduct?.name} className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-900 m-0 text-sm line-clamp-2">{checkoutProduct?.name}</h4>
-                <p className="font-extrabold m-0 mt-1.5 text-lg" style={{ color: themeColor }}>₹{checkoutProduct?.price?.toLocaleString('en-IN')} <span className="text-xs text-gray-500 font-normal">/ {checkoutProduct?.unit}</span></p>
-                <p className="text-[10px] text-gray-500 m-0 mt-0.5">MOQ: {checkoutProduct?.moq} {checkoutProduct?.unit}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">Quantity ({checkoutProduct?.unit})</label>
-                <input
-                  type="number"
-                  min={checkoutProduct?.moq || 1}
-                  value={checkoutForm.quantity}
-                  onChange={e => setCheckoutForm(f => ({ ...f, quantity: parseInt(e.target.value) || f.quantity }))}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-gray-700 block mb-2">Delivery Address</label>
-                <div className="space-y-2.5 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <input type="text" placeholder="Full Address (Street, House No)" value={checkoutForm.address.fullAddress} onChange={e => setCheckoutForm(f => ({ ...f, address: { ...f.address, fullAddress: e.target.value } }))} className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <input type="text" placeholder="City" value={checkoutForm.address.city} onChange={e => setCheckoutForm(f => ({ ...f, address: { ...f.address, city: e.target.value } }))} className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
-                    <input type="text" placeholder="State" value={checkoutForm.address.state} onChange={e => setCheckoutForm(f => ({ ...f, address: { ...f.address, state: e.target.value } }))} className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
-                  </div>
-                  <input type="text" placeholder="Pincode" value={checkoutForm.address.pincode} onChange={e => setCheckoutForm(f => ({ ...f, address: { ...f.address, pincode: e.target.value } }))} className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none" />
-                </div>
-              </div>
-            </div>
-
-            {checkoutError && <div className="mt-4 p-3 bg-red-50 text-red-600 text-xs font-bold rounded-lg border border-red-100 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-red-600"/>{checkoutError}</div>}
-
-            <div className="mt-6 pt-5 border-t border-gray-100">
-              <div className="flex justify-between items-end mb-4 bg-[#f8fafc] p-4 rounded-lg border border-gray-100">
-                <span className="text-sm font-bold text-gray-600">Total Amount</span>
-                <span className="text-2xl font-black text-gray-900">₹{((checkoutProduct?.price || 0) * checkoutForm.quantity).toLocaleString('en-IN')}</span>
-              </div>
-              <button 
-                onClick={submitCheckout} 
-                disabled={submitting} 
-                className="w-full py-3.5 rounded-lg text-white font-bold cursor-pointer border-none disabled:opacity-70 transition-opacity flex items-center justify-center gap-2 shadow-sm hover:opacity-90"
-                style={{ backgroundColor: themeColor }}
-              >
-                <ShoppingBag size={18} /> {submitting ? 'Processing...' : 'Place Direct Order'}
-              </button>
-              <p className="text-[10px] font-medium text-gray-400 text-center mt-3 mb-0">Payment and delivery will be coordinated directly with {storeName}.</p>
-            </div>
-          </div>
-        )}
-      </Modal>
+      {showShareModal && (
+        <ShareModal 
+          url={storeUrl} 
+          name={storeName} 
+          onClose={() => setShowShareModal(false)} 
+        />
+      )}
     </div>
   );
 };

@@ -70,6 +70,11 @@ const supplierService = {
     return response.data;
   },
   
+  updateSocialMedia: async (data: any) => {
+    const response = await apiClient.patch('/supplier/social-media', data);
+    return response.data;
+  },
+  
   uploadDoc: async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);

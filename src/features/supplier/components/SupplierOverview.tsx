@@ -49,7 +49,6 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
   const fmt = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
   const money = (n: number) => `₹${fmt(n || 0)}`;
 
-
   const { salesTrend, orderStatusData, topProductData } = useMemo(() => {
     const monthMap = new Map<string, { month: string; sales: number; orders: number }>();
     const statusMap = new Map<string, number>();
