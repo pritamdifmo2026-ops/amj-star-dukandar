@@ -76,69 +76,69 @@ const Hero: React.FC = () => {
   };
 
   return (
-    <section className="bg-cream py-10 overflow-hidden">
-      <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex items-center justify-between gap-10 max-[1100px]:flex-col max-[1100px]:text-center max-[1100px]:gap-12">
-        <div className="flex-1 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-center">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-cream border border-border rounded-full font-sans text-[10px] font-medium uppercase tracking-[0.12em] text-primary mb-4">
-            <span className="w-2 h-2 bg-primary rounded-full" />
+    <section className="bg-cream py-6 sm:py-10 overflow-hidden">
+      <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex items-center justify-between gap-8 sm:gap-10 max-[1100px]:flex-col max-[1100px]:text-center max-[1100px]:gap-10">
+        <div className="flex-1 max-[1100px]:flex max-[1100px]:flex-col max-[1100px]:items-center w-full">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-cream border border-border rounded-full font-sans text-[10px] sm:text-xs font-medium uppercase tracking-[0.12em] text-primary mb-4 max-w-full text-center whitespace-normal">
+            <span className="w-2 h-2 bg-primary rounded-full shrink-0" />
             Join AMJSTAR and grow your wholesale business today.
           </div>
 
-          <h1 className="font-display text-[clamp(1.8rem,5vw,2.8rem)] leading-none text-heading mb-4 font-normal">
+          <h1 className="font-display text-[clamp(1.6rem,5vw,2.8rem)] leading-snug text-heading mb-4 font-normal max-w-full break-words">
             <span className="text-primary italic">AMJSTAR</span>{' '}
             connects wholesalers, suppliers, and resellers with a smarter B2B wholesale platform.
           </h1>
 
-          <p className="font-sans text-sm text-body mb-6 max-w-[600px] leading-relaxed max-[1100px]:mx-auto max-[1100px]:mb-12">
+          <p className="font-sans text-sm sm:text-base text-body mb-6 max-w-[600px] leading-relaxed max-[1100px]:mx-auto max-[1100px]:mb-8">
             AMJSTAR connects wholesalers, local retail resellers, and business
             buyers in one trade network. Quote-based ordering and bulk fulfillment.
           </p>
 
-          <div className="flex flex-row gap-4 mb-8 max-[1100px]:justify-center max-[640px]:w-full items-center">
+          <div className="flex flex-col sm:flex-row gap-3.5 mb-8 max-[1100px]:justify-center w-full sm:w-auto items-center">
             <Link
               to={`${ROUTES.LOGIN}?mode=buyer`}
               onClick={handleBuyerClick}
-              className="justify-center bg-primary text-white min-w-[240px] px-10 py-4 max-[640px]:px-6 max-[640px]:py-3.5 max-[640px]:text-base text-[18px] font-bold rounded-full no-underline flex items-center gap-2 transition-all hover:bg-primary-dark whitespace-nowrap shadow-md"
+              className="w-full sm:w-auto justify-center bg-primary text-white min-w-0 sm:min-w-[220px] px-6 sm:px-10 py-3.5 sm:py-4 text-base sm:text-[18px] font-bold rounded-full no-underline flex items-center gap-2 transition-all hover:bg-primary-dark shadow-md text-center shrink-0"
             >
-              Join as Buyer <ArrowRight size={20} className="max-[640px]:w-5 max-[640px]:h-5" />
+              Join as Buyer <ArrowRight size={20} className="w-5 h-5 shrink-0" />
             </Link>
             <Link
               to={`${ROUTES.LOGIN}?mode=seller`}
               onClick={handleSupplierClick}
-              className="justify-center text-center bg-[#1e293b] text-white min-w-[240px] px-10 py-4 max-[640px]:px-6 max-[640px]:py-3.5 max-[640px]:text-base text-[18px] font-bold rounded-full no-underline transition-all hover:bg-[#0f172a] whitespace-nowrap shadow-md"
+              className="w-full sm:w-auto justify-center text-center bg-[#1e293b] text-white min-w-0 sm:min-w-[220px] px-6 sm:px-10 py-3.5 sm:py-4 text-base sm:text-[18px] font-bold rounded-full no-underline transition-all hover:bg-[#0f172a] shadow-md shrink-0"
             >
               Become a Supplier
             </Link>
           </div>
 
-          <div className="flex items-center gap-6 max-[1100px]:justify-center max-[640px]:gap-5 max-[640px]:flex-wrap">
-            <div className="flex flex-col">
-              <span className="font-display text-2xl text-heading leading-none">50k+</span>
+          <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-6 flex-wrap w-full">
+            <div className="flex flex-col items-center sm:items-start">
+              <span className="font-display text-xl sm:text-2xl text-heading leading-none">50k+</span>
               <span className="text-xs text-muted">Verified Suppliers</span>
             </div>
-            <div className="w-px h-6 bg-border max-[640px]:hidden" />
-            <div className="flex flex-col">
-              <span className="font-display text-2xl text-heading leading-none">2M+</span>
+            <div className="w-px h-6 bg-border hidden sm:block" />
+            <div className="flex flex-col items-center sm:items-start">
+              <span className="font-display text-xl sm:text-2xl text-heading leading-none">2M+</span>
               <span className="text-xs text-muted">Bulk Products</span>
             </div>
-            <div className="w-px h-6 bg-border max-[640px]:hidden" />
-            <div className="flex flex-col">
-              <span className="font-display text-2xl text-heading leading-none">B2B</span>
+            <div className="w-px h-6 bg-border hidden sm:block" />
+            <div className="flex flex-col items-center sm:items-start">
+              <span className="font-display text-xl sm:text-2xl text-heading leading-none">B2B</span>
               <span className="text-xs text-muted">First Platform</span>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 flex justify-end max-[1100px]:justify-center">
-          <div className="relative w-full max-w-[480px]">
+        <div className="flex-1 flex justify-end max-[1100px]:justify-center w-full max-w-[480px]">
+          <div className="relative w-full">
             <img
               src={heroImage}
               alt="B2B Marketplace"
-              className="w-full h-auto rounded-[32px] block shadow-[0_20px_40px_-20px_rgba(0,0,0,0.2)]"
+              className="w-full h-auto rounded-[24px] sm:rounded-[32px] block shadow-[0_20px_40px_-20px_rgba(0,0,0,0.2)]"
             />
-            <div className="absolute bottom-5 -left-5 max-[1100px]:left-5 max-[1100px]:-bottom-5 bg-cream p-4 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex flex-col z-[2] border border-border">
-              <span className="font-display text-2xl text-heading leading-none mb-1">+38%</span>
-              <span className="text-[13px] text-body whitespace-nowrap">avg. reseller margin uplift</span>
+            <div className="absolute bottom-3 left-3 sm:-left-5 sm:bottom-5 bg-cream p-3 sm:p-4 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex flex-col z-[2] border border-border">
+              <span className="font-display text-xl sm:text-2xl text-heading leading-none mb-1">+38%</span>
+              <span className="text-xs sm:text-[13px] text-body whitespace-nowrap">avg. reseller margin uplift</span>
             </div>
           </div>
         </div>
