@@ -6,6 +6,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
+    esbuild: {
+      drop: mode === 'production' ? ['console', 'debugger'] : [],
+    },
     plugins: [tailwindcss(), react()],
     resolve: {
       // @ts-ignore
