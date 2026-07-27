@@ -39,7 +39,10 @@ const ResellerBrowseProducts: React.FC = () => {
     try {
       const data = await resellerService.getRequests();
       const statuses: Record<string, string> = {};
-      data.requests.forEach((req: any) => { const prodId = req.product._id || req.product; statuses[prodId] = req.status; });
+      data.requests.forEach((req: any) => {
+        const prodId = typeof req.product === 'object' ? (req.product._id || req.product.id) : req.product;
+        if (prodId) statuses[prodId.toString()] = req.status;
+      });
       setRequestStatuses(statuses);
     } catch (err) { console.error('Failed to fetch requests', err); }
   };
@@ -59,10 +62,16 @@ const ResellerBrowseProducts: React.FC = () => {
       setRequestingId(productId);
       setIsModalOpen(false);
       await resellerService.requestProduct(productId);
-      setRequestStatuses(prev => ({ ...prev, [productId]: 'PENDING' }));
+      setRequestStatuses(prev => ({ ...prev, [productId.toString()]: 'PENDING' }));
       toast.success('Request sent to supplier successfully!');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to send request');
+      if (error.response?.status === 409) {
+        const msg = error.response?.data?.message || 'This product is already in your store';
+        setRequestStatuses(prev => ({ ...prev, [productId.toString()]: msg.includes('already in your store') ? 'APPROVED' : 'PENDING' }));
+        toast.error(msg);
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to send request');
+      }
     } finally {
       setRequestingId(null);
       setSelectedProduct(null);
@@ -76,6 +85,7 @@ const ResellerBrowseProducts: React.FC = () => {
   const StatusBadge = ({ status }: { status: string }) => {
     if (status === 'APPROVED') return <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#ecfdf5] text-[#059669] text-xs font-bold rounded-full"><CheckCircle size={12} /> Added</span>;
     if (status === 'PENDING') return <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#fff7ed] text-[#c2410c] text-xs font-bold rounded-full"><CheckCircle size={12} /> Pending</span>;
+    if (status === 'REJECTED') return <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#fef2f2] text-[#dc2626] text-xs font-bold rounded-full">Declined</span>;
     return null;
   };
 

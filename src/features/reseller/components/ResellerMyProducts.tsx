@@ -73,18 +73,81 @@ const ResellerMyProducts: React.FC = () => {
   const getMargin = () => getSellingPrice() - getBasePrice();
   const getMarginPct = () => getBasePrice() > 0 ? ((getMargin() / getBasePrice()) * 100).toFixed(1) : '0';
 
-  const onSellingPriceChange = (v: string) => { setEditSellingPrice(v); const sp = parseFloat(v) || 0; const base = getBasePrice(); if (base > 0) setEditMarginPct(String(Math.round(((sp - base) / base) * 100))); };
-  const onMarginPctChange = (v: string) => { setEditMarginPct(v); const pct = parseFloat(v) || 0; const base = getBasePrice(); setEditSellingPrice(String(Math.round(base * (1 + pct / 100)))); };
+  const onSellingPriceChange = (v: string) => {
+    const base = getBasePrice();
+    const maxAllowed = Math.round(base * 1.5);
+    let sp = parseFloat(v);
+    
+    if (!v || isNaN(sp)) {
+      setEditSellingPrice(v);
+      setEditMarginPct('0');
+      return;
+    }
+
+    if (sp > maxAllowed) {
+      sp = maxAllowed;
+      setEditSellingPrice(String(maxAllowed));
+      toast.error(`Maximum allowed selling price is ₹${maxAllowed} (50% margin cap)`);
+    } else {
+      setEditSellingPrice(v);
+    }
+
+    if (base > 0) {
+      const marginPct = Math.min(50, Math.max(0, Math.round(((sp - base) / base) * 100)));
+      setEditMarginPct(String(marginPct));
+    }
+  };
+
+  const onMarginPctChange = (v: string) => {
+    let pct = parseFloat(v);
+    const base = getBasePrice();
+
+    if (!v || isNaN(pct)) {
+      setEditMarginPct(v);
+      setEditSellingPrice(String(base));
+      return;
+    }
+
+    if (pct > 50) {
+      pct = 50;
+      setEditMarginPct('50');
+      toast.error('Maximum profit margin allowed is 50%');
+    } else {
+      setEditMarginPct(v);
+    }
+
+    const calculatedPrice = Math.round(base * (1 + Math.max(0, pct) / 100));
+    setEditSellingPrice(String(calculatedPrice));
+  };
 
   const saveDrawer = async () => {
     if (!drawerProduct) return;
+    const sp = parseFloat(editSellingPrice);
+    const base = getBasePrice();
+    const maxAllowed = Math.round(base * 1.5);
+
+    if (isNaN(sp) || sp < base) {
+      toast.error(`Selling price cannot be lower than supplier base price (₹${base})`);
+      return;
+    }
+    if (sp > maxAllowed) {
+      toast.error(`Selling price cannot exceed 50% margin cap (Max allowed: ₹${maxAllowed})`);
+      return;
+    }
+
     setSaving(true);
     const highlights = editHighlights.split('\n').filter(h => h.trim());
-    const patch: Partial<ProductRequest> = { sellingPrice: parseFloat(editSellingPrice), customTitle: editTitle, customDescription: editDesc, highlights };
-    updateLocal(drawerProduct._id, patch);
-    try { await resellerService.updateProductCustomization(drawerProduct._id, patch); }
-    catch { alert('Failed to save changes. Please try again.'); }
-    finally { setSaving(false); closeDrawer(); }
+    const patch: Partial<ProductRequest> = { sellingPrice: sp, customTitle: editTitle, customDescription: editDesc, highlights };
+    try {
+      await resellerService.updateProductCustomization(drawerProduct._id, patch);
+      updateLocal(drawerProduct._id, patch);
+      toast.success('Product pricing updated successfully!');
+      closeDrawer();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to save changes. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const approvedProducts = requests.filter(r => r.status === 'APPROVED');
@@ -260,18 +323,18 @@ const ResellerMyProducts: React.FC = () => {
                       <label className="text-xs font-bold text-[#475569]">Set Selling Price (₹)</label>
                       <div className="flex items-center border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-[#f8fafc] focus-within:border-primary">
                         <span className="px-3 py-2.5 text-sm text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
-                        <input className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent" type="number" value={editSellingPrice} onChange={e => onSellingPriceChange(e.target.value)} min={getBasePrice()} placeholder="e.g. 130" />
+                        <input className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent font-medium" type="number" value={editSellingPrice} onChange={e => onSellingPriceChange(e.target.value)} min={getBasePrice()} max={Math.round(getBasePrice() * 1.5)} placeholder={`e.g. ${Math.round(getBasePrice() * 1.15)}`} />
                       </div>
-                      <small className="text-xs text-[#94a3b8]">Minimum: ₹{getBasePrice()} (supplier price)</small>
+                      <small className="text-xs text-[#94a3b8]">Range: ₹{getBasePrice()} – ₹{Math.round(getBasePrice() * 1.5)} (Max 50% margin allowed)</small>
                     </div>
                     <div className="text-center text-xs font-bold text-[#94a3b8]">— OR —</div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs font-bold text-[#475569]">Set Margin %</label>
                       <div className="flex items-center border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-[#f8fafc] focus-within:border-primary">
-                        <input className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent" type="number" value={editMarginPct} onChange={e => onMarginPctChange(e.target.value)} min={0} placeholder="e.g. 30" />
+                        <input className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent font-medium" type="number" value={editMarginPct} onChange={e => onMarginPctChange(e.target.value)} min={0} max={50} placeholder="e.g. 15" />
                         <span className="px-3 py-2.5 text-sm text-[#94a3b8] border-l border-[#e2e8f0]">%</span>
                       </div>
-                      <small className="text-xs text-[#94a3b8]">Adjusts your selling price automatically</small>
+                      <small className="text-xs text-[#94a3b8]">Max allowed margin is 50% over supplier base price</small>
                     </div>
                   </div>
                   <div className="bg-[#f8fafc] rounded-[10px] p-4 flex flex-col gap-2 text-sm">
