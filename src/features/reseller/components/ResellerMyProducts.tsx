@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Package, Building, Tag, CheckCircle, Clock, XCircle, AlertCircle, Eye, EyeOff, Edit3, BarChart2, ChevronRight, X, TrendingUp, ShoppingCart, Percent, DollarSign, Info, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Button from '@/shared/components/ui/Button';
 import resellerService from '../services/reseller.service';
 
