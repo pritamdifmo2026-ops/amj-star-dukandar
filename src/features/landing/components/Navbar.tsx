@@ -128,32 +128,31 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      {/* Top strip */}
-      <div className="hidden sm:block bg-cream border-b border-border py-0.5">
-        <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
-          <span className="text-[9px] text-body flex items-center gap-1.5">
-            <Phone size={10} /> Helpline: +91 9034440673 (Mon–Sat, 9am–6pm)
-          </span>
-          <div className="flex items-center gap-3">
-            {!isAuth && (
-              <>
-                <Link to="/login?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
-                <span className="text-border">|</span>
-              </>
-            )}
-            <button onClick={() => setIsHelpOpen(true)} className="text-[9px] bg-transparent border-none p-0 cursor-pointer text-body no-underline hover:text-primary">Help</button>
-            <span className="text-border">|</span>
-            <Link to="/contact" className="text-[9px] text-body no-underline hover:text-primary">Contact Us</Link>
-          </div>
-        </div>
-      </div>
-
       <header
-        className="fixed lg:sticky top-0 left-0 right-0 w-full z-[1000] bg-surface"
+        className="fixed top-0 left-0 right-0 w-full z-[1000] bg-surface border-b border-border shadow-xs"
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)'
         }}
       >
+        {/* Top strip */}
+        <div className="hidden sm:block bg-cream border-b border-border py-0.5">
+          <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
+            <span className="text-[9px] text-body flex items-center gap-1.5">
+              <Phone size={10} /> Helpline: +91 9034440673 (Mon–Sat, 9am–6pm)
+            </span>
+            <div className="flex items-center gap-3">
+              {!isAuth && (
+                <>
+                  <Link to="/login?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
+                  <span className="text-border">|</span>
+                </>
+              )}
+              <button onClick={() => setIsHelpOpen(true)} className="text-[9px] bg-transparent border-none p-0 cursor-pointer text-body no-underline hover:text-primary">Help</button>
+              <span className="text-border">|</span>
+              <Link to="/contact" className="text-[9px] text-body no-underline hover:text-primary">Contact Us</Link>
+            </div>
+          </div>
+        </div>
         {/* Main navbar */}
         <nav className="bg-surface h-14 lg:h-auto border-b border-border flex items-stretch lg:items-center lg:py-1">
           <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 w-full flex justify-between items-center h-full">
@@ -317,10 +316,10 @@ const Navbar: React.FC = () => {
               {categories.map(cat => {
                 const hasSubs = cat.subcategories?.length > 0;
                 return (
-                  <div key={cat._id} className="relative py-1 group">
+                  <div key={cat._id} className="relative py-2.5 group">
                     <Link
                       to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                      className="flex items-center gap-1.5 text-body no-underline text-[11px] font-semibold transition-colors group-hover:text-primary whitespace-nowrap"
+                      className="flex items-center gap-1.5 text-body no-underline text-xs font-semibold transition-colors group-hover:text-primary whitespace-nowrap"
                     >
                       <span>{cat.name}</span>
                       {hasSubs && <ChevronDown size={12} />}
@@ -340,8 +339,8 @@ const Navbar: React.FC = () => {
                 );
               })}
             </div>
-            <div className="flex items-center gap-6 border-l border-border pl-6">
-              <Link to="/verified-manufacturers" className="text-[11px] font-medium text-heading no-underline whitespace-nowrap hover:text-primary">
+            <div className="flex items-center gap-6 border-l border-border pl-6 py-2.5">
+              <Link to="/verified-manufacturers" className="text-xs font-semibold text-heading no-underline whitespace-nowrap hover:text-primary">
                 Verified manufacturers
               </Link>
             </div>
@@ -349,13 +348,8 @@ const Navbar: React.FC = () => {
         </div>
       </header>
 
-      {/* Spacer to prevent content overlap on mobile/tablet because the header is fixed */}
-      <div
-        className="lg:hidden"
-        style={{
-          height: 'calc(3.5rem + env(safe-area-inset-top, 0px))'
-        }}
-      />
+      {/* Spacer to prevent page content from overlapping or being covered by fixed header */}
+      <div className="w-full h-[calc(56px+env(safe-area-inset-top,0px))] sm:h-[calc(80px+env(safe-area-inset-top,0px))] lg:h-[calc(135px+env(safe-area-inset-top,0px))] shrink-0 pointer-events-none" />
 
       {/* Mobile menu overlay */}
       <div

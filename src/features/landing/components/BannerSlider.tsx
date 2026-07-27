@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import adminService from '@/features/admin/services/admin.service';
@@ -19,6 +19,10 @@ const BannerSlider: React.FC = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deviceType, setDeviceType] = useState<'Mobile' | 'Tablet' | 'Desktop'>('Desktop');
+
+  // Touch swipe gesture state
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
   const updateDeviceType = useCallback(() => {
     const width = window.innerWidth;
@@ -50,20 +54,50 @@ const BannerSlider: React.FC = () => {
     return () => clearInterval(interval);
   }, [nextSlide, isHovering, banners.length]);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 40;
+    if (distance > minSwipeDistance) {
+      nextSlide();
+    } else if (distance < -minSwipeDistance) {
+      prevSlide();
+    }
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
   if (loading || banners.length === 0) return null;
+
+  const getImageUrl = (banner: Banner) => {
+    if (deviceType === 'Mobile' && banner.imageMobile) return banner.imageMobile;
+    if (deviceType === 'Tablet' && banner.imageTablet) return banner.imageTablet;
+    return banner.imageDesktop || banner.imageTablet || banner.imageMobile || '';
+  };
 
   return (
     <div
-      className="relative w-full h-[280px] max-lg:h-[220px] max-md:h-[180px] overflow-hidden bg-[#f8f9fa] my-4 mb-8 rounded-[8px] max-md:rounded-none max-md:my-0 shadow-[0_4px_20px_rgba(0,0,0,0.08)] group"
+      className="relative w-full aspect-[16/6] sm:aspect-auto sm:h-[240px] lg:h-[300px] overflow-hidden my-2 sm:my-4 mb-4 sm:mb-8 rounded-none sm:rounded-[12px] group select-none"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       <div
         className="flex w-full h-full transition-transform duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {banners.map((banner, index) => {
-          const imageUrl = banner[`image${deviceType}` as keyof Banner] as string;
+          const imageUrl = getImageUrl(banner);
           const isActive = index === currentSlide;
 
           return (
@@ -71,7 +105,7 @@ const BannerSlider: React.FC = () => {
               <img
                 src={imageUrl}
                 alt="Promotion Banner"
-                className={`w-full h-full object-cover transition-transform duration-[1500ms] ease-out ${isActive ? 'scale-105' : 'scale-100'}`}
+                className={`w-full h-full max-sm:object-fill object-cover transition-transform duration-[1500ms] ease-out ${isActive ? 'scale-105' : 'scale-100'}`}
               />
               {banner.link && (
                 <Link to={banner.link} className="absolute inset-0 z-[2]" aria-label="Banner link" />
@@ -83,25 +117,31 @@ const BannerSlider: React.FC = () => {
 
       {banners.length > 1 && (
         <>
+          {/* Previous Slide Button (Mobile & Desktop) */}
           <button
-            className="absolute top-1/2 -translate-y-1/2 left-5 bg-white/20 backdrop-blur-[8px] border-none w-[50px] h-[50px] rounded-full flex items-center justify-center text-white cursor-pointer z-10 transition-all opacity-0 group-hover:opacity-100 hover:bg-white/40 hover:scale-110 max-md:hidden"
+            aria-label="Previous Slide"
+            className="absolute top-1/2 -translate-y-1/2 left-2 sm:left-5 bg-black/40 sm:bg-white/20 backdrop-blur-[6px] border-none w-8 h-8 sm:w-[50px] sm:h-[50px] rounded-full flex items-center justify-center text-white cursor-pointer z-10 transition-all opacity-90 sm:opacity-0 group-hover:opacity-100 hover:bg-black/60 sm:hover:bg-white/40 hover:scale-110"
             onClick={prevSlide}
           >
-            <ChevronLeft size={30} />
-          </button>
-          <button
-            className="absolute top-1/2 -translate-y-1/2 right-5 bg-white/20 backdrop-blur-[8px] border-none w-[50px] h-[50px] rounded-full flex items-center justify-center text-white cursor-pointer z-10 transition-all opacity-0 group-hover:opacity-100 hover:bg-white/40 hover:scale-110 max-md:hidden"
-            onClick={nextSlide}
-          >
-            <ChevronRight size={30} />
+            <ChevronLeft className="w-5 h-5 sm:w-[30px] sm:h-[30px]" />
           </button>
 
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2.5 z-10">
+          {/* Next Slide Button (Mobile & Desktop) */}
+          <button
+            aria-label="Next Slide"
+            className="absolute top-1/2 -translate-y-1/2 right-2 sm:right-5 bg-black/40 sm:bg-white/20 backdrop-blur-[6px] border-none w-8 h-8 sm:w-[50px] sm:h-[50px] rounded-full flex items-center justify-center text-white cursor-pointer z-10 transition-all opacity-90 sm:opacity-0 group-hover:opacity-100 hover:bg-black/60 sm:hover:bg-white/40 hover:scale-110"
+            onClick={nextSlide}
+          >
+            <ChevronRight className="w-5 h-5 sm:w-[30px] sm:h-[30px]" />
+          </button>
+
+          {/* Slide Dots Indicator */}
+          <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2 z-10">
             {banners.map((_, index) => (
               <div
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`h-2.5 rounded-full cursor-pointer transition-all ${index === currentSlide ? 'bg-cream w-6' : 'w-2.5 bg-white/30'}`}
+                className={`h-1.5 sm:h-2 rounded-full cursor-pointer transition-all ${index === currentSlide ? 'bg-white w-4 sm:w-5' : 'w-1.5 sm:w-2 bg-white/50'}`}
               />
             ))}
           </div>
