@@ -84,7 +84,7 @@ const Hero: React.FC = () => {
             Join AMJSTAR and grow your wholesale business today.
           </div>
 
-          <h1 className="font-display text-[clamp(1.6rem,5vw,2.8rem)] leading-snug text-heading mb-4 font-normal max-w-full break-words">
+          <h1 className="font-display text-[clamp(1.5rem,5vw,2.8rem)] leading-snug text-heading mb-4 font-normal max-w-full break-words">
             <span className="text-primary italic">AMJSTAR</span>{' '}
             connects wholesalers, suppliers, and resellers with a smarter B2B wholesale platform.
           </h1>

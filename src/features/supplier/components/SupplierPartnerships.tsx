@@ -121,7 +121,7 @@ const SupplierPartnerships: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
                   {[
-                    { label: 'Reseller Name', val: partner.reseller?.user?.name || 'N/A' },
+                    { label: 'Reseller Name', val: partner.reseller?.fullName || partner.reseller?.user?.name || partner.reseller?.storeName || 'N/A' },
                     { label: 'Location', val: `${partner.reseller?.city}, ${partner.reseller?.state}` },
                     { label: 'Authorized Product', val: partner.product?.name },
                   ].map(({ label, val }) => (

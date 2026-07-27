@@ -109,7 +109,7 @@ const ProductDetail: React.FC = () => {
   }, [product, socket, setActiveChatId]);
 
   const pageCls = "min-h-screen flex flex-col bg-surface";
-  const centerCls = "flex justify-center items-center min-h-[60vh] max-lg:pt-[calc(56px+env(safe-area-inset-top,0px))]";
+  const centerCls = "flex justify-center items-center min-h-[60vh]";
 
   if (isLoading) return <div className={pageCls}><Navbar /><div className={centerCls}><Loader size="lg" /></div><Footer /></div>;
   if (isError || !product) return <div className={pageCls}><Navbar /><div className={centerCls}><ErrorState onRetry={() => refetch()} /></div><Footer /></div>;
@@ -179,7 +179,7 @@ const ProductDetail: React.FC = () => {
     <div className={pageCls}>
       <Navbar />
 
-      <main className="flex-1 py-6 pb-20 max-md:pb-4 max-lg:pt-[calc(56px+env(safe-area-inset-top,0px))]">
+      <main className="flex-1 py-6 pb-20 max-md:pb-4">
         <div className="w-full max-w-[var(--width-container)] mx-auto px-8 max-md:px-4">
           <button
             onClick={() => navigate(-1)}

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
   Store, ShoppingBag, Truck, List, LayoutDashboard, Search,
-  Info, Factory, RefreshCw
+  Info, Factory, RefreshCw, ShieldCheck
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
@@ -128,34 +128,39 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      {/* Top strip */}
-      <div className="hidden sm:block bg-cream border-b border-border py-0.5">
-        <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
-          <span className="text-[9px] text-body flex items-center gap-1.5">
-            <Phone size={10} /> Helpline: +91 9034440673 (Mon–Sat, 9am–6pm)
-          </span>
-          <div className="flex items-center gap-3">
-            {!isAuth && (
-              <>
-                <Link to="/login?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
-                <span className="text-border">|</span>
-              </>
-            )}
-            <button onClick={() => setIsHelpOpen(true)} className="text-[9px] bg-transparent border-none p-0 cursor-pointer text-body no-underline hover:text-primary">Help</button>
-            <span className="text-border">|</span>
-            <Link to="/contact" className="text-[9px] text-body no-underline hover:text-primary">Contact Us</Link>
-          </div>
-        </div>
-      </div>
-
       <header
-        className="fixed lg:sticky top-0 left-0 right-0 w-full z-[1000] bg-surface"
+        className="sticky top-0 left-0 right-0 w-full z-[1000] bg-surface border-b border-border shadow-xs"
         style={{
-          paddingTop: 'env(safe-area-inset-top, 0px)'
+          position: 'sticky',
+          top: 0,
+          left: 0,
+          right: 0,
+          width: '100%',
+          zIndex: 1000,
+          backgroundColor: '#ffffff'
         }}
       >
+        {/* Top strip */}
+        <div className="hidden sm:block bg-cream border-b border-border py-0.5">
+          <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
+            <span className="text-[9px] text-body flex items-center gap-1.5">
+              <Phone size={10} /> Helpline: +91 9034440673 (Mon–Sat, 9am–6pm)
+            </span>
+            <div className="flex items-center gap-3">
+              {!isAuth && (
+                <>
+                  <Link to="/login?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
+                  <span className="text-border">|</span>
+                </>
+              )}
+              <button onClick={() => setIsHelpOpen(true)} className="text-[9px] bg-transparent border-none p-0 cursor-pointer text-body no-underline hover:text-primary">Help</button>
+              <span className="text-border">|</span>
+              <Link to="/contact" className="text-[9px] text-body no-underline hover:text-primary">Contact Us</Link>
+            </div>
+          </div>
+        </div>
         {/* Main navbar */}
-        <nav className="bg-surface h-14 lg:h-auto border-b border-border flex items-stretch lg:items-center lg:py-1">
+        <nav className="bg-surface h-14 lg:h-auto border-b border-border flex items-center lg:py-1">
           <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 w-full flex justify-between items-center h-full">
             {/* Desktop-only Logo */}
             <Link to={ROUTES.HOME} className="hidden lg:flex items-center no-underline h-full">
@@ -287,12 +292,37 @@ const Navbar: React.FC = () => {
                     )}
                   </div>
                 ) : (
-                  <Link
-                    to={`${ROUTES.LOGIN}?mode=buyer`}
-                    className="w-8 h-8 rounded-full bg-gray-50 border border-gray-200 text-gray-500 flex items-center justify-center hover:bg-gray-100 transition-colors"
-                  >
-                    <User size={14} />
-                  </Link>
+                  <div className="relative flex items-center" ref={mobileMenuRef}>
+                    <button
+                      onClick={() => setUserMenuOpen(p => !p)}
+                      className="w-8 h-8 rounded-full bg-gray-50 border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-100 transition-colors border-none cursor-pointer"
+                      aria-label="User Account Options"
+                    >
+                      <User size={15} />
+                    </button>
+
+                    {userMenuOpen && (
+                      <div
+                        className="absolute top-[calc(100%+8px)] right-0 mt-1 bg-white border border-border rounded-[12px] shadow-[0_10px_25px_rgba(0,0,0,0.12)] min-w-[200px] p-2 z-[1001]"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <div className="px-3 py-2 border-b border-gray-100 mb-1">
+                          <p className="text-xs font-bold text-heading m-0">Sign In </p>
+                          <p className="text-[10px] text-muted m-0">Choose your account portal</p>
+                        </div>
+                        <Link to="/login?mode=buyer" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <User size={14} className="inline mr-2 text-primary" />Buyer Sign In
+                        </Link>
+                        <Link to="/login?mode=seller" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <Store size={14} className="inline mr-2 text-[#8b5cf6]" />Supplier Sign In
+                        </Link>
+                        {/* <Link to="/login?mode=reseller" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <Truck size={14} className="inline mr-2 text-[#06b6d4]" />Reseller Sign In
+                        </Link> */}
+
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {isAuth && <NotificationBell />}
@@ -317,10 +347,10 @@ const Navbar: React.FC = () => {
               {categories.map(cat => {
                 const hasSubs = cat.subcategories?.length > 0;
                 return (
-                  <div key={cat._id} className="relative py-1 group">
+                  <div key={cat._id} className="relative py-2.5 group">
                     <Link
                       to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                      className="flex items-center gap-1.5 text-body no-underline text-[11px] font-semibold transition-colors group-hover:text-primary whitespace-nowrap"
+                      className="flex items-center gap-1.5 text-body no-underline text-xs font-semibold transition-colors group-hover:text-primary whitespace-nowrap"
                     >
                       <span>{cat.name}</span>
                       {hasSubs && <ChevronDown size={12} />}
@@ -340,8 +370,8 @@ const Navbar: React.FC = () => {
                 );
               })}
             </div>
-            <div className="flex items-center gap-6 border-l border-border pl-6">
-              <Link to="/verified-manufacturers" className="text-[11px] font-medium text-heading no-underline whitespace-nowrap hover:text-primary">
+            <div className="flex items-center gap-6 border-l border-border pl-6 py-2.5">
+              <Link to="/verified-manufacturers" className="text-xs font-semibold text-heading no-underline whitespace-nowrap hover:text-primary">
                 Verified manufacturers
               </Link>
             </div>
@@ -349,77 +379,82 @@ const Navbar: React.FC = () => {
         </div>
       </header>
 
-      {/* Spacer to prevent content overlap on mobile/tablet because the header is fixed */}
-      <div
-        className="lg:hidden"
-        style={{
-          height: 'calc(3.5rem + env(safe-area-inset-top, 0px))'
-        }}
-      />
-
       {/* Mobile menu overlay */}
       <div
         className={`fixed inset-0 bg-black/50 z-[2000] transition-all duration-300 ${mobileOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
         onClick={() => setMobileOpen(false)}
       >
         <div
-          className={`fixed top-0 left-0 bottom-0 w-[300px] h-[100dvh] bg-surface flex flex-col transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`fixed top-0 left-0 bottom-0 w-[72vw] max-w-[260px] h-[100dvh] bg-surface flex flex-col transition-transform duration-300 shadow-2xl z-[2001] ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
           onClick={e => e.stopPropagation()}
         >
           <header
-            className="px-6 border-b border-border flex justify-between items-center"
+            className="px-5 py-4 border-b border-border flex justify-between items-center bg-cream/50"
             style={{
-              paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))',
-              paddingBottom: '1.5rem'
+              paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+              paddingBottom: '1rem'
             }}
           >
             {isAuth ? (
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-base shadow-sm">
                   {displayName[0]?.toUpperCase() || 'U'}
                 </div>
                 <div>
-                  <span className="block font-semibold text-heading text-sm">{displayName}</span>
+                  <span className="block font-bold text-heading text-sm leading-tight">{displayName}</span>
                   <span className="text-xs text-muted capitalize">{user?.role}</span>
                 </div>
               </div>
             ) : (
-              <img src={logo} alt="Logo" className="h-8 rounded-full" />
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="Logo" className="h-8 w-8 rounded-full object-contain" />
+                <span className="font-display font-bold text-lg text-heading">AMJSTAR</span>
+              </div>
             )}
-            <button className="bg-transparent border-none cursor-pointer text-heading" onClick={() => setMobileOpen(false)}>
+            <button className="bg-transparent border-none cursor-pointer text-heading p-1.5 rounded-full hover:bg-gray-100 transition-colors" onClick={() => setMobileOpen(false)} aria-label="Close menu">
               <X size={20} />
             </button>
           </header>
 
-          <div className="flex-1 overflow-y-auto px-6 py-6">
-            <div className="mb-8">
-              <div className="text-xs font-bold uppercase text-muted tracking-widest mb-4">Quick Links</div>
-              <Link to={ROUTES.PRODUCT_LIST} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
-                <Search size={18} /><span>Search Products</span>
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="mb-6">
+              <div className="text-[11px] font-bold uppercase text-muted tracking-widest mb-3">Quick Links</div>
+              <Link to={ROUTES.PRODUCT_LIST} className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}>
+                <Search size={18} className="text-primary shrink-0" /><span>Search Products</span>
               </Link>
-              <Link to="/about" className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
-                <List size={18} /><span>About AMJSTAR</span>
+              <Link to="/verified-manufacturers" className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}>
+                <ShieldCheck size={18} className="text-primary shrink-0" /><span>Verified Manufacturers</span>
               </Link>
+              <Link to="/about" className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}>
+                <List size={18} className="text-muted shrink-0" /><span>About AMJSTAR</span>
+              </Link>
+              <button
+                onClick={() => { setIsHelpOpen(true); setMobileOpen(false); }}
+                className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors bg-transparent border-none w-full text-left cursor-pointer"
+              >
+                <Info size={18} className="text-muted shrink-0" /><span>Help & Support</span>
+              </button>
             </div>
 
-            <div className="mb-8">
-              <div className="text-xs font-bold uppercase text-muted tracking-widest mb-4">Join as Partner</div>
+            <div className="mb-6">
+              <div className="text-[11px] font-bold uppercase text-muted tracking-widest mb-3">Account & Partner</div>
               {isAuth ? (
                 <Link to={isSupplier ? "/supplier/onboarding" : isReseller ? "/reseller/dashboard" : isAdmin ? "/admin/dashboard" : "/profile"}
-                  className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}>
-                  <User size={18} /><span>{isAdmin ? 'Control Panel' : 'My Profile'}</span>
+                  className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}>
+                  <User size={18} className="text-primary shrink-0" /><span>{isAdmin ? 'Control Panel' : 'My Profile'}</span>
                 </Link>
               ) : (
                 <>
-                  <Link to={ROUTES.BUYERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><ShoppingBag size={18} /><span>For Buyers</span></Link>
-                  <Link to={ROUTES.SUPPLIERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><Store size={18} /><span>For Suppliers</span></Link>
-                  <Link to={ROUTES.RESELLERS} className="flex items-center gap-3 py-3 text-heading no-underline font-medium" onClick={() => setMobileOpen(false)}><Truck size={18} /><span>For Resellers</span></Link>
-                  <button
-                    onClick={() => setIsHelpOpen(true)}
-                    className="mt-3 flex items-center justify-center w-full py-3 bg-heading text-white rounded-[8px] font-semibold text-sm transition-all hover:opacity-90"
+                  <Link to={ROUTES.BUYERS} className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}><ShoppingBag size={18} className="text-muted shrink-0" /><span>For Buyers</span></Link>
+                  <Link to={ROUTES.SUPPLIERS} className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}><Store size={18} className="text-muted shrink-0" /><span>For Suppliers</span></Link>
+                  <Link to={ROUTES.RESELLERS} className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}><Truck size={18} className="text-muted shrink-0" /><span>For Resellers</span></Link>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="mt-4 flex items-center justify-center w-full py-3 bg-heading text-white rounded-[10px] font-bold text-sm transition-all hover:opacity-90 no-underline shadow-sm"
                   >
                     Sign In
-                  </button>
+                  </Link>
                 </>
               )}
             </div>
@@ -427,14 +462,14 @@ const Navbar: React.FC = () => {
             <hr className="border-border my-4" />
 
             <div>
-              <div className="text-xs font-bold uppercase text-muted tracking-widest mb-4">Browse Categories</div>
+              <div className="text-[11px] font-bold uppercase text-muted tracking-widest mb-3">Browse Categories</div>
               {categories.map((cat) => {
                 const hasSubs = cat.subcategories && cat.subcategories.length > 0;
                 const isExpanded = expandedCategory === cat._id;
                 return (
                   <div key={cat._id}>
                     <div
-                      className="flex items-center justify-between py-3 text-heading font-medium cursor-pointer"
+                      className="flex items-center justify-between py-2.5 text-heading font-medium text-sm cursor-pointer hover:text-primary transition-colors"
                       onClick={() => {
                         if (hasSubs) {
                           setExpandedCategory(isExpanded ? null : cat._id);
@@ -445,21 +480,21 @@ const Navbar: React.FC = () => {
                       }}
                     >
                       <div className="flex items-center gap-3">
-                        <List size={18} />
+                        <List size={16} className="text-muted shrink-0" />
                         <span>{cat.name}</span>
                       </div>
                       {hasSubs && (
                         <ChevronDown
                           size={16}
-                          className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                          className={`transition-transform duration-200 text-muted ${isExpanded ? 'rotate-180 text-primary' : ''}`}
                         />
                       )}
                     </div>
                     {isExpanded && hasSubs && (
-                      <div className="pl-9 flex flex-col">
+                      <div className="pl-7 flex flex-col bg-slate-50/60 rounded-[8px] py-1 my-1">
                         <Link
                           to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                          className="py-2 text-slate-500 no-underline text-xs"
+                          className="py-1.5 px-3 text-slate-600 no-underline text-xs font-semibold hover:text-primary"
                           onClick={() => setMobileOpen(false)}
                         >
                           - All {cat.name}
@@ -468,7 +503,7 @@ const Navbar: React.FC = () => {
                           <Link
                             key={sub._id}
                             to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                            className="py-2 text-slate-500 no-underline text-xs"
+                            className="py-1.5 px-3 text-slate-500 no-underline text-xs hover:text-primary"
                             onClick={() => setMobileOpen(false)}
                           >
                             - {sub.name}
@@ -496,47 +531,47 @@ const Navbar: React.FC = () => {
       <MessageModal isOpen={showSoonModal} onClose={() => setShowSoonModal(false)} title="Coming Soon"
         message="We are currently updating our cart and checkout system. Please check back soon!" type="info" />
 
-      <Modal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="How can we help you?" widthClass="max-w-[500px]">
-        <div className="flex flex-col gap-3 py-2">
+      <Modal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} title="How can we help you?" widthClass="max-w-[440px] max-sm:w-[92vw]">
+        <div className="flex flex-col gap-2 sm:gap-2.5 py-1">
           <Link
             to="/help/buyers"
             onClick={() => { setIsHelpOpen(false); setMobileOpen(false); }}
-            className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/40 hover:bg-primary/5 transition-all group no-underline"
+            className="flex items-center gap-3 p-2.5 sm:p-3.5 rounded-lg sm:rounded-xl border border-gray-100 bg-white hover:border-primary/40 hover:bg-primary/5 transition-all group no-underline shadow-xs"
           >
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <ShoppingBag size={20} className="text-primary" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <ShoppingBag size={18} className="text-primary" />
             </div>
-            <div className="flex-1">
-              <p className="text-base font-bold text-heading m-0 mb-1 group-hover:text-primary transition-colors">Help for Buyers</p>
-              <p className="text-xs text-body m-0 leading-relaxed">Order tracking, sourcing requests, minimum order quantities, and buyer FAQs.</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-bold text-heading m-0 mb-0.5 group-hover:text-primary transition-colors">Help for Buyers</p>
+              <p className="text-[11px] sm:text-xs text-body m-0 leading-normal line-clamp-2">Order tracking, sourcing requests, MOQ, and buyer FAQs.</p>
             </div>
           </Link>
 
           <Link
             to="/help/suppliers"
             onClick={() => { setIsHelpOpen(false); setMobileOpen(false); }}
-            className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-[#8b5cf6]/40 hover:bg-[#8b5cf6]/5 transition-all group no-underline"
+            className="flex items-center gap-3 p-2.5 sm:p-3.5 rounded-lg sm:rounded-xl border border-gray-100 bg-white hover:border-[#8b5cf6]/40 hover:bg-[#8b5cf6]/5 transition-all group no-underline shadow-xs"
           >
-            <div className="w-12 h-12 rounded-full bg-[#f5f3ff] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <Factory size={20} className="text-[#8b5cf6]" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f5f3ff] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <Factory size={18} className="text-[#8b5cf6]" />
             </div>
-            <div className="flex-1">
-              <p className="text-base font-bold text-heading m-0 mb-1 group-hover:text-[#8b5cf6] transition-colors">Help for Suppliers</p>
-              <p className="text-xs text-body m-0 leading-relaxed">Account verifications, catalog management, commission setup, and payments.</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-bold text-heading m-0 mb-0.5 group-hover:text-[#8b5cf6] transition-colors">Help for Suppliers</p>
+              <p className="text-[11px] sm:text-xs text-body m-0 leading-normal line-clamp-2">Account verifications, catalog, commissions, and payments.</p>
             </div>
           </Link>
 
           <Link
             to="/help/resellers"
             onClick={() => { setIsHelpOpen(false); setMobileOpen(false); }}
-            className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-[#06b6d4]/40 hover:bg-[#06b6d4]/5 transition-all group no-underline"
+            className="flex items-center gap-3 p-2.5 sm:p-3.5 rounded-lg sm:rounded-xl border border-gray-100 bg-white hover:border-[#06b6d4]/40 hover:bg-[#06b6d4]/5 transition-all group no-underline shadow-xs"
           >
-            <div className="w-12 h-12 rounded-full bg-[#ecfeff] flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <RefreshCw size={20} className="text-[#06b6d4]" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#ecfeff] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <RefreshCw size={18} className="text-[#06b6d4]" />
             </div>
-            <div className="flex-1">
-              <p className="text-base font-bold text-heading m-0 mb-1 group-hover:text-[#06b6d4] transition-colors">Help for Resellers</p>
-              <p className="text-xs text-body m-0 leading-relaxed">Storefront personalization, finding supplier partners, and handling leads.</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-bold text-heading m-0 mb-0.5 group-hover:text-[#06b6d4] transition-colors">Help for Resellers</p>
+              <p className="text-[11px] sm:text-xs text-body m-0 leading-normal line-clamp-2">Storefront setup, supplier partners, and lead handling.</p>
             </div>
           </Link>
         </div>
