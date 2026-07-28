@@ -140,7 +140,7 @@ const About: React.FC = () => {
 
               {/* Info Text Below Image */}
               <div className="text-center mt-2 mb-5">
-                <h3 className="text-3xl font-display font-normal text-gray-900 tracking-tight m-0">Mr. Khuldeep Redhu</h3>
+                <h3 className="text-3xl font-display font-normal text-gray-900 tracking-tight m-0">Mr. Kuldeep Redhu</h3>
                 <div className="inline-flex items-center justify-center mt-4 space-x-3">
                   <span className="h-px w-8 bg-primary/30"></span>
                   <p className="text-xs text-primary font-bold tracking-widest uppercase m-0">Director</p>
