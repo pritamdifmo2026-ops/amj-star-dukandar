@@ -143,13 +143,13 @@ const Navbar: React.FC = () => {
         {/* Top strip */}
         <div className="hidden sm:block bg-cream border-b border-border py-0.5">
           <div className="max-w-[var(--width-container)] mx-auto px-4 sm:px-8 flex justify-between items-center">
-            <span className="text-[9px] text-body flex items-center gap-1.5">
-              <Phone size={10} /> Helpline: +91 9034440673 (Mon–Sat, 9am–6pm)
+            <span className="text-[9px] text-body flex items-center gap-1.5 font-medium tracking-wide uppercase">
+              {/* India ka Apna B2B Marketplace */}
             </span>
             <div className="flex items-center gap-3">
               {!isAuth && (
                 <>
-                  <Link to="/login?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
+                  <Link to="/register?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
                   <span className="text-border">|</span>
                 </>
               )}
@@ -313,8 +313,8 @@ const Navbar: React.FC = () => {
                         <Link to="/login?mode=buyer" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <User size={14} className="inline mr-2 text-primary" />Buyer Sign In
                         </Link>
-                        <Link to="/login?mode=seller" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
-                          <Store size={14} className="inline mr-2 text-[#8b5cf6]" />Supplier Sign In
+                        <Link to="/register?mode=seller" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <Store size={14} className="inline mr-2 text-[#8b5cf6]" />Become a Supplier
                         </Link>
                         {/* <Link to="/login?mode=reseller" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <Truck size={14} className="inline mr-2 text-[#06b6d4]" />Reseller Sign In

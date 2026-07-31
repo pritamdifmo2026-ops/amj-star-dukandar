@@ -256,6 +256,7 @@ const adminService = {
     minimumWalletBalance?: number;
     minimumWithdrawalAmount?: number;
     contactPhone?: string;
+    announcementText?: string;
     planPrices?: { VERIFIED?: number; GAMMA?: number; BETA?: number };
   }) => {
     const response = await api.put('/admin/platform-settings', data);

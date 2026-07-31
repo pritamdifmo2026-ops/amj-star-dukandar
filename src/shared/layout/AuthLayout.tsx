@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import loginBanner from '@/assets/login_banner.png';
 import logo from '@/assets/logoo.png';
 import { ShieldCheck, ShoppingBag, Tag, Headphones, Zap } from 'lucide-react';
@@ -23,13 +23,13 @@ const AuthLayout: React.FC = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-primary/40 flex flex-col justify-between px-12 py-10 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Brand */}
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 w-fit hover:opacity-90 transition-opacity no-underline">
             <img src={logo} alt="Logo" className="w-12 h-12 rounded-full shadow-lg border-2 border-white/30" />
             <div>
               <h2 className="text-[17px] font-extrabold leading-none !text-white m-0 tracking-wider">AMJSTAR</h2>
               <span className="text-[10px] font-medium tracking-[0.25em] opacity-80 !text-white">WHOLESALE</span>
             </div>
-          </div>
+          </Link>
 
           {/* Hero Copy */}
           <div className="!text-white flex flex-col gap-0">
@@ -64,7 +64,7 @@ const AuthLayout: React.FC = () => {
             <Headphones size={22} className="text-white/80 shrink-0" />
             <div>
               <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest !text-white block">Need Help?</span>
-              <p className="text-[12px] font-medium m-0 !text-white">support@amjstar.com · +91 9034440682</p>
+              <p className="text-[12px] font-medium m-0 !text-white">info@amjstar.com · +91 9034440682</p>
             </div>
           </div>
         </div>
@@ -83,13 +83,13 @@ const AuthLayout: React.FC = () => {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center py-8 px-5 !text-white text-center gap-3">
-          <div className="flex items-center gap-2.5">
+          <Link to="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity no-underline">
             <img src={logo} alt="Logo" className="w-9 h-9 rounded-full shadow-lg border-2 border-white/30" />
             <div className="text-left">
               <span className="text-[16px] font-extrabold tracking-wider block leading-none !text-white">AMJSTAR</span>
               <span className="text-[9px] font-medium tracking-[0.22em] opacity-80 uppercase !text-white">Wholesale</span>
             </div>
-          </div>
+          </Link>
 
           <h1 className="text-[20px] font-extrabold !text-white tracking-tight leading-snug m-0">
             Smart Wholesale, Better Business
@@ -112,25 +112,17 @@ const AuthLayout: React.FC = () => {
 
       {/* ── RIGHT PANEL / FORM AREA ───────────────────────────── */}
       <div className="flex flex-col items-center justify-start lg:justify-center relative bg-white lg:h-screen lg:overflow-y-auto flex-1">
-        {/* Desktop logo (top-left) */}
-        <div className="hidden lg:block absolute top-8 left-10">
-          <img src={logo} alt="Logo" className="w-10 h-10 rounded-full shadow-md" />
-        </div>
-
-        {/* Form card */}
-        <div className="w-full max-w-[440px] px-5 sm:px-8 py-8 sm:py-10 lg:mt-0 mx-auto">
-          {/* Premium card wrapper on mobile */}
-          <div className="bg-white rounded-2xl shadow-[0_4px_32px_rgba(0,0,0,0.08)] border border-slate-100 p-6 sm:p-8 lg:shadow-none lg:border-none lg:p-0">
-            <Outlet />
-          </div>
+        {/* Form area wrapper */}
+        <div className="w-full max-w-[420px] px-6 sm:px-8 py-10 lg:py-0 mx-auto">
+          <Outlet />
 
           {/* Support footer – mobile only */}
           <div className="lg:hidden mt-6 flex items-center justify-center gap-2 text-center">
             <Headphones size={14} className="text-slate-400 shrink-0" />
             <p className="text-[11px] text-slate-400 m-0">
               Need help?{' '}
-              <a href="mailto:support@amjstar.com" className="text-primary font-semibold hover:underline">
-                support@amjstar.com
+              <a href="mailto:info@amjstar.com" className="text-primary font-semibold hover:underline">
+                info@amjstar.com
               </a>
             </p>
           </div>

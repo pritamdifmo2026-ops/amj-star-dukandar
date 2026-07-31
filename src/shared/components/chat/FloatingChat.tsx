@@ -735,8 +735,8 @@ export const FloatingChat: React.FC = () => {
             )}
           </div>
 
-          {/* Quick replies — only after PO generated */}
-          {panel === 'chat' && messages.some(m => m.messageType === 'system') && (
+          {/* Quick replies — available in all chats */}
+          {panel === 'chat' && (
             <div className="px-3 py-2 border-t border-gray-100 bg-white shrink-0">
               {customMsgOpen ? (
                 <div className="flex flex-col gap-1.5">

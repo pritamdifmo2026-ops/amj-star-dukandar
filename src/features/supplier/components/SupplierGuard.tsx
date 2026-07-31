@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import supplierService from '../services/supplier.service';
-import { setSupplierProfile } from '@/features/supplier/store/supplier.slice';
+import { setSupplierProfile, OnboardingStatus } from '@/features/supplier/store/supplier.slice';
+import { Navigate } from 'react-router-dom';
 
 interface SupplierGuardProps {
   children: React.ReactNode;
@@ -11,21 +12,28 @@ const SupplierGuard: React.FC<SupplierGuardProps> = ({ children }) => {
   const { profile } = useAppSelector(state => state.supplier);
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(!profile);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     const checkStatus = async () => {
-      if (!profile) {
-        try {
+      try {
+        if (!profile) {
           const data = await supplierService.getProfile();
           if (data.supplier) {
             dispatch(setSupplierProfile(data.supplier));
+            if (data.supplier.onboardingStatus !== OnboardingStatus.COMPLETED) {
+              setNeedsOnboarding(true);
+            }
+          } else {
+            setNeedsOnboarding(true);
           }
-        } catch (err) {
-          // Allow access to dashboard directly even if not approved
-        } finally {
-          setLoading(false);
+        } else if (profile.onboardingStatus !== OnboardingStatus.COMPLETED) {
+          setNeedsOnboarding(true);
         }
-      } else {
+      } catch (err) {
+        // If error (e.g. no profile yet), we should probably send them to onboarding
+        setNeedsOnboarding(true);
+      } finally {
         setLoading(false);
       }
     };
@@ -36,9 +44,9 @@ const SupplierGuard: React.FC<SupplierGuardProps> = ({ children }) => {
     return <div style={{ padding: '40px', textAlign: 'center' }}>Verifying account status...</div>;
   }
 
-  // Allow access to dashboard directly even if not verified
-  // Verification status can be handled via banners inside the dashboard
-  return <>{children}</>;
+  if (needsOnboarding) {
+    return <Navigate to="/supplier/onboarding" replace />;
+  }
 
   return <>{children}</>;
 };

@@ -15,9 +15,8 @@ export function useRegister() {
   return useMutation({
     mutationFn: (payload: RegisterPayload) => authApi.register(payload),
     onSuccess: (data) => {
-      dispatch(setCredentials({ user: data.user }));
-      toast.success('Account created successfully!');
-      navigate(ROUTES.HOME);
+      toast.success('Account created successfully! Please log in.');
+      navigate(ROUTES.LOGIN);
     },
     onError: (error) => {
       const { message } = parseApiError(error);

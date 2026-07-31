@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import resellerService from '../services/reseller.service';
 import { setResellerProfile } from '@/features/reseller/store/reseller.slice';
+import { Navigate } from 'react-router-dom';
 
 interface ResellerGuardProps {
   children: React.ReactNode;
@@ -11,21 +12,28 @@ const ResellerGuard: React.FC<ResellerGuardProps> = ({ children }) => {
   const { profile } = useAppSelector(state => state.reseller);
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState(!profile);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     const checkStatus = async () => {
-      if (!profile) {
-        try {
+      try {
+        if (!profile) {
           const data = await resellerService.getProfile();
           if (data) {
             dispatch(setResellerProfile(data));
+            if (data.status !== 'APPROVED') {
+              setNeedsOnboarding(true);
+            }
+          } else {
+            setNeedsOnboarding(true);
           }
-        } catch (err) {
-          console.error('Failed to fetch reseller profile');
-        } finally {
-          setLoading(false);
+        } else if (profile.status !== 'APPROVED') {
+          setNeedsOnboarding(true);
         }
-      } else {
+      } catch (err) {
+        // If error (e.g. no profile yet), send them to onboarding
+        setNeedsOnboarding(true);
+      } finally {
         setLoading(false);
       }
     };
@@ -57,8 +65,9 @@ const ResellerGuard: React.FC<ResellerGuardProps> = ({ children }) => {
     );
   }
 
-  // Allow access to dashboard directly even if not approved
-  return <>{children}</>;
+  if (needsOnboarding) {
+    return <Navigate to="/reseller/onboarding" replace />;
+  }
 
   return <>{children}</>;
 };

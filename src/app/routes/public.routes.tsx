@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { ROUTES } from '@/shared/constants/routes';
 import AuthLayout from '@/shared/layout/AuthLayout';
 import Login from '@/features/auth/pages/Login';
-import VerifyOtp from '@/features/auth/pages/VerifyOtp';
+
 import Register from '@/features/auth/pages/Register';
 import VerifyEmail from '@/features/auth/pages/VerifyEmail';
 import Landing from '@/features/landing/pages/Landing';
@@ -22,6 +22,8 @@ import Suppliers from '@/features/landing/pages/Suppliers';
 import Contact from '@/features/landing/pages/Contact';
 import Terms from '@/features/landing/pages/Terms';
 import Privacy from '@/features/landing/pages/Privacy';
+import RefundPolicy from '@/features/landing/pages/RefundPolicy';
+import Careers from '@/features/landing/pages/Careers';
 import VerifiedManufacturers from '@/features/landing/pages/VerifiedManufacturers';
 import HelpBuyers from '@/features/landing/pages/HelpBuyers';
 import HelpSuppliers from '@/features/landing/pages/HelpSuppliers';
@@ -61,6 +63,14 @@ export const publicRoutes: RouteObject[] = [
     element: <Privacy />,
   },
   {
+    path: '/refund',
+    element: <RefundPolicy />,
+  },
+  {
+    path: '/careers',
+    element: <Careers />,
+  },
+  {
     path: '/verified-manufacturers',
     element: <VerifiedManufacturers />,
   },
@@ -82,10 +92,6 @@ export const publicRoutes: RouteObject[] = [
       {
         path: ROUTES.LOGIN,
         element: <Login />,
-      },
-      {
-        path: ROUTES.VERIFY_OTP,
-        element: <VerifyOtp />,
       },
       {
         path: ROUTES.REGISTER,

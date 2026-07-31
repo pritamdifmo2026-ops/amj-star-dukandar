@@ -76,23 +76,14 @@ const HelpBuyers: React.FC = () => {
               <p className="text-sm text-body">Reach us through any of these channels.</p>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-[8px] bg-primary-soft flex items-center justify-center shrink-0">
-                  <Phone size={16} className="text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-0.5">Helpline</p>
-                  <p className="text-sm font-semibold text-heading">+91 9034440673</p>
-                  <p className="text-xs text-body">Mon–Sat, 9am–6pm</p>
-                </div>
-              </div>
+
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-[8px] bg-primary-soft flex items-center justify-center shrink-0">
                   <Mail size={16} className="text-primary" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-0.5">Email</p>
-                  <p className="text-sm font-semibold text-heading">support@amjstar.com</p>
+                  <p className="text-sm font-semibold text-heading">info@amjstar.com</p>
                 </div>
               </div>
             </div>

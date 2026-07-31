@@ -20,7 +20,7 @@ export interface SelectRolePayload {
 }
 
 export interface LoginPayload {
-  email: string;
+  identifier: string;
   password: string;
 }
 
@@ -30,6 +30,8 @@ export interface RegisterPayload {
   phone: string;
   password: string;
   role: 'reseller' | 'supplier';
+  emailOtp: string;
+  phoneOtp: string;
 }
 
 export interface AuthResponse {

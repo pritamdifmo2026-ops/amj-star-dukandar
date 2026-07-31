@@ -5,6 +5,13 @@ export const ENDPOINTS = {
     REGISTER: '/auth/register',
     ME: '/auth/me',
     LOGOUT: '/auth/logout',
+    SEND_REGISTER_OTP: '/auth/send-register-otp',
+    VERIFY_REGISTER_OTP: '/auth/verify-register-otp',
+    FORGOT_PASSWORD_SEND_OTP: '/auth/forgot-password/send-otp',
+    FORGOT_PASSWORD_VERIFY_OTP: '/auth/forgot-password/verify-otp',
+    FORGOT_PASSWORD_RESET: '/auth/forgot-password/reset',
+    SEND_OTP: '/auth/send-otp',
+    VERIFY_OTP: '/auth/verify-otp',
   },
 
   // Products

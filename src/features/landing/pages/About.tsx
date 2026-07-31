@@ -158,7 +158,7 @@ const About: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
 
             {/* Founder Quote */}
-            <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 order-2 md:order-1">
               <div className="flex-shrink-0">
                 <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 bg-white flex items-center justify-center">
                   <img src={logo} alt="AMJSTAR Logo" className="w-full h-full object-cover scale-[2]" />
@@ -179,7 +179,7 @@ const About: React.FC = () => {
             </div>
 
             {/* CFO Quote */}
-            <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 order-1 md:order-2">
               <div className="flex-shrink-0">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-orange-400 text-white flex items-center justify-center font-bold text-xl">
                   U

@@ -25,7 +25,7 @@ const AdminPlatformSettings: React.FC = () => {
     queryFn: adminService.getPlatformSettings,
   });
 
-  const [form, setForm] = useState({ minimumWalletBalance: '', minimumWithdrawalAmount: '', contactPhone: '' });
+  const [form, setForm] = useState({ minimumWalletBalance: '', minimumWithdrawalAmount: '', contactPhone: '', announcementText: '' });
   const [socialForm, setSocialForm] = useState({ facebook: '', twitter: '', linkedin: '', instagram: '' });
   const [phoneError, setPhoneError] = useState('');
 
@@ -38,6 +38,7 @@ const AdminPlatformSettings: React.FC = () => {
         minimumWalletBalance: String(settings.minimumWalletBalance),
         minimumWithdrawalAmount: String(settings.minimumWithdrawalAmount),
         contactPhone: settings.contactPhone || '',
+        announcementText: settings.announcementText || '',
       });
       setSocialForm({
         facebook: settings.socialMedia?.facebook || '',
@@ -77,6 +78,7 @@ const AdminPlatformSettings: React.FC = () => {
       minimumWalletBalance: Number(form.minimumWalletBalance),
       minimumWithdrawalAmount: Number(form.minimumWithdrawalAmount),
       contactPhone: form.contactPhone,
+      announcementText: form.announcementText,
       socialMedia: socialForm,
     } as any),
     onSuccess: () => {
@@ -137,6 +139,17 @@ const AdminPlatformSettings: React.FC = () => {
               className={inputCls}
             />
             <p className="text-xs text-[#94a3b8] mt-1.5">Suppliers cannot request withdrawals below this amount</p>
+          </div>
+
+          <div>
+            <label className={labelCls}>Global Announcement Text</label>
+            <textarea
+              value={form.announcementText}
+              onChange={e => setForm(p => ({ ...p, announcementText: e.target.value }))}
+              className={`${inputCls} min-h-[80px] resize-y`}
+              placeholder="Latest news or updates..."
+            />
+            <p className="text-xs text-[#94a3b8] mt-1.5">This text will be shown on the home page below the hero section. Leave empty to hide.</p>
           </div>
 
           <div>

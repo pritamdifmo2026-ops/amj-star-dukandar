@@ -29,7 +29,7 @@ const Suppliers: React.FC = () => (
           <p className="text-base text-body leading-relaxed max-w-[600px] mx-auto mb-8">
             Expand your reach, streamline your wholesale operations, and connect directly with thousands of verified B2B buyers across India.
           </p>
-          <Link to={`${ROUTES.LOGIN}?mode=seller`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
+          <Link to={`${ROUTES.REGISTER}?mode=seller`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
             Join as a Supplier
           </Link>
         </div>
@@ -179,7 +179,7 @@ const Suppliers: React.FC = () => (
                   ))}
                 </div>
 
-                <Link to={`${ROUTES.LOGIN}?mode=seller`} className="mt-4 w-full block text-center py-2.5 rounded-[8px] font-bold text-sm bg-[#f8fafc] text-[#0f172a] border border-[#e2e8f0] hover:bg-primary hover:text-white hover:border-primary transition-colors">
+                <Link to={`${ROUTES.REGISTER}?mode=seller`} className="mt-4 w-full block text-center py-2.5 rounded-[8px] font-bold text-sm bg-[#f8fafc] text-[#0f172a] border border-[#e2e8f0] hover:bg-primary hover:text-white hover:border-primary transition-colors">
                   {tier.buttonText}
                 </Link>
               </div>

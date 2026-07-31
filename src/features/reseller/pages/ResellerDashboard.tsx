@@ -168,7 +168,7 @@ const dispatch = useAppDispatch();
             </div>
             <p className="text-xs text-[#64748b] mb-3">Our support team is available 24/7 to help you with your business.</p>
             <div className="flex flex-col gap-2">
-              {['support@amjstar.com', 'Info@amjstar.com'].map(email => (
+              {['info@amjstar.com', 'Info@amjstar.com'].map(email => (
                 <a key={email} href={`mailto:${email}`} className="flex items-center gap-2 text-xs text-primary no-underline hover:underline">
                   <Mail size={12} /> {email}
                 </a>

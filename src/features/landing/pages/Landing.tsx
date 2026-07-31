@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
+import AnnouncementBar from '../components/AnnouncementBar';
 import BannerSlider from '../components/BannerSlider';
 import PostRequirementSection from '../components/PostRequirementSection';
 import FeaturedSuppliers from '../components/FeaturedSuppliers';
@@ -162,6 +163,7 @@ const Landing: React.FC = () => {
           <BannerSlider />
         </div>
         <Hero />
+        <AnnouncementBar />
 
         {categories.slice(0, 4).map(cat => (
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />

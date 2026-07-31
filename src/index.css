@@ -35,14 +35,21 @@
 }
 
 @keyframes pulse-scale {
-
   0%,
   100% {
     transform: scale(1);
   }
-
   50% {
     transform: scale(1.04);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
   }
 }
 
@@ -51,6 +58,7 @@
   --animate-slide-up: slide-up 0.3s ease-out;
   --animate-float: float 3s ease-in-out infinite;
   --animate-pulse-scale: pulse-scale 6s ease-in-out infinite;
+  --animate-marquee: marquee 25s linear infinite;
   /* Brand colors */
   --color-primary: oklch(0.55 0.16 38);
   --color-primary-dark: oklch(0.50 0.16 38);

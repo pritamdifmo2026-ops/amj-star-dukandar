@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -21,6 +22,9 @@ const Input: React.FC<InputProps> = ({
   ...rest
 }) => {
   const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = rest.type === 'password';
+  const inputType = isPassword ? (showPassword ? 'text' : 'password') : rest.type;
 
   return (
     <div className={['flex flex-col gap-1', fullWidth ? 'w-full' : '', className].filter(Boolean).join(' ')}>
@@ -39,8 +43,18 @@ const Input: React.FC<InputProps> = ({
           id={inputId}
           className="flex-1 border-none outline-none bg-transparent px-2.5 py-2 text-base text-heading placeholder:text-muted"
           {...rest}
+          type={inputType}
         />
-        {rightIcon && <span className="flex items-center px-2 text-muted">{rightIcon}</span>}
+        {rightIcon && !isPassword && <span className="flex items-center px-2 text-muted">{rightIcon}</span>}
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="flex items-center px-3 text-muted hover:text-heading transition-colors bg-transparent border-none cursor-pointer"
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        )}
       </div>
       {error && <p className="text-xs text-error">{error}</p>}
       {!error && helperText && <p className="text-xs text-muted">{helperText}</p>}

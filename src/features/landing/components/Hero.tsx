@@ -65,7 +65,7 @@ const Hero: React.FC = () => {
         title: `Switch to Supplier?`,
         body: `You're currently logged in as a ${roleLabel}. To register as a Supplier, please log out of your ${roleLabel} account first.`,
         canSwitch: true,
-        switchTarget: `${ROUTES.LOGIN}?mode=seller`,
+        switchTarget: `${ROUTES.REGISTER}?mode=seller`,
       });
     }
   };
@@ -103,7 +103,7 @@ const Hero: React.FC = () => {
               Join as Buyer <ArrowRight size={20} className="w-5 h-5 shrink-0" />
             </Link>
             <Link
-              to={`${ROUTES.LOGIN}?mode=seller`}
+              to={`${ROUTES.REGISTER}?mode=seller`}
               onClick={handleSupplierClick}
               className="w-full sm:w-auto justify-center text-center bg-[#1e293b] text-white min-w-0 sm:min-w-[220px] px-6 sm:px-10 py-3.5 sm:py-4 text-base sm:text-[18px] font-bold rounded-full no-underline transition-all hover:bg-[#0f172a] shadow-md shrink-0"
             >

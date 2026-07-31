@@ -99,7 +99,7 @@ const InvoiceModal: React.FC<{
               <h1 className="text-2xl font-extrabold text-primary m-0">AMJ STAR</h1>
               <p className="text-xs text-[#64748b] m-0 mt-1">India ka Apna B2B Marketplace</p>
               <p className="text-xs text-[#64748b] m-0">GSTIN: 27AABCA1234C1Z5</p>
-              <p className="text-xs text-[#64748b] m-0">support@amjstar.com</p>
+              <p className="text-xs text-[#64748b] m-0">info@amjstar.com</p>
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-[#94a3b8] uppercase tracking-wider m-0">Tax Invoice</p>

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { MessageSquare, Phone, Mail, MapPin, LogIn, CheckCircle } from 'lucide-react';
+
+import { MessageSquare, Phone, Mail, MapPin, CheckCircle } from 'lucide-react';
 import MainLayout from '@/shared/layout/MainLayout';
 import { useAppSelector } from '@/store/hooks';
 import adminService from '@/features/admin/services/admin.service';
-import { ROUTES } from '@/shared/constants/routes';
 
 const SUBJECTS = [
   'General Enquiry',
@@ -23,7 +22,6 @@ const ROLE_LABEL: Record<string, string> = {
 
 const Contact: React.FC = () => {
   const user = useAppSelector(state => state.auth.user);
-  const isLoggedIn = !!user && user.role !== 'admin';
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -84,23 +82,14 @@ const Contact: React.FC = () => {
               <p className="text-sm text-body">Reach us through any of these channels.</p>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-[8px] bg-primary-soft flex items-center justify-center shrink-0">
-                  <Phone size={16} className="text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-0.5">Phone</p>
-                  <p className="text-sm font-semibold text-heading">+91 9034440673</p>
-                  <p className="text-xs text-body">Mon–Sat, 9am–6pm</p>
-                </div>
-              </div>
+
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-[8px] bg-primary-soft flex items-center justify-center shrink-0">
                   <Mail size={16} className="text-primary" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-0.5">Email</p>
-                  <p className="text-sm font-semibold text-heading">support@amjstar.com</p>
+                  <p className="text-sm font-semibold text-heading">info@amjstar.com</p>
                   <p className="text-xs text-body">We reply within 24 hours</p>
                 </div>
               </div>
@@ -135,23 +124,6 @@ const Contact: React.FC = () => {
                 >
                   Send Another
                 </button>
-              </div>
-            ) : !isLoggedIn ? (
-              /* Auth gate */
-              <div className="flex flex-col items-center justify-center py-10 text-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-[#eff6ff] flex items-center justify-center">
-                  <LogIn size={28} className="text-[#0284c7]" />
-                </div>
-                <h3 className="text-xl font-extrabold text-heading">Sign in to Contact Us</h3>
-                <p className="text-sm text-body max-w-sm">
-                  You need to be logged in as a Buyer, Supplier, or Reseller to send us a message.
-                </p>
-                <Link
-                  to={`${ROUTES.LOGIN}?redirect=/contact`}
-                  className="mt-2 px-6 py-2.5 bg-primary text-white rounded-full text-sm font-semibold no-underline hover:bg-primary-dark transition-colors"
-                >
-                  Sign In
-                </Link>
               </div>
             ) : (
               /* Form */

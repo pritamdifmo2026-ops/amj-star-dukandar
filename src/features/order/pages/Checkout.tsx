@@ -7,11 +7,13 @@ import apiClient from '@/api/client';
 import {
   ShoppingBag, MapPin, Plus, Truck, ArrowLeft,
   CheckCircle, Package, AlertCircle, X,
-  ChevronRight, Receipt, Handshake, FileText
+  ChevronRight, Receipt, Handshake, FileText, MessageCircle
 } from 'lucide-react';
 import { addressApi } from '@/features/buyer/services/address.api';
 import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
 import { pincodeToState, normaliseState, getShippingZone } from '@/shared/utils/pincodeToState';
+import { useSocket } from '@/shared/contexts/SocketContext';
+import { chatApi } from '@/features/chat/services/chat.api';
 
 interface CheckoutItem {
   productId: string;
@@ -51,6 +53,20 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [showDealPanel, setShowDealPanel] = useState(false);
   const [dealPayMethod, setDealPayMethod] = useState<'direct' | 'amjstar'>('direct');
   const [dealAck, setDealAck] = useState(false);
+  const { setActiveChatId } = useSocket();
+  const [startingChat, setStartingChat] = useState<string | null>(null);
+
+  const handleStartChat = async (supplierId: string, productId: string) => {
+    try {
+      setStartingChat(productId);
+      const conversation = await chatApi.getOrCreateConversation(supplierId, productId);
+      setActiveChatId(conversation._id);
+    } catch (err) {
+      console.error('Failed to start chat', err);
+    } finally {
+      setStartingChat(null);
+    }
+  };
 
   // Fetch saved addresses; fall back to profile address if none saved yet
   useEffect(() => {
@@ -285,7 +301,17 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-[#0f172a] m-0 leading-snug">{item.name}</p>
-                      <p className="text-xs text-[#94a3b8] m-0 mt-0.5">MOQ: {item.moq} {item.unit}</p>
+                      <div className="flex flex-wrap items-center gap-3 mt-1">
+                        <p className="text-xs text-[#94a3b8] m-0">MOQ: {item.moq} {item.unit}</p>
+                        <button
+                          onClick={() => handleStartChat(item.supplierId, item.productId)}
+                          disabled={startingChat === item.productId}
+                          className="flex items-center gap-1.5 text-[11px] font-bold text-primary bg-[#fff7ed] border border-[#ffedd5] px-2 py-1 rounded-[6px] cursor-pointer hover:bg-[#ffedd5] transition-colors disabled:opacity-50"
+                        >
+                          <MessageCircle size={12} />
+                          {startingChat === item.productId ? 'Starting...' : 'Chat with Supplier'}
+                        </button>
+                      </div>
                       {/* Mobile-only price */}
                       <div className="sm:hidden mt-1 flex items-center gap-3 text-sm">
                         <span className="text-[#475569]">₹{item.price.toLocaleString('en-IN')} × {item.quantity}</span>
