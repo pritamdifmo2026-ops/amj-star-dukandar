@@ -9,14 +9,15 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   widthClass?: string;
+  overlayClassName?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, widthClass }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, widthClass, overlayClassName }) => {
   if (!isOpen) return null;
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] backdrop-blur-sm animate-fade-in"
+      className={`fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] animate-fade-in ${overlayClassName || ''}`}
       onClick={onClose}
     >
       <div

@@ -1,9 +1,29 @@
 import React from 'react';
 import MainLayout from '@/shared/layout/MainLayout';
-import { Briefcase, Users, Rocket, Target, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Briefcase, Users, Rocket, Target, Mail, MapPin, Building, Clock, ChevronRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/api/client';
+
+interface Job {
+  _id: string;
+  title: string;
+  department: string;
+  location: string;
+  type: string;
+  description: string;
+  isActive: boolean;
+}
 
 const Careers: React.FC = () => {
+  const { data: jobs = [], isLoading } = useQuery<Job[]>({
+    queryKey: ['public', 'jobs'],
+    queryFn: async () => {
+      const res = await api.get('/jobs');
+      return res.data.jobs;
+    },
+  });
+
   return (
     <MainLayout>
       <div className="bg-surface min-h-screen">
@@ -56,23 +76,73 @@ const Careers: React.FC = () => {
                 <h2 className="text-3xl font-extrabold text-heading mb-2">Open Positions</h2>
                 <p className="text-body text-base">Explore our current job openings.</p>
               </div>
-              <a href="mailto:info@amjstar.com" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-[8px] hover:bg-primary-dark transition-colors no-underline">
+              <a href="mailto:info@amjstar.com?subject=Spontaneous%20Application" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-[8px] hover:bg-primary-dark transition-colors no-underline">
                 <Mail size={18} />
                 Send Spontaneous Application
               </a>
             </div>
 
-            <div className="bg-white rounded-[16px] border border-border overflow-hidden">
-              <div className="p-12 text-center">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Briefcase className="text-gray-400" size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-heading mb-2">No open positions right now</h3>
-                <p className="text-body max-w-md mx-auto">
-                  We are not actively hiring for any specific roles at the moment, but we are always on the lookout for great talent. Send us your resume at <strong>info@amjstar.com</strong> and we'll keep you in mind for future roles!
-                </p>
+            {isLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center text-body">
+                <p className="text-sm">Loading positions...</p>
               </div>
-            </div>
+            ) : jobs.length === 0 ? (
+              <div className="bg-white rounded-[16px] border border-border overflow-hidden">
+                <div className="p-12 text-center">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Briefcase className="text-gray-400" size={24} />
+                  </div>
+                  <h3 className="text-xl font-bold text-heading mb-2">No open positions right now</h3>
+                  <p className="text-body max-w-md mx-auto">
+                    We are not actively hiring for any specific roles at the moment, but we are always on the lookout for great talent. Send us your resume at <strong>info@amjstar.com</strong> and we'll keep you in mind for future roles!
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {jobs.map((job) => (
+                  <div key={job._id} className="relative bg-white rounded-xl border border-gray-200 p-6 hover:border-primary hover:shadow-md transition-all group flex flex-col h-full overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-soft opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    
+                    <div className="mb-4">
+                      <h3 className="text-[19px] font-bold text-heading mb-3 group-hover:text-primary transition-colors line-clamp-2 leading-tight">{job.title}</h3>
+
+                      <div className="flex flex-wrap items-center gap-2 mb-4">
+                        <span className="flex items-center gap-1.5 text-[11px] font-medium text-body bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100">
+                          <Building size={12} /> {job.department}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-[11px] font-medium text-body bg-gray-50 px-2.5 py-1 rounded-md border border-gray-100">
+                          <MapPin size={12} /> {job.location}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-[11px] font-bold text-primary bg-primary-soft/50 px-2.5 py-1 rounded-md border border-primary-soft">
+                          <Clock size={12} /> {job.type}
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm text-body/80 line-clamp-2 leading-relaxed">
+                        {job.description.replace(/[#*`_>-]/g, '').trim()}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-auto pt-5 border-t border-gray-100">
+                      <Link
+                        to={`/careers/${job._id}`}
+                        className="inline-flex items-center justify-center px-4 py-2 bg-gray-50 text-gray-700 text-[13px] font-bold rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary transition-all no-underline"
+                      >
+                        View Details
+                      </Link>
+                      <a
+                        href={`mailto:info@amjstar.com?subject=Application for ${encodeURIComponent(job.title)}`}
+                        className="inline-flex items-center justify-center px-5 py-2 bg-primary text-white text-[13px] font-bold rounded-lg hover:bg-primary-dark transition-all shadow-sm hover:shadow-md no-underline"
+                      >
+                        Apply
+                        <ChevronRight size={14} className="ml-1" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </div>

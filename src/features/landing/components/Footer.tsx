@@ -76,8 +76,11 @@ const Footer: React.FC = () => {
             <div className="flex flex-col">
               <h4 className={colTitleCls}>For Buyers</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
-                <li><Link to={ROUTES.PRODUCT_LIST} className={linkCls}>Browse Products</Link></li>
+                <li><Link to={ROUTES.PRODUCT_LIST || '/products'} className={linkCls}>Browse Products</Link></li>
                 <li><Link to={ROUTES.BUYERS} className={linkCls}>Request Quote</Link></li>
+                <li><Link to="/directory" className={linkCls}>Wholesale Directory</Link></li>
+                <li><button onClick={() => setIsHelpOpen(true)} className={`${linkCls} bg-transparent border-none p-0 cursor-pointer font-sans`}>Buyer FAQs</button></li>
+                <li><Link to="/orders" className={linkCls}>Track Orders</Link></li>
               </ul>
             </div>
 
@@ -86,7 +89,9 @@ const Footer: React.FC = () => {
               <h4 className={colTitleCls}>For Suppliers</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
                 <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Sell on AMJSTAR</Link></li>
-
+                <li><Link to="/pricing" className={linkCls}>Wholesale Pricing</Link></li>
+                <li><Link to="/stories" className={linkCls}>Success Stories</Link></li>
+                <li><button onClick={() => setIsHelpOpen(true)} className={`${linkCls} bg-transparent border-none p-0 cursor-pointer font-sans`}>Supplier FAQs</button></li>
               </ul>
             </div>
 

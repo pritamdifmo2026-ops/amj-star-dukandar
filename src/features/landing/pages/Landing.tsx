@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
-import AnnouncementBar from '../components/AnnouncementBar';
+import LatestUpdatesCarousel from '../components/LatestUpdatesCarousel';
 import BannerSlider from '../components/BannerSlider';
 import PostRequirementSection from '../components/PostRequirementSection';
 import FeaturedSuppliers from '../components/FeaturedSuppliers';
@@ -102,23 +102,23 @@ const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolea
                 <Link
                   key={product.id}
                   to={`/products/${product.id}`}
-                  className="no-underline flex gap-3 items-center border border-[#eee] rounded-[10px] p-3 hover:border-primary hover:shadow-sm transition-all"
+                  className="no-underline flex gap-3 items-start border border-[#eee] rounded-[10px] p-3 hover:border-primary hover:shadow-sm transition-all self-start h-auto"
                 >
                   <img
                     src={product.images?.[0] || PLACEHOLDER}
                     alt={product.name}
-                    className="w-[80px] h-[80px] object-cover rounded-[8px] shrink-0"
+                    className="w-[80px] h-[80px] object-cover rounded-[8px] shrink-0 bg-gray-50"
                     onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER; }}
                   />
-                  <div className="flex flex-col gap-1 min-w-0">
+                  <div className="flex flex-col gap-1 min-w-0 flex-1">
                     <h4 className="text-heading text-sm font-semibold m-0 leading-snug line-clamp-2">
-                      {product.name.length > 36 ? product.name.slice(0, 36) + '…' : product.name}
+                      {product.name}
                     </h4>
                     {product.supplierName && (
-                      <span className="text-primary text-xs">{product.supplierName}</span>
+                      <span className="text-primary text-xs font-medium">{product.supplierName}</span>
                     )}
                     <span className="text-muted text-xs">MOQ: {product.minOrderQty} units</span>
-                    <span className="text-primary text-sm font-bold">₹{product.price?.toLocaleString('en-IN')}</span>
+                    <span className="text-primary text-[15px] font-bold mt-0.5">₹{product.price?.toLocaleString('en-IN')}</span>
                   </div>
                 </Link>
               ))}
@@ -163,7 +163,7 @@ const Landing: React.FC = () => {
           <BannerSlider />
         </div>
         <Hero />
-        <AnnouncementBar />
+        <LatestUpdatesCarousel />
 
         {categories.slice(0, 4).map(cat => (
           <CategorySection key={cat._id} cat={cat} products={products} loading={loading} />

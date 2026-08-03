@@ -40,6 +40,7 @@ const PAGE_LIST = [
   { slug: 'about',   label: 'About Us',           desc: 'Company story, mission & values', path: '/about'   },
   { slug: 'terms',   label: 'Terms & Conditions', desc: 'Platform usage terms',             path: '/terms'   },
   { slug: 'privacy', label: 'Privacy Policy',     desc: 'How we handle user data',          path: '/privacy' },
+  { slug: 'refund',  label: 'Refund Policy',      desc: 'Refund & cancellation terms',      path: '/refund'  },
 ];
 
 // ── Live section renderer ─────────────────────────────────────────────────────

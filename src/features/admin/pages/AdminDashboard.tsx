@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut, Megaphone, Briefcase } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
@@ -21,6 +21,7 @@ import ResellerVerification from '../components/ResellerVerification';
 import BannerManagement from '../components/BannerManagement';
 import EnquiryManagement from '../components/EnquiryManagement';
 import AdminPlatformSettings from '../components/AdminPlatformSettings';
+import AdminLatestUpdate from '../components/AdminLatestUpdate';
 import AdminWithdrawals from '../components/AdminWithdrawals';
 import AdminEarnings from '../components/AdminEarnings';
 import AdminHelpRequests from '../components/AdminHelpRequests';
@@ -32,6 +33,7 @@ import RequirementManagement from '../components/RequirementManagement';
 import AdminPages from '../components/AdminPages';
 import AdminSupplierPlans from '../components/AdminSupplierPlans';
 import AdminMeetingRequests from '../components/AdminMeetingRequests';
+import AdminJobs from '../components/AdminJobs';
 
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
@@ -56,8 +58,10 @@ const tabLabel: Record<string, string> = {
   'platform-settings': 'Platform Settings',
   withdrawals: 'Withdrawal Requests',
   pages: 'Manage Pages',
+  jobs: 'Careers Management',
   'requirement-management': 'Requirement Management',
   'buyer-queries': 'Buyer Queries',
+  'latest-update': 'Latest Update',
   'supplier-plans': 'Supplier Memberships',
   'meeting-requests': 'Meeting Requests',
 };
@@ -123,6 +127,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'products', label: 'Product Queue', icon: Package, badge: stats?.pendingProducts || undefined },
     { id: 'categories', label: 'Categories', icon: Tags },
     { id: 'banners', label: 'Banner Ads', icon: ImageIcon },
+    { id: 'latest-update', label: 'Latest Update', icon: Megaphone },
     { id: 'buyer-queries', label: 'Buyer Queries', icon: MessageSquare },
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
     { id: 'help-requests', label: 'Help Requests', icon: MessageSquare, badge: newHelpRequestsCount || undefined },
@@ -132,6 +137,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'disputes', label: 'Disputes', icon: AlertTriangle },
     { id: 'withdrawals', label: 'Withdrawals', icon: Wallet },
     { id: 'pages', label: 'Manage Pages', icon: FileText },
+    { id: 'jobs', label: 'Manage Careers', icon: Briefcase },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
     { id: 'supplier-plans', label: 'Supplier Memberships', icon: CreditCard },
     { id: 'meeting-requests', label: 'Meeting Requests', icon: Video },
@@ -151,6 +157,7 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'products') return hasPermission('product_queue');
     if (item.id === 'categories') return hasPermission('category_management');
     if (item.id === 'banners') return hasPermission('banner_management');
+    if (item.id === 'latest-update') return hasPermission('platform_settings');
     if (item.id === 'buyer-queries') return true;
     if (item.id === 'enquiry') return hasPermission('enquiry_management');
     if (item.id === 'help-requests') return hasPermission('enquiry_management');
@@ -160,6 +167,7 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'disputes') return hasPermission('disputes');
     if (item.id === 'withdrawals') return hasPermission('withdrawals');
     if (item.id === 'pages') return hasPermission('pages_management');
+    if (item.id === 'jobs') return hasPermission('pages_management'); // Using pages_management for jobs as well
     if (item.id === 'platform-settings') return hasPermission('platform_settings');
     if (item.id === 'supplier-plans') return hasPermission('supplier_verify');
     if (item.id === 'meeting-requests') return hasPermission('meeting_requests');
@@ -303,7 +311,9 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'disputes' && <AdminDisputes />}
             {activeTab === 'enquiry' && <EnquiryManagement />}
             {activeTab === 'buyer-queries' && <BuyerQueries />}
+            {activeTab === 'latest-update' && <AdminLatestUpdate />}
             {activeTab === 'pages' && <AdminPages />}
+            {activeTab === 'jobs' && <AdminJobs />}
             {activeTab === 'help-requests' && <AdminHelpRequests />}
             {activeTab === 'requirement-management' && <RequirementManagement />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}

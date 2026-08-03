@@ -10,10 +10,10 @@ import toast from 'react-hot-toast';
 
 const Register: React.FC = () => {
   const [form, setForm] = useState({
-    name: '', 
-    email: '', 
-    phone: '', 
-    password: '', 
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
     role: 'buyer' as 'buyer' | 'reseller' | 'supplier',
     emailOtp: '',
     phoneOtp: ''
@@ -42,7 +42,7 @@ const Register: React.FC = () => {
 
       await authApi.verifyRegisterOtp(type, identifier, otpVal);
       toast.success(`${type === 'email' ? 'Email' : 'Phone'} verified!`);
-      
+
       if (type === 'email') {
         setEmailOtpVerified(true);
         setErrors(prev => { const u = { ...prev }; delete u.emailOtp; return u; });
@@ -61,12 +61,12 @@ const Register: React.FC = () => {
 
   const handleSendOtp = async (type: 'email' | 'phone') => {
     const identifier = type === 'email' ? form.email : form.phone;
-    
+
     if (type === 'email' && !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email)) {
       setErrors(prev => ({ ...prev, email: 'Please enter a valid email to send OTP' }));
       return;
     }
-    
+
     if (type === 'phone' && !/^\d{10}$/.test(form.phone)) {
       setErrors(prev => ({ ...prev, phone: 'Please enter a valid 10-digit phone to send OTP' }));
       return;
@@ -75,10 +75,10 @@ const Register: React.FC = () => {
     try {
       if (type === 'email') setSendingEmailOtp(true);
       else setSendingPhoneOtp(true);
-      
+
       await authApi.sendRegisterOtp(type, identifier);
       toast.success(`OTP sent to your ${type}!`);
-      
+
       if (type === 'email') setEmailOtpSent(true);
       else setPhoneOtpSent(true);
     } catch (error: any) {
@@ -97,7 +97,7 @@ const Register: React.FC = () => {
     if (form.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
     if (!emailOtpVerified) newErrors.emailOtp = 'Please verify your email OTP';
     if (!phoneOtpVerified) newErrors.phoneOtp = 'Please verify your phone OTP';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -132,31 +132,31 @@ const Register: React.FC = () => {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="text-center">
         <h2 className="text-[26px] font-bold text-heading m-0 leading-tight">Create Account</h2>
-        <p className="text-[14px] text-muted mt-1 m-0">Join AMJSTAR as a buyer or seller</p>
+        <p className="text-[14px] text-muted mt-1 m-0">Join AMJSTAR as a buyer, reseller or supplier</p>
       </div>
 
       <div className="flex flex-col gap-3">
         <Input label="Full Name" type="text" name="name" autoComplete="name" placeholder="Your full name" value={form.name} onChange={set('name')} leftIcon={<User size={16} />} fullWidth required error={errors.name} />
-        
+
         <div className="flex flex-col gap-2">
-          <Input 
-            label="Email Address" 
-            type="email" 
+          <Input
+            label="Email Address"
+            type="email"
             name="email"
             autoComplete="email"
-            placeholder="you@example.com" 
-            value={form.email} 
-            onChange={set('email')} 
-            leftIcon={<Mail size={16} />} 
-            fullWidth 
-            required 
-            error={errors.email} 
+            placeholder="you@example.com"
+            value={form.email}
+            onChange={set('email')}
+            leftIcon={<Mail size={16} />}
+            fullWidth
+            required
+            error={errors.email}
             disabled={emailOtpSent}
             rightIcon={
               !emailOtpSent ? (
-                <button 
-                  type="button" 
-                  onClick={() => handleSendOtp('email')} 
+                <button
+                  type="button"
+                  onClick={() => handleSendOtp('email')}
                   disabled={sendingEmailOtp}
                   className="text-primary font-semibold text-xs whitespace-nowrap bg-transparent border-none cursor-pointer pr-1 hover:underline disabled:opacity-50"
                 >
@@ -175,25 +175,25 @@ const Register: React.FC = () => {
         </div>
 
         <div className="flex flex-col gap-2">
-          <Input 
-            label="Phone Number" 
-            type="tel" 
+          <Input
+            label="Phone Number"
+            type="tel"
             name="tel"
             autoComplete="tel"
-            placeholder="10-digit mobile number" 
-            value={form.phone} 
-            onChange={set('phone')} 
-            leftIcon={<Phone size={16} />} 
-            fullWidth 
-            required 
-            error={errors.phone} 
-            maxLength={10} 
+            placeholder="10-digit mobile number"
+            value={form.phone}
+            onChange={set('phone')}
+            leftIcon={<Phone size={16} />}
+            fullWidth
+            required
+            error={errors.phone}
+            maxLength={10}
             disabled={phoneOtpSent}
             rightIcon={
               !phoneOtpSent ? (
-                <button 
-                  type="button" 
-                  onClick={() => handleSendOtp('phone')} 
+                <button
+                  type="button"
+                  onClick={() => handleSendOtp('phone')}
                   disabled={sendingPhoneOtp}
                   className="text-primary font-semibold text-xs whitespace-nowrap bg-transparent border-none cursor-pointer pr-1 hover:underline disabled:opacity-50"
                 >
@@ -243,9 +243,9 @@ const Register: React.FC = () => {
       <div className="pt-3 border-t border-slate-100 flex flex-col gap-2 text-center">
         <p className="text-[13px] text-slate-500 m-0">
           Already have an account?{' '}
-          <button 
-            type="button" 
-            onClick={() => navigate(`${ROUTES.LOGIN}?mode=${form.role === 'supplier' ? 'seller' : form.role}`)} 
+          <button
+            type="button"
+            onClick={() => navigate(`${ROUTES.LOGIN}?mode=${form.role === 'supplier' ? 'seller' : form.role}`)}
             className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0"
           >
             Sign in

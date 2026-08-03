@@ -111,6 +111,7 @@ interface SupplierProfile {
   maxProducts?: number;
   businessDetails?: BusinessDetails;
   user?: SupplierUser;
+  assignedAdminContact?: string;
 }
 
 interface SupplierState {

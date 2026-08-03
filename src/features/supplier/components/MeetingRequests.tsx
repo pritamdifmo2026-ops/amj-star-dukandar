@@ -3,7 +3,7 @@ import { useAppSelector } from '@/store/hooks';
 import { SupplierTier, SubscriptionStatus } from '@/features/supplier/store/supplier.slice';
 import apiClient from '@/api/client';
 import {
-  Video, Clock, CheckCircle, XCircle, RefreshCw, Send, AlertCircle, Calendar
+  Video, Clock, CheckCircle, XCircle, RefreshCw, Send, AlertCircle, Calendar, Phone
 } from 'lucide-react';
 
 const SERVICE_TYPES = [
@@ -31,10 +31,10 @@ interface MeetingRequest {
 }
 
 const statusConfig: Record<string, { label: string; icon: React.ReactNode; cls: string }> = {
-  PENDING:   { label: 'Pending',   icon: <Clock size={13} />,        cls: 'bg-[#fff7ed] text-[#c2410c]' },
-  SCHEDULED: { label: 'Scheduled', icon: <Calendar size={13} />,     cls: 'bg-[#eff6ff] text-[#1d4ed8]' },
-  COMPLETED: { label: 'Completed', icon: <CheckCircle size={13} />,  cls: 'bg-[#ecfdf5] text-[#059669]' },
-  CANCELLED: { label: 'Cancelled', icon: <XCircle size={13} />,      cls: 'bg-[#fef2f2] text-[#dc2626]' },
+  PENDING: { label: 'Pending', icon: <Clock size={13} />, cls: 'bg-[#fff7ed] text-[#c2410c]' },
+  SCHEDULED: { label: 'Scheduled', icon: <Calendar size={13} />, cls: 'bg-[#eff6ff] text-[#1d4ed8]' },
+  COMPLETED: { label: 'Completed', icon: <CheckCircle size={13} />, cls: 'bg-[#ecfdf5] text-[#059669]' },
+  CANCELLED: { label: 'Cancelled', icon: <XCircle size={13} />, cls: 'bg-[#fef2f2] text-[#dc2626]' },
 };
 
 const sectionCls = "bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] max-lg:p-5";
@@ -102,9 +102,21 @@ const MeetingRequests: React.FC = () => {
     <div className="flex flex-col gap-6">
       {/* Request form */}
       <div className={sectionCls}>
-        <h2 className="flex items-center gap-2 text-[1.25rem] text-[#1e293b] m-0 mb-6 font-extrabold">
+        <h2 className="flex items-center gap-2 text-[1.25rem] text-[#1e293b] m-0 mb-4 font-extrabold">
           <Video size={20} /> Schedule a Meeting
         </h2>
+
+        <div className="flex items-center gap-3 p-4 mb-6 bg-[#fff7ed] border border-[#ffedd5] rounded-[8px]">
+          <div className="w-10 h-10 rounded-full bg-[#ffedd5] flex items-center justify-center text-[#ea580c] shrink-0">
+            <Phone size={20} />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-[#9a3412] mb-0.5">Need immediate assistance?</p>
+            <p className="text-xs text-[#c2410c] m-0">Call Admin directly at <a href={`tel:${profile?.assignedAdminContact?.replace(/\s/g, '') || '+919034440673'}`} className="font-bold underline text-[#9a3412]">{profile?.assignedAdminContact || '+91 9034440673'}</a></p>
+          </div>
+        </div>
+
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-semibold text-[#334155] mb-1.5">Service Type <span className="text-[#dc2626]">*</span></label>

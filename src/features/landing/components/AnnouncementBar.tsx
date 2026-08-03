@@ -61,9 +61,12 @@ const AnnouncementBar: React.FC = () => {
           className="flex-1 overflow-hidden relative"
           style={{ maskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)' }}
         >
-          <div className="animate-ticker cursor-default">
+          <div className="animate-ticker cursor-default flex items-center">
             {repeatedSegments.map((text, i) => (
               <React.Fragment key={i}>
+                {settings.announcementImage && (
+                  <img src={settings.announcementImage} alt="Update" className="h-6 object-contain mr-3 rounded" />
+                )}
                 <span className="text-[13px] sm:text-[15px] text-heading font-semibold tracking-wide">
                   {text}
                 </span>

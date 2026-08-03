@@ -130,20 +130,24 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
     if (isNonBuyer) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
-    navigate(ROUTES.CHECKOUT, {
-      state: {
-        buyNowItem: {
-          productId: currentProductId,
-          name: product.name,
-          price: product.price,
-          quantity: product.minOrderQty,
-          unit: product.unit,
-          supplierId: product.supplierId,
-          imageUrl: currentImage,
-          moq: product.minOrderQty
-        }
-      }
-    });
+    
+    // Add to cart automatically and then go to cart (buying page)
+    if (!isInCart) {
+      dispatch(addToCartAsync({ 
+        productId: currentProductId, 
+        name: product.name, 
+        price: product.price, 
+        quantity: product.minOrderQty, 
+        unit: product.unit, 
+        supplierId: product.supplierId, 
+        imageUrl: currentImage, 
+        moq: product.minOrderQty, 
+        stock: product.stock, 
+        gstRate: product.gstRate, 
+        gstIncluded: product.gstIncluded 
+      }));
+    }
+    navigate(ROUTES.CHECKOUT);
   };
 
   const gstAmount = product.gstIncluded ? 0 : calculateGST(product.price, product.gstRate);

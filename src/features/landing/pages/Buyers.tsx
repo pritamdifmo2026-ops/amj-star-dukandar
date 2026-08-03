@@ -29,9 +29,17 @@ const Buyers: React.FC = () => (
           <p className="text-base text-body leading-relaxed max-w-[600px] mx-auto mb-8">
             Discover top-quality products from verified manufacturers. Enjoy seamless purchasing, secure transactions, and unparalleled support.
           </p>
-          <Link to={`${ROUTES.LOGIN}?mode=buyer`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
-            Join as a Buyer
-          </Link>
+          {(() => {
+            const hasLoggedInBefore = localStorage.getItem('has_logged_in_before') === 'true';
+            const targetRoute = hasLoggedInBefore ? ROUTES.LOGIN : ROUTES.REGISTER;
+            const buttonText = hasLoggedInBefore ? 'Join as a Buye' : 'Join as a Buyer';
+
+            return (
+              <Link to={`${targetRoute}?mode=buyer`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
+                {buttonText}
+              </Link>
+            );
+          })()}
         </div>
       </section>
 

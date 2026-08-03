@@ -29,9 +29,17 @@ const Suppliers: React.FC = () => (
           <p className="text-base text-body leading-relaxed max-w-[600px] mx-auto mb-8">
             Expand your reach, streamline your wholesale operations, and connect directly with thousands of verified B2B buyers across India.
           </p>
-          <Link to={`${ROUTES.REGISTER}?mode=seller`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
-            Join as a Supplier
-          </Link>
+          {(() => {
+            const hasLoggedInBefore = localStorage.getItem('has_logged_in_before') === 'true';
+            const targetRoute = hasLoggedInBefore ? ROUTES.LOGIN : ROUTES.REGISTER;
+            const buttonText = hasLoggedInBefore ? 'Join as a Supplier' : 'Join as a Supplier';
+
+            return (
+              <Link to={`${targetRoute}?mode=seller`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
+                {buttonText}
+              </Link>
+            );
+          })()}
         </div>
       </section>
 
@@ -80,22 +88,22 @@ const Suppliers: React.FC = () => (
             <h2 className="text-[28px] font-extrabold text-heading mb-3">Simple Listing Pricing</h2>
             <p className="text-[18px] text-body max-w-[600px] mx-auto">Grow your catalog without expensive listing fees.</p>
           </div>
-          
+
           <div className="flex flex-col md:flex-row items-center justify-between gap-12 max-w-[900px] mx-auto">
             <div className="text-left flex-1">
               <h3 className="text-[24px] font-extrabold text-heading mb-2">List Products Starting at Just ₹10 Each</h3>
               <p className="text-[16px] text-body mb-6">Grow your online wholesale catalog without high upfront costs.</p>
-              
+
               <div className="flex items-center gap-2 mb-4">
                 <div className="text-[48px] font-extrabold text-primary leading-none">₹10</div>
                 <div className="text-[18px] font-bold text-body mt-2">per product / month</div>
               </div>
-              
+
               <div className="inline-block bg-cream text-heading font-medium px-4 py-1.5 rounded-full text-[14px]">
                 Minimum monthly charge ₹499
               </div>
             </div>
-            
+
             <div className="flex-1 flex flex-col justify-center gap-5">
               {[
                 'Zero hidden setup or onboarding fees',

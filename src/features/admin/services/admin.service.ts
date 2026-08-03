@@ -207,6 +207,11 @@ const adminService = {
     return response.data.supplier;
   },
 
+  setAdminContact: async (supplierId: string, contactNumber: string) => {
+    const response = await api.patch(`/admin/suppliers/${supplierId}/admin-contact`, { contactNumber });
+    return response.data.supplier;
+  },
+
   getFrozenOrders: async (userId: string) => {
     const response = await api.get(`/admin/suppliers/${userId}/frozen-orders`);
     return response.data.orders as Array<{

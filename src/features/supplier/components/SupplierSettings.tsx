@@ -50,9 +50,10 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
   const qc = useQueryClient();
   const { data: walletData } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.getWallet });
   const { data: banksData } = useQuery({ queryKey: ['supplier', 'banks'], queryFn: supplierService.getBanks });
-  const rawPhone: string = (walletData as any)?.contactPhone || '';
-  const contactPhone = rawPhone.length === 10 ? `+91 ${rawPhone.slice(0, 5)} ${rawPhone.slice(5)}` : rawPhone;
-  const contactHref = rawPhone.length === 10 ? `tel:+91${rawPhone}` : '';
+  const adminContact = profile?.assignedAdminContact;
+  const fallbackPhone: string = (walletData as any)?.contactPhone || '9034440673';
+  const contactPhone = adminContact || (fallbackPhone.length === 10 ? `+91 ${fallbackPhone.slice(0, 5)} ${fallbackPhone.slice(5)}` : fallbackPhone);
+  const contactHref = adminContact ? `tel:${adminContact.replace(/\s/g, '')}` : (fallbackPhone.length === 10 ? `tel:+91${fallbackPhone}` : `tel:${fallbackPhone}`);
 
   // Email update flow
   const [editingEmail, setEditingEmail] = useState(false);

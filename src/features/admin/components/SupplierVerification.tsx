@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink, Percent, Landmark } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink, Percent, Landmark, Phone } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import Pagination from '@/shared/components/ui/Pagination';
@@ -243,6 +243,48 @@ const CommissionRateEditor: React.FC<{ supplierId: string; currentRate: number |
       </div>
       {currentRate != null && <p className="text-xs text-[#94a3b8] mt-2">Current rate: {currentRate}%</p>}
       {currentRate == null && <p className="text-xs text-[#d97706] mt-2">Not yet configured — PO generation is blocked for this supplier.</p>}
+    </div>
+  );
+};
+
+const AdminContactEditor: React.FC<{ supplierId: string; currentContact?: string }> = ({ supplierId, currentContact }) => {
+  const [contact, setContact] = useState(currentContact || '');
+  const qc = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: () => adminService.setAdminContact(supplierId, contact),
+    onSuccess: () => {
+      toast.success('Admin contact saved');
+      qc.invalidateQueries({ queryKey: ['admin', 'suppliers'] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to save'),
+  });
+
+  return (
+    <div className="p-6 border-t border-[#f1f5f9]">
+      <div className="flex items-center gap-2 mb-4 text-[#ea580c]"><Phone size={18} /><h3 className="text-base font-extrabold text-[#0f172a] m-0">Assigned Admin Contact</h3></div>
+      <p className="text-xs text-[#64748b] mb-4 m-0 leading-relaxed max-w-2xl">
+        This phone number will be displayed in the supplier's dashboard for them to reach out directly to their assigned admin or account manager.
+      </p>
+      <div className="flex items-center gap-3 max-w-xs">
+        <div className="flex-1 flex items-center gap-2 border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 focus-within:border-primary">
+          <input
+            type="text"
+            value={contact}
+            onChange={e => setContact(e.target.value)}
+            placeholder="+91 XXXXXXXXXX"
+            className="flex-1 border-none outline-none text-sm text-[#1e293b] bg-transparent"
+          />
+        </div>
+        <Button
+          onClick={() => mutation.mutate()}
+          disabled={!contact || mutation.isPending}
+          className="!py-2.5 !text-sm"
+        >
+          {mutation.isPending ? 'Saving…' : 'Save'}
+        </Button>
+      </div>
+      {!currentContact && <p className="text-xs text-[#d97706] mt-2">No specific number assigned — using default number.</p>}
     </div>
   );
 };
@@ -615,6 +657,7 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
             )}
           </div>
           <CommissionRateEditor supplierId={selectedSupplier._id} currentRate={(selectedSupplier as any).commissionRate} />
+          <AdminContactEditor supplierId={selectedSupplier._id} currentContact={selectedSupplier.assignedAdminContact} />
           {selectedSupplier.kycStatus === 'VERIFIED' && (
             <TrustAutomationEditor supplierId={selectedSupplier._id} autoLiveActive={!!selectedSupplier.autoLiveProducts} />
           )}

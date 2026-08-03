@@ -22,6 +22,7 @@ export interface AdminSupplier {
   name?: string;
   phone: string;
   commissionRate?: number;
+  assignedAdminContact?: string;
   kycStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
   verifiedByAdmin: boolean;
   rejectionReason?: string;

@@ -24,6 +24,7 @@ import Terms from '@/features/landing/pages/Terms';
 import Privacy from '@/features/landing/pages/Privacy';
 import RefundPolicy from '@/features/landing/pages/RefundPolicy';
 import Careers from '@/features/landing/pages/Careers';
+import JobDetail from '@/features/landing/pages/JobDetail';
 import VerifiedManufacturers from '@/features/landing/pages/VerifiedManufacturers';
 import HelpBuyers from '@/features/landing/pages/HelpBuyers';
 import HelpSuppliers from '@/features/landing/pages/HelpSuppliers';
@@ -69,6 +70,10 @@ export const publicRoutes: RouteObject[] = [
   {
     path: '/careers',
     element: <Careers />,
+  },
+  {
+    path: '/careers/:id',
+    element: <JobDetail />,
   },
   {
     path: '/verified-manufacturers',
