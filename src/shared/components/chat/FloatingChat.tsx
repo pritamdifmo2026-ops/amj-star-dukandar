@@ -145,6 +145,7 @@ export const FloatingChat: React.FC = () => {
     shippingNotes: '',
     terms: 'Standard delivery terms apply.',
   });
+  const [isNegotiating, setIsNegotiating] = useState(false);
 
   // Derived totals for quote form
   const computedGstAmount = quoteForm.gstType === 'exempt'
@@ -269,8 +270,7 @@ export const FloatingChat: React.FC = () => {
     catch { console.error('Failed to reject quote'); }
   };
 
-  const QuotationCard = ({ msg }: { msg: any }) => {
-    const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
+  const QuotationCard = ({ msg, onActiveChange }: { msg: any; onActiveChange?: (isActive: boolean) => void }) => {
     const isSupplier = user?.role === 'supplier';
     const [quote, setQuote] = useState<any>(null);
     const [showCounter, setShowCounter] = useState(false);
@@ -301,7 +301,7 @@ export const FloatingChat: React.FC = () => {
 
     // Fetch contact phone once deal is confirmed
     useEffect(() => {
-      if (quote?.status === 'accepted' && quote.orderId?._id && !hasFetchedContact.current) {
+      if (quote?.status === 'QUOTATION_ACCEPTED' && quote.orderId?._id && !hasFetchedContact.current) {
         hasFetchedContact.current = true;
         apiClient.get(`/orders/${quote.orderId._id}`).then(res => {
           const snap = res.data.data?.snapshot || {};
@@ -313,13 +313,16 @@ export const FloatingChat: React.FC = () => {
 
     if (!quote) return <div className="text-[0.9rem] text-gray-400 italic">Loading quotation…</div>;
 
+    const isActive = quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT';
+    useEffect(() => {
+      if (onActiveChange) onActiveChange(isActive);
+    }, [isActive, onActiveChange]);
+
     const statusMeta: Record<string, { label: string; cls: string }> = {
-      pending: { label: 'Awaiting Response', cls: 'bg-yellow-50 text-yellow-700' },
-      counter_offered: { label: 'Counter Offered', cls: 'bg-blue-50 text-blue-700' },
-      accepted: { label: 'Deal Confirmed ✅', cls: 'bg-green-50 text-green-700' },
-      rejected: { label: 'Declined', cls: 'bg-red-50 text-red-600' },
-      expired: { label: 'Expired', cls: 'bg-gray-100 text-gray-500' },
-      ordered: { label: 'Order Created', cls: 'bg-blue-50 text-blue-700' },
+      NEGOTIATION_PENDING: { label: 'Awaiting Response', cls: 'bg-yellow-50 text-yellow-700' },
+      COUNTER_OFFER_SENT: { label: 'Counter Offered', cls: 'bg-blue-50 text-blue-700' },
+      QUOTATION_ACCEPTED: { label: 'Deal Confirmed ✅', cls: 'bg-green-50 text-green-700' },
+      CANCELLED: { label: 'Declined / Cancelled', cls: 'bg-red-50 text-red-600' }
     };
     const meta = statusMeta[quote.status] || { label: quote.status, cls: 'bg-gray-100 text-gray-500' };
 
@@ -339,7 +342,7 @@ export const FloatingChat: React.FC = () => {
       if (!counterPrice && !counterTimeline.trim()) return;
       setCounterSubmitting(true);
       try {
-        await quotationApi.counterOffer(quote._id, {
+        const res = await quotationApi.counterOffer(quote._id, {
           price: counterPrice ? Number(counterPrice) : undefined,
           deliveryTimeline: counterTimeline.trim() || undefined,
           note: counterNote.trim() || undefined,
@@ -347,6 +350,9 @@ export const FloatingChat: React.FC = () => {
         loadMessages();
         setShowCounter(false);
         setCounterPrice(''); setCounterTimeline(''); setCounterNote('');
+        if (res?.warningFlag) {
+          toast.error('Warning: Your offer exceeded the retail price', { icon: '⚠️', duration: 5000 });
+        }
       } catch (err: any) {
         toast.error(err.response?.data?.message || 'Failed to send counter');
       } finally { setCounterSubmitting(false); }
@@ -427,17 +433,17 @@ export const FloatingChat: React.FC = () => {
           </div>
         )}
 
-        {/* Buyer waiting after counter */}
-        {!isSupplier && quote.status === 'counter_offered' && (
+        {/* Waiting for other party */}
+        {quote.currentTurn !== (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT') && (
           <div className="px-3 pb-2">
             <p className="text-[10px] text-blue-600 font-semibold text-center m-0 bg-blue-50 border border-blue-100 rounded-[5px] py-1.5">
-              Counter sent — awaiting supplier's new quote.
+              Awaiting {isSupplier ? "buyer's" : "supplier's"} response.
             </p>
           </div>
         )}
 
-        {/* Buyer actions: only when pending */}
-        {!isMine && !isSupplier && quote.status === 'pending' && !showCounter && (
+        {/* Actions: only when it's user's turn */}
+        {quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT') && !showCounter && (
           <>
             <div className="flex gap-1.5 px-3 pb-3">
               <button onClick={() => setConfirmAction('accept')}
@@ -529,8 +535,8 @@ export const FloatingChat: React.FC = () => {
           </>
         )}
 
-        {/* Counter form — only when pending */}
-        {!isMine && !isSupplier && quote.status === 'pending' && showCounter && (
+        {/* Counter form — only when it's user's turn */}
+        {quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT') && showCounter && (
           <div className="px-3 pb-3 flex flex-col gap-1.5">
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center border border-gray-200 rounded-[6px] focus-within:border-blue-400">
@@ -565,17 +571,8 @@ export const FloatingChat: React.FC = () => {
           </div>
         )}
 
-        {/* Supplier: counter_offered → prompt to send new quote */}
-        {isSupplier && quote.status === 'counter_offered' && (
-          <div className="px-3 pb-3">
-            <p className="text-[10px] text-blue-600 font-semibold text-center m-0">
-              Buyer countered. Use "Quote" to respond.
-            </p>
-          </div>
-        )}
-
         {/* Deal Confirmed */}
-        {quote.status === 'accepted' && (
+        {quote.status === 'QUOTATION_ACCEPTED' && (
           <div className="mx-3 mb-3 bg-green-50 border border-green-100 rounded-[6px] p-2 text-center">
             <p className="text-[11px] font-extrabold text-green-700 m-0">🎉 Deal Confirmed!</p>
             <p className="text-[10px] text-green-600 m-0 mt-0.5">Proceed as per agreed terms.</p>
@@ -601,12 +598,11 @@ export const FloatingChat: React.FC = () => {
             )}
           </div>
         )}
-        {quote.status === 'ordered' && (
+        {quote.status === 'QUOTATION_ACCEPTED' && quote.orderId && (
           <div className="mx-3 mb-3 text-[11px] font-bold text-green-700 text-center">Order Created ✅</div>
         )}
       </div>
     );
-  };
 
   if (!isAuthenticated) return null;
   const otherUser = getOtherUser(activeConv);
@@ -715,7 +711,7 @@ export const FloatingChat: React.FC = () => {
                   if (msg.messageType === 'quotation') {
                     return (
                       <div key={msg._id || idx} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-                        <QuotationCard msg={msg} />
+                        <QuotationCard msg={msg} onActiveChange={setIsNegotiating} />
                       </div>
                     );
                   }
@@ -738,7 +734,11 @@ export const FloatingChat: React.FC = () => {
           {/* Quick replies — available in all chats */}
           {panel === 'chat' && (
             <div className="px-3 py-2 border-t border-gray-100 bg-white shrink-0">
-              {customMsgOpen ? (
+              {isNegotiating ? (
+                <div className="p-3 text-center text-[11px] font-semibold text-orange-600 bg-orange-50 rounded-[8px] border border-orange-200">
+                  Chat is disabled during active negotiation. Please use the quotation buttons above.
+                </div>
+              ) : customMsgOpen ? (
                 <div className="flex flex-col gap-1.5">
                   <textarea
                     autoFocus
@@ -1037,3 +1037,4 @@ export const FloatingChat: React.FC = () => {
     </div>
   );
 };
+}

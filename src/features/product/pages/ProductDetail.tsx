@@ -77,6 +77,11 @@ const ProductDetail: React.FC = () => {
         product.supplierId,
         product.id,
         enquiry.deliveryAddress,
+        {
+          quantity: enquiry.quantity,
+          targetPrice: enquiry.targetPrice || undefined,
+          deliveryTimeline: enquiry.deliveryTimeline
+        }
       );
       const shipTo = [
         enquiry.deliveryAddress.fullAddress,
@@ -86,10 +91,10 @@ const ProductDetail: React.FC = () => {
       ].filter(Boolean).join(', ');
       const priceLine =
         enquiry.priceMode === 'negotiate'
-          ? 'Open to negotiation'
-          : enquiry.priceMode === 'custom' && enquiry.targetPrice
-            ? `Target budget: ₹${enquiry.targetPrice.toLocaleString()} total`
-            : 'As listed';
+          ? enquiry.targetPrice
+            ? `Open to negotiation (Target budget: ₹${enquiry.targetPrice.toLocaleString()} total (excl. GST))`
+            : 'Open to negotiation'
+          : 'As listed';
       const text = [
         `📦 Enquiry: ${product.name}`,
         `Quantity: ${enquiry.quantity} ${product.unit}s`,
@@ -100,7 +105,10 @@ const ProductDetail: React.FC = () => {
         enquiry.note ? `Note: ${enquiry.note}` : '',
       ].filter(Boolean).join('\n');
       socket?.emit('join_conversation', conversation._id);
+      // conversation.supplierId is the User ID of the supplier, returned by the backend API.
+      // Do NOT use product.supplierId._id, as that is the Supplier Profile ID.
       socket?.emit('send_message', { conversationId: conversation._id, text, receiverId: (conversation as any).supplierId });
+      
       setShowEnquiryModal(false);
       setActiveChatId(conversation._id);
     } finally {

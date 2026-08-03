@@ -6,7 +6,7 @@ export const quotationApi = {
     return res.data;
   },
   createQuotation: async (data: any) => {
-    const res = await apiClient.post('/quotations', data);
+    const res = await apiClient.post('/quotations/create', data);
     return res.data;
   },
   getQuotation: async (id: string) => {
@@ -23,22 +23,6 @@ export const quotationApi = {
   },
   counterOffer: async (id: string, data: { price?: number; quantity?: number; note?: string; deliveryTimeline?: string }) => {
     const res = await apiClient.post(`/quotations/${id}/counter`, data);
-    return res.data;
-  },
-  acceptCounter: async (id: string) => {
-    const res = await apiClient.post(`/quotations/${id}/accept-counter`);
-    return res.data;
-  },
-  rejectCounter: async (id: string) => {
-    const res = await apiClient.post(`/quotations/${id}/reject-counter`);
-    return res.data;
-  },
-  deleteQuotation: async (id: string) => {
-    const res = await apiClient.delete(`/quotations/${id}`);
-    return res.data;
-  },
-  updateQuotation: async (id: string, data: any) => {
-    const res = await apiClient.patch(`/quotations/${id}`, data);
     return res.data;
   },
   cancelQuotation: async (id: string, reason: string) => {
