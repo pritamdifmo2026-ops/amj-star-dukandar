@@ -6,8 +6,9 @@ export const chatApi = {
     supplierId: string,
     productId?: string,
     buyerAddress?: { fullAddress?: string; city?: string; state?: string; pincode?: string },
+    enquiryData?: { quantity?: number; targetPrice?: number; deliveryTimeline?: string }
   ) => {
-    const res = await apiClient.post(ENDPOINTS.CHAT.CONVERSATION, { supplierId, productId, buyerAddress });
+    const res = await apiClient.post(ENDPOINTS.CHAT.CONVERSATION, { supplierId, productId, buyerAddress, enquiryData });
     return res.data.data;
   },
 
@@ -23,6 +24,11 @@ export const chatApi = {
 
   deleteConversation: async (conversationId: string) => {
     await apiClient.delete(`/chat/conversations/${conversationId}`);
+  },
+
+  cancelEnquiry: async (conversationId: string, reason: string) => {
+    const res = await apiClient.post(`/chat/conversations/${conversationId}/cancel`, { reason });
+    return res.data;
   },
 
   getUnreadCount: async (): Promise<number> => {

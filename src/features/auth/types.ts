@@ -29,7 +29,7 @@ export interface RegisterPayload {
   email: string;
   phone: string;
   password: string;
-  role: 'reseller' | 'supplier';
+  role: 'buyer' | 'reseller' | 'supplier';
   emailOtp: string;
   phoneOtp: string;
 }

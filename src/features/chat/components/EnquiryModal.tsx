@@ -22,7 +22,7 @@ export interface EnquiryPayload {
   priceMode: 'quoted' | 'negotiate' | 'custom';
   deliveryTimeline: string;
   requirements: string;
-  note: string;
+  note?: string;
   deliveryAddress: {
     fullAddress?: string;
     city: string;
@@ -63,7 +63,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
   const [useCustomQty, setUseCustomQty] = useState(false);
 
   // Step 2
-  const [priceMode, setPriceMode] = useState<'quoted' | 'negotiate' | 'custom'>('quoted');
+  const [priceMode, setPriceMode] = useState<'quoted' | 'negotiate'>('quoted');
   const [customPrice, setCustomPrice] = useState('');
 
   // Step 3 — delivery timeline + address
@@ -77,12 +77,11 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 
   // Step 4
   const [requirements, setRequirements] = useState<string[]>(['Standard']);
-  const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const qtyOptions = [moq, moq * 2, moq * 5].filter((v, i, a) => a.indexOf(v) === i && v <= stock);
   const finalQty = useCustomQty ? Number(customQty) || moq : quantity;
-  const finalPrice = priceMode === 'custom' ? Number(customPrice) || null : null;
+  const finalPrice = priceMode === 'negotiate' ? Number(customPrice) || null : null;
 
   const newAddrValid = city.trim() !== '' && state.trim() !== '' && /^\d{6}$/.test(pincode.trim());
 
@@ -92,8 +91,13 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
   };
 
   const canProceed = () => {
-    if (step === 1) return (useCustomQty ? Number(customQty) >= 1 && Number(customQty) <= stock : quantity <= stock);
-    if (step === 2) return priceMode !== 'custom' || Number(customPrice) > 0;
+    if (step === 1) return (useCustomQty ? Number(customQty) >= moq && Number(customQty) <= stock : quantity <= stock);
+    if (step === 2) {
+      if (priceMode === 'quoted') return true;
+      const cp = Number(customPrice);
+      const listPrice = basePrice * finalQty;
+      return cp >= (listPrice * 0.5) && cp <= listPrice;
+    }
     if (step === 3) return addrMode === 'saved' || newAddrValid;
     return true;
   };
@@ -135,7 +139,6 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
         priceMode,
         deliveryTimeline: timeline,
         requirements: requirements.join(', '),
-        note: note.trim(),
         deliveryAddress,
       });
     } finally {
@@ -214,7 +217,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
               </div>
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center border border-[#e2e8f0] rounded-[8px] bg-white focus-within:border-primary transition-colors">
-                    <input autoFocus type="number" min={1} max={stock} value={customQty} onChange={e => setCustomQty(e.target.value)}
+                    <input autoFocus type="number" min={moq} max={stock} value={customQty} onChange={e => setCustomQty(e.target.value)}
                       placeholder={`Min ${moq}, Max ${stock}`} className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent" />
                     <span className="px-3 text-sm text-[#94a3b8] font-semibold border-l border-[#e2e8f0]">{unit}s</span>
                   </div>
@@ -236,8 +239,8 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                 </p>
               </div>
               <div className="flex flex-col gap-2">
-                {(['quoted', 'negotiate', 'custom'] as const).map(mode => {
-                  const labels = { quoted: 'Accept listed price', negotiate: 'Open to negotiation', custom: 'I have a target budget' };
+                {(['quoted', 'negotiate'] as const).map(mode => {
+                  const labels = { quoted: 'Accept listed price', negotiate: 'Open to negotiation' };
                   return (
                     <button key={mode} onClick={() => setPriceMode(mode)}
                       className={`text-left px-4 py-3 rounded-[10px] text-sm font-semibold border cursor-pointer transition-all ${priceMode === mode ? 'bg-primary/5 border-primary text-primary' : 'bg-white border-[#e2e8f0] text-[#475569] hover:border-primary/40'}`}>
@@ -246,24 +249,33 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                   );
                 })}
               </div>
-              {priceMode === 'custom' && (
+              {priceMode === 'negotiate' && (
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center border border-[#e2e8f0] rounded-[8px] bg-white focus-within:border-primary transition-colors">
                     <span className="px-3 py-2.5 text-sm text-[#94a3b8] font-bold border-r border-[#e2e8f0] bg-[#f8fafc] rounded-l-[8px]">₹</span>
-                    <input autoFocus type="number" min={1} value={customPrice} onChange={e => setCustomPrice(e.target.value)}
+                    <input autoFocus type="number" min={Math.ceil(basePrice * finalQty * 0.5)} max={basePrice * finalQty} value={customPrice} onChange={e => setCustomPrice(e.target.value)}
                       placeholder={`e.g. ${Math.round(basePrice * finalQty * 0.9)}`}
                       className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent" />
-                    <span className="px-3 text-sm text-[#94a3b8] font-semibold border-l border-[#e2e8f0]">total</span>
+                    <span className="px-3 text-sm text-[#94a3b8] font-semibold border-l border-[#e2e8f0]">total (excl. GST)</span>
                   </div>
                   {Number(customPrice) > 0 && finalQty > 0 && (
-                    <p className="text-xs text-[#64748b] m-0 pl-1">
-                      = ₹{(Number(customPrice) / finalQty).toFixed(2)} / {unit}
-                      {Number(customPrice) < basePrice * finalQty && (
-                        <span className="ml-1 text-primary font-semibold">
-                          ({Math.round((1 - Number(customPrice) / (basePrice * finalQty)) * 100)}% below listed)
-                        </span>
+                    <div className="flex flex-col gap-0.5 mt-0.5">
+                      <p className="text-xs text-[#64748b] m-0 pl-1">
+                        = ₹{(Number(customPrice) / finalQty).toFixed(2)} / {unit}
+                        <span className="text-[#94a3b8] ml-2 font-normal">(Est. Total with 18% GST: ₹{Math.round(Number(customPrice) * 1.18).toLocaleString('en-IN')})</span>
+                        {Number(customPrice) < basePrice * finalQty && (
+                          <span className="ml-1 text-primary font-semibold">
+                            ({Math.round((1 - Number(customPrice) / (basePrice * finalQty)) * 100)}% below listed)
+                          </span>
+                        )}
+                      </p>
+                      {Number(customPrice) > basePrice * finalQty && (
+                        <p className="text-[10px] text-[#ef4444] m-0 pl-1 font-medium">Your offer cannot exceed the listed price.</p>
                       )}
-                    </p>
+                      {Number(customPrice) < basePrice * finalQty * 0.5 && (
+                        <p className="text-[10px] text-[#ef4444] m-0 pl-1 font-medium">Your offer cannot be less than 50% of the listed price.</p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -414,16 +426,11 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
           {step === 4 && (
             <div className="flex flex-col gap-4">
               <h3 className="text-base font-extrabold text-[#0f172a] m-0">Any special requirements?</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-2">
                 {REQUIREMENT_OPTIONS.map(r => (
                   <button key={r} onClick={() => toggleReq(r)} className={chip(requirements.includes(r))}>{r}</button>
                 ))}
               </div>
-              <textarea
-                className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] bg-white outline-none focus:border-primary transition-colors resize-none"
-                placeholder="Any additional notes for the supplier… (optional)"
-                rows={3} value={note} onChange={e => setNote(e.target.value)}
-              />
               {/* Summary */}
               <div className="bg-[#f8fafc] rounded-[10px] p-3 text-xs text-[#475569] flex flex-col gap-1 border border-[#eef2f6]">
                 <span className="font-bold text-[#0f172a] text-sm mb-1">Enquiry Summary</span>
@@ -431,8 +438,6 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                 <span>Price: <strong>
                   {priceMode === 'quoted'
                     ? `₹${(basePrice * finalQty).toLocaleString()} total (as listed)`
-                    : priceMode === 'negotiate'
-                    ? 'Open to negotiation'
                     : `₹${Number(customPrice).toLocaleString()} total`}
                 </strong></span>
                 <span>Delivery: <strong>{timeline}</strong></span>

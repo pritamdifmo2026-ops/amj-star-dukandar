@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone, Clock, X } from 'lucide-react';
+import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone, Clock } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { chatApi } from '@/features/chat/services/chat.api';
 import { quotationApi } from '@/features/supplier/services/quotation.api';
 import { useChat } from '@/shared/hooks/useChat';
 import { useSocket } from '@/shared/contexts/SocketContext';
-import { POReviewModal } from './POReviewModal';
 import apiClient from '@/api/client';
 
 type Filter = 'all' | 'unread';
@@ -140,14 +139,226 @@ const SUPPLIER_QR = [
 ];
 
 // ── Main component ──────────────────────────────────────────────────────────
-const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, socket, loadMessages, product, onSupplierAction }: { isLatestQuoteMsg?: boolean; msg: any; onActiveChange?: (isActive: boolean) => void; user: any; socket: any; loadMessages: () => void; product?: any; onSupplierAction?: (quote: any, isAccept: boolean) => void; }) => {
-    const isSupplier = user?.role === 'supplier';
+const ChatInbox: React.FC = () => {
+  const { user } = useSelector((state: any) => state.auth);
+
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [activeConv, setActiveConv] = useState<any>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [search, setSearch] = useState('');
+
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [quoteForm, setQuoteForm] = useState({
+    itemName: '',
+    hsnCode: '',
+    quantity: 1,
+    price: 0,
+    gstType: 'CGST_SGST' as GstType,
+    gstRate: 18,
+    shipping: 0,
+    deliveryTimeline: '',
+    shippingNotes: '',
+    terms: 'Standard delivery terms apply.',
+    priceTag: '' as '' | 'Best Price' | 'Last Price',
+  });
+
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [customMsgOpen, setCustomMsgOpen] = useState(false);
+  const [customMsgText, setCustomMsgText] = useState('');
+
+  const { messages, isTyping, loadMessages, sendMessage } = useChat(activeConv?._id);
+  const { socket } = useSocket();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [isSendingQuote, setIsSendingQuote] = useState(false);
+  const [quoteFormErrors, setQuoteFormErrors] = useState<{ price?: string; deliveryTimeline?: string }>({});
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const heldToastIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const onHide = () => {
+      if (document.hidden && heldToastIdRef.current) {
+        toast.dismiss(heldToastIdRef.current);
+        heldToastIdRef.current = null;
+      }
+    };
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      if (heldToastIdRef.current) toast.dismiss(heldToastIdRef.current);
+    };
+  }, []);
+
+  const computedTotalPrice = quoteForm.price * quoteForm.quantity;
+  const computedGstAmount = quoteForm.gstType === 'exempt'
+    ? 0
+    : Math.round(computedTotalPrice * quoteForm.gstRate) / 100;
+  const computedGrandTotal = computedTotalPrice + computedGstAmount + quoteForm.shipping;
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleDeleteConv = async (e: React.MouseEvent, convId: string) => {
+    e.stopPropagation();
+    setDeletingId(convId);
+    setOpenMenuId(null);
+    try {
+      await chatApi.deleteConversation(convId);
+      setConversations(prev => prev.filter(c => c._id !== convId));
+      if (activeConv?._id === convId) setActiveConv(null);
+      toast.success('Enquiry deleted');
+    } catch {
+      toast.error('Failed to delete enquiry');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  useEffect(() => { if (user) loadConversations(); }, [user]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleNotification = (notif: any) => {
+      if (notif.type === 'CHAT_MESSAGE' || notif.type === 'QUOTATION_UPDATE') {
+        loadConversations();
+        if (activeConv?._id === notif.conversationId) loadMessages();
+      }
+    };
+    socket.on('new_notification', handleNotification);
+    return () => { socket.off('new_notification', handleNotification); };
+  }, [socket, activeConv]);
+
+  const loadConversations = async () => {
+    try {
+      const data = await chatApi.getConversations();
+      setConversations(data);
+    } catch (err) {
+      console.error('Failed to load conversations', err);
+    }
+  };
+
+  useEffect(() => {
+    const container = messagesEndRef.current?.parentElement;
+    if (container) container.scrollTop = container.scrollHeight;
+  }, [messages]);
+
+  const getOtherParticipant = (conv: any) => {
+    const currentUserId = user?._id || user?.id;
+    const buyerId = conv?.buyerId?._id || conv?.buyerId;
+    if (buyerId?.toString() === currentUserId?.toString()) return conv?.supplierId;
+    return conv?.buyerId;
+  };
+
+  const getUnread = (conv: any) => {
+    const uid = user?._id || user?.id;
+    return conv.unreadCount?.[uid] || conv.unreadCount?.[user?.id] || 0;
+  };
+
+  const filteredConversations = conversations.filter((conv) => {
+    const other = getOtherParticipant(conv);
+    const otherName = other?.name || 'User';
+    return (
+      otherName.toLowerCase().includes(search.toLowerCase()) &&
+      (filter === 'all' || getUnread(conv) > 0)
+    );
+  });
+
+  const handleSelectConv = (conv: any) => {
+    setActiveConv(conv);
+    // Clear the unread dot/badge for this conversation immediately
+    const uid = user?._id || user?.id;
+    setConversations(prev => prev.map(c =>
+      c._id === conv._id ? { ...c, unreadCount: { ...(c.unreadCount || {}), [uid]: 0, [user?.id]: 0 } } : c
+    ));
+    socket?.emit('mark_read', conv._id);
+    setQuoteForm(prev => ({
+      ...prev,
+      itemName: conv.productId?.name || '',
+      hsnCode: conv.productId?.hsnCode || '',
+    }));
+  };
+
+  const handleCreateQuotation = async () => {
+    if (!activeConv || isSendingQuote) return;
+    setIsSendingQuote(true);
+    const other = getOtherParticipant(activeConv);
+    const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
+    const payload = {
+      conversationId: activeConv._id,
+      buyerId,
+      items: [{
+        name: quoteForm.itemName,
+        quantity: quoteForm.quantity,
+        price: quoteForm.price,
+        hsnCode: quoteForm.hsnCode || undefined,
+      }],
+      taxableAmount: computedTotalPrice,
+      totalAmount: computedTotalPrice,
+      gstType: quoteForm.gstType,
+      gstRate: quoteForm.gstType === 'exempt' ? 0 : quoteForm.gstRate,
+      gstAmount: computedGstAmount,
+      shippingCost: quoteForm.shipping,
+      deliveryTimeline: quoteForm.deliveryTimeline || undefined,
+      shippingNotes: quoteForm.shippingNotes || undefined,
+      terms: quoteForm.terms,
+      priceTag: quoteForm.priceTag || undefined,
+    };
+    try {
+      const result = editingQuoteId
+        ? await quotationApi.updateQuotation(editingQuoteId, payload)
+        : await quotationApi.createQuotation(payload);
+      setIsQuoteModalOpen(false);
+      setShowPreview(false);
+      setEditingQuoteId(null);
+      loadMessages();
+      if (result?.held) {
+        const tid = toast.custom(t => (
+          <div className={`flex items-start gap-3 bg-white border border-[#fcd34d] rounded-[12px] shadow-lg px-4 py-3 max-w-sm w-full ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
+            <span className="text-2xl shrink-0">⏸️</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-[#92400e] m-0">Quotation held — insufficient balance</p>
+              <div className="mt-1.5 bg-[#fffbeb] border border-[#fde68a] rounded-[6px] px-2.5 py-2 text-xs text-[#92400e] flex flex-col gap-0.5">
+                <div className="flex justify-between"><span>Commission required</span><span className="font-bold">₹{Number(result.commission).toFixed(2)}</span></div>
+                <div className="flex justify-between text-[#b45309]"><span>Your balance</span><span className="font-bold">₹{Number(result.availableBalance).toFixed(2)}</span></div>
+                <div className="flex justify-between border-t border-[#fde68a] pt-1 mt-0.5 text-[#dc2626]"><span className="font-bold">Shortfall</span><span className="font-bold">₹{Math.max(0, result.commission - result.availableBalance).toFixed(2)}</span></div>
+              </div>
+              <p className="text-xs text-[#b45309] mt-1.5 m-0">Top up ₹{Math.max(0, result.commission - result.availableBalance).toFixed(2)} and it will be sent to the buyer automatically.</p>
+              <a
+                href="/supplier/dashboard?tab=wallet"
+                onClick={() => toast.dismiss(t.id)}
+                className="inline-block mt-2 text-xs font-bold text-[#e65c00] underline underline-offset-2 hover:text-[#c94f00]"
+              >
+                Top up wallet →
+              </a>
+            </div>
+            <button onClick={() => toast.dismiss(t.id)} className="text-[#94a3b8] bg-transparent border-none cursor-pointer text-lg p-0 shrink-0">×</button>
+          </div>
+        ), { duration: Infinity, position: 'top-right' });
+        heldToastIdRef.current = tid;
+      } else {
+        toast.success(editingQuoteId ? 'Quotation updated!' : 'Quotation sent successfully!');
+      }
+    } catch (err: any) {
+      console.error('Failed to create quotation', err);
+      toast.error(err?.response?.data?.message || 'Failed to send quotation');
+    } finally {
+      setIsSendingQuote(false);
+    }
+  };
+
   const handleAcceptQuote = async (quoteId: string, paymentMethod: 'direct' | 'amjstar' = 'direct') => {
-    const loadingToast = toast.loading(isSupplier ? 'Accepting offer...' : 'Confirming deal...');
+    const loadingToast = toast.loading('Confirming deal...');
     try {
       await quotationApi.acceptQuotation(quoteId, paymentMethod);
       loadMessages();
-      toast.success(isSupplier ? 'Agreed to price! Waiting for buyer to confirm.' : 'Deal Confirmed! Order created.', { id: loadingToast });
+      toast.success('Deal Confirmed! Order created.', { id: loadingToast });
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to confirm deal', { id: loadingToast });
     }
@@ -158,27 +369,41 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
     catch (err) { console.error('Failed to reject quote', err); }
   };
 
+  const handleQuickReply = (text: string) => {
+    if (!activeConv) return;
+    const other = getOtherParticipant(activeConv);
+    const receiverId = other?._id || other?.id;
+    if (!receiverId) return;
+    sendMessage(text, receiverId);
+  };
+
   const formatTimeline = (v: string) => {
     if (!v) return v;
     if (/day|week|month|hour/i.test(v)) return v;
     return v.replace(/-/g, '–') + ' days';
   };
 
+  // ── Quotation card ────────────────────────────────────────────────────────
+  const QuotationCard = ({ msg }: { msg: any }) => {
+    const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
+    const isSupplier = user?.role === 'supplier';
     const [quote, setQuote] = useState<any>(null);
     const [quoteNotFound, setQuoteNotFound] = useState(false);
     const [showCounter, setShowCounter] = useState(false);
     const [counterPrice, setCounterPrice] = useState('');
+    const [counterTimeline, setCounterTimeline] = useState('');
+    const [counterNote, setCounterNote] = useState('');
     const [counterSubmitting, setCounterSubmitting] = useState(false);
     const [contactPhone, setContactPhone] = useState<string | null>(null);
     const hasFetchedContact = useRef(false);
     const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
     const [payMethod, setPayMethod] = useState<'direct' | 'amjstar'>('direct');
     const [directAck, setDirectAck] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [showCancelInput, setShowCancelInput] = useState(false);
     const [cancelReason, setCancelReason] = useState('');
     const [cancelSubmitting, setCancelSubmitting] = useState(false);
-    const [showReviewModal, setShowReviewModal] = useState(false);
-    const [reviewAck, setReviewAck] = useState(false);
 
     const fetchQuote = () => {
       if (msg.quotationId) {
@@ -211,59 +436,111 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
       }
     }, [quote?.status, quote?.orderId?._id]);
 
-    const isActive = quote ? (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent') : false;
-    useEffect(() => {
-      if (onActiveChange) onActiveChange(isActive);
-    }, [isActive, onActiveChange]);
-
     if (quoteNotFound) return null;
     if (!quote) return null;
+    if (quote.status === 'held' && !isSupplier) return null;
 
     const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
     const timeRow = (
-      <div className={`flex items-center gap-1 mt-1 justify-end`}>
+      <div className={`flex items-center gap-1 mt-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
         <span className="text-[10px] text-[#94a3b8]">{msgTime}</span>
+        {isMine && (msg.isRead ? <CheckCheck size={12} className="text-[#38bdf8]" /> : <Check size={12} className="text-[#94a3b8]" />)}
       </div>
     );
 
     const statusMeta: Record<string, { label: string; cls: string }> = {
-      negotiation_pending: { label: 'Awaiting Response', cls: 'bg-[#fffbeb] text-[#a16207]' },
-      counter_offer_sent: { label: 'Counter Offered', cls: 'bg-[#eff6ff] text-[#2563eb]' },
-      supplier_accepted: { label: 'Supplier Agreed', cls: 'bg-[#ecfdf5] text-[#059669]' },
-      quotation_accepted: { label: 'Deal Confirmed ✅', cls: 'bg-[#ecfdf5] text-[#059669]' },
-      cancelled: { label: 'Declined / Cancelled', cls: 'bg-[#fef2f2] text-[#dc2626]' },
+      pending: { label: 'Awaiting Response', cls: 'bg-[#fffbeb] text-[#a16207]' },
+      held: { label: 'On Hold', cls: 'bg-[#fef3c7] text-[#92400e]' },
+      counter_offered: { label: 'Counter Offered', cls: 'bg-[#eff6ff] text-[#2563eb]' },
+      accepted: { label: 'Deal Confirmed ✅', cls: 'bg-[#ecfdf5] text-[#059669]' },
+      rejected: { label: 'Declined', cls: 'bg-[#fef2f2] text-[#dc2626]' },
+      expired: { label: 'Expired', cls: 'bg-[#f1f5f9] text-[#94a3b8]' },
+      ordered: { label: 'Order Created', cls: 'bg-[#eff6ff] text-[#0369a1]' },
+      cancelled: { label: 'Cancelled ❌', cls: 'bg-[#fef2f2] text-[#dc2626]' },
     };
     const meta = statusMeta[quote.status] || { label: quote.status, cls: 'bg-[#f1f5f9] text-[#475569]' };
 
     const taxableAmt = quote.taxableAmount ?? quote.totalAmount ?? 0;
-    const actualRetailTotal = quote.items?.reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.quantity)), 0) || taxableAmt;
     const gstAmt = quote.gstAmount ?? 0;
     const shipCost = quote.shippingCost ?? 0;
     const grandTotal = taxableAmt + gstAmt + shipCost;
     const halfRate = (quote.gstRate ?? 0) / 2;
 
     const submitCounter = async () => {
-      if (!counterPrice) return;
-      const cp = Number(counterPrice);
-      if (cp < actualRetailTotal * 0.5 || cp > actualRetailTotal) return;
-
+      if (!counterPrice && !counterTimeline.trim()) return;
       setCounterSubmitting(true);
       try {
         await quotationApi.counterOffer(quote._id, {
-          price: cp,
+          price: counterPrice ? Number(counterPrice) : undefined,
+          deliveryTimeline: counterTimeline.trim() || undefined,
+          note: counterNote.trim() || undefined,
         });
         loadMessages();
         setShowCounter(false);
         setCounterPrice('');
+        setCounterTimeline('');
+        setCounterNote('');
       } catch (err: any) {
         toast.error(err.response?.data?.message || 'Failed to send counter');
       } finally { setCounterSubmitting(false); }
     };
 
-    const canSupplierCancel = isLatestQuoteMsg && isSupplier && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent' || quote.status === 'supplier_accepted');
-    const canBuyerCancel = isLatestQuoteMsg && !isSupplier && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent' || quote.status === 'supplier_accepted');
+    const handleRespondToCounter = () => {
+      setQuoteForm({
+        itemName: quote.items?.[0]?.name || '',
+        hsnCode: quote.items?.[0]?.hsnCode || '',
+        quantity: quote.items?.[0]?.quantity || 1,
+        price: quote.counterOffer?.price
+          ? Math.round(quote.counterOffer.price / (quote.items?.[0]?.quantity || 1))
+          : (quote.items?.[0]?.price ?? 0),
+        gstType: quote.gstType || 'CGST_SGST',
+        gstRate: quote.gstRate ?? 18,
+        shipping: quote.shippingCost ?? 0,
+        deliveryTimeline: quote.counterOffer?.deliveryTimeline || quote.deliveryTimeline || '',
+        shippingNotes: quote.shippingNotes || '',
+        terms: quote.terms || 'Standard delivery terms apply.',
+        priceTag: '' as '' | 'Best Price' | 'Last Price',
+      });
+      setEditingQuoteId(null);
+      setQuoteFormErrors({});
+      setIsQuoteModalOpen(true);
+    };
 
-    // Action buttons — rendered outside the card so faded wrapper never blocks them
+    const canEdit = isSupplier && isMine && (quote.status === 'pending' || quote.status === 'held');
+
+    const handleEdit = () => {
+      setQuoteForm({
+        itemName: quote.items?.[0]?.name || '',
+        hsnCode: quote.items?.[0]?.hsnCode || '',
+        quantity: quote.items?.[0]?.quantity || 1,
+        price: quote.items?.[0]?.price ?? 0,
+        gstType: quote.gstType || 'CGST_SGST',
+        gstRate: quote.gstRate ?? 18,
+        shipping: quote.shippingCost ?? 0,
+        deliveryTimeline: quote.deliveryTimeline || '',
+        shippingNotes: quote.shippingNotes || '',
+        terms: quote.terms || 'Standard delivery terms apply.',
+        priceTag: quote.priceTag || '',
+      });
+      setEditingQuoteId(quote._id);
+      setQuoteFormErrors({});
+      setIsQuoteModalOpen(true);
+    };
+
+    const handleDelete = async () => {
+      setIsDeleting(true);
+      try {
+        await quotationApi.deleteQuotation(quote._id);
+        loadMessages();
+        toast.success('Quotation retracted.');
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Failed to retract quotation');
+      } finally {
+        setIsDeleting(false);
+        setShowDeleteConfirm(false);
+      }
+    };
+
     const handleCancelEnquiry = async () => {
       if (!cancelReason.trim()) return;
       setCancelSubmitting(true);
@@ -277,16 +554,30 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
       } finally { setCancelSubmitting(false); }
     };
 
-    const actionButtons = canSupplierCancel && (
+    const canSupplierCancel = isSupplier && ['pending', 'held', 'counter_offered'].includes(quote.status);
+    const canBuyerCancel = !isSupplier && ['pending', 'counter_offered'].includes(quote.status);
+
+    // Action buttons — rendered outside the card so faded wrapper never blocks them
+    const actionButtons = canEdit && (
       <div className="min-w-[260px] max-w-[340px]">
-        {!showCancelInput ? (
+        {!showDeleteConfirm && !showCancelInput ? (
           <div className="flex flex-col gap-1.5 mt-1.5">
+            <div className="flex gap-2">
+              <button
+                onClick={handleEdit}
+                className="flex-1 py-1.5 text-xs font-bold text-[#2563eb] bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] cursor-pointer hover:bg-[#dbeafe]"
+              >✏️ Edit</button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex-1 py-1.5 text-xs font-bold text-[#475569] bg-[#f1f5f9] border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#e2e8f0]"
+              >✕ Retract</button>
+            </div>
             <button
               onClick={() => setShowCancelInput(true)}
               className="w-full py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fee2e2]"
             >🚫 Cancel Enquiry</button>
           </div>
-        ) : (
+        ) : showCancelInput ? (
           <div className="mt-1.5 flex flex-col gap-2">
             <textarea
               autoFocus
@@ -305,6 +596,24 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                 className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
                 {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
               </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-1.5 bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-3 py-2.5">
+            <p className="text-xs font-extrabold text-[#dc2626] m-0 mb-1">Retract this quotation?</p>
+            <p className="text-[11px] text-[#475569] m-0 mb-2.5 leading-relaxed">
+              The quotation will be removed from the chat. The buyer will no longer see it.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]"
+              >Cancel</button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer hover:bg-[#b91c1c] disabled:opacity-50"
+              >{isDeleting ? 'Retracting…' : 'Yes, Retract'}</button>
             </div>
           </div>
         )}
@@ -326,89 +635,68 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
         </div>
 
 
-        {msg.messageType === 'buyer_counter_offer' ? (
-          <div className="px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
-            <div className="text-[13px] text-[#334155] whitespace-pre-wrap leading-[1.6]">
-              <span className="font-extrabold flex items-center gap-1.5 text-[#0f172a]">
-                📦 Counter Offer: {product?.name || 'Product'}
-              </span>
-              <div className="mt-1.5">
-                Quantity: {quote.items?.[0]?.quantity || 0} {quote.items?.[0]?.unit || 'pcs'}<br/>
-                Price: ₹{(quote.counterOffer?.price || quote.proposedPrice).toLocaleString('en-IN')}<br/>
-                Delivery Timeline: {quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || 'Standard'}<br/>
-                {quote.shippingAddress && (
-                  <>Ship to: {[quote.shippingAddress.addressLine1, quote.shippingAddress.city, quote.shippingAddress.state, quote.shippingAddress.pincode].filter(Boolean).join(', ')}<br/></>
-                )}
-                {quote.terms && <>Requirements: {quote.terms}</>}
+        <div className="px-4 py-3 flex flex-col gap-1.5">
+          {quote.items.map((item: any, i: number) => (
+            <div key={i} className="flex flex-col gap-0.5">
+              <div className="flex justify-between text-xs text-[#475569]">
+                <span className="font-medium">{item.name}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+                <span>Unit Price</span>
+                <span>₹{item.price.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+                <span>Qty</span>
+                <span>{item.quantity} {item.unit}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#475569] font-semibold">
+                <span>Total Price</span>
+                <span>₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
               </div>
             </div>
+          ))}
+          <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
+            <span>Amount (before GST)</span>
+            <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN')}</span>
           </div>
-        ) : (
-          <>
-            <div className="px-4 py-3 flex flex-col gap-1.5">
-              {quote.items.map((item: any, i: number) => (
-                <div key={i} className="flex flex-col gap-0.5">
-                  <div className="flex justify-between text-xs text-[#475569]">
-                    <span className="font-medium">{item.name}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
-                    <span>Unit Price</span>
-                    <span>₹{item.price.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
-                    <span>Qty</span>
-                    <span>{item.quantity} {item.unit}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-[#475569] font-semibold">
-                    <span>Total Price</span>
-                    <span>₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              ))}
-              <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
-                <span>Amount (before GST)</span>
-                <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN')}</span>
+          {quote.gstType && quote.gstType !== 'exempt' && gstAmt > 0 ? (
+            quote.gstType === 'IGST' ? (
+              <div className="flex justify-between text-xs text-[#0369a1]">
+                <span>IGST @ {quote.gstRate}%</span>
+                <span className="font-semibold">₹{gstAmt.toLocaleString('en-IN')}</span>
               </div>
-              {quote.gstType && quote.gstType !== 'exempt' && gstAmt > 0 ? (
-                quote.gstType === 'IGST' ? (
-                  <div className="flex justify-between text-xs text-[#0369a1]">
-                    <span>IGST @ {quote.gstRate}%</span>
-                    <span className="font-semibold">₹{gstAmt.toLocaleString('en-IN')}</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex justify-between text-xs text-[#0369a1]">
-                      <span>CGST @ {halfRate}%</span>
-                      <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-[#0369a1]">
-                      <span>SGST @ {halfRate}%</span>
-                      <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
-                    </div>
-                  </>
-                )
-              ) : (
-                <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>
-              )}
-              {shipCost > 0 && (
-                <div className="flex justify-between text-xs text-[#475569]">
-                  <span>Shipping</span>
-                  <span className="font-semibold">₹{shipCost.toLocaleString('en-IN')}</span>
+            ) : (
+              <>
+                <div className="flex justify-between text-xs text-[#0369a1]">
+                  <span>CGST @ {halfRate}%</span>
+                  <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
                 </div>
-              )}
-              <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
-                <span>Grand Total</span>
-                <span>₹{grandTotal.toLocaleString('en-IN')}</span>
-              </div>
-              {quote.deliveryTimeline && <p className="text-[10px] text-[#94a3b8] m-0">Delivery: {quote.deliveryTimeline}</p>}
-              {quote.terms && <p className="text-[10px] text-[#94a3b8] m-0">Terms: {quote.terms}</p>}
+                <div className="flex justify-between text-xs text-[#0369a1]">
+                  <span>SGST @ {halfRate}%</span>
+                  <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                </div>
+              </>
+            )
+          ) : (
+            <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>
+          )}
+          {shipCost > 0 && (
+            <div className="flex justify-between text-xs text-[#475569]">
+              <span>Shipping</span>
+              <span className="font-semibold">₹{shipCost.toLocaleString('en-IN')}</span>
             </div>
-          </>
-        )}
+          )}
+          <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
+            <span>Grand Total</span>
+            <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+          </div>
+          {quote.deliveryTimeline && <p className="text-[10px] text-[#94a3b8] m-0">Delivery: {quote.deliveryTimeline}</p>}
+          {quote.terms && <p className="text-[10px] text-[#94a3b8] m-0">Terms: {quote.terms}</p>}
+        </div>
 
-        {msg.messageType !== 'buyer_counter_offer' && quote.counterOffer && (
+        {quote.counterOffer && (
           <div className="mx-4 mb-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] px-3 py-2 text-xs text-[#1d4ed8]">
-            <span className="font-bold block mb-1.5">Counter Offer from {quote.initiatedBy === 'buyer' ? 'Buyer' : 'Supplier'}</span>
+            <span className="font-bold block mb-1.5">Counter Offer from Buyer</span>
             {quote.counterOffer.price ? (
               <div className="flex justify-between items-center mb-0.5">
                 <span className="text-[#3b82f6]">Requested Price</span>
@@ -427,34 +715,37 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
           </div>
         )}
 
-        {/* Waiting for other party */}
-        {isLatestQuoteMsg && quote.currentTurn !== (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || (quote.status === 'counter_offer_sent' && msg.messageType === 'buyer_counter_offer')) && (
+        {!isSupplier && quote.status === 'counter_offered' && (
           <div className="px-4 pb-3">
             <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] px-3 py-2">
-              <p className="text-[10px] text-[#2563eb] font-bold m-0 text-center">
-                {quote.status === 'supplier_accepted' 
-                  ? "Waiting for buyer to confirm payment method." 
-                  : `Awaiting ${isSupplier ? "buyer's" : "supplier's"} response.`}
-              </p>
+              <p className="text-[10px] text-[#2563eb] font-bold m-0 mb-1 text-center">Counter sent — awaiting supplier's response</p>
+              <div className="flex flex-col gap-0.5">
+                {quote.counterOffer?.price ? (
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-[#3b82f6]">Your price request</span>
+                    <span className="font-bold text-[#1d4ed8]">₹{quote.counterOffer.price.toLocaleString('en-IN')}</span>
+                  </div>
+                ) : null}
+                {quote.counterOffer?.deliveryTimeline ? (
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-[#3b82f6]">Your timeline request</span>
+                    <span className="font-bold text-[#1d4ed8]">{formatTimeline(quote.counterOffer.deliveryTimeline)}</span>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Actions: only when it's user's turn and this is the latest quotation message */}
-        {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || (quote.status === 'counter_offer_sent' && msg.messageType === 'buyer_counter_offer')) && !showCounter && (
+        {!isMine && !isSupplier && quote.status === 'pending' && !showCounter && (
           <>
             <div className="flex gap-2 px-4 pb-3">
               <button className="flex-1 py-2 text-xs font-bold text-white bg-[#059669] rounded-[6px] border-none cursor-pointer hover:bg-[#047857]"
-                onClick={() => isSupplier ? (onSupplierAction ? onSupplierAction(quote, true) : null) : setConfirmAction('accept')}>Accept Deal</button>
-              
-              {quote.status !== 'supplier_accepted' && (
-                <>
-                  <button className="flex-1 py-2 text-xs font-bold text-[#2563eb] bg-[#eff6ff] rounded-[6px] border-none cursor-pointer hover:bg-[#dbeafe]"
-                    onClick={() => isSupplier ? (onSupplierAction ? onSupplierAction(quote, false) : null) : setShowCounter(true)}>Counter</button>
-                  <button className="flex-1 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]"
-                    onClick={() => setConfirmAction('decline')}>Decline</button>
-                </>
-              )}
+                onClick={() => setConfirmAction('accept')}>Accept Deal</button>
+              <button className="flex-1 py-2 text-xs font-bold text-[#2563eb] bg-[#eff6ff] rounded-[6px] border-none cursor-pointer hover:bg-[#dbeafe]"
+                onClick={() => setShowCounter(true)}>Counter</button>
+              <button className="flex-1 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]"
+                onClick={() => setConfirmAction('decline')}>Decline</button>
             </div>
 
             {/* Decline confirmation popup */}
@@ -516,14 +807,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                     <input
                       type="checkbox"
                       checked={directAck}
-                      onChange={e => {
-                        if (e.target.checked) {
-                          setShowReviewModal(true);
-                          setReviewAck(false);
-                        } else {
-                          setDirectAck(false);
-                        }
-                      }}
+                      onChange={e => setDirectAck(e.target.checked)}
                       className="mt-0.5 accent-[#059669] shrink-0"
                     />
                     <span className="text-[10px] text-[#475569] leading-relaxed">
@@ -554,29 +838,12 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
           </>
         )}
 
-        {/* PO Review Modal */}
-        {showReviewModal && (
-          <POReviewModal
-            quote={quote}
-            product={product}
-            payMethod={payMethod}
-            reviewAck={reviewAck}
-            setReviewAck={setReviewAck}
-            onClose={() => setShowReviewModal(false)}
-            onConfirm={() => {
-              setShowReviewModal(false);
-              setDirectAck(true);
-            }}
-          />
-        )}
-
-        {/* Counter form — only when it's user's turn */}
-        {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent') && showCounter && (
+        {!isMine && !isSupplier && quote.status === 'pending' && showCounter && (
           <div className="px-4 pb-3 flex flex-col gap-2">
             <p className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Counter Offer</p>
             {/* Price counter */}
             <div className="flex flex-col gap-0.5">
-              <label className="text-[10px] text-[#64748b] font-semibold">Counter Total Price (excl. GST &amp; shipping)</label>
+              <label className="text-[10px] text-[#64748b] font-semibold">Counter Total Price (total, excl. GST &amp; shipping)</label>
               <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary">
                 <span className="px-2 py-2 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
                 <input
@@ -586,48 +853,42 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                   pattern="[0-9]*"
                   value={counterPrice}
                   onChange={e => setCounterPrice(e.target.value.replace(/\D/g, ''))}
-                  placeholder={`e.g. ${taxableAmt}`}
+                  placeholder="Leave blank to keep current"
                   className="flex-1 border-none outline-none px-2 py-2 text-xs bg-transparent"
                 />
               </div>
-
-              {counterPrice && Number(counterPrice) > 0 && Number(counterPrice) < actualRetailTotal * 0.5 && (
-                <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
-                  Counter price cannot be less than 50% of the original price (₹{Math.round(actualRetailTotal * 0.5).toLocaleString('en-IN')})
-                </p>
-              )}
-              {counterPrice && Number(counterPrice) > 0 && Number(counterPrice) > actualRetailTotal && (
-                <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
-                  Counter price cannot be higher than the original price (₹{actualRetailTotal.toLocaleString('en-IN')})
-                </p>
-              )}
-
-              {counterPrice && Number(counterPrice) > 0 && (
-                <div className="mt-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] p-2 flex flex-col gap-1">
-                  <div className="flex justify-between text-[10px] text-[#64748b]">
-                    <span>Amount (before GST)</span>
-                    <span>₹{Number(counterPrice).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-[10px] text-[#64748b]">
-                    <span>GST @ {quote.gstRate ?? 18}%</span>
-                    <span>₹{Math.round(Number(counterPrice) * (quote.gstRate ?? 18) / 100).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-[11px] font-bold text-[#0f172a] pt-1 border-t border-[#e2e8f0]">
-                    <span>Grand Total</span>
-                    <span>₹{Math.round(Number(counterPrice) + (Number(counterPrice) * (quote.gstRate ?? 18) / 100) + shipCost).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              )}
             </div>
-
-            <div className="flex gap-2 mt-1">
+            {/* Timeline counter */}
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[10px] text-[#64748b] font-semibold">Delivery Timeline Request <span className="font-normal text-[#94a3b8]">(enter days)</span></label>
+              <input
+                type="text"
+                value={counterTimeline}
+                onChange={e => setCounterTimeline(e.target.value)}
+                onBlur={e => {
+                  const raw = e.target.value.trim();
+                  if (raw) setCounterTimeline(formatTimeline(raw));
+                }}
+                placeholder="e.g. 3 or 7–10"
+                className="border border-[#e2e8f0] rounded-[6px] px-2 py-2 text-xs outline-none focus:border-primary"
+              />
+            </div>
+            {/* Note */}
+            <input
+              type="text"
+              value={counterNote}
+              onChange={e => setCounterNote(e.target.value)}
+              placeholder="Note (optional)"
+              className="border border-[#e2e8f0] rounded-[6px] px-2 py-2 text-xs outline-none focus:border-primary"
+            />
+            <div className="flex gap-2">
               <button
-                onClick={() => { setShowCounter(false); setCounterPrice(''); }}
+                onClick={() => { setShowCounter(false); setCounterPrice(''); setCounterTimeline(''); setCounterNote(''); }}
                 className="flex-1 py-2 text-xs font-bold text-[#64748b] bg-[#f8fafc] rounded-[6px] border border-[#e2e8f0] cursor-pointer"
               >Cancel</button>
               <button
                 onClick={submitCounter}
-                disabled={counterSubmitting || !counterPrice || Number(counterPrice) < actualRetailTotal * 0.5 || Number(counterPrice) > actualRetailTotal}
+                disabled={counterSubmitting || (!counterPrice && !counterTimeline.trim())}
                 className="flex-1 py-2 text-xs font-bold text-white bg-[#2563eb] rounded-[6px] border-none cursor-pointer disabled:opacity-50"
               >
                 {counterSubmitting ? 'Sending…' : 'Send Counter'}
@@ -636,8 +897,39 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
           </div>
         )}
 
-        {/* Deal Confirmed */}
-        {quote.status === 'quotation_accepted' && (
+        {isSupplier && quote.status === 'counter_offered' && (
+          <div className="px-4 pb-3 flex flex-col gap-2">
+            <div className="bg-[#fafafa] border border-[#e2e8f0] rounded-[8px] px-3 py-2.5">
+              <p className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0 mb-1.5">Buyer's Counter Request</p>
+              {quote.counterOffer?.price ? (
+                <div className="flex justify-between text-xs mb-0.5">
+                  <span className="text-[#64748b]">Price requested</span>
+                  <span className="font-bold text-[#0f172a]">₹{quote.counterOffer.price.toLocaleString('en-IN')}</span>
+                </div>
+              ) : null}
+              {quote.counterOffer?.deliveryTimeline ? (
+                <div className="flex justify-between text-xs mb-0.5">
+                  <span className="text-[#64748b]">Delivery Time Requested</span>
+                  <span className="font-bold text-[#0f172a]">{formatTimeline(quote.counterOffer.deliveryTimeline)}</span>
+                </div>
+              ) : null}
+              {quote.counterOffer?.note ? (
+                <p className="text-[11px] text-[#64748b] m-0 mt-1 border-t border-[#e2e8f0] pt-1">{quote.counterOffer.note}</p>
+              ) : null}
+            </div>
+            <button
+              onClick={handleRespondToCounter}
+              className="w-full py-2 text-xs font-bold text-white bg-primary rounded-[6px] border-none cursor-pointer hover:opacity-90"
+            >
+              ✏️ Respond with New Quote
+            </button>
+            <p className="text-[10px] text-[#94a3b8] text-center m-0">
+              You can mark it as <strong>Last Price</strong> to signal a final offer.
+            </p>
+          </div>
+        )}
+
+        {quote.status === 'accepted' && (
           <div className="px-4 pb-3">
             <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] px-3 py-2 text-center">
               <p className="text-xs font-extrabold text-[#059669] m-0">🎉 Deal Confirmed!</p>
@@ -782,251 +1074,6 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
     );
   };
 
-const ChatInbox: React.FC = () => {
-  const { user } = useSelector((state: any) => state.auth);
-
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [activeConv, setActiveConv] = useState<any>(null);
-  const [filter, setFilter] = useState<Filter>('all');
-  const [search, setSearch] = useState('');
-
-  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
-  const [isAcceptingBuyerPrice, setIsAcceptingBuyerPrice] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
-  const [quoteForm, setQuoteForm] = useState({
-    itemName: '',
-    hsnCode: '',
-    quantity: 1,
-    price: 0,
-    gstType: 'CGST_SGST' as GstType,
-    gstRate: 18,
-    shipping: 0,
-    deliveryTimeline: '',
-    shippingNotes: '',
-    terms: 'Standard delivery terms apply.',
-    priceTag: '' as '' | 'Best Price' | 'Last Price',
-  });
-
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [customMsgOpen, setCustomMsgOpen] = useState(false);
-  const [customMsgText, setCustomMsgText] = useState('');
-
-  const { messages, isTyping, loadMessages, sendMessage } = useChat(activeConv?._id);
-  const { socket } = useSocket();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [isSendingQuote, setIsSendingQuote] = useState(false);
-  const [quoteFormErrors, setQuoteFormErrors] = useState<{ price?: string; deliveryTimeline?: string }>({});
-  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
-
-  const heldToastIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const onHide = () => {
-      if (document.hidden && heldToastIdRef.current) {
-        toast.dismiss(heldToastIdRef.current);
-        heldToastIdRef.current = null;
-      }
-    };
-    document.addEventListener('visibilitychange', onHide);
-    return () => {
-      document.removeEventListener('visibilitychange', onHide);
-      if (heldToastIdRef.current) toast.dismiss(heldToastIdRef.current);
-    };
-  }, []);
-
-  const computedTotalPrice = quoteForm.price * quoteForm.quantity;
-  const computedGstAmount = quoteForm.gstType === 'exempt'
-    ? 0
-    : Math.round(computedTotalPrice * quoteForm.gstRate) / 100;
-  const computedGrandTotal = computedTotalPrice + computedGstAmount + quoteForm.shipping;
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleDeleteConv = async (e: React.MouseEvent, convId: string) => {
-    e.stopPropagation();
-    setDeletingId(convId);
-    setOpenMenuId(null);
-    try {
-      await chatApi.deleteConversation(convId);
-      setConversations(prev => prev.filter(c => c._id !== convId));
-      if (activeConv?._id === convId) setActiveConv(null);
-      toast.success('Enquiry deleted');
-    } catch {
-      toast.error('Failed to delete enquiry');
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  const loadConversations = async () => {
-    try {
-      const data = await chatApi.getConversations();
-      setConversations(data);
-    } catch (err) {
-      console.error('Failed to load conversations', err);
-    }
-  };
-
-  useEffect(() => { if (user) loadConversations(); }, [user]);
-
-  useEffect(() => {
-    if (!socket) return;
-    const handleNotification = (notif: any) => {
-      if (notif.type === 'CHAT_MESSAGE' || notif.type === 'QUOTATION_UPDATE') {
-        loadConversations();
-        if (activeConv?._id === notif.conversationId) loadMessages();
-      }
-    };
-    socket.on('new_notification', handleNotification);
-    return () => { socket.off('new_notification', handleNotification); };
-  }, [socket, activeConv]);
-
-  useEffect(() => {
-    const container = messagesEndRef.current?.parentElement;
-    if (container) container.scrollTop = container.scrollHeight;
-  }, [messages]);
-
-  const getOtherParticipant = (conv: any) => {
-    const currentUserId = user?._id || user?.id;
-    const buyerId = conv?.buyerId?._id || conv?.buyerId;
-    if (buyerId?.toString() === currentUserId?.toString()) return conv?.supplierId;
-    return conv?.buyerId;
-  };
-
-  const getUnread = (conv: any) => {
-    const uid = user?._id || user?.id;
-    return conv.unreadCount?.[uid] || conv.unreadCount?.[user?.id] || 0;
-  };
-
-  const filteredConversations = conversations.filter((conv) => {
-    const other = getOtherParticipant(conv);
-    const otherName = other?.name || 'User';
-    return (
-      otherName.toLowerCase().includes(search.toLowerCase()) &&
-      (filter === 'all' || getUnread(conv) > 0)
-    );
-  });
-
-  const handleSelectConv = (conv: any) => {
-    setActiveConv(conv);
-    // Clear the unread dot/badge for this conversation immediately
-    const uid = user?._id || user?.id;
-    setConversations(prev => prev.map(c =>
-      c._id === conv._id ? { ...c, unreadCount: { ...(c.unreadCount || {}), [uid]: 0, [user?.id]: 0 } } : c
-    ));
-    socket?.emit('mark_read', conv._id);
-    const quantity = conv.initialEnquiry?.quantity || 1;
-    setQuoteForm(prev => ({
-      ...prev,
-      itemName: conv.productId?.name || '',
-      hsnCode: conv.productId?.hsnCode || '',
-      quantity: quantity,
-      price: conv.initialEnquiry?.targetPrice ? (conv.initialEnquiry.targetPrice / quantity) : 0,
-      deliveryTimeline: conv.initialEnquiry?.deliveryTimeline || '',
-    }));
-  };
-
-  const handleCreateQuotation = async () => {
-    if (!activeConv || isSendingQuote) return;
-    setIsSendingQuote(true);
-    const other = getOtherParticipant(activeConv);
-    const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
-    try {
-      const payload = await quotationApi.createQuotation({
-        conversationId: activeConv._id,
-        buyerId,
-        isAcceptingBuyerPrice,
-        items: [{
-          name: quoteForm.itemName,
-          quantity: quoteForm.quantity,
-          price: Number(quoteForm.price),
-          hsnCode: quoteForm.hsnCode || undefined,
-        }],
-        taxableAmount: computedTotalPrice,
-        totalAmount: computedGrandTotal,
-        gstType: quoteForm.gstType,
-        gstRate: quoteForm.gstType === 'exempt' ? 0 : Number(quoteForm.gstRate),
-        gstAmount: computedGstAmount,
-        shippingCost: Number(quoteForm.shipping),
-        deliveryTimeline: quoteForm.deliveryTimeline || undefined,
-        shippingNotes: quoteForm.shippingNotes || undefined,
-        terms: quoteForm.terms,
-        deliveryAddressSnapshot: activeConv.buyerAddress,
-        priceTag: quoteForm.priceTag || undefined,
-      });
-      setIsQuoteModalOpen(false);
-      setShowPreview(false);
-      setEditingQuoteId(null);
-      loadMessages();
-      if (payload?.held) {
-        const tid = toast.custom(t => (
-          <div className={`flex items-start gap-3 bg-white border border-[#fcd34d] rounded-[12px] shadow-lg px-4 py-3 max-w-sm w-full ${t.visible ? 'opacity-100' : 'opacity-0'}`}>
-            <span className="text-2xl shrink-0">⏸️</span>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-[#92400e] m-0">Quotation held — insufficient balance</p>
-              <div className="mt-1.5 bg-[#fffbeb] border border-[#fde68a] rounded-[6px] px-2.5 py-2 text-xs text-[#92400e] flex flex-col gap-0.5">
-                <div className="flex justify-between"><span>Commission required</span><span className="font-bold">₹{Number(payload.commission).toFixed(2)}</span></div>
-                <div className="flex justify-between text-[#b45309]"><span>Your balance</span><span className="font-bold">₹{Number(payload.availableBalance).toFixed(2)}</span></div>
-                <div className="flex justify-between border-t border-[#fde68a] pt-1 mt-0.5 text-[#dc2626]"><span className="font-bold">Shortfall</span><span className="font-bold">₹{Math.max(0, payload.commission - payload.availableBalance).toFixed(2)}</span></div>
-              </div>
-              <p className="text-xs text-[#b45309] mt-1.5 m-0">Top up ₹{Math.max(0, payload.commission - payload.availableBalance).toFixed(2)} and it will be sent to the buyer automatically.</p>
-              <a
-                href="/supplier/dashboard?tab=wallet"
-                onClick={() => toast.dismiss(t.id)}
-                className="inline-block mt-2 text-xs font-bold text-[#e65c00] underline underline-offset-2 hover:text-[#c94f00]"
-              >
-                Top up wallet →
-              </a>
-            </div>
-            <button onClick={() => toast.dismiss(t.id)} className="text-[#94a3b8] bg-transparent border-none cursor-pointer text-lg p-0 shrink-0">×</button>
-          </div>
-        ), { duration: Infinity, position: 'top-right' });
-        heldToastIdRef.current = tid;
-      } else {
-        toast.success(editingQuoteId ? 'Quotation updated!' : 'Quotation sent successfully!');
-      }
-    } catch (err: any) {
-      console.error('Failed to create quotation', err);
-      toast.error(err?.response?.data?.message || 'Failed to send quotation');
-    } finally {
-      setIsSendingQuote(false);
-    }
-  };
-
-
-
-  const handleQuickReply = (text: string) => {
-    if (!activeConv) return;
-    const other = getOtherParticipant(activeConv);
-    const receiverId = other?._id || other?.id;
-    if (!receiverId) return;
-    sendMessage(text, receiverId);
-  };
-
-
-  // ── Quotation card ────────────────────────────────────────────────────────
-
-  let isNegotiationDead = false;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const txt = messages[i].text || '';
-    if (txt.includes('Enquiry:') && messages[i].messageType !== 'system') {
-      isNegotiationDead = false;
-      break;
-    }
-    if (txt.includes('Negotiation rejected') || txt.includes('Negotiation Cancelled') || txt.includes('Purchase Order Generated')) {
-      isNegotiationDead = true;
-      break;
-    }
-  }
-
   return (
     <div className="flex h-full bg-white overflow-hidden">
       {/* Sidebar */}
@@ -1083,18 +1130,7 @@ const ChatInbox: React.FC = () => {
                     <span className="text-[10px] text-[#94a3b8] shrink-0 mr-5">{new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
-                    <span className={`text-xs truncate ${unread > 0 ? 'font-bold text-[#475569]' : 'text-[#94a3b8]'}`}>
-                      {(() => {
-                        if (!conv.lastMessage) return 'Start of conversation';
-                        if (conv.lastMessage === 'Quotation sent' && user?.role === 'buyer') {
-                          return 'Quotation received';
-                        }
-                        if (conv.lastMessage === 'Supplier accepted the offer.' && user?.role === 'supplier') {
-                          return 'You accepted the offer.';
-                        }
-                        return conv.lastMessage;
-                      })()}
-                    </span>
+                    <span className={`text-xs truncate ${unread > 0 ? 'font-bold text-[#475569]' : 'text-[#94a3b8]'}`}>{conv.lastMessage || 'Start of conversation'}</span>
                     {unread > 0 && <span className="text-[10px] font-extrabold bg-primary text-white px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0 mr-5">{unread}</span>}
                   </div>
                 </div>
@@ -1147,16 +1183,13 @@ const ChatInbox: React.FC = () => {
                   })()}
                 </div>
               </div>
-              {user?.role === 'supplier' && (() => {
-                return (
-                  <button
-                    disabled={isNegotiationDead}
-                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] ${isNegotiationDead ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-[#ffedd5]'}`}
-                    onClick={() => { setIsQuoteModalOpen(true); setIsAcceptingBuyerPrice(false); setQuoteFormErrors({}); }}>
-                    <FileText size={14} /> Send Quotation
-                  </button>
-                );
-              })()}
+              {user?.role === 'supplier' && (
+                <button
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5]"
+                  onClick={() => { setIsQuoteModalOpen(true); setQuoteFormErrors({}); }}>
+                  <FileText size={14} /> Send Quotation
+                </button>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 bg-[#f8fafc]">
@@ -1164,24 +1197,8 @@ const ChatInbox: React.FC = () => {
                 const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
                 return (
                   <div key={msg._id || idx} className={`flex flex-col ${msg.messageType === 'system' ? 'items-center w-full' : isMine ? 'items-end' : 'items-start'}`}>
-                    {msg.messageType === 'quotation' || msg.messageType === 'buyer_counter_offer' ? (
-                      <QuotationCard isLatestQuoteMsg={!messages.slice(idx + 1).some(m => m.messageType === 'quotation' || m.messageType === 'buyer_counter_offer')} msg={msg} user={user} socket={socket} loadMessages={loadMessages} product={activeConv?.productId} onSupplierAction={(quote, isAccept) => {
-                        setQuoteForm(prev => {
-                          const quantity = quote.items?.[0]?.quantity || prev.quantity || 1;
-                          const latestPrice = quote.counterOffer?.price || quote.proposedPrice;
-                          const unitPrice = latestPrice ? Number(latestPrice) / quantity : prev.price;
-                          return {
-                            ...prev,
-                            price: unitPrice,
-                            quantity: quantity,
-                            deliveryTimeline: quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || prev.deliveryTimeline,
-                            shipping: quote.shippingCost || prev.shipping
-                          };
-                        });
-                        setIsAcceptingBuyerPrice(isAccept);
-                        setIsQuoteModalOpen(true);
-                        setQuoteFormErrors({});
-                      }} />
+                    {msg.messageType === 'quotation' ? (
+                      <QuotationCard msg={msg} />
                     ) : msg.messageType === 'system' ? (
                       <div className="w-full flex items-center gap-2 py-1">
                         <div className="flex-1 h-px bg-[#e2e8f0]" />
@@ -1195,76 +1212,6 @@ const ChatInbox: React.FC = () => {
                     ) : (
                       <div className={`whitespace-pre-wrap leading-relaxed max-w-[75%] px-4 py-2.5 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
                         {msg.text}
-                        {msg.text.includes('Enquiry:') && user?.role === 'supplier' && (() => {
-                          let showActions = false;
-                          // Show actions only if this is the LATEST enquiry and there's no active negotiation after it
-                          const msgIdx = messages.findIndex(m => m._id === msg._id);
-                          if (msgIdx !== -1) {
-                            const isLatestEnquiry = !messages.slice(msgIdx + 1).some(m => m.text.includes('Enquiry:'));
-                            const hasQuotationAfter = messages.slice(msgIdx + 1).some(m => m.messageType === 'quotation');
-                            showActions = isLatestEnquiry && !hasQuotationAfter && !isNegotiationDead;
-                          }
-                          
-                          if (!showActions) return null;
-                          
-                          // Parse target price
-                          const match = msg.text.match(/Target budget: ₹([0-9,]+)/);
-                          const targetPriceStr = match ? match[1].replace(/,/g, '') : null;
-                          const parsedTargetPrice = targetPriceStr ? Number(targetPriceStr) : null;
-                          
-                          return (
-                            <div className="mt-3 w-full flex flex-col gap-2 border-t border-[#e2e8f0]/40 pt-3">
-                              <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Your Action</span>
-                              <div className="grid grid-cols-2 gap-2">
-                                {(parsedTargetPrice || msg.text.includes('Price: As listed')) && (
-                                  <button
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-green-600 rounded-[8px] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-50"
-                                    disabled={isSendingQuote}
-                                    onClick={() => { 
-                                      if (parsedTargetPrice) {
-                                        const qtyMatch = msg.text.match(/Quantity: (\d+)/);
-                                        const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                        setQuoteForm(prev => ({ ...prev, price: parsedTargetPrice / qty, quantity: qty }));
-                                      } else {
-                                        const qtyMatch = msg.text.match(/Quantity: (\d+)/);
-                                        const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                        setQuoteForm(prev => ({ ...prev, price: activeConv?.productId?.basePrice || 0, quantity: qty, priceTag: '' as any }));
-                                      }
-                                      setIsAcceptingBuyerPrice(true);
-                                      setIsQuoteModalOpen(true); 
-                                      setQuoteFormErrors({}); 
-                                    }}>
-                                    <Check size={14} /> Accept
-                                  </button>
-                                )}
-                                <button
-                                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold ${(!parsedTargetPrice && !msg.text.includes('Price: As listed')) ? 'col-span-2 text-white bg-primary hover:bg-primary/90' : 'text-[#475569] bg-white border border-[#e2e8f0] hover:bg-[#f8fafc]'} rounded-[8px] cursor-pointer transition-colors`}
-                                  onClick={() => { 
-                                    const qtyMatch = msg.text.match(/Quantity: (\d+)/);
-                                    if (qtyMatch) {
-                                      setQuoteForm(prev => ({ ...prev, quantity: Number(qtyMatch[1]) }));
-                                    }
-                                    setIsAcceptingBuyerPrice(false);
-                                    setIsQuoteModalOpen(true); 
-                                    setQuoteFormErrors({}); 
-                                  }}>
-                                  <FileText size={14} /> Negotiate
-                                </button>
-                              </div>
-                              <button
-                                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-[8px] cursor-pointer hover:bg-red-100 transition-colors"
-                                onClick={() => { 
-                                  if (!activeConv?._id) return;
-                                  chatApi.cancelEnquiry(activeConv._id, 'Supplier rejected the enquiry terms.').then(() => {
-                                    handleQuickReply("Thank you for your enquiry. Unfortunately, we are unable to fulfill this request at the specified terms.");
-                                    loadMessages();
-                                  });
-                                }}>
-                                <X size={14} /> Reject Enquiry
-                              </button>
-                            </div>
-                          );
-                        })()}
                       </div>
                     )}
                     {msg.messageType !== 'system' && msg.messageType !== 'quotation' && (
@@ -1281,15 +1228,7 @@ const ChatInbox: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {(() => {
-              const lastEnquiryIdx = messages.findLastIndex(m => m.text?.includes('Enquiry:'));
-              const lastPOIdx = messages.findLastIndex(m => m.text?.includes('Purchase Order Generated'));
-              const lastDeliveredIdx = messages.findLastIndex(m => m.text?.includes('marked delivered by the supplier'));
-              const isPOActive = lastPOIdx !== -1 && lastPOIdx > lastEnquiryIdx;
-              const isDelivered = lastDeliveredIdx !== -1 && lastDeliveredIdx > lastPOIdx;
-              const canType = isPOActive && !isDelivered;
-              return canType;
-            })() && (
+            {messages.some(m => m.messageType === 'system') && (
               <div className="border-t border-[#f1f5f9] bg-white px-4 py-2.5 shrink-0">
                 {customMsgOpen ? (
                   /* ── Custom message input ── */
@@ -1328,43 +1267,34 @@ const ChatInbox: React.FC = () => {
                   </div>
                 ) : (
                   /* ── Quick reply pills ── */
-                  true ? (
-                    <>
-                      <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider m-0 mb-2">Quick Replies</p>
-                      <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {(user?.role === 'supplier' ? SUPPLIER_QR : BUYER_QR).map(qr => (
-                          <button
-                            key={qr.label}
-                            onClick={() => {
-                              if (qr.label.startsWith('❓') || qr.label.startsWith('✏️')) {
-                                setCustomMsgOpen(true);
-                              } else {
-                                handleQuickReply(qr.text);
-                              }
-                            }}
-                            className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-full cursor-pointer hover:border-primary hover:text-primary hover:bg-[#fff7ed] transition-colors whitespace-nowrap"
-                          >
-                            {qr.label}
-                          </button>
-                        ))}
-                        {/* Supplier custom reply button */}
-                        {user?.role === 'supplier' && (
-                          <button
-                            onClick={() => setCustomMsgOpen(true)}
-                            className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-full cursor-pointer hover:bg-[#ffedd5] transition-colors whitespace-nowrap">
-                            ✏️ Write your reply
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    /* Show write reply button directly if no PO yet */
-                    <button
-                      onClick={() => setCustomMsgOpen(true)}
-                      className="w-full flex justify-center items-center gap-2 px-3 py-2 text-[11px] font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5] transition-colors">
-                      ✏️ Type Message
-                    </button>
-                  )
+                  <>
+                    <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider m-0 mb-2">Quick Replies</p>
+                    <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      {(user?.role === 'supplier' ? SUPPLIER_QR : BUYER_QR).map(qr => (
+                        <button
+                          key={qr.label}
+                          onClick={() => {
+                            if (qr.label.startsWith('❓') || qr.label.startsWith('✏️')) {
+                              setCustomMsgOpen(true);
+                            } else {
+                              handleQuickReply(qr.text);
+                            }
+                          }}
+                          className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-full cursor-pointer hover:border-primary hover:text-primary hover:bg-[#fff7ed] transition-colors whitespace-nowrap"
+                        >
+                          {qr.label}
+                        </button>
+                      ))}
+                      {/* Supplier custom reply button */}
+                      {user?.role === 'supplier' && (
+                        <button
+                          onClick={() => setCustomMsgOpen(true)}
+                          className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-full cursor-pointer hover:bg-[#ffedd5] transition-colors whitespace-nowrap">
+                          ✏️ Write your reply
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -1391,9 +1321,14 @@ const ChatInbox: React.FC = () => {
                   <label className={labelCls}>Quantity</label>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={quoteForm.quantity}
-                    readOnly
-                    className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, '');
+                      setQuoteForm({ ...quoteForm, quantity: v === '' ? 1 : Number(v) });
+                    }}
+                    className={inputCls}
                   />
                 </div>
               </div>

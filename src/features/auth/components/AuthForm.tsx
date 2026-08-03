@@ -14,7 +14,7 @@ const LoginForm: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login({ email, password });
+    login({ identifier: email, password });
   };
 
   return (
