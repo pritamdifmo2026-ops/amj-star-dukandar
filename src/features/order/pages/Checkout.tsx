@@ -7,7 +7,8 @@ import apiClient from '@/api/client';
 import {
   ShoppingBag, MapPin, Plus, Truck, ArrowLeft,
   CheckCircle, Package, AlertCircle, X,
-  ChevronRight, Receipt, Handshake, FileText, MessageCircle
+  ChevronRight, Receipt, Handshake, FileText, MessageCircle,
+  Image as ImageIcon
 } from 'lucide-react';
 import { addressApi } from '@/features/buyer/services/address.api';
 import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
@@ -303,14 +304,6 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                       <p className="text-sm font-bold text-[#0f172a] m-0 leading-snug">{item.name}</p>
                       <div className="flex flex-wrap items-center gap-3 mt-1">
                         <p className="text-xs text-[#94a3b8] m-0">MOQ: {item.moq} {item.unit}</p>
-                        <button
-                          onClick={() => handleStartChat(item.supplierId, item.productId)}
-                          disabled={startingChat === item.productId}
-                          className="flex items-center gap-1.5 text-[11px] font-bold text-primary bg-[#fff7ed] border border-[#ffedd5] px-2 py-1 rounded-[6px] cursor-pointer hover:bg-[#ffedd5] transition-colors disabled:opacity-50"
-                        >
-                          <MessageCircle size={12} />
-                          {startingChat === item.productId ? 'Starting...' : 'Chat with Supplier'}
-                        </button>
                       </div>
                       {/* Mobile-only price */}
                       <div className="sm:hidden mt-1 flex items-center gap-3 text-sm">
@@ -501,11 +494,14 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => { setShowDealPanel(false); setDealAck(false); }}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
           <div
-            className="relative bg-white rounded-[16px] w-full max-w-[440px] p-5 shadow-[0_24px_64px_rgba(0,0,0,0.2)]"
+            className="relative bg-white rounded-[16px] w-full max-w-[440px] p-5 shadow-[0_24px_64px_rgba(0,0,0,0.2)] max-h-[90vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Choose how you'll pay</h3>
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <div>
+                <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Review Order Details</h3>
+                <p className="text-[11px] text-[#64748b] m-0 mt-0.5">Please confirm details before generating PO.</p>
+              </div>
               <button
                 onClick={() => { setShowDealPanel(false); setDealAck(false); }}
                 className="w-7 h-7 flex items-center justify-center rounded-full bg-[#f1f5f9] border-none cursor-pointer text-[#64748b] hover:bg-[#e2e8f0]"
@@ -513,12 +509,72 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 <X size={14} />
               </button>
             </div>
+            <div className="flex-1 overflow-y-auto pr-1 -mr-1 custom-scrollbar pb-2">
+              {/* Product Details */}
+              <div className="flex flex-col gap-1.5 mb-5">
+                <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Product Details</p>
+                <div className="flex flex-col gap-3">
+                  {items.map((item, idx) => (
+                    <div key={idx} className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155]">
+                      <div className="flex items-center gap-3 mb-2 pb-2 border-b border-[#e2e8f0]">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.name} className="w-10 h-10 object-cover rounded-[6px] border border-[#cbd5e1]" />
+                        ) : (
+                          <div className="w-10 h-10 bg-[#e2e8f0] rounded-[6px] flex items-center justify-center shrink-0 border border-[#cbd5e1]">
+                            <ImageIcon size={16} className="text-[#94a3b8]" />
+                          </div>
+                        )}
+                        <span className="font-semibold text-sm text-[#0f172a]">{item.name}</span>
+                      </div>
+                      <div className="flex justify-between text-[#64748b]">
+                        <span>Quantity</span>
+                        <span>{item.quantity} {item.unit}</span>
+                      </div>
+                      <div className="flex justify-between text-[#64748b]">
+                        <span>Unit Price</span>
+                        <span>₹{item.price?.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between text-[#64748b] mt-1 pt-1 border-t border-[#e2e8f0]">
+                        <span>Subtotal</span>
+                        <span className="font-semibold text-[#0f172a]">₹{(item.quantity * item.price)?.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            {/* Direct Payment option */}
-            <button
-              onClick={() => setDealPayMethod('direct')}
-              className={`w-full text-left mb-2 p-3 rounded-[10px] border-2 cursor-pointer transition-colors ${dealPayMethod === 'direct' ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}
-            >
+              {/* Order Summary */}
+              <div className="flex flex-col gap-1.5 mb-5">
+                <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Order Summary</p>
+                <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155] flex flex-col gap-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#64748b]">Taxable Amount</span>
+                    <span>₹{Math.round(taxableAmount).toLocaleString('en-IN')}</span>
+                  </div>
+                  {totalGst > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-[#64748b]">GST</span>
+                      <span>₹{Math.round(totalGst).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-[#64748b]">Shipping Cost</span>
+                    <span>{totalShipping === 0 ? 'Free' : `₹${Math.round(totalShipping).toLocaleString('en-IN')}`}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 mt-0.5 border-t border-[#e2e8f0] font-extrabold text-sm text-[#0f172a]">
+                    <span>Grand Total</span>
+                    <span>₹{Math.round(grandTotal).toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 mb-2">
+                <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Payment Method</p>
+                {/* Direct Payment option */}
+                <button
+                  onClick={() => setDealPayMethod('direct')}
+                  className={`w-full text-left mb-2 p-3 rounded-[10px] border-2 cursor-pointer transition-colors ${dealPayMethod === 'direct' ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}
+                >
               <div className="flex items-center gap-2">
                 <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex-none ${dealPayMethod === 'direct' ? 'border-[#059669] bg-[#059669]' : 'border-[#cbd5e1]'}`} />
                 <span className="text-sm font-bold text-[#0f172a]">Direct Payment to Supplier</span>
@@ -542,7 +598,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
             {/* Acknowledgement */}
             {dealPayMethod === 'direct' && (
-              <label className="flex items-start gap-2 mb-4 cursor-pointer">
+              <label className="flex items-start gap-2 mt-4 mb-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={dealAck}
@@ -550,31 +606,37 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                   className="mt-0.5 accent-[#059669] shrink-0"
                 />
                 <span className="text-xs text-[#475569] leading-relaxed">
-                  I understand that payment is handled <strong>directly between me and the supplier</strong>, and AMJSTAR is not responsible for the payment or its settlement.
+                  I confirm the details above are correct and I wish to generate a legally binding Purchase Order.
+                  <span className="block mt-1">
+                    I understand that payment is handled <strong>directly between me and the supplier</strong>, and AMJSTAR is not responsible for the payment or its settlement.
+                  </span>
                 </span>
               </label>
             )}
+            
+            </div> {/* End Payment Method container */}
+          </div> {/* End Scroll container */}
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setShowDealPanel(false); setDealAck(false); }}
-                className="flex-1 py-2.5 text-sm font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[10px] cursor-pointer hover:bg-[#f8fafc]"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={placing || (dealPayMethod === 'direct' && !dealAck)}
-                onClick={() => { setShowDealPanel(false); handlePlaceOrder('direct'); }}
-                className="flex-1 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[10px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {placing ? (
-                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="60" strokeDashoffset="15" />
-                  </svg>
-                ) : 'Confirm & Generate'}
-              </button>
-            </div>
+          <div className="flex gap-3 mt-4 pt-4 border-t border-[#e2e8f0] shrink-0">
+            <button
+              onClick={() => { setShowDealPanel(false); setDealAck(false); }}
+              className="flex-1 py-2.5 text-sm font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[10px] cursor-pointer hover:bg-[#f8fafc]"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={placing || (dealPayMethod === 'direct' && !dealAck)}
+              onClick={() => { setShowDealPanel(false); handlePlaceOrder('direct'); }}
+              className="flex-1 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[10px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {placing ? (
+                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="60" strokeDashoffset="15" />
+                </svg>
+              ) : 'Confirm & Generate'}
+            </button>
           </div>
+        </div>
         </div>,
         document.body
       )}
