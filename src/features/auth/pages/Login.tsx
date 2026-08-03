@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Navigate, Link } from 'react-router-dom';
+import { useSearchParams, Navigate, Link } from 'react-router-dom';
 import { Mail, Lock, Phone } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useLogin } from '../hooks/useLogin';
@@ -9,7 +9,7 @@ import Button from '@/shared/components/ui/Button';
 import ForgotPasswordForm from '../components/ForgotPasswordForm';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
+  
   const [searchParams] = useSearchParams();
   const mode = (searchParams.get('mode') || 'buyer');
 
