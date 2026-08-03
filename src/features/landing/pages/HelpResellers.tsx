@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Mail, MessageSquare } from 'lucide-react';
+import { Mail, MessageSquare } from 'lucide-react';
 import MainLayout from '@/shared/layout/MainLayout';
 import { useAppSelector } from '@/store/hooks';
 import adminService from '@/features/admin/services/admin.service';

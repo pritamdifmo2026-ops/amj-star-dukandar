@@ -7,14 +7,12 @@ import apiClient from '@/api/client';
 import {
   ShoppingBag, MapPin, Plus, Truck, ArrowLeft,
   CheckCircle, Package, AlertCircle, X,
-  ChevronRight, Receipt, Handshake, FileText, MessageCircle,
+  ChevronRight, Receipt, Handshake, FileText,
   Image as ImageIcon
 } from 'lucide-react';
 import { addressApi } from '@/features/buyer/services/address.api';
 import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
 import { pincodeToState, normaliseState, getShippingZone } from '@/shared/utils/pincodeToState';
-import { useSocket } from '@/shared/contexts/SocketContext';
-import { chatApi } from '@/features/chat/services/chat.api';
 
 interface CheckoutItem {
   productId: string;
@@ -54,20 +52,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [showDealPanel, setShowDealPanel] = useState(false);
   const [dealPayMethod, setDealPayMethod] = useState<'direct' | 'amjstar'>('direct');
   const [dealAck, setDealAck] = useState(false);
-  const { setActiveChatId } = useSocket();
-  const [startingChat, setStartingChat] = useState<string | null>(null);
 
-  const handleStartChat = async (supplierId: string, productId: string) => {
-    try {
-      setStartingChat(productId);
-      const conversation = await chatApi.getOrCreateConversation(supplierId, productId);
-      setActiveChatId(conversation._id);
-    } catch (err) {
-      console.error('Failed to start chat', err);
-    } finally {
-      setStartingChat(null);
-    }
-  };
 
   // Fetch saved addresses; fall back to profile address if none saved yet
   useEffect(() => {

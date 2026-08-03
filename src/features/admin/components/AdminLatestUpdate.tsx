@@ -243,7 +243,7 @@ const AdminLatestUpdate: React.FC = () => {
             <div className="mt-auto pt-4 flex justify-end">
               <Button 
                 onClick={handleSave} 
-                isLoading={uploading || createMutation.isPending || updateMutation.isPending}
+                loading={uploading || createMutation.isPending || updateMutation.isPending}
                 disabled={uploading || createMutation.isPending || updateMutation.isPending}
               >
                 {isEditing ? 'Save Changes' : 'Create Update'}

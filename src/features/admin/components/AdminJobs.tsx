@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Briefcase, Plus, Edit2, Trash2, Check, X, Loader2 } from 'lucide-react';
+import { Briefcase, Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/api/client';
 import Modal from '@/shared/components/ui/Modal';

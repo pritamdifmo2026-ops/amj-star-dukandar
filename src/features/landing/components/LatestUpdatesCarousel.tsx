@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/client';
 import { Briefcase, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+
 
 interface ILatestUpdate {
   _id: string;

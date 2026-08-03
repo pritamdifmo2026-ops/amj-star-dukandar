@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ShoppingCart, ChevronDown, Phone, Menu, X, User, LogOut,
+  ShoppingCart, ChevronDown, Menu, X, User, LogOut,
   Store, ShoppingBag, Truck, List, LayoutDashboard, Search,
   Info, Factory, RefreshCw, ShieldCheck
 } from 'lucide-react';

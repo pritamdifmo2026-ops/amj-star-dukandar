@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, Info, Megaphone } from 'lucide-react';
+
 import api from '@/api/client';
 
 const AnnouncementBar: React.FC = () => {
