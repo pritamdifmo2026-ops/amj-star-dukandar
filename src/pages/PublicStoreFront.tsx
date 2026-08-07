@@ -182,9 +182,16 @@ const StorefrontProductCard: React.FC<{ product: any; onShare: (product: any) =>
           <span className="text-xs sm:text-sm font-extrabold text-[#0f172a]">
             ₹{(product.price || product.basePrice || 0).toLocaleString('en-IN')}
           </span>
-          <span className="text-[9px] sm:text-[10px] text-[#94a3b8] font-medium">
-            MOQ: {product.minOrderQty || product.moq} {product.unit}
-          </span>
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="text-[9px] sm:text-[10px] text-[#94a3b8] font-medium">
+              MOQ: {product.minOrderQty || product.moq} {product.unit}
+            </span>
+            {product.supplierDefaultPaymentTerms && (
+              <span className="text-[9px] text-[#059669] bg-[#ecfdf5] px-1.5 py-[2px] rounded-sm font-semibold mt-1">
+                {product.supplierDefaultPaymentTerms}
+              </span>
+            )}
+          </div>
         </div>
         <button
           onClick={handleEnquire}
@@ -449,7 +456,7 @@ const PublicStoreFront: React.FC = () => {
                   {filteredProducts.map((p: any) => (
                     <StorefrontProductCard 
                       key={p.id || p._id} 
-                      product={p} 
+                      product={{...p, supplierDefaultPaymentTerms: supplier?.defaultPaymentTerms}} 
                       onShare={(product) => setShareData({
                         url: `${window.location.origin}/products/${product.id || product._id}`,
                         name: product.name,
@@ -494,7 +501,16 @@ const PublicStoreFront: React.FC = () => {
                         >
                           <Share2 size={12} />
                         </button>
-                        <p className="text-base font-extrabold text-[#0f172a] m-0">₹{(product.price || product.basePrice || 0).toLocaleString('en-IN')}</p>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className="text-sm font-extrabold text-[#0f172a]">
+                            ₹{(product.price || product.basePrice || 0).toLocaleString('en-IN')}
+                          </span>
+                          {supplier?.defaultPaymentTerms && (
+                            <span className="text-[9px] text-[#059669] bg-[#ecfdf5] px-1.5 py-[2px] rounded-sm font-semibold">
+                              {supplier.defaultPaymentTerms}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </Link>
                   ))}

@@ -65,10 +65,12 @@ const PhoneReveal = ({ phone, label }: { phone: string; label: string }) => {
 const QuotePreviewCard = ({
   form, gstAmount, grandTotal,
 }: {
-  form: { itemName: string; hsnCode: string; quantity: number; price: number; gstType: GstType; gstRate: number; shipping: number; deliveryTimeline: string; terms: string };
+  form: { itemName: string; hsnCode: string; quantity: number; price: number; gstType: GstType; gstRate: number; shipping: number; deliveryTimeline: string; terms: string; transportationTerms?: string };
   gstAmount: number;
   grandTotal: number;
-}) => (
+}) => {
+  const courierGst = (form.transportationTerms === 'Third-Party Courier (Prepaid)' && form.shipping > 0) ? Math.round(form.shipping * 0.18) : 0;
+  return (
   <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden">
     <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
       <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
@@ -117,6 +119,12 @@ const QuotePreviewCard = ({
           <span className="font-semibold">₹{form.shipping.toLocaleString('en-IN')}</span>
         </div>
       )}
+      {courierGst > 0 && (
+        <div className="flex justify-between text-xs text-[#0369a1]">
+          <span>Courier GST (18%)</span>
+          <span className="font-semibold">₹{courierGst.toLocaleString('en-IN')}</span>
+        </div>
+      )}
       <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
         <span>Grand Total</span>
         <span>₹{grandTotal.toLocaleString('en-IN')}</span>
@@ -128,6 +136,7 @@ const QuotePreviewCard = ({
     </div>
   </div>
 );
+};
 
 // ── Quick reply presets ─────────────────────────────────────────────────────
 const BUYER_QR = [
@@ -188,9 +197,17 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
 
   const fetchQuote = () => {
     if (msg.quotationId) {
-      quotationApi.getQuotation(msg.quotationId)
-        .then(q => { setQuoteNotFound(false); setQuote(q); })
-        .catch(() => setQuoteNotFound(true));
+      if (typeof msg.quotationId === 'object' && msg.quotationId._id) {
+        setQuoteNotFound(false);
+        setQuote(msg.quotationId);
+      } else {
+        const id = typeof msg.quotationId === 'string' ? msg.quotationId : (msg.quotationId as any)?._id;
+        if (id) {
+          quotationApi.getQuotation(id)
+            .then(q => { setQuoteNotFound(false); setQuote(q); })
+            .catch(() => setQuoteNotFound(true));
+        }
+      }
     }
   };
 
@@ -342,6 +359,8 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
               Quantity: {quote.items?.[0]?.quantity || 0} {quote.items?.[0]?.unit || 'pcs'}<br />
               Price: ₹{(quote.counterOffer?.price || quote.proposedPrice).toLocaleString('en-IN')}<br />
               Delivery Timeline: {quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || 'Standard'}<br />
+              {quote.paymentTerms && <>Payment: {quote.paymentTerms}<br /></>}
+              {quote.transportationTerms && <>Transport: {quote.transportationTerms}<br /></>}
               {quote.shippingAddress && (
                 <>Ship to: {[quote.shippingAddress.addressLine1, quote.shippingAddress.city, quote.shippingAddress.state, quote.shippingAddress.pincode].filter(Boolean).join(', ')}<br /></>
               )}
@@ -400,6 +419,12 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
               <div className="flex justify-between text-xs text-[#475569]">
                 <span>Shipping</span>
                 <span className="font-semibold">₹{shipCost.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+            {quote.transportationTerms === 'Third-Party Courier (Prepaid)' && shipCost > 0 && (
+              <div className="flex justify-between text-xs text-[#0369a1]">
+                <span>Courier GST (18%)</span>
+                <span className="font-semibold">₹{Math.round(shipCost * 0.18).toLocaleString('en-IN')}</span>
               </div>
             )}
             <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
@@ -842,6 +867,8 @@ const ChatInbox: React.FC = () => {
     shippingNotes: '',
     terms: 'Standard delivery terms apply.',
     priceTag: '' as '' | 'Best Price' | 'Last Price',
+    paymentTerms: '',
+    transportationTerms: '',
   });
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -877,7 +904,8 @@ const ChatInbox: React.FC = () => {
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
     : Math.round(computedTotalPrice * quoteForm.gstRate) / 100;
-  const computedGrandTotal = computedTotalPrice + computedGstAmount + quoteForm.shipping;
+  const computedCourierGst = (quoteForm.transportationTerms === 'Third-Party Courier (Prepaid)' && quoteForm.shipping > 0) ? Math.round(quoteForm.shipping * 0.18) : 0;
+  const computedGrandTotal = computedTotalPrice + computedGstAmount + quoteForm.shipping + computedCourierGst;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -968,6 +996,8 @@ const ChatInbox: React.FC = () => {
       quantity: quantity,
       price: conv.initialEnquiry?.targetPrice ? (conv.initialEnquiry.targetPrice / quantity) : 0,
       deliveryTimeline: conv.initialEnquiry?.deliveryTimeline || '',
+      paymentTerms: conv.initialEnquiry?.paymentTerms || 'Advance',
+      transportationTerms: conv.initialEnquiry?.transportationTerms || 'FOR',
     }));
   };
 
@@ -1016,6 +1046,8 @@ const ChatInbox: React.FC = () => {
         terms: quoteForm.terms,
         deliveryAddressSnapshot: activeConv.buyerAddress,
         priceTag: quoteForm.priceTag || undefined,
+        paymentTerms: quoteForm.paymentTerms,
+        transportationTerms: quoteForm.transportationTerms,
         supplierSignature: finalSignature || undefined,
       });
       setIsQuoteModalOpen(false);
@@ -1234,6 +1266,8 @@ const ChatInbox: React.FC = () => {
                             price: unitPrice,
                             quantity: quantity,
                             deliveryTimeline: quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || prev.deliveryTimeline,
+                            paymentTerms: quote.paymentTerms || prev.paymentTerms,
+                            transportationTerms: quote.transportationTerms || prev.transportationTerms,
                             shipping: quote.shippingCost || prev.shipping
                           };
                         });
@@ -1259,7 +1293,8 @@ const ChatInbox: React.FC = () => {
                                     btn.disabled = true;
                                     btn.innerText = 'Approving...';
                                     try {
-                                      await quotationApi.supplierApprove(msg.quotationId!);
+                                      const qId = typeof msg.quotationId === 'object' ? (msg.quotationId as any)._id : msg.quotationId;
+                                      await quotationApi.supplierApprove(qId);
                                       loadMessages();
                                     } catch (err: any) {
                                       btn.disabled = false;
@@ -1284,8 +1319,146 @@ const ChatInbox: React.FC = () => {
                           {msg.text.split('\n').map((line: string, i: number) => (
                             <p key={i} className={`m-0 ${i === 0 ? 'text-xs font-extrabold text-[#0f172a]' : 'text-[11px] text-[#64748b] mt-0.5'}`}>{line}</p>
                           ))}
+                          {msg.text.includes('Purchase Order Generated') && user?.role === 'supplier' && (() => {
+                            const hasRequested = messages.some(m => m.messageType === 'payment_request' && new Date(m.createdAt) > new Date(msg.createdAt));
+                            if (!hasRequested) {
+                              return (
+                                <button
+                                  onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    btn.disabled = true;
+                                    btn.innerText = 'Requesting...';
+                                    try {
+                                      const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
+                                      const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                                      const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
+                                      if (!orderId) throw new Error('Order ID not found in Chat');
+                                      await apiClient.post(`/orders/${orderId}/payment-request`);
+                                      toast.success('Payment requested successfully');
+                                      loadMessages();
+                                    } catch (err: any) {
+                                      btn.disabled = false;
+                                      btn.innerText = 'Request Payment';
+                                      toast.error(err.response?.data?.message || 'Failed to request payment');
+                                    }
+                                  }}
+                                  className="w-full mt-3 py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors"
+                                >
+                                  Request Payment
+                                </button>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                         <div className="flex-1 h-px bg-[#e2e8f0]" />
+                      </div>
+                    ) : msg.messageType === 'payment_request' ? (
+                      <div className="w-full flex justify-center py-2">
+                        <div className="w-[85%] bg-[#fefce8] border border-[#fef08a] rounded-[12px] p-4 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-[#eab308]"></div>
+                          <p className="text-[11px] font-bold text-[#ca8a04] uppercase tracking-wide m-0 mb-1">Payment Required</p>
+                          <p className="text-sm text-[#713f12] m-0 mb-3">{msg.text}</p>
+                          {user?.role === 'buyer' && (() => {
+                            const isLatest = messages.filter(m => m.messageType === 'payment_request').pop()?._id === msg._id;
+                            const hasProof = messages.some(m => m.messageType === 'payment_proof' && new Date(m.createdAt) > new Date(msg.createdAt));
+                            if (isLatest && !hasProof) {
+                              return (
+                                <button
+                                  onClick={() => {
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = 'image/*,application/pdf';
+                                    input.onchange = async (e: any) => {
+                                      const file = e.target.files[0];
+                                      if (!file) return;
+                                      
+                                      // Normally you'd upload this file to S3/Cloudinary and get a URL.
+                                      // For this MVP, we'll prompt for UTR and send a dummy/placeholder URL.
+                                      const utr = prompt('Please enter the UTR / Transaction Number:');
+                                      if (!utr) return;
+
+                                      try {
+                                        toast.loading('Uploading payment proof...', { id: 'payment-proof' });
+                                        // In real app, upload file here.
+                                        const dummyUrl = 'https://example.com/dummy-proof.jpg';
+                                        
+                                        // Assuming quote.orderId is available from the populated quotationId
+                                        const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
+                                        const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                                        const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
+                                        if (!orderId) throw new Error('Order ID not found in Chat');
+
+                                        await apiClient.post(`/orders/${orderId}/payment-proof`, {
+                                          paymentProofUrl: dummyUrl,
+                                          paymentUtrNumber: utr
+                                        });
+                                        toast.success('Payment proof uploaded successfully', { id: 'payment-proof' });
+                                        loadMessages();
+                                      } catch (err: any) {
+                                        toast.error(err.response?.data?.message || 'Failed to upload proof', { id: 'payment-proof' });
+                                      }
+                                    };
+                                    input.click();
+                                  }}
+                                  className="w-full py-2 bg-[#eab308] hover:bg-[#ca8a04] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors"
+                                >
+                                  Upload Payment Proof
+                                </button>
+                              );
+                            }
+                            return <p className="text-xs font-bold text-[#ca8a04] m-0 italic">Proof Uploaded</p>;
+                          })()}
+                        </div>
+                      </div>
+                    ) : msg.messageType === 'payment_proof' ? (
+                      <div className="w-full flex justify-center py-2">
+                        <div className="w-[85%] bg-[#f0fdf4] border border-[#bbf7d0] rounded-[12px] p-4 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-[#22c55e]"></div>
+                          <p className="text-[11px] font-bold text-[#166534] uppercase tracking-wide m-0 mb-1">Payment Proof Uploaded</p>
+                          <p className="text-sm text-[#14532d] m-0 mb-3">{msg.text}</p>
+                          {user?.role === 'supplier' && (() => {
+                            const isLatest = messages.filter(m => m.messageType === 'payment_proof').pop()?._id === msg._id;
+                            const isVerified = messages.some(m => m.messageType === 'payment_verified' && new Date(m.createdAt) > new Date(msg.createdAt));
+                            if (isLatest && !isVerified) {
+                              return (
+                                <button
+                                  onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    btn.disabled = true;
+                                    btn.innerText = 'Verifying...';
+                                    try {
+                                      const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
+                                      const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                                      const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
+                                      if (!orderId) throw new Error('Order ID not found in Chat');
+                                      
+                                      await apiClient.post(`/orders/${orderId}/payment-verify`);
+                                      toast.success('Payment verified successfully');
+                                      loadMessages();
+                                    } catch (err: any) {
+                                      btn.disabled = false;
+                                      btn.innerText = 'Verify Payment';
+                                      toast.error(err.response?.data?.message || 'Failed to verify payment');
+                                    }
+                                  }}
+                                  className="w-full py-2 bg-[#22c55e] hover:bg-[#16a34a] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors disabled:opacity-50"
+                                >
+                                  Verify Payment
+                                </button>
+                              );
+                            }
+                            return <p className="text-xs font-bold text-[#166534] m-0 italic">Payment Verified</p>;
+                          })()}
+                        </div>
+                      </div>
+                    ) : msg.messageType === 'payment_verified' ? (
+                      <div className="w-full flex justify-center py-2">
+                        <div className="w-[85%] bg-[#ecfdf5] border border-[#a7f3d0] rounded-[12px] p-4 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-[#10b981]"></div>
+                          <p className="text-[11px] font-bold text-[#047857] uppercase tracking-wide m-0 mb-1">Payment Verified</p>
+                          <p className="text-sm text-[#064e3b] m-0">{msg.text}</p>
+                        </div>
                       </div>
                     ) : (
                       <div className={`whitespace-pre-wrap leading-relaxed max-w-[75%] px-4 py-2.5 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
@@ -1545,13 +1718,14 @@ const ChatInbox: React.FC = () => {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
+                    disabled={quoteForm.transportationTerms.includes('Ex.') || quoteForm.transportationTerms.includes('To Pay') || quoteForm.transportationTerms === 'FOR'}
                     value={quoteForm.shipping || ''}
                     onChange={e => {
                       const v = e.target.value.replace(/\D/g, '');
                       setQuoteForm({ ...quoteForm, shipping: v === '' ? 0 : Number(v) });
                     }}
                     placeholder="0"
-                    className={inputCls}
+                    className={inputCls + (quoteForm.transportationTerms.includes('Ex.') || quoteForm.transportationTerms.includes('To Pay') || quoteForm.transportationTerms === 'FOR' ? ' opacity-50 bg-gray-100 cursor-not-allowed' : '')}
                   />
                 </div>
                 <div>
@@ -1587,6 +1761,39 @@ const ChatInbox: React.FC = () => {
                 <label className={labelCls}>Terms & Conditions</label>
                 <textarea rows={2} value={quoteForm.terms} onChange={e => setQuoteForm({ ...quoteForm, terms: e.target.value })} className={inputCls + " resize-none"} />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Payment Terms <span className="text-red-500">*</span></label>
+                  <select value={quoteForm.paymentTerms} onChange={e => setQuoteForm({ ...quoteForm, paymentTerms: e.target.value })} className={inputCls}>
+                    <option value="Advance">Advance (100% upfront)</option>
+                    <option value="COD">Cash on Delivery (COD)</option>
+                    <option value="Credit">Credit Terms (e.g. 30 Days)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Transportation <span className="text-red-500">*</span></label>
+                  <select 
+                    value={quoteForm.transportationTerms} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      const updates: any = { transportationTerms: val };
+                      if (val.includes('Ex.') || val.includes('To Pay') || val === 'FOR') {
+                        updates.shipping = 0;
+                      }
+                      setQuoteForm({ ...quoteForm, ...updates });
+                    }} 
+                    className={inputCls}
+                  >
+                    <option value="FOR">FOR (Supplier delivers - Free)</option>
+                    <option value="Ex. Factory">Ex. Factory (Buyer picks up)</option>
+                    <option value="Ex. Godown">Ex. Godown (Buyer picks up)</option>
+                    <option value="To Pay">To Pay (Buyer pays freight to courier)</option>
+                    <option value="Third-Party Courier (Prepaid)">Third-Party Courier (Prepaid)</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className={labelCls}>Price Highlight (Optional)</label>
                 <div className="flex gap-2">
@@ -1619,6 +1826,7 @@ const ChatInbox: React.FC = () => {
                   )
                 ) : <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>}
                 {quoteForm.shipping > 0 && <div className="flex justify-between text-xs text-[#475569]"><span>Shipping</span><span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN')}</span></div>}
+                {computedCourierGst > 0 && <div className="flex justify-between text-xs text-[#0369a1]"><span>Courier GST (18%)</span><span className="font-semibold">₹{computedCourierGst.toLocaleString('en-IN')}</span></div>}
                 <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-1.5 border-t border-[#e2e8f0]">
                   <span>Grand Total</span><span>₹{computedGrandTotal.toLocaleString('en-IN')}</span>
                 </div>
@@ -1647,125 +1855,128 @@ const ChatInbox: React.FC = () => {
       {/* ── Quote Preview / Confirm Modal ────────────────────────────────── */}
       {isQuoteModalOpen && showPreview && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.65)] z-50 flex items-center justify-center px-4" onClick={() => setShowPreview(false)}>
-          <div className="bg-white rounded-[16px] shadow-[0_24px_64px_rgba(0,0,0,0.22)] w-full max-w-[400px] overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-[16px] shadow-[0_24px_64px_rgba(0,0,0,0.22)] w-full max-w-[750px] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Preview header */}
             <div className="px-5 py-4 bg-[#f8fafc] border-b border-[#f1f5f9]">
               <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest m-0 mb-1">How the buyer will see this</p>
               <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Confirm & Send Quotation</h3>
             </div>
 
-            {/* Quote card preview */}
-            <div className="p-4">
-              <QuotePreviewCard form={quoteForm} gstAmount={computedGstAmount} grandTotal={computedGrandTotal} />
-            </div>
+            <div className="flex flex-col md:flex-row gap-5 p-5">
+              {/* Left Column: Quote Preview */}
+              <div className="flex-[1.2] flex flex-col min-w-0">
+                <QuotePreviewCard form={quoteForm} gstAmount={computedGstAmount} grandTotal={computedGrandTotal} />
+              </div>
 
-            {/* Payment Method Info for Supplier */}
-            <div className="px-5 pb-3">
-              <label className="flex items-start gap-2 bg-[#f0fdf4] border border-[#059669] rounded-[8px] p-3 cursor-pointer hover:bg-[#e6fcf0] transition-colors">
-                <input
-                  type="checkbox"
-                  checked={supplierPaymentAck}
-                  onChange={e => setSupplierPaymentAck(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 accent-[#059669] shrink-0 cursor-pointer"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-[#0f172a]">Direct Payment to Supplier</span>
-                  </div>
-                  <p className="text-[10px] text-[#047857] m-0 leading-relaxed">
-                    I acknowledge that the buyer will pay me directly (UPI / bank / cash), and phone numbers will unlock so we can coordinate.
-                  </p>
-                </div>
-              </label>
-            </div>
-
-            {/* Signature Pad */}
-            <div className="px-5 pb-2">
-              {(supplierProfileData?.savedSignature || user?.savedSignature) ? (
-                <div className="flex flex-col items-center gap-3">
-                  <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0 self-start">Authorized Signature</p>
-                  <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full max-w-[360px] h-[100px]">
-                    <img src={supplierProfileData?.savedSignature || user?.savedSignature} alt="Your Signature" className="max-w-full max-h-full object-contain" />
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Authorized Signature <span className="text-red-500">*</span></label>
-                    <div className="flex items-center gap-2 text-xs">
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
-                        Draw
-                      </label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
-                        Upload
-                      </label>
+              {/* Right Column: Payment Ack + Signature */}
+              <div className="flex-1 flex flex-col gap-4 min-w-0">
+                {/* Payment Method Info for Supplier */}
+                <label className="flex items-start gap-2 bg-[#f0fdf4] border border-[#059669] rounded-[8px] p-3 cursor-pointer hover:bg-[#e6fcf0] transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={supplierPaymentAck}
+                    onChange={e => setSupplierPaymentAck(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-[#059669] shrink-0 cursor-pointer"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-[#0f172a]">Direct Payment to Supplier</span>
                     </div>
+                    <p className="text-[10px] text-[#047857] m-0 leading-relaxed">
+                      I acknowledge that the buyer will pay me directly (UPI / bank / cash), and phone numbers will unlock so we can coordinate.
+                    </p>
                   </div>
-                  {signatureMode === 'draw' ? (
-                    <div className="border border-[#e2e8f0] rounded-[8px] bg-white relative">
-                      <SignatureCanvas
-                        ref={supplierSigCanvas}
-                        penColor="#0f172a"
-                        canvasProps={{ className: 'w-full h-[120px] rounded-[8px]', style: { cursor: 'crosshair' } }}
-                        onEnd={() => setHasDrawnSignature(true)}
-                      />
-                      <button className="absolute top-2 right-2 p-1.5 bg-[#f1f5f9] text-[#64748b] rounded-[6px] hover:bg-[#e2e8f0]" onClick={() => { supplierSigCanvas.current?.clear(); setHasDrawnSignature(false); }}>
-                        <Eraser size={14} />
-                      </button>
+                </label>
+
+                {/* Signature Pad */}
+                <div>
+                  {(supplierProfileData?.savedSignature || user?.savedSignature) ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Authorized Signature</p>
+                      <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full h-[80px]">
+                        <img src={supplierProfileData?.savedSignature || user?.savedSignature} alt="Your Signature" className="max-w-full max-h-full object-contain" />
+                      </div>
                     </div>
                   ) : (
-                    <div className="border-2 border-dashed border-[#cbd5e1] rounded-[8px] p-4 flex flex-col items-center justify-center bg-[#f8fafc] relative min-h-[120px]">
-                      {supplierSignature ? (
-                        <>
-                          <img src={supplierSignature} alt="Uploaded" className="max-w-full max-h-[100px] object-contain" />
-                          <button className="absolute top-2 right-2 p-1 text-red-500 bg-white rounded-full shadow-sm hover:bg-red-50" onClick={() => setSupplierSignature(null)}>
-                            <X size={14} />
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Authorized Signature <span className="text-red-500">*</span></label>
+                        <div className="flex items-center gap-2 text-xs">
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
+                            Draw
+                          </label>
+                          <label className="flex items-center gap-1 cursor-pointer">
+                            <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
+                            Upload
+                          </label>
+                        </div>
+                      </div>
+                      {signatureMode === 'draw' ? (
+                        <div className="border border-[#e2e8f0] rounded-[8px] bg-white relative">
+                          <SignatureCanvas
+                            ref={supplierSigCanvas}
+                            penColor="#0f172a"
+                            canvasProps={{ className: 'w-full h-[80px] rounded-[8px]', style: { cursor: 'crosshair' } }}
+                            onEnd={() => setHasDrawnSignature(true)}
+                          />
+                          <button className="absolute top-2 right-2 p-1.5 bg-[#f1f5f9] text-[#64748b] rounded-[6px] hover:bg-[#e2e8f0]" onClick={() => { supplierSigCanvas.current?.clear(); setHasDrawnSignature(false); }}>
+                            <Eraser size={14} />
                           </button>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <Upload size={24} className="text-[#94a3b8] mb-2" />
-                          <span className="text-xs font-semibold text-[#475569]">Click to upload signature</span>
-                          <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              try {
-                                const reader = new FileReader();
-                                reader.onload = async (ev) => {
-                                  const result = ev.target?.result as string;
+                        <div className="border-2 border-dashed border-[#cbd5e1] rounded-[8px] p-4 flex flex-col items-center justify-center bg-[#f8fafc] relative min-h-[80px]">
+                          {supplierSignature ? (
+                            <>
+                              <img src={supplierSignature} alt="Uploaded" className="max-w-full max-h-[70px] object-contain" />
+                              <button className="absolute top-2 right-2 p-1 text-red-500 bg-white rounded-full shadow-sm hover:bg-red-50" onClick={() => setSupplierSignature(null)}>
+                                <X size={14} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={24} className="text-[#94a3b8] mb-2" />
+                              <span className="text-xs font-semibold text-[#475569]">Click to upload signature</span>
+                              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
                                   try {
-                                    const processed = await removeWhiteBackground(result);
-                                    setSupplierSignature(processed);
-                                  } catch {
-                                    setSupplierSignature(result);
+                                    const reader = new FileReader();
+                                    reader.onload = async (ev) => {
+                                      const result = ev.target?.result as string;
+                                      try {
+                                        const processed = await removeWhiteBackground(result);
+                                        setSupplierSignature(processed);
+                                      } catch {
+                                        setSupplierSignature(result);
+                                      }
+                                    };
+                                    reader.readAsDataURL(file);
+                                  } catch (e) {
+                                    console.error(e);
                                   }
-                                };
-                                reader.readAsDataURL(file);
-                              } catch (e) {
-                                console.error(e);
-                              }
-                            }
-                          }} />
-                        </>
+                                }
+                              }} />
+                            </>
+                          )}
+                        </div>
                       )}
+                      <p className="text-[10px] text-primary m-0 italic">This signature will be saved to your profile for all future quotations.</p>
                     </div>
                   )}
-                  <p className="text-[10px] text-primary m-0 italic">This signature will be saved to your profile for all future quotations.</p>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Action strip */}
-            <div className="px-5 pb-5 pt-1 flex gap-3">
+            <div className="px-5 py-4 bg-[#f8fafc] border-t border-[#f1f5f9] flex gap-3 justify-end">
               <button
-                className="flex-1 py-2.5 text-sm font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] cursor-pointer hover:bg-[#f1f5f9] transition-colors"
+                className="px-6 py-2.5 text-sm font-semibold text-[#475569] bg-white border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f1f5f9] transition-colors"
                 onClick={() => { setShowPreview(false); setSupplierSignature(null); setHasDrawnSignature(false); setSupplierPaymentAck(false); }}>
-                ← Edit
+                Cancel Edit
               </button>
               <button
-                className="flex-2 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[10px] border-none cursor-pointer hover:bg-[#047857] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleCreateQuotation}
                 disabled={isSendingQuote || !supplierPaymentAck || (!(supplierProfileData?.savedSignature || user?.savedSignature) && !hasDrawnSignature && !supplierSignature)}
               >

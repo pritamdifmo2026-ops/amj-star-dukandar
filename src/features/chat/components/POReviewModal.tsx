@@ -62,6 +62,30 @@ export const POReviewModal: React.FC<POReviewModalProps> = ({
           </div>
 
           <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Terms &amp; Conditions</p>
+            <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155] flex flex-col gap-2">
+              {quote.paymentTerms && (
+                <div className="flex justify-between">
+                  <span className="text-[#64748b]">Payment Terms</span>
+                  <span className="font-semibold text-[#0f172a]">{quote.paymentTerms}</span>
+                </div>
+              )}
+              {quote.transportationTerms && (
+                <div className="flex justify-between">
+                  <span className="text-[#64748b]">Transportation</span>
+                  <span className="font-semibold text-[#0f172a]">{quote.transportationTerms}</span>
+                </div>
+              )}
+              {quote.deliveryTimePreference && (
+                <div className="flex justify-between">
+                  <span className="text-[#64748b]">Delivery Timeline</span>
+                  <span className="font-semibold text-[#0f172a]">{quote.deliveryTimePreference}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
             <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Order Summary</p>
             <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155] flex flex-col gap-1.5">
               <div className="flex justify-between">
@@ -76,8 +100,14 @@ export const POReviewModal: React.FC<POReviewModalProps> = ({
               )}
               <div className="flex justify-between">
                 <span className="text-[#64748b]">Shipping Cost</span>
-                <span>₹{quote.shippingCost?.toLocaleString('en-IN') || 0}</span>
+                <span>{quote.transportationTerms?.includes('Ex.') || quote.transportationTerms?.includes('To Pay') ? '₹0 (Buyer Arranges)' : `₹${quote.shippingCost?.toLocaleString('en-IN') || 0}`}</span>
               </div>
+              {quote.transportationTerms === 'Third-Party Courier (Prepaid)' && (quote.shippingCost || 0) > 0 && (
+                <div className="flex justify-between text-[#0369a1]">
+                  <span>Courier GST (18%)</span>
+                  <span>₹{Math.round((quote.shippingCost || 0) * 0.18).toLocaleString('en-IN')}</span>
+                </div>
+              )}
               <div className="flex justify-between pt-2 mt-0.5 border-t border-[#e2e8f0] font-extrabold text-sm text-[#0f172a]">
                 <span>Grand Total</span>
                 <span>₹{quote.totalAmount?.toLocaleString('en-IN')}</span>

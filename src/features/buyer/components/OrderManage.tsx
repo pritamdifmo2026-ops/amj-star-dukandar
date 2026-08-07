@@ -515,14 +515,24 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         )}
       </div>
 
-      {/* Tracking */}
-      {order.trackingId && ['shipped', 'awaiting_confirmation', 'completed', 'disputed'].includes(order.status) && (
-        <div className={`${card} p-5`}>
-          <p className={sectionTitle}>Shipment</p>
-          <p className="text-sm text-[#0f172a] m-0">Courier: <strong>{order.courierName || 'AMJSTAR COURIER SERVICES'}</strong></p>
-          <p className="text-sm text-[#0f172a] m-0">Tracking ID: <strong>{order.trackingId}</strong></p>
-          {order.trackingURL && <a href={order.trackingURL} target="_blank" rel="noopener noreferrer" className="text-xs text-[#1d4ed8] hover:underline">Track shipment →</a>}
-        </div>
+      {/* Tracking / Pickup */}
+      {order.transportationTerms?.includes('Ex.') ? (
+        ['shipped', 'awaiting_confirmation', 'completed', 'disputed'].includes(order.status) && (
+          <div className={`${card} p-5`}>
+            <p className={sectionTitle}>Warehouse Pickup</p>
+            <p className="text-sm text-[#0f172a] m-0">Supplier has marked this order as ready for pickup.</p>
+            <p className="text-sm text-[#0f172a] m-0 mt-1">Please arrange transportation from the supplier's warehouse.</p>
+          </div>
+        )
+      ) : (
+        order.trackingId && ['shipped', 'awaiting_confirmation', 'completed', 'disputed'].includes(order.status) && (
+          <div className={`${card} p-5`}>
+            <p className={sectionTitle}>Shipment</p>
+            <p className="text-sm text-[#0f172a] m-0">Courier: <strong>{order.courierName || 'AMJSTAR COURIER SERVICES'}</strong></p>
+            <p className="text-sm text-[#0f172a] m-0">Tracking ID: <strong>{order.trackingId}</strong></p>
+            {order.trackingURL && <a href={order.trackingURL} target="_blank" rel="noopener noreferrer" className="text-xs text-[#1d4ed8] hover:underline">Track shipment →</a>}
+          </div>
+        )
       )}
 
       {/* ── DISPUTE PANEL ──────────────────────────────────────────────────── */}

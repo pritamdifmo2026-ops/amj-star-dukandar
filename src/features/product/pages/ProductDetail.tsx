@@ -80,7 +80,9 @@ const ProductDetail: React.FC = () => {
         {
           quantity: enquiry.quantity,
           targetPrice: enquiry.targetPrice || undefined,
-          deliveryTimeline: enquiry.deliveryTimeline
+          deliveryTimeline: enquiry.deliveryTimeline,
+          paymentTerms: enquiry.paymentTerms,
+          transportationTerms: enquiry.transportationTerms
         }
       );
       const shipTo = [
@@ -278,6 +280,13 @@ const ProductDetail: React.FC = () => {
                 <p className="text-sm font-bold text-heading mt-2">
                   {product.gstIncluded ? 'All-inclusive price' : `Total: ${formatCurrency(totalPrice)}`}
                 </p>
+                {product.supplierId?.defaultPaymentTerms && (
+                  <div className="mt-3 pt-3 border-t border-primary/20">
+                    <span className="inline-block text-xs text-[#059669] bg-[#ecfdf5] px-2 py-1 rounded-sm font-semibold">
+                      Payment Terms: {product.supplierId.defaultPaymentTerms}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Key details row */}
@@ -307,6 +316,14 @@ const ProductDetail: React.FC = () => {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* V1 Terms Details */}
+              <div className="bg-[#f8fafc] p-3 rounded-[var(--radius-md)] mb-5 border border-[#e2e8f0]">
+                <div className="flex flex-col gap-1.5 text-[13px]">
+                  <p className="m-0"><strong className="text-[#334155]">Default Payment Terms:</strong> <span className="text-[#64748b]">Advance, COD, Credit</span></p>
+                  <p className="m-0"><strong className="text-[#334155]">Default Transportation:</strong> <span className="text-[#64748b]">FOR Lucknow, Ex. Factory, Ex. Godown</span></p>
+                </div>
               </div>
 
               {/* Action buttons */}
