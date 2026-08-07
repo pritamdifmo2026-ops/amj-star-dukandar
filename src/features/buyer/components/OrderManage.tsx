@@ -332,7 +332,6 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
     finally { setBusy(false); }
   };
 
-  const isSupplier = user?.role === 'supplier';
   const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
   const StatusIcon = cfg.Icon;
 

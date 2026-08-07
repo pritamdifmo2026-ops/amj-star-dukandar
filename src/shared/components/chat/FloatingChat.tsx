@@ -585,7 +585,7 @@ export const FloatingChat: React.FC = () => {
             )}
             {quote.orderId?._id ? (
               <a
-                href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '')}/api/orders/${quote.orderId._id}/po-download`}
+                href={`${apiBase}/api/orders/${quote.orderId._id}/po-download`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 bg-green-500 text-white text-[10px] font-bold rounded-[5px] no-underline hover:bg-green-600"
