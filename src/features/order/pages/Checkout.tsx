@@ -58,12 +58,13 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [dealPayMethod, setDealPayMethod] = useState<'direct' | 'amjstar'>('direct');
   const [dealAck, setDealAck] = useState(false);
   const sigCanvas = React.useRef<any>(null);
-  const [signatureMode, setSignatureMode] = useState<'upload'|'draw'>('draw');
-  const [uploadedSignature, setUploadedSignature] = useState<string|null>(null);
+  const [signatureMode, setSignatureMode] = useState<'upload' | 'draw'>('draw');
+  const [uploadedSignature, setUploadedSignature] = useState<string | null>(null);
   const [isChangingSignature, setIsChangingSignature] = useState(false);
-  const [tempSignature, setTempSignature] = useState<string|null>(null);
+  const [tempSignature, setTempSignature] = useState<string | null>(null);
 
   const { socket } = useSocket();
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace('/api', '');
 
   // Listen for supplier approval in real-time
   useEffect(() => {
@@ -134,7 +135,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
       setAddresses(all);
       const def = all.find((a: any) => a.isDefault) || all[0];
       if (def) setSelectedAddressId(def._id);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const selectedAddress = addresses.find(a => a._id === selectedAddressId) || addresses[0];
@@ -197,11 +198,11 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
     setPlacing(true); setError(null);
     try {
       const addressSnapshot = {
-        fullName:    selectedAddress.fullName,
-        phone:       selectedAddress.phone,
-        pincode:     selectedAddress.pincode,
-        state:       selectedAddress.state,
-        city:        selectedAddress.city,
+        fullName: selectedAddress.fullName,
+        phone: selectedAddress.phone,
+        pincode: selectedAddress.pincode,
+        state: selectedAddress.state,
+        city: selectedAddress.city,
         fullAddress: [selectedAddress.houseNo, selectedAddress.area].filter(Boolean).join(', '),
       };
 
@@ -280,17 +281,17 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         <div className="flex flex-col gap-3 w-full">
           {placedOrders.every(o => o.status === 'pending_approval') && (
             <div className="bg-[#fff7ed] border border-[#fdba74] p-3 rounded-[10px] text-left mb-2">
-              <p className="text-xs text-[#c2410c] m-0 font-semibold mb-1 flex items-center gap-1.5"><Clock size={14}/> Awaiting Supplier Approval</p>
+              <p className="text-xs text-[#c2410c] m-0 font-semibold mb-1 flex items-center gap-1.5"><Clock size={14} /> Awaiting Supplier Approval</p>
               <p className="text-[10px] text-[#ea580c] m-0">The supplier must review and approve this order before the official Purchase Order is generated.</p>
             </div>
           )}
           {placedOrders.some(o => o.poNumber) && placedOrders.map(order => order.poNumber && (
             <a
               key={order._id}
-              href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '')}/api/orders/${order._id}/po-download`}
+              href={`${apiBase}/api/orders/${order._id}/po-download`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-white border-2 border-[#059669] text-[#059669] font-bold text-sm rounded-[10px] no-underline hover:bg-[#f0fdf4] transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-[#f0fdf4] border-2 border-[#059669] text-[#059669] font-bold text-sm rounded-[10px] no-underline hover:bg-[#dcfce7] transition-colors"
             >
               <FileText size={16} /> Download PO {order.poNumber ? `(${order.poNumber})` : ''}
             </a>
@@ -467,11 +468,10 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 {addresses.map(addr => (
                   <label
                     key={addr._id}
-                    className={`flex items-start gap-3 p-4 rounded-[10px] border cursor-pointer transition-all ${
-                      selectedAddressId === addr._id
+                    className={`flex items-start gap-3 p-4 rounded-[10px] border cursor-pointer transition-all ${selectedAddressId === addr._id
                         ? 'border-primary bg-[#fff7ed] shadow-[0_0_0_3px_rgba(230,92,0,0.08)]'
                         : 'border-[#e2e8f0] hover:border-[#e65c00]/30'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -500,7 +500,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               Authorized Signature
             </h2>
             <p className="text-[11px] text-[#64748b] m-0 mb-4">Required to generate a legally binding Purchase Order.</p>
-            
+
             {!isChangingSignature && (tempSignature || user?.savedSignature) ? (
               <div className="flex flex-col items-center gap-3">
                 <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full max-w-[360px] h-[100px]">
@@ -528,45 +528,45 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 <p className="text-xs text-[#64748b] m-0 mb-1 italic">Note: Draw clearly or upload a photo of your signature on plain white paper.</p>
 
                 <div className="border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white relative flex justify-center">
-                {signatureMode === 'draw' ? (
-                  <div className="w-full flex flex-col items-center bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAACVJREFUKFNj/P///38GNIBxMCMxihjQxMkxCAsMogJkm2FygDQAn610wzC1aJ0AAAAASUVORK5CYII=')] bg-repeat">
-                    <SignatureCanvas
-                      ref={sigCanvas}
-                      penColor="black"
-                      backgroundColor="rgba(255,255,255,0)"
-                      canvasProps={{ width: 720, height: 200, className: 'w-full max-w-[500px] h-[100px] border-b border-[#e2e8f0] cursor-crosshair' }}
-                    />
-                    <button type="button" onClick={() => sigCanvas.current?.clear()} className="absolute bottom-2 right-2 text-[10px] text-gray-500 hover:text-gray-700 bg-white shadow px-2 py-1 rounded border-none cursor-pointer">
-                      Clear
-                    </button>
-                  </div>
-                ) : (
-                  <div className="p-4 w-full flex flex-col items-center bg-white">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="text-xs"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = async (ev) => {
-                            if (ev.target?.result) {
-                              const processed = await removeWhiteBackground(ev.target.result as string);
-                              setUploadedSignature(processed);
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    {uploadedSignature && (
-                      <div className="mt-3 border border-[#e2e8f0] p-2 bg-white rounded flex justify-center h-[100px] w-full max-w-[360px]">
-                        <img src={uploadedSignature} alt="Uploaded" className="max-w-full max-h-full object-contain" />
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {signatureMode === 'draw' ? (
+                    <div className="w-full flex flex-col items-center bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAACVJREFUKFNj/P///38GNIBxMCMxihjQxMkxCAsMogJkm2FygDQAn610wzC1aJ0AAAAASUVORK5CYII=')] bg-repeat">
+                      <SignatureCanvas
+                        ref={sigCanvas}
+                        penColor="black"
+                        backgroundColor="rgba(255,255,255,0)"
+                        canvasProps={{ width: 720, height: 200, className: 'w-full max-w-[500px] h-[100px] border-b border-[#e2e8f0] cursor-crosshair' }}
+                      />
+                      <button type="button" onClick={() => sigCanvas.current?.clear()} className="absolute bottom-2 right-2 text-[10px] text-gray-500 hover:text-gray-700 bg-white shadow px-2 py-1 rounded border-none cursor-pointer">
+                        Clear
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-4 w-full flex flex-col items-center bg-white">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="text-xs"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = async (ev) => {
+                              if (ev.target?.result) {
+                                const processed = await removeWhiteBackground(ev.target.result as string);
+                                setUploadedSignature(processed);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      {uploadedSignature && (
+                        <div className="mt-3 border border-[#e2e8f0] p-2 bg-white rounded flex justify-center h-[100px] w-full max-w-[360px]">
+                          <img src={uploadedSignature} alt="Uploaded" className="max-w-full max-h-full object-contain" />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
                   {isChangingSignature && (
@@ -582,12 +582,12 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                       } else if (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty()) {
                         sigData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
                       }
-                      
+
                       if (!sigData) {
                         toast.error('Please provide a signature');
                         return;
                       }
-                      
+
                       setTempSignature(sigData);
                       setIsChangingSignature(false);
                       toast.success('Signature confirmed for this order');
@@ -630,7 +630,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           {/* Payment options */}
           <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
             <h3 className="text-sm font-extrabold text-[#0f172a] m-0 mb-4">Payment Method</h3>
-            
+
 
 
             {/* Error Message */}
@@ -754,68 +754,68 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                   onClick={() => setDealPayMethod('direct')}
                   className={`w-full text-left mb-2 p-3 rounded-[10px] border-2 cursor-pointer transition-colors ${dealPayMethod === 'direct' ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}
                 >
-              <div className="flex items-center gap-2">
-                <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex-none ${dealPayMethod === 'direct' ? 'border-[#059669] bg-[#059669]' : 'border-[#cbd5e1]'}`} />
-                <span className="text-sm font-bold text-[#0f172a]">Direct Payment to Supplier</span>
-              </div>
-              <p className="text-xs text-[#64748b] m-0 mt-1.5 ml-[22px] leading-relaxed">
-                You pay the supplier directly (UPI / bank / cash). Phone numbers unlock so you can coordinate.
-              </p>
-            </button>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 flex-none ${dealPayMethod === 'direct' ? 'border-[#059669] bg-[#059669]' : 'border-[#cbd5e1]'}`} />
+                    <span className="text-sm font-bold text-[#0f172a]">Direct Payment to Supplier</span>
+                  </div>
+                  <p className="text-xs text-[#64748b] m-0 mt-1.5 ml-[22px] leading-relaxed">
+                    You pay the supplier directly (UPI / bank / cash). Phone numbers unlock so you can coordinate.
+                  </p>
+                </button>
 
-            {/* AMJSTAR Escrow — coming soon */}
-            <div className="w-full mb-3 p-3 rounded-[10px] border border-dashed border-[#e2e8f0] bg-[#fafafa] opacity-70 cursor-not-allowed">
-              <div className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 rounded-full border-2 border-[#cbd5e1] shrink-0 flex-none" />
-                <span className="text-sm font-bold text-[#94a3b8]">Pay Through AMJSTAR (Escrow)</span>
-                <span className="text-[9px] font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] px-1.5 py-0.5 rounded-full ml-auto">COMING SOON</span>
-              </div>
-              <p className="text-xs text-[#94a3b8] m-0 mt-1.5 ml-[22px] leading-relaxed">
-                AMJSTAR holds your payment safely until you confirm delivery. Launching soon.
-              </p>
+                {/* AMJSTAR Escrow — coming soon */}
+                <div className="w-full mb-3 p-3 rounded-[10px] border border-dashed border-[#e2e8f0] bg-[#fafafa] opacity-70 cursor-not-allowed">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-[#cbd5e1] shrink-0 flex-none" />
+                    <span className="text-sm font-bold text-[#94a3b8]">Pay Through AMJSTAR (Escrow)</span>
+                    <span className="text-[9px] font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] px-1.5 py-0.5 rounded-full ml-auto">COMING SOON</span>
+                  </div>
+                  <p className="text-xs text-[#94a3b8] m-0 mt-1.5 ml-[22px] leading-relaxed">
+                    AMJSTAR holds your payment safely until you confirm delivery. Launching soon.
+                  </p>
+                </div>
+
+                {/* Acknowledgement */}
+                {dealPayMethod === 'direct' && (
+                  <label className="flex items-start gap-2 mt-4 mb-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={dealAck}
+                      onChange={e => setDealAck(e.target.checked)}
+                      className="mt-0.5 accent-[#059669] shrink-0"
+                    />
+                    <span className="text-xs text-[#475569] leading-relaxed">
+                      I confirm the details above are correct and I wish to generate a legally binding Purchase Order.
+                      <span className="block mt-1">
+                        I understand that payment is handled <strong>directly between me and the supplier</strong>, and AMJSTAR is not responsible for the payment or its settlement.
+                      </span>
+                    </span>
+                  </label>
+                )}
+
+              </div> {/* End Payment Method container */}
+            </div> {/* End Scroll container */}
+
+            <div className="flex gap-3 mt-4 pt-4 border-t border-[#e2e8f0] shrink-0">
+              <button
+                onClick={() => { setShowDealPanel(false); setDealAck(false); }}
+                className="flex-1 py-2.5 text-sm font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[10px] cursor-pointer hover:bg-[#f8fafc]"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={placing || (dealPayMethod === 'direct' && !dealAck)}
+                onClick={() => { setShowDealPanel(false); handlePlaceOrder('direct'); }}
+                className="flex-1 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[10px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {placing ? (
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="60" strokeDashoffset="15" />
+                  </svg>
+                ) : 'Confirm & Generate'}
+              </button>
             </div>
-
-            {/* Acknowledgement */}
-            {dealPayMethod === 'direct' && (
-              <label className="flex items-start gap-2 mt-4 mb-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={dealAck}
-                  onChange={e => setDealAck(e.target.checked)}
-                  className="mt-0.5 accent-[#059669] shrink-0"
-                />
-                <span className="text-xs text-[#475569] leading-relaxed">
-                  I confirm the details above are correct and I wish to generate a legally binding Purchase Order.
-                  <span className="block mt-1">
-                    I understand that payment is handled <strong>directly between me and the supplier</strong>, and AMJSTAR is not responsible for the payment or its settlement.
-                  </span>
-                </span>
-              </label>
-            )}
-            
-            </div> {/* End Payment Method container */}
-          </div> {/* End Scroll container */}
-
-          <div className="flex gap-3 mt-4 pt-4 border-t border-[#e2e8f0] shrink-0">
-            <button
-              onClick={() => { setShowDealPanel(false); setDealAck(false); }}
-              className="flex-1 py-2.5 text-sm font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[10px] cursor-pointer hover:bg-[#f8fafc]"
-            >
-              Cancel
-            </button>
-            <button
-              disabled={placing || (dealPayMethod === 'direct' && !dealAck)}
-              onClick={() => { setShowDealPanel(false); handlePlaceOrder('direct'); }}
-              className="flex-1 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[10px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {placing ? (
-                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="60" strokeDashoffset="15" />
-                </svg>
-              ) : 'Confirm & Generate'}
-            </button>
           </div>
-        </div>
         </div>,
         document.body
       )}

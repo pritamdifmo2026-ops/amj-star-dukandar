@@ -145,7 +145,8 @@ const SUPPLIER_QR = [
 
 // ── Main component ──────────────────────────────────────────────────────────
 const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, socket, loadMessages, product, onSupplierAction }: { isLatestQuoteMsg?: boolean; msg: any; onActiveChange?: (isActive: boolean) => void; user: any; socket: any; loadMessages: () => void; product?: any; onSupplierAction?: (quote: any, isAccept: boolean) => void; }) => {
-    const isSupplier = user?.role === 'supplier';
+  const isSupplier = user?.role === 'supplier';
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace('/api', '');
   const handleAcceptQuote = async (quoteId: string, paymentMethod: 'direct' | 'amjstar' = 'direct', buyerSignature?: string) => {
     const loadingToast = toast.loading(isSupplier ? 'Accepting offer...' : 'Confirming deal...');
     try {
@@ -168,624 +169,624 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
     return v.replace(/-/g, '–') + ' days';
   };
 
-    const [quote, setQuote] = useState<any>(null);
-    const [quoteNotFound, setQuoteNotFound] = useState(false);
-    const [showCounter, setShowCounter] = useState(false);
-    const [counterPrice, setCounterPrice] = useState('');
-    const [counterSubmitting, setCounterSubmitting] = useState(false);
-    const [contactPhone, setContactPhone] = useState<string | null>(null);
-    const hasFetchedContact = useRef(false);
-    const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
-    const [payMethod, setPayMethod] = useState<'direct' | 'amjstar'>('direct');
-    const [directAck, setDirectAck] = useState(false);
-    const [showCancelInput, setShowCancelInput] = useState(false);
-    const [cancelReason, setCancelReason] = useState('');
-    const [cancelSubmitting, setCancelSubmitting] = useState(false);
-    const [showReviewModal, setShowReviewModal] = useState(false);
-    const [reviewAck, setReviewAck] = useState(false);
-    // Removed buyerSignature
+  const [quote, setQuote] = useState<any>(null);
+  const [quoteNotFound, setQuoteNotFound] = useState(false);
+  const [showCounter, setShowCounter] = useState(false);
+  const [counterPrice, setCounterPrice] = useState('');
+  const [counterSubmitting, setCounterSubmitting] = useState(false);
+  const [contactPhone, setContactPhone] = useState<string | null>(null);
+  const hasFetchedContact = useRef(false);
+  const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
+  const [payMethod, setPayMethod] = useState<'direct' | 'amjstar'>('direct');
+  const [directAck, setDirectAck] = useState(false);
+  const [showCancelInput, setShowCancelInput] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewAck, setReviewAck] = useState(false);
+  // Removed buyerSignature
 
-    const fetchQuote = () => {
-      if (msg.quotationId) {
-        quotationApi.getQuotation(msg.quotationId)
-          .then(q => { setQuoteNotFound(false); setQuote(q); })
-          .catch(() => setQuoteNotFound(true));
-      }
+  const fetchQuote = () => {
+    if (msg.quotationId) {
+      quotationApi.getQuotation(msg.quotationId)
+        .then(q => { setQuoteNotFound(false); setQuote(q); })
+        .catch(() => setQuoteNotFound(true));
+    }
+  };
+
+  useEffect(() => { fetchQuote(); }, [msg.quotationId]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (notif: any) => {
+      if (notif.type === 'QUOTATION_UPDATE') fetchQuote();
     };
+    socket.on('new_notification', handler);
+    return () => { socket.off('new_notification', handler); };
+  }, [socket, msg.quotationId]);
 
-    useEffect(() => { fetchQuote(); }, [msg.quotationId]);
+  // Fetch contact phone once deal is confirmed
+  useEffect(() => {
+    if (quote?.status === 'accepted' && quote.orderId?._id && !hasFetchedContact.current) {
+      hasFetchedContact.current = true;
+      apiClient.get(`/orders/${quote.orderId._id}`).then(res => {
+        const snap = res.data.data?.snapshot || {};
+        const phone = isSupplier ? snap.buyerPhone : snap.supplierPhone;
+        if (phone) setContactPhone(phone);
+      }).catch(() => { });
+    }
+  }, [quote?.status, quote?.orderId?._id]);
 
-    useEffect(() => {
-      if (!socket) return;
-      const handler = (notif: any) => {
-        if (notif.type === 'QUOTATION_UPDATE') fetchQuote();
-      };
-      socket.on('new_notification', handler);
-      return () => { socket.off('new_notification', handler); };
-    }, [socket, msg.quotationId]);
+  const isActive = quote ? (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent') : false;
+  useEffect(() => {
+    if (onActiveChange) onActiveChange(isActive);
+  }, [isActive, onActiveChange]);
 
-    // Fetch contact phone once deal is confirmed
-    useEffect(() => {
-      if (quote?.status === 'accepted' && quote.orderId?._id && !hasFetchedContact.current) {
-        hasFetchedContact.current = true;
-        apiClient.get(`/orders/${quote.orderId._id}`).then(res => {
-          const snap = res.data.data?.snapshot || {};
-          const phone = isSupplier ? snap.buyerPhone : snap.supplierPhone;
-          if (phone) setContactPhone(phone);
-        }).catch(() => { });
-      }
-    }, [quote?.status, quote?.orderId?._id]);
+  if (quoteNotFound) return null;
+  if (!quote) return null;
 
-    const isActive = quote ? (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent') : false;
-    useEffect(() => {
-      if (onActiveChange) onActiveChange(isActive);
-    }, [isActive, onActiveChange]);
+  const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  const timeRow = (
+    <div className={`flex items-center gap-1 mt-1 justify-end`}>
+      <span className="text-[10px] text-[#94a3b8]">{msgTime}</span>
+    </div>
+  );
 
-    if (quoteNotFound) return null;
-    if (!quote) return null;
+  const statusMeta: Record<string, { label: string; cls: string }> = {
+    negotiation_pending: { label: 'Awaiting Response', cls: 'bg-[#fffbeb] text-[#a16207]' },
+    counter_offer_sent: { label: 'Counter Offered', cls: 'bg-[#eff6ff] text-[#2563eb]' },
+    supplier_accepted: { label: 'Supplier Agreed', cls: 'bg-[#ecfdf5] text-[#059669]' },
+    quotation_accepted: { label: 'Deal Confirmed ✅', cls: 'bg-[#ecfdf5] text-[#059669]' },
+    cancelled: { label: 'Declined / Cancelled', cls: 'bg-[#fef2f2] text-[#dc2626]' },
+  };
+  const meta = statusMeta[quote.status] || { label: quote.status, cls: 'bg-[#f1f5f9] text-[#475569]' };
 
-    const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
-    const timeRow = (
-      <div className={`flex items-center gap-1 mt-1 justify-end`}>
-        <span className="text-[10px] text-[#94a3b8]">{msgTime}</span>
+  const taxableAmt = quote.taxableAmount ?? quote.totalAmount ?? 0;
+  const actualRetailTotal = quote.items?.reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.quantity)), 0) || taxableAmt;
+  const gstAmt = quote.gstAmount ?? 0;
+  const shipCost = quote.shippingCost ?? 0;
+  const grandTotal = taxableAmt + gstAmt + shipCost;
+  const halfRate = (quote.gstRate ?? 0) / 2;
+
+  const submitCounter = async () => {
+    if (!counterPrice) return;
+    const cp = Number(counterPrice);
+    if (cp < actualRetailTotal * 0.5 || cp > actualRetailTotal) return;
+
+    setCounterSubmitting(true);
+    try {
+      await quotationApi.counterOffer(quote._id, {
+        price: cp,
+      });
+      loadMessages();
+      setShowCounter(false);
+      setCounterPrice('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to send counter');
+    } finally { setCounterSubmitting(false); }
+  };
+
+  const canSupplierCancel = isLatestQuoteMsg && isSupplier && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent' || quote.status === 'supplier_accepted');
+  const canBuyerCancel = isLatestQuoteMsg && !isSupplier && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent' || quote.status === 'supplier_accepted');
+
+  // Action buttons — rendered outside the card so faded wrapper never blocks them
+  const handleCancelEnquiry = async () => {
+    if (!cancelReason.trim()) return;
+    setCancelSubmitting(true);
+    try {
+      await quotationApi.cancelQuotation(quote._id, cancelReason.trim());
+      loadMessages();
+      setShowCancelInput(false);
+      toast.success('Enquiry cancelled.');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to cancel');
+    } finally { setCancelSubmitting(false); }
+  };
+
+  const actionButtons = canSupplierCancel && (
+    <div className="min-w-[260px] max-w-[340px]">
+      {!showCancelInput ? (
+        <div className="flex flex-col gap-1.5 mt-1.5">
+          <button
+            onClick={() => setShowCancelInput(true)}
+            className="w-full py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fee2e2]"
+          >🚫 Cancel Enquiry</button>
+        </div>
+      ) : (
+        <div className="mt-1.5 flex flex-col gap-2">
+          <textarea
+            autoFocus
+            rows={2}
+            value={cancelReason}
+            onChange={e => setCancelReason(e.target.value)}
+            placeholder="Reason for cancellation (required)"
+            className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
+          />
+          <div className="flex gap-2">
+            <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
+              className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+              Back
+            </button>
+            <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
+              className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
+              {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const cardContent = (
+    <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden min-w-[260px] max-w-[340px]">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
+        <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
+        <div className="flex items-center gap-1.5">
+          {quote.priceTag && (
+            <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm bg-red-100 text-red-700 uppercase tracking-wide border border-red-200">
+              {quote.priceTag}
+            </span>
+          )}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
+        </div>
       </div>
-    );
 
-    const statusMeta: Record<string, { label: string; cls: string }> = {
-      negotiation_pending: { label: 'Awaiting Response', cls: 'bg-[#fffbeb] text-[#a16207]' },
-      counter_offer_sent: { label: 'Counter Offered', cls: 'bg-[#eff6ff] text-[#2563eb]' },
-      supplier_accepted: { label: 'Supplier Agreed', cls: 'bg-[#ecfdf5] text-[#059669]' },
-      quotation_accepted: { label: 'Deal Confirmed ✅', cls: 'bg-[#ecfdf5] text-[#059669]' },
-      cancelled: { label: 'Declined / Cancelled', cls: 'bg-[#fef2f2] text-[#dc2626]' },
-    };
-    const meta = statusMeta[quote.status] || { label: quote.status, cls: 'bg-[#f1f5f9] text-[#475569]' };
 
-    const taxableAmt = quote.taxableAmount ?? quote.totalAmount ?? 0;
-    const actualRetailTotal = quote.items?.reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.quantity)), 0) || taxableAmt;
-    const gstAmt = quote.gstAmount ?? 0;
-    const shipCost = quote.shippingCost ?? 0;
-    const grandTotal = taxableAmt + gstAmt + shipCost;
-    const halfRate = (quote.gstRate ?? 0) / 2;
+      {msg.messageType === 'buyer_counter_offer' ? (
+        <div className="px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
+          <div className="text-[13px] text-[#334155] whitespace-pre-wrap leading-[1.6]">
+            <span className="font-extrabold flex items-center gap-1.5 text-[#0f172a]">
+              📦 Counter Offer: {product?.name || 'Product'}
+            </span>
+            <div className="mt-1.5">
+              Quantity: {quote.items?.[0]?.quantity || 0} {quote.items?.[0]?.unit || 'pcs'}<br />
+              Price: ₹{(quote.counterOffer?.price || quote.proposedPrice).toLocaleString('en-IN')}<br />
+              Delivery Timeline: {quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || 'Standard'}<br />
+              {quote.shippingAddress && (
+                <>Ship to: {[quote.shippingAddress.addressLine1, quote.shippingAddress.city, quote.shippingAddress.state, quote.shippingAddress.pincode].filter(Boolean).join(', ')}<br /></>
+              )}
+              {quote.terms && <>Requirements: {quote.terms}</>}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="px-4 py-3 flex flex-col gap-1.5">
+            {quote.items.map((item: any, i: number) => (
+              <div key={i} className="flex flex-col gap-0.5">
+                <div className="flex justify-between text-xs text-[#475569]">
+                  <span className="font-medium">{item.name}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
+                </div>
+                <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+                  <span>Unit Price</span>
+                  <span>₹{item.price.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+                  <span>Qty</span>
+                  <span>{item.quantity} {item.unit}</span>
+                </div>
+                <div className="flex justify-between text-xs text-[#475569] font-semibold">
+                  <span>Total Price</span>
+                  <span>₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            ))}
+            <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
+              <span>Amount (before GST)</span>
+              <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN')}</span>
+            </div>
+            {quote.gstType && quote.gstType !== 'exempt' && gstAmt > 0 ? (
+              quote.gstType === 'IGST' ? (
+                <div className="flex justify-between text-xs text-[#0369a1]">
+                  <span>IGST @ {quote.gstRate}%</span>
+                  <span className="font-semibold">₹{gstAmt.toLocaleString('en-IN')}</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between text-xs text-[#0369a1]">
+                    <span>CGST @ {halfRate}%</span>
+                    <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-[#0369a1]">
+                    <span>SGST @ {halfRate}%</span>
+                    <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                  </div>
+                </>
+              )
+            ) : (
+              <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>
+            )}
+            {shipCost > 0 && (
+              <div className="flex justify-between text-xs text-[#475569]">
+                <span>Shipping</span>
+                <span className="font-semibold">₹{shipCost.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
+              <span>Grand Total</span>
+              <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+            </div>
+            {quote.deliveryTimeline && <p className="text-[10px] text-[#94a3b8] m-0">Delivery: {quote.deliveryTimeline}</p>}
+            {quote.terms && <p className="text-[10px] text-[#94a3b8] m-0">Terms: {quote.terms}</p>}
+          </div>
+        </>
+      )}
 
-    const submitCounter = async () => {
-      if (!counterPrice) return;
-      const cp = Number(counterPrice);
-      if (cp < actualRetailTotal * 0.5 || cp > actualRetailTotal) return;
+      {msg.messageType !== 'buyer_counter_offer' && quote.counterOffer && (
+        <div className="mx-4 mb-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] px-3 py-2 text-xs text-[#1d4ed8]">
+          <span className="font-bold block mb-1.5">Counter Offer from {quote.initiatedBy === 'buyer' ? 'Buyer' : 'Supplier'}</span>
+          {quote.counterOffer.price ? (
+            <div className="flex justify-between items-center mb-0.5">
+              <span className="text-[#3b82f6]">Requested Price</span>
+              <span className="font-bold">₹{quote.counterOffer.price.toLocaleString('en-IN')} <span className="text-[#93c5fd] font-normal">(excl. GST &amp; shipping)</span></span>
+            </div>
+          ) : null}
+          {quote.counterOffer.deliveryTimeline ? (
+            <div className="flex justify-between items-center mb-0.5">
+              <span className="text-[#3b82f6]">Requested Timeline</span>
+              <span className="font-bold">{formatTimeline(quote.counterOffer.deliveryTimeline)}</span>
+            </div>
+          ) : null}
+          {quote.counterOffer.note && (
+            <p className="text-[#3b82f6] mt-1 m-0 border-t border-[#bfdbfe] pt-1">{quote.counterOffer.note}</p>
+          )}
+        </div>
+      )}
 
-      setCounterSubmitting(true);
-      try {
-        await quotationApi.counterOffer(quote._id, {
-          price: cp,
-        });
-        loadMessages();
-        setShowCounter(false);
-        setCounterPrice('');
-      } catch (err: any) {
-        toast.error(err.response?.data?.message || 'Failed to send counter');
-      } finally { setCounterSubmitting(false); }
-    };
+      {/* Waiting for other party */}
+      {isLatestQuoteMsg && quote.currentTurn !== (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || (quote.status === 'counter_offer_sent' && msg.messageType === 'buyer_counter_offer')) && (
+        <div className="px-4 pb-3">
+          <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] px-3 py-2">
+            <p className="text-[10px] text-[#2563eb] font-bold m-0 text-center">
+              {quote.status === 'supplier_accepted'
+                ? "Waiting for buyer to confirm payment method."
+                : `Awaiting ${isSupplier ? "buyer's" : "supplier's"} response.`}
+            </p>
+          </div>
+        </div>
+      )}
 
-    const canSupplierCancel = isLatestQuoteMsg && isSupplier && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent' || quote.status === 'supplier_accepted');
-    const canBuyerCancel = isLatestQuoteMsg && !isSupplier && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent' || quote.status === 'supplier_accepted');
+      {/* Actions: only when it's user's turn and this is the latest quotation message */}
+      {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || (quote.status === 'counter_offer_sent' && msg.messageType === 'buyer_counter_offer')) && !showCounter && (
+        <>
+          <div className="flex gap-2 px-4 pb-3">
+            <button className="flex-1 py-2 text-xs font-bold text-white bg-[#059669] rounded-[6px] border-none cursor-pointer hover:bg-[#047857]"
+              onClick={() => isSupplier ? (onSupplierAction ? onSupplierAction(quote, true) : null) : setConfirmAction('accept')}>Accept Deal</button>
 
-    // Action buttons — rendered outside the card so faded wrapper never blocks them
-    const handleCancelEnquiry = async () => {
-      if (!cancelReason.trim()) return;
-      setCancelSubmitting(true);
-      try {
-        await quotationApi.cancelQuotation(quote._id, cancelReason.trim());
-        loadMessages();
-        setShowCancelInput(false);
-        toast.success('Enquiry cancelled.');
-      } catch (err: any) {
-        toast.error(err?.response?.data?.message || 'Failed to cancel');
-      } finally { setCancelSubmitting(false); }
-    };
+            {quote.status !== 'supplier_accepted' && (
+              <>
+                <button className="flex-1 py-2 text-xs font-bold text-[#2563eb] bg-[#eff6ff] rounded-[6px] border-none cursor-pointer hover:bg-[#dbeafe]"
+                  onClick={() => isSupplier ? (onSupplierAction ? onSupplierAction(quote, false) : null) : setShowCounter(true)}>Counter</button>
+                <button className="flex-1 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]"
+                  onClick={() => setConfirmAction('decline')}>Decline</button>
+              </>
+            )}
+          </div>
 
-    const actionButtons = canSupplierCancel && (
-      <div className="min-w-[260px] max-w-[340px]">
-        {!showCancelInput ? (
-          <div className="flex flex-col gap-1.5 mt-1.5">
+          {/* Decline confirmation popup */}
+          {confirmAction === 'decline' && (
+            <div className="mx-4 mb-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5">
+              <p className="text-xs font-extrabold text-[#dc2626] m-0 mb-1">Decline this quote?</p>
+              <p className="text-[11px] text-[#475569] m-0 mb-2.5">
+                The supplier will be notified. You can request a new quotation anytime.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { setConfirmAction(null); handleRejectQuote(quote._id); }}
+                  className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#dc2626] hover:bg-[#b91c1c]">
+                  Yes, Decline
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Accept → payment method picker */}
+          {confirmAction === 'accept' && (
+            <div className="mx-4 mb-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5">
+              <p className="text-xs font-extrabold text-[#0f172a] m-0 mb-2">Choose how you'll pay</p>
+
+              {/* Direct */}
+              <button
+                onClick={() => setPayMethod('direct')}
+                className={`w-full text-left mb-2 p-2.5 rounded-[8px] border cursor-pointer transition-colors ${payMethod === 'direct' ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 ${payMethod === 'direct' ? 'border-[#059669] bg-[#059669]' : 'border-[#cbd5e1]'}`} />
+                  <span className="text-xs font-bold text-[#0f172a]">Direct Payment to Supplier</span>
+                </div>
+                <p className="text-[10px] text-[#64748b] m-0 mt-1 ml-[22px] leading-relaxed">
+                  You pay the supplier directly (UPI / bank / cash). Phone numbers unlock so you can coordinate.
+                </p>
+              </button>
+
+              {/* AMJSTAR — coming soon */}
+              <div className="w-full mb-2 p-2.5 rounded-[8px] border border-dashed border-[#e2e8f0] bg-[#fafafa] opacity-70 cursor-not-allowed">
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 rounded-full border-2 border-[#cbd5e1] shrink-0" />
+                  <span className="text-xs font-bold text-[#94a3b8]">Pay Through AMJSTAR (Escrow)</span>
+                  <span className="text-[9px] font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] px-1.5 py-0.5 rounded-full ml-auto">COMING SOON</span>
+                </div>
+                <p className="text-[10px] text-[#94a3b8] m-0 mt-1 ml-[22px] leading-relaxed">
+                  AMJSTAR holds your payment safely until you confirm delivery. Launching soon.
+                </p>
+              </div>
+
+              {/* Direct disclaimer + ack */}
+              {payMethod === 'direct' && (
+                <label className="flex items-start gap-2 mb-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={directAck}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        setShowReviewModal(true);
+                        setReviewAck(false);
+                      } else {
+                        setDirectAck(false);
+                      }
+                    }}
+                    className="mt-0.5 accent-[#059669] shrink-0"
+                  />
+                  <span className="text-[10px] text-[#475569] leading-relaxed">
+                    I understand that payment is handled <strong>directly between me and the supplier</strong>, and AMJSTAR is not responsible for the payment or its settlement.
+                  </span>
+                </label>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setConfirmAction(null); setDirectAck(false); }}
+                  className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                  Cancel
+                </button>
+                <button
+                  disabled={payMethod === 'direct' && !directAck}
+                  onClick={() => {
+                    setConfirmAction(null);
+                    setDirectAck(false);
+                    handleAcceptQuote(quote._id, payMethod, user?.savedSignature || undefined);
+                  }}
+                  className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#059669] hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed">
+                  Confirm &amp; Generate PO
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* PO Review Modal */}
+      {showReviewModal && (
+        <POReviewModal
+          quote={quote}
+          product={product}
+          payMethod={payMethod}
+          reviewAck={reviewAck}
+          setReviewAck={setReviewAck}
+          onClose={() => setShowReviewModal(false)}
+          onConfirm={() => {
+            setShowReviewModal(false);
+            setDirectAck(true);
+          }}
+        />
+      )}
+
+      {/* Counter form — only when it's user's turn */}
+      {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent') && showCounter && (
+        <div className="px-4 pb-3 flex flex-col gap-2">
+          <p className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Counter Offer</p>
+          {/* Price counter */}
+          <div className="flex flex-col gap-0.5">
+            <label className="text-[10px] text-[#64748b] font-semibold">Counter Total Price (excl. GST &amp; shipping)</label>
+            <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary">
+              <span className="px-2 py-2 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
+              <input
+                autoFocus
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={counterPrice}
+                onChange={e => setCounterPrice(e.target.value.replace(/\D/g, ''))}
+                placeholder={`e.g. ${taxableAmt}`}
+                className="flex-1 border-none outline-none px-2 py-2 text-xs bg-transparent"
+              />
+            </div>
+
+            {counterPrice && Number(counterPrice) > 0 && Number(counterPrice) < actualRetailTotal * 0.5 && (
+              <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
+                Counter price cannot be less than 50% of the original price (₹{Math.round(actualRetailTotal * 0.5).toLocaleString('en-IN')})
+              </p>
+            )}
+            {counterPrice && Number(counterPrice) > 0 && Number(counterPrice) > actualRetailTotal && (
+              <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
+                Counter price cannot be higher than the original price (₹{actualRetailTotal.toLocaleString('en-IN')})
+              </p>
+            )}
+
+            {counterPrice && Number(counterPrice) > 0 && (
+              <div className="mt-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] p-2 flex flex-col gap-1">
+                <div className="flex justify-between text-[10px] text-[#64748b]">
+                  <span>Amount (before GST)</span>
+                  <span>₹{Number(counterPrice).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-[#64748b]">
+                  <span>GST @ {quote.gstRate ?? 18}%</span>
+                  <span>₹{Math.round(Number(counterPrice) * (quote.gstRate ?? 18) / 100).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-[11px] font-bold text-[#0f172a] pt-1 border-t border-[#e2e8f0]">
+                  <span>Grand Total</span>
+                  <span>₹{Math.round(Number(counterPrice) + (Number(counterPrice) * (quote.gstRate ?? 18) / 100) + shipCost).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={() => { setShowCounter(false); setCounterPrice(''); }}
+              className="flex-1 py-2 text-xs font-bold text-[#64748b] bg-[#f8fafc] rounded-[6px] border border-[#e2e8f0] cursor-pointer"
+            >Cancel</button>
+            <button
+              onClick={submitCounter}
+              disabled={counterSubmitting || !counterPrice || Number(counterPrice) < actualRetailTotal * 0.5 || Number(counterPrice) > actualRetailTotal}
+              className="flex-1 py-2 text-xs font-bold text-white bg-[#2563eb] rounded-[6px] border-none cursor-pointer disabled:opacity-50"
+            >
+              {counterSubmitting ? 'Sending…' : 'Send Counter'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Deal Confirmed */}
+      {quote.status === 'quotation_accepted' && (
+        <div className="px-4 pb-3">
+          <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] px-3 py-2 text-center">
+            <p className="text-xs font-extrabold text-[#059669] m-0">🎉 Deal Confirmed!</p>
+            <p className="text-[10px] text-[#047857] m-0 mt-1">Order created. Proceed as per agreed terms.</p>
+
+            {/* Phone reveal animation */}
+            {contactPhone && (
+              <div className="mt-2 pt-2 border-t border-[#a7f3d0]">
+                <PhoneReveal
+                  phone={contactPhone}
+                  label={isSupplier ? "Buyer's Phone" : "Supplier's Phone"}
+                />
+              </div>
+            )}
+
+            {quote.orderId?._id ? (
+              <a
+                href={`${apiBase}/api/orders/${quote.orderId._id}/po-download`}
+                target="_blank" rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 bg-[#059669] text-white text-[10px] font-bold rounded-[6px] no-underline hover:bg-[#047857]"
+              >
+                <FileText size={11} /> Download PO {quote.orderId.poNumber ? `(${quote.orderId.poNumber})` : ''}
+              </a>
+            ) : (
+              <p className="text-[10px] text-[#6ee7b7] m-0 mt-1">Order being processed…</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {quote.status === 'ordered' && (
+        <div className="px-4 pb-3 text-xs font-bold text-[#059669]">Order Created ✅</div>
+      )}
+
+      {quote.status === 'cancelled' && (
+        <div className="mx-4 mb-3 bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-3 py-2.5">
+          <p className="text-xs font-bold text-[#dc2626] m-0 mb-1">
+            Cancelled by {quote.cancelledBy === 'supplier' ? 'Supplier' : 'Buyer'}
+          </p>
+          {quote.cancellationReason && (
+            <p className="text-[11px] text-[#7f1d1d] m-0 leading-relaxed">
+              Reason: {quote.cancellationReason}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Supplier cancel UI — for counter_offered state (edit/retract not shown there) */}
+      {canSupplierCancel && quote.status === 'counter_offered' && (
+        <div className="px-4 pb-3">
+          {!showCancelInput ? (
             <button
               onClick={() => setShowCancelInput(true)}
               className="w-full py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fee2e2]"
-            >🚫 Cancel Enquiry</button>
-          </div>
-        ) : (
-          <div className="mt-1.5 flex flex-col gap-2">
-            <textarea
-              autoFocus
-              rows={2}
-              value={cancelReason}
-              onChange={e => setCancelReason(e.target.value)}
-              placeholder="Reason for cancellation (required)"
-              className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
-            />
-            <div className="flex gap-2">
-              <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
-                className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
-                Back
-              </button>
-              <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
-                className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
-                {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-
-    const cardContent = (
-      <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden min-w-[260px] max-w-[340px]">
-        <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
-          <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
-          <div className="flex items-center gap-1.5">
-            {quote.priceTag && (
-              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm bg-red-100 text-red-700 uppercase tracking-wide border border-red-200">
-                {quote.priceTag}
-              </span>
-            )}
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
-          </div>
-        </div>
-
-
-        {msg.messageType === 'buyer_counter_offer' ? (
-          <div className="px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
-            <div className="text-[13px] text-[#334155] whitespace-pre-wrap leading-[1.6]">
-              <span className="font-extrabold flex items-center gap-1.5 text-[#0f172a]">
-                📦 Counter Offer: {product?.name || 'Product'}
-              </span>
-              <div className="mt-1.5">
-                Quantity: {quote.items?.[0]?.quantity || 0} {quote.items?.[0]?.unit || 'pcs'}<br/>
-                Price: ₹{(quote.counterOffer?.price || quote.proposedPrice).toLocaleString('en-IN')}<br/>
-                Delivery Timeline: {quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || 'Standard'}<br/>
-                {quote.shippingAddress && (
-                  <>Ship to: {[quote.shippingAddress.addressLine1, quote.shippingAddress.city, quote.shippingAddress.state, quote.shippingAddress.pincode].filter(Boolean).join(', ')}<br/></>
-                )}
-                {quote.terms && <>Requirements: {quote.terms}</>}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="px-4 py-3 flex flex-col gap-1.5">
-              {quote.items.map((item: any, i: number) => (
-                <div key={i} className="flex flex-col gap-0.5">
-                  <div className="flex justify-between text-xs text-[#475569]">
-                    <span className="font-medium">{item.name}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
-                    <span>Unit Price</span>
-                    <span>₹{item.price.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
-                    <span>Qty</span>
-                    <span>{item.quantity} {item.unit}</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-[#475569] font-semibold">
-                    <span>Total Price</span>
-                    <span>₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              ))}
-              <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
-                <span>Amount (before GST)</span>
-                <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN')}</span>
-              </div>
-              {quote.gstType && quote.gstType !== 'exempt' && gstAmt > 0 ? (
-                quote.gstType === 'IGST' ? (
-                  <div className="flex justify-between text-xs text-[#0369a1]">
-                    <span>IGST @ {quote.gstRate}%</span>
-                    <span className="font-semibold">₹{gstAmt.toLocaleString('en-IN')}</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex justify-between text-xs text-[#0369a1]">
-                      <span>CGST @ {halfRate}%</span>
-                      <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between text-xs text-[#0369a1]">
-                      <span>SGST @ {halfRate}%</span>
-                      <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
-                    </div>
-                  </>
-                )
-              ) : (
-                <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>
-              )}
-              {shipCost > 0 && (
-                <div className="flex justify-between text-xs text-[#475569]">
-                  <span>Shipping</span>
-                  <span className="font-semibold">₹{shipCost.toLocaleString('en-IN')}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
-                <span>Grand Total</span>
-                <span>₹{grandTotal.toLocaleString('en-IN')}</span>
-              </div>
-              {quote.deliveryTimeline && <p className="text-[10px] text-[#94a3b8] m-0">Delivery: {quote.deliveryTimeline}</p>}
-              {quote.terms && <p className="text-[10px] text-[#94a3b8] m-0">Terms: {quote.terms}</p>}
-            </div>
-          </>
-        )}
-
-        {msg.messageType !== 'buyer_counter_offer' && quote.counterOffer && (
-          <div className="mx-4 mb-3 bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] px-3 py-2 text-xs text-[#1d4ed8]">
-            <span className="font-bold block mb-1.5">Counter Offer from {quote.initiatedBy === 'buyer' ? 'Buyer' : 'Supplier'}</span>
-            {quote.counterOffer.price ? (
-              <div className="flex justify-between items-center mb-0.5">
-                <span className="text-[#3b82f6]">Requested Price</span>
-                <span className="font-bold">₹{quote.counterOffer.price.toLocaleString('en-IN')} <span className="text-[#93c5fd] font-normal">(excl. GST &amp; shipping)</span></span>
-              </div>
-            ) : null}
-            {quote.counterOffer.deliveryTimeline ? (
-              <div className="flex justify-between items-center mb-0.5">
-                <span className="text-[#3b82f6]">Requested Timeline</span>
-                <span className="font-bold">{formatTimeline(quote.counterOffer.deliveryTimeline)}</span>
-              </div>
-            ) : null}
-            {quote.counterOffer.note && (
-              <p className="text-[#3b82f6] mt-1 m-0 border-t border-[#bfdbfe] pt-1">{quote.counterOffer.note}</p>
-            )}
-          </div>
-        )}
-
-        {/* Waiting for other party */}
-        {isLatestQuoteMsg && quote.currentTurn !== (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || (quote.status === 'counter_offer_sent' && msg.messageType === 'buyer_counter_offer')) && (
-          <div className="px-4 pb-3">
-            <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] px-3 py-2">
-              <p className="text-[10px] text-[#2563eb] font-bold m-0 text-center">
-                {quote.status === 'supplier_accepted' 
-                  ? "Waiting for buyer to confirm payment method." 
-                  : `Awaiting ${isSupplier ? "buyer's" : "supplier's"} response.`}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Actions: only when it's user's turn and this is the latest quotation message */}
-        {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || (quote.status === 'counter_offer_sent' && msg.messageType === 'buyer_counter_offer')) && !showCounter && (
-          <>
-            <div className="flex gap-2 px-4 pb-3">
-              <button className="flex-1 py-2 text-xs font-bold text-white bg-[#059669] rounded-[6px] border-none cursor-pointer hover:bg-[#047857]"
-                onClick={() => isSupplier ? (onSupplierAction ? onSupplierAction(quote, true) : null) : setConfirmAction('accept')}>Accept Deal</button>
-              
-              {quote.status !== 'supplier_accepted' && (
-                <>
-                  <button className="flex-1 py-2 text-xs font-bold text-[#2563eb] bg-[#eff6ff] rounded-[6px] border-none cursor-pointer hover:bg-[#dbeafe]"
-                    onClick={() => isSupplier ? (onSupplierAction ? onSupplierAction(quote, false) : null) : setShowCounter(true)}>Counter</button>
-                  <button className="flex-1 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]"
-                    onClick={() => setConfirmAction('decline')}>Decline</button>
-                </>
-              )}
-            </div>
-
-            {/* Decline confirmation popup */}
-            {confirmAction === 'decline' && (
-              <div className="mx-4 mb-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5">
-                <p className="text-xs font-extrabold text-[#dc2626] m-0 mb-1">Decline this quote?</p>
-                <p className="text-[11px] text-[#475569] m-0 mb-2.5">
-                  The supplier will be notified. You can request a new quotation anytime.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setConfirmAction(null)}
-                    className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => { setConfirmAction(null); handleRejectQuote(quote._id); }}
-                    className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#dc2626] hover:bg-[#b91c1c]">
-                    Yes, Decline
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Accept → payment method picker */}
-            {confirmAction === 'accept' && (
-              <div className="mx-4 mb-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5">
-                <p className="text-xs font-extrabold text-[#0f172a] m-0 mb-2">Choose how you'll pay</p>
-
-                {/* Direct */}
-                <button
-                  onClick={() => setPayMethod('direct')}
-                  className={`w-full text-left mb-2 p-2.5 rounded-[8px] border cursor-pointer transition-colors ${payMethod === 'direct' ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 ${payMethod === 'direct' ? 'border-[#059669] bg-[#059669]' : 'border-[#cbd5e1]'}`} />
-                    <span className="text-xs font-bold text-[#0f172a]">Direct Payment to Supplier</span>
-                  </div>
-                  <p className="text-[10px] text-[#64748b] m-0 mt-1 ml-[22px] leading-relaxed">
-                    You pay the supplier directly (UPI / bank / cash). Phone numbers unlock so you can coordinate.
-                  </p>
+            >
+              🚫 Cancel Enquiry
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <textarea
+                autoFocus
+                rows={2}
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                placeholder="Reason for cancellation (required)"
+                className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
+              />
+              <div className="flex gap-2">
+                <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
+                  className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                  Back
                 </button>
-
-                {/* AMJSTAR — coming soon */}
-                <div className="w-full mb-2 p-2.5 rounded-[8px] border border-dashed border-[#e2e8f0] bg-[#fafafa] opacity-70 cursor-not-allowed">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full border-2 border-[#cbd5e1] shrink-0" />
-                    <span className="text-xs font-bold text-[#94a3b8]">Pay Through AMJSTAR (Escrow)</span>
-                    <span className="text-[9px] font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] px-1.5 py-0.5 rounded-full ml-auto">COMING SOON</span>
-                  </div>
-                  <p className="text-[10px] text-[#94a3b8] m-0 mt-1 ml-[22px] leading-relaxed">
-                    AMJSTAR holds your payment safely until you confirm delivery. Launching soon.
-                  </p>
-                </div>
-
-                {/* Direct disclaimer + ack */}
-                {payMethod === 'direct' && (
-                  <label className="flex items-start gap-2 mb-2.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={directAck}
-                      onChange={e => {
-                        if (e.target.checked) {
-                          setShowReviewModal(true);
-                          setReviewAck(false);
-                        } else {
-                          setDirectAck(false);
-                        }
-                      }}
-                      className="mt-0.5 accent-[#059669] shrink-0"
-                    />
-                    <span className="text-[10px] text-[#475569] leading-relaxed">
-                      I understand that payment is handled <strong>directly between me and the supplier</strong>, and AMJSTAR is not responsible for the payment or its settlement.
-                    </span>
-                  </label>
-                )}
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setConfirmAction(null); setDirectAck(false); }}
-                    className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
-                    Cancel
-                  </button>
-                  <button
-                    disabled={payMethod === 'direct' && !directAck}
-                    onClick={() => {
-                      setConfirmAction(null);
-                      setDirectAck(false);
-                      handleAcceptQuote(quote._id, payMethod, user?.savedSignature || undefined);
-                    }}
-                    className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#059669] hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed">
-                    Confirm &amp; Generate PO
-                  </button>
-                </div>
+                <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
+                  className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
+                  {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
+                </button>
               </div>
-            )}
-          </>
-        )}
-
-        {/* PO Review Modal */}
-        {showReviewModal && (
-          <POReviewModal
-            quote={quote}
-            product={product}
-            payMethod={payMethod}
-            reviewAck={reviewAck}
-            setReviewAck={setReviewAck}
-            onClose={() => setShowReviewModal(false)}
-            onConfirm={() => {
-              setShowReviewModal(false);
-              setDirectAck(true);
-            }}
-          />
-        )}
-
-        {/* Counter form — only when it's user's turn */}
-        {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent') && showCounter && (
-          <div className="px-4 pb-3 flex flex-col gap-2">
-            <p className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Counter Offer</p>
-            {/* Price counter */}
-            <div className="flex flex-col gap-0.5">
-              <label className="text-[10px] text-[#64748b] font-semibold">Counter Total Price (excl. GST &amp; shipping)</label>
-              <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary">
-                <span className="px-2 py-2 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
-                <input
-                  autoFocus
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={counterPrice}
-                  onChange={e => setCounterPrice(e.target.value.replace(/\D/g, ''))}
-                  placeholder={`e.g. ${taxableAmt}`}
-                  className="flex-1 border-none outline-none px-2 py-2 text-xs bg-transparent"
-                />
-              </div>
-
-              {counterPrice && Number(counterPrice) > 0 && Number(counterPrice) < actualRetailTotal * 0.5 && (
-                <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
-                  Counter price cannot be less than 50% of the original price (₹{Math.round(actualRetailTotal * 0.5).toLocaleString('en-IN')})
-                </p>
-              )}
-              {counterPrice && Number(counterPrice) > 0 && Number(counterPrice) > actualRetailTotal && (
-                <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
-                  Counter price cannot be higher than the original price (₹{actualRetailTotal.toLocaleString('en-IN')})
-                </p>
-              )}
-
-              {counterPrice && Number(counterPrice) > 0 && (
-                <div className="mt-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] p-2 flex flex-col gap-1">
-                  <div className="flex justify-between text-[10px] text-[#64748b]">
-                    <span>Amount (before GST)</span>
-                    <span>₹{Number(counterPrice).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-[10px] text-[#64748b]">
-                    <span>GST @ {quote.gstRate ?? 18}%</span>
-                    <span>₹{Math.round(Number(counterPrice) * (quote.gstRate ?? 18) / 100).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-[11px] font-bold text-[#0f172a] pt-1 border-t border-[#e2e8f0]">
-                    <span>Grand Total</span>
-                    <span>₹{Math.round(Number(counterPrice) + (Number(counterPrice) * (quote.gstRate ?? 18) / 100) + shipCost).toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              )}
             </div>
-
-            <div className="flex gap-2 mt-1">
-              <button
-                onClick={() => { setShowCounter(false); setCounterPrice(''); }}
-                className="flex-1 py-2 text-xs font-bold text-[#64748b] bg-[#f8fafc] rounded-[6px] border border-[#e2e8f0] cursor-pointer"
-              >Cancel</button>
-              <button
-                onClick={submitCounter}
-                disabled={counterSubmitting || !counterPrice || Number(counterPrice) < actualRetailTotal * 0.5 || Number(counterPrice) > actualRetailTotal}
-                className="flex-1 py-2 text-xs font-bold text-white bg-[#2563eb] rounded-[6px] border-none cursor-pointer disabled:opacity-50"
-              >
-                {counterSubmitting ? 'Sending…' : 'Send Counter'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Deal Confirmed */}
-        {quote.status === 'quotation_accepted' && (
-          <div className="px-4 pb-3">
-            <div className="bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] px-3 py-2 text-center">
-              <p className="text-xs font-extrabold text-[#059669] m-0">🎉 Deal Confirmed!</p>
-              <p className="text-[10px] text-[#047857] m-0 mt-1">Order created. Proceed as per agreed terms.</p>
-
-              {/* Phone reveal animation */}
-              {contactPhone && (
-                <div className="mt-2 pt-2 border-t border-[#a7f3d0]">
-                  <PhoneReveal
-                    phone={contactPhone}
-                    label={isSupplier ? "Buyer's Phone" : "Supplier's Phone"}
-                  />
-                </div>
-              )}
-
-              {quote.orderId?._id ? (
-                <a
-                  href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '')}/api/orders/${quote.orderId._id}/po-download`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 bg-[#059669] text-white text-[10px] font-bold rounded-[6px] no-underline hover:bg-[#047857]"
-                >
-                  <FileText size={11} /> Download PO {quote.orderId.poNumber ? `(${quote.orderId.poNumber})` : ''}
-                </a>
-              ) : (
-                <p className="text-[10px] text-[#6ee7b7] m-0 mt-1">Order being processed…</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {quote.status === 'ordered' && (
-          <div className="px-4 pb-3 text-xs font-bold text-[#059669]">Order Created ✅</div>
-        )}
-
-        {quote.status === 'cancelled' && (
-          <div className="mx-4 mb-3 bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-3 py-2.5">
-            <p className="text-xs font-bold text-[#dc2626] m-0 mb-1">
-              Cancelled by {quote.cancelledBy === 'supplier' ? 'Supplier' : 'Buyer'}
-            </p>
-            {quote.cancellationReason && (
-              <p className="text-[11px] text-[#7f1d1d] m-0 leading-relaxed">
-                Reason: {quote.cancellationReason}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Supplier cancel UI — for counter_offered state (edit/retract not shown there) */}
-        {canSupplierCancel && quote.status === 'counter_offered' && (
-          <div className="px-4 pb-3">
-            {!showCancelInput ? (
-              <button
-                onClick={() => setShowCancelInput(true)}
-                className="w-full py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fee2e2]"
-              >
-                🚫 Cancel Enquiry
-              </button>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <textarea
-                  autoFocus
-                  rows={2}
-                  value={cancelReason}
-                  onChange={e => setCancelReason(e.target.value)}
-                  placeholder="Reason for cancellation (required)"
-                  className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
-                />
-                <div className="flex gap-2">
-                  <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
-                    className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
-                    Back
-                  </button>
-                  <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
-                    className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
-                    {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Buyer cancel UI */}
-        {canBuyerCancel && !showCounter && !confirmAction && (
-          <div className="px-4 pb-3">
-            {!showCancelInput ? (
-              <button
-                onClick={() => setShowCancelInput(true)}
-                className="w-full py-1 text-[11px] font-semibold text-[#dc2626] bg-transparent border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fef2f2]"
-              >
-                🚫 Cancel Enquiry
-              </button>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-bold text-[#dc2626] m-0">Cancel this enquiry?</p>
-                <textarea
-                  autoFocus
-                  rows={2}
-                  value={cancelReason}
-                  onChange={e => setCancelReason(e.target.value)}
-                  placeholder="Reason for cancellation (required)"
-                  className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
-                />
-                <div className="flex gap-2">
-                  <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
-                    className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
-                    Back
-                  </button>
-                  <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
-                    className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
-                    {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-
-    if (quote.status === 'held' && isSupplier) {
-      return (
-        <div className="flex flex-col">
-          <div className="relative" style={{ opacity: 0.55 }}>
-            {cardContent}
-            <div className="absolute bottom-2 right-2 bg-[#fbbf24] rounded-full p-1 shadow-md">
-              <Clock size={12} className="text-white" />
-            </div>
-          </div>
-          {actionButtons}
-          {timeRow}
+          )}
         </div>
-      );
-    }
+      )}
 
+      {/* Buyer cancel UI */}
+      {canBuyerCancel && !showCounter && !confirmAction && (
+        <div className="px-4 pb-3">
+          {!showCancelInput ? (
+            <button
+              onClick={() => setShowCancelInput(true)}
+              className="w-full py-1 text-[11px] font-semibold text-[#dc2626] bg-transparent border border-[#fecaca] rounded-[6px] cursor-pointer hover:bg-[#fef2f2]"
+            >
+              🚫 Cancel Enquiry
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-bold text-[#dc2626] m-0">Cancel this enquiry?</p>
+              <textarea
+                autoFocus
+                rows={2}
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                placeholder="Reason for cancellation (required)"
+                className="border border-[#fecaca] rounded-[6px] px-2.5 py-2 text-xs outline-none focus:border-[#dc2626] resize-none"
+              />
+              <div className="flex gap-2">
+                <button onClick={() => { setShowCancelInput(false); setCancelReason(''); }}
+                  className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                  Back
+                </button>
+                <button onClick={handleCancelEnquiry} disabled={cancelSubmitting || !cancelReason.trim()}
+                  className="flex-1 py-1.5 text-xs font-bold text-white bg-[#dc2626] rounded-[6px] border-none cursor-pointer disabled:opacity-50">
+                  {cancelSubmitting ? 'Cancelling…' : 'Confirm Cancel'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  if (quote.status === 'held' && isSupplier) {
     return (
       <div className="flex flex-col">
-        {cardContent}
+        <div className="relative" style={{ opacity: 0.55 }}>
+          {cardContent}
+          <div className="absolute bottom-2 right-2 bg-[#fbbf24] rounded-full p-1 shadow-md">
+            <Clock size={12} className="text-white" />
+          </div>
+        </div>
         {actionButtons}
         {timeRow}
       </div>
     );
-  };
+  }
+
+  return (
+    <div className="flex flex-col">
+      {cardContent}
+      {actionButtons}
+      {timeRow}
+    </div>
+  );
+};
 
 const ChatInbox: React.FC = () => {
   const { user } = useSelector((state: any) => state.auth);
@@ -814,7 +815,7 @@ const ChatInbox: React.FC = () => {
         } else if (data && !data.success) {
           setSupplierProfileData(data); // Fallback if structure is different
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [user?.role]);
 
@@ -825,7 +826,7 @@ const ChatInbox: React.FC = () => {
       supplierService.getProfile().then(data => {
         if (data?.supplier) setSupplierProfileData(data.supplier);
         else if (data && !data.success) setSupplierProfileData(data);
-      }).catch(() => {});
+      }).catch(() => { });
     }
   });
 
@@ -973,9 +974,9 @@ const ChatInbox: React.FC = () => {
   const handleCreateQuotation = async () => {
     if (!activeConv || isSendingQuote) return;
     setIsSendingQuote(true);
-    
+
     let finalSignature = supplierProfileData?.savedSignature || user?.savedSignature;
-    
+
     if (!finalSignature) {
       if (supplierSigCanvas.current && !supplierSigCanvas.current.isEmpty()) {
         finalSignature = supplierSigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
@@ -1298,14 +1299,14 @@ const ChatInbox: React.FC = () => {
                             const hasQuotationAfter = messages.slice(msgIdx + 1).some(m => m.messageType === 'quotation');
                             showActions = isLatestEnquiry && !hasQuotationAfter && !isNegotiationDead;
                           }
-                          
+
                           if (!showActions) return null;
-                          
+
                           // Parse target price
                           const match = msg.text.match(/Target budget: ₹([0-9,]+)/);
                           const targetPriceStr = match ? match[1].replace(/,/g, '') : null;
                           const parsedTargetPrice = targetPriceStr ? Number(targetPriceStr) : null;
-                          
+
                           return (
                             <div className="mt-3 w-full flex flex-col gap-2 border-t border-[#e2e8f0]/40 pt-3">
                               <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Your Action</span>
@@ -1314,7 +1315,7 @@ const ChatInbox: React.FC = () => {
                                   <button
                                     className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-green-600 rounded-[8px] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-50"
                                     disabled={isSendingQuote}
-                                    onClick={() => { 
+                                    onClick={() => {
                                       if (parsedTargetPrice) {
                                         const qtyMatch = msg.text.match(/Quantity: (\d+)/);
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
@@ -1325,29 +1326,29 @@ const ChatInbox: React.FC = () => {
                                         setQuoteForm(prev => ({ ...prev, price: activeConv?.productId?.basePrice || 0, quantity: qty, priceTag: '' as any }));
                                       }
                                       setIsAcceptingBuyerPrice(true);
-                                      setIsQuoteModalOpen(true); 
-                                      setQuoteFormErrors({}); 
+                                      setIsQuoteModalOpen(true);
+                                      setQuoteFormErrors({});
                                     }}>
                                     <Check size={14} /> Accept
                                   </button>
                                 )}
                                 <button
                                   className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold ${(!parsedTargetPrice && !msg.text.includes('Price: As listed')) ? 'col-span-2 text-white bg-primary hover:bg-primary/90' : 'text-[#475569] bg-white border border-[#e2e8f0] hover:bg-[#f8fafc]'} rounded-[8px] cursor-pointer transition-colors`}
-                                  onClick={() => { 
+                                  onClick={() => {
                                     const qtyMatch = msg.text.match(/Quantity: (\d+)/);
                                     if (qtyMatch) {
                                       setQuoteForm(prev => ({ ...prev, quantity: Number(qtyMatch[1]) }));
                                     }
                                     setIsAcceptingBuyerPrice(false);
-                                    setIsQuoteModalOpen(true); 
-                                    setQuoteFormErrors({}); 
+                                    setIsQuoteModalOpen(true);
+                                    setQuoteFormErrors({});
                                   }}>
                                   <FileText size={14} /> Negotiate
                                 </button>
                               </div>
                               <button
                                 className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-[8px] cursor-pointer hover:bg-red-100 transition-colors"
-                                onClick={() => { 
+                                onClick={() => {
                                   if (!activeConv?._id) return;
                                   chatApi.cancelEnquiry(activeConv._id, 'Supplier rejected the enquiry terms.').then(() => {
                                     handleQuickReply("Thank you for your enquiry. Unfortunately, we are unable to fulfill this request at the specified terms.");
@@ -1384,84 +1385,84 @@ const ChatInbox: React.FC = () => {
               const canType = isPOActive && !isDelivered;
               return canType;
             })() && (
-              <div className="border-t border-[#f1f5f9] bg-white px-4 py-2.5 shrink-0">
-                {customMsgOpen ? (
-                  /* ── Custom message input ── */
-                  <div className="flex flex-col gap-2">
-                    <textarea
-                      autoFocus
-                      rows={2}
-                      value={customMsgText}
-                      onChange={e => setCustomMsgText(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          const t = customMsgText.trim();
-                          if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
-                        }
-                      }}
-                      placeholder={user?.role === 'supplier' ? 'Type your reply…' : 'Type your question…'}
-                      className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#1e293b] outline-none focus:border-primary resize-none"
-                    />
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={() => { setCustomMsgOpen(false); setCustomMsgText(''); }}
-                        className="px-3 py-1.5 text-xs font-semibold text-[#64748b] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
-                        Cancel
-                      </button>
-                      <button
-                        disabled={!customMsgText.trim()}
-                        onClick={() => {
-                          const t = customMsgText.trim();
-                          if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
+                <div className="border-t border-[#f1f5f9] bg-white px-4 py-2.5 shrink-0">
+                  {customMsgOpen ? (
+                    /* ── Custom message input ── */
+                    <div className="flex flex-col gap-2">
+                      <textarea
+                        autoFocus
+                        rows={2}
+                        value={customMsgText}
+                        onChange={e => setCustomMsgText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            const t = customMsgText.trim();
+                            if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
+                          }
                         }}
-                        className="px-4 py-1.5 text-xs font-bold text-white bg-primary rounded-[6px] border-none cursor-pointer disabled:opacity-40">
-                        Send
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  /* ── Quick reply pills ── */
-                  true ? (
-                    <>
-                      <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider m-0 mb-2">Quick Replies</p>
-                      <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {(user?.role === 'supplier' ? SUPPLIER_QR : BUYER_QR).map(qr => (
-                          <button
-                            key={qr.label}
-                            onClick={() => {
-                              if (qr.label.startsWith('❓') || qr.label.startsWith('✏️')) {
-                                setCustomMsgOpen(true);
-                              } else {
-                                handleQuickReply(qr.text);
-                              }
-                            }}
-                            className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-full cursor-pointer hover:border-primary hover:text-primary hover:bg-[#fff7ed] transition-colors whitespace-nowrap"
-                          >
-                            {qr.label}
-                          </button>
-                        ))}
-                        {/* Supplier custom reply button */}
-                        {user?.role === 'supplier' && (
-                          <button
-                            onClick={() => setCustomMsgOpen(true)}
-                            className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-full cursor-pointer hover:bg-[#ffedd5] transition-colors whitespace-nowrap">
-                            ✏️ Write your reply
-                          </button>
-                        )}
+                        placeholder={user?.role === 'supplier' ? 'Type your reply…' : 'Type your question…'}
+                        className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#1e293b] outline-none focus:border-primary resize-none"
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => { setCustomMsgOpen(false); setCustomMsgText(''); }}
+                          className="px-3 py-1.5 text-xs font-semibold text-[#64748b] bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
+                          Cancel
+                        </button>
+                        <button
+                          disabled={!customMsgText.trim()}
+                          onClick={() => {
+                            const t = customMsgText.trim();
+                            if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
+                          }}
+                          className="px-4 py-1.5 text-xs font-bold text-white bg-primary rounded-[6px] border-none cursor-pointer disabled:opacity-40">
+                          Send
+                        </button>
                       </div>
-                    </>
+                    </div>
                   ) : (
-                    /* Show write reply button directly if no PO yet */
-                    <button
-                      onClick={() => setCustomMsgOpen(true)}
-                      className="w-full flex justify-center items-center gap-2 px-3 py-2 text-[11px] font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5] transition-colors">
-                      ✏️ Type Message
-                    </button>
-                  )
-                )}
-              </div>
-            )}
+                    /* ── Quick reply pills ── */
+                    true ? (
+                      <>
+                        <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider m-0 mb-2">Quick Replies</p>
+                        <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                          {(user?.role === 'supplier' ? SUPPLIER_QR : BUYER_QR).map(qr => (
+                            <button
+                              key={qr.label}
+                              onClick={() => {
+                                if (qr.label.startsWith('❓') || qr.label.startsWith('✏️')) {
+                                  setCustomMsgOpen(true);
+                                } else {
+                                  handleQuickReply(qr.text);
+                                }
+                              }}
+                              className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-full cursor-pointer hover:border-primary hover:text-primary hover:bg-[#fff7ed] transition-colors whitespace-nowrap"
+                            >
+                              {qr.label}
+                            </button>
+                          ))}
+                          {/* Supplier custom reply button */}
+                          {user?.role === 'supplier' && (
+                            <button
+                              onClick={() => setCustomMsgOpen(true)}
+                              className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-full cursor-pointer hover:bg-[#ffedd5] transition-colors whitespace-nowrap">
+                              ✏️ Write your reply
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      /* Show write reply button directly if no PO yet */
+                      <button
+                        onClick={() => setCustomMsgOpen(true)}
+                        className="w-full flex justify-center items-center gap-2 px-3 py-2 text-[11px] font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] cursor-pointer hover:bg-[#ffedd5] transition-colors">
+                        ✏️ Type Message
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
           </>
         )}
       </main>
@@ -1679,82 +1680,82 @@ const ChatInbox: React.FC = () => {
             </div>
 
             {/* Signature Pad */}
-          <div className="px-5 pb-2">
-            {(supplierProfileData?.savedSignature || user?.savedSignature) ? (
-              <div className="flex flex-col items-center gap-3">
-                <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0 self-start">Authorized Signature</p>
-                <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full max-w-[360px] h-[100px]">
-                  <img src={supplierProfileData?.savedSignature || user?.savedSignature} alt="Your Signature" className="max-w-full max-h-full object-contain" />
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Authorized Signature <span className="text-red-500">*</span></label>
-                  <div className="flex items-center gap-2 text-xs">
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
-                      Draw
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
-                      Upload
-                    </label>
+            <div className="px-5 pb-2">
+              {(supplierProfileData?.savedSignature || user?.savedSignature) ? (
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0 self-start">Authorized Signature</p>
+                  <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full max-w-[360px] h-[100px]">
+                    <img src={supplierProfileData?.savedSignature || user?.savedSignature} alt="Your Signature" className="max-w-full max-h-full object-contain" />
                   </div>
                 </div>
-                {signatureMode === 'draw' ? (
-                  <div className="border border-[#e2e8f0] rounded-[8px] bg-white relative">
-                    <SignatureCanvas 
-                      ref={supplierSigCanvas} 
-                      penColor="#0f172a" 
-                      canvasProps={{ className: 'w-full h-[120px] rounded-[8px]', style: { cursor: 'crosshair' } }}
-                      onEnd={() => setHasDrawnSignature(true)}
-                    />
-                    <button className="absolute top-2 right-2 p-1.5 bg-[#f1f5f9] text-[#64748b] rounded-[6px] hover:bg-[#e2e8f0]" onClick={() => { supplierSigCanvas.current?.clear(); setHasDrawnSignature(false); }}>
-                      <Eraser size={14} />
-                    </button>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Authorized Signature <span className="text-red-500">*</span></label>
+                    <div className="flex items-center gap-2 text-xs">
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
+                        Draw
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
+                        Upload
+                      </label>
+                    </div>
                   </div>
-                ) : (
-                  <div className="border-2 border-dashed border-[#cbd5e1] rounded-[8px] p-4 flex flex-col items-center justify-center bg-[#f8fafc] relative min-h-[120px]">
-                    {supplierSignature ? (
-                      <>
-                        <img src={supplierSignature} alt="Uploaded" className="max-w-full max-h-[100px] object-contain" />
-                        <button className="absolute top-2 right-2 p-1 text-red-500 bg-white rounded-full shadow-sm hover:bg-red-50" onClick={() => setSupplierSignature(null)}>
-                          <X size={14} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={24} className="text-[#94a3b8] mb-2" />
-                        <span className="text-xs font-semibold text-[#475569]">Click to upload signature</span>
-                        <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            try {
-                              const reader = new FileReader();
-                              reader.onload = async (ev) => {
-                                const result = ev.target?.result as string;
-                                try {
-                                  const processed = await removeWhiteBackground(result);
-                                  setSupplierSignature(processed);
-                                } catch {
-                                  setSupplierSignature(result);
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            } catch (e) {
-                              console.error(e);
+                  {signatureMode === 'draw' ? (
+                    <div className="border border-[#e2e8f0] rounded-[8px] bg-white relative">
+                      <SignatureCanvas
+                        ref={supplierSigCanvas}
+                        penColor="#0f172a"
+                        canvasProps={{ className: 'w-full h-[120px] rounded-[8px]', style: { cursor: 'crosshair' } }}
+                        onEnd={() => setHasDrawnSignature(true)}
+                      />
+                      <button className="absolute top-2 right-2 p-1.5 bg-[#f1f5f9] text-[#64748b] rounded-[6px] hover:bg-[#e2e8f0]" onClick={() => { supplierSigCanvas.current?.clear(); setHasDrawnSignature(false); }}>
+                        <Eraser size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-[#cbd5e1] rounded-[8px] p-4 flex flex-col items-center justify-center bg-[#f8fafc] relative min-h-[120px]">
+                      {supplierSignature ? (
+                        <>
+                          <img src={supplierSignature} alt="Uploaded" className="max-w-full max-h-[100px] object-contain" />
+                          <button className="absolute top-2 right-2 p-1 text-red-500 bg-white rounded-full shadow-sm hover:bg-red-50" onClick={() => setSupplierSignature(null)}>
+                            <X size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={24} className="text-[#94a3b8] mb-2" />
+                          <span className="text-xs font-semibold text-[#475569]">Click to upload signature</span>
+                          <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const reader = new FileReader();
+                                reader.onload = async (ev) => {
+                                  const result = ev.target?.result as string;
+                                  try {
+                                    const processed = await removeWhiteBackground(result);
+                                    setSupplierSignature(processed);
+                                  } catch {
+                                    setSupplierSignature(result);
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              } catch (e) {
+                                console.error(e);
+                              }
                             }
-                          }
-                        }} />
-                      </>
-                    )}
-                  </div>
-                )}
-                <p className="text-[10px] text-primary m-0 italic">This signature will be saved to your profile for all future quotations.</p>
-              </div>
-            )}
-          </div>
+                          }} />
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-[10px] text-primary m-0 italic">This signature will be saved to your profile for all future quotations.</p>
+                </div>
+              )}
+            </div>
 
             {/* Action strip */}
             <div className="px-5 pb-5 pt-1 flex gap-3">

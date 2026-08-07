@@ -58,6 +58,7 @@ const OrderList: React.FC = () => {
   const { user } = useSelector((state: any) => state.auth);
   const profile = useSelector((state: any) => state.supplier?.profile);
   const { socket } = useSocket();
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace('/api', '');
 
   const isSupplier = user?.role === 'supplier';
   // V1: AMJ provides no logistics — every supplier ships with their own courier.
@@ -281,9 +282,9 @@ const OrderList: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   {!isSupplier && order.poNumber && (
-                    <a href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '')}/api/orders/${order._id}/po-download`} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[#0369a1] bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] no-underline hover:bg-[#dbeafe]">
-                      <Download size={12} /> PO
+                    <a href={`${apiBase}/api/orders/${order._id}/po-download`} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#0f172a] bg-white border border-[#e2e8f0] rounded-[6px] no-underline hover:border-primary hover:text-primary">
+                      <Download size={14} /> Download PO
                     </a>
                   )}
                   {attention && <span className="text-[10px] font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fca5a5] px-2 py-0.5 rounded-full">Action needed</span>}
