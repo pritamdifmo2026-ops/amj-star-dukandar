@@ -1,16 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { clearCart } from '@/features/buyer/store/cart.slice';
 import apiClient from '@/api/client';
+import { useSocket } from '@/shared/contexts/SocketContext';
+import { orderApi } from '@/features/order/services/order.api';
 import {
   ShoppingBag, MapPin, Plus, Truck, ArrowLeft,
   CheckCircle, Package, AlertCircle, X,
-  ChevronRight, Receipt, Handshake, FileText,
+  ChevronRight, Receipt, Handshake, FileText, Clock,
   Image as ImageIcon
 } from 'lucide-react';
 import { addressApi } from '@/features/buyer/services/address.api';
+import SignatureCanvas from 'react-signature-canvas';
+import { removeWhiteBackground } from '@/shared/utils/removeBackground';
 import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
 import { pincodeToState, normaliseState, getShippingZone } from '@/shared/utils/pincodeToState';
 
@@ -52,6 +57,61 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [showDealPanel, setShowDealPanel] = useState(false);
   const [dealPayMethod, setDealPayMethod] = useState<'direct' | 'amjstar'>('direct');
   const [dealAck, setDealAck] = useState(false);
+  const sigCanvas = React.useRef<any>(null);
+  const [signatureMode, setSignatureMode] = useState<'upload'|'draw'>('draw');
+  const [uploadedSignature, setUploadedSignature] = useState<string|null>(null);
+  const [isChangingSignature, setIsChangingSignature] = useState(false);
+  const [tempSignature, setTempSignature] = useState<string|null>(null);
+
+  const { socket } = useSocket();
+
+  // Listen for supplier approval in real-time
+  useEffect(() => {
+    if (!placedOrders || placedOrders.length === 0) return;
+
+    const checkUpdates = async () => {
+      let changed = false;
+      const newOrders = await Promise.all(placedOrders.map(async o => {
+        if (o.status === 'pending_approval') {
+          try {
+            const freshRes: any = await orderApi.detail(o._id);
+            const fresh = freshRes.data || freshRes;
+            if (fresh.status !== 'pending_approval') {
+              changed = true;
+              return fresh;
+            }
+          } catch (e) { }
+        }
+        return o;
+      }));
+      if (changed) {
+        setPlacedOrders(newOrders);
+      }
+    };
+
+    // Socket listener (fast path)
+    const handleOrderUpdate = (update: any) => {
+      const matchedOrder = placedOrders.find(o => o._id === update.orderId);
+      if (matchedOrder && update.status === 'pending') {
+        checkUpdates();
+      }
+    };
+
+    if (socket) {
+      socket.on('order_update', handleOrderUpdate);
+    }
+
+    // Polling fallback (robust path)
+    const interval = setInterval(() => {
+      const needsPolling = placedOrders.some(o => o.status === 'pending_approval');
+      if (needsPolling) checkUpdates();
+    }, 5000);
+
+    return () => {
+      if (socket) socket.off('order_update', handleOrderUpdate);
+      clearInterval(interval);
+    };
+  }, [socket, placedOrders]);
 
 
   // Fetch saved addresses; fall back to profile address if none saved yet
@@ -151,6 +211,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         buyNow: isBuyNow,
         addressSnapshot,
         shippingCost: totalShipping,
+        buyerSignature: tempSignature || user?.savedSignature || uploadedSignature || (sigCanvas.current && !sigCanvas.current.isEmpty() ? sigCanvas.current.getTrimmedCanvas().toDataURL('image/png') : ''),
       });
 
       const orders = res.data.orders || [];
@@ -163,6 +224,22 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
     }
   };
 
+  const handleOpenDealPanel = () => {
+    if (!selectedAddress) {
+      setError('Please add a delivery address.');
+      return;
+    }
+    if (!user?.savedSignature || isChangingSignature) {
+      const hasSig = (signatureMode === 'upload' && uploadedSignature) || (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty());
+      if (!hasSig) {
+        setError('Please provide your Authorized Signature below.');
+        return;
+      }
+    }
+    setError(null);
+    setShowDealPanel(true);
+  };
+
   // ── Success screen ────────────────────────────────────────────────────────
   if (placedOrders) {
     return (
@@ -171,11 +248,11 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           <CheckCircle size={40} className="text-[#059669]" />
         </div>
         <div>
-          <h2 className="text-xl font-extrabold text-[#0f172a] m-0 mb-2">Order Placed!</h2>
+          <h2 className="text-xl font-extrabold text-[#0f172a] m-0 mb-2">Order Requested!</h2>
           <p className="text-sm text-[#64748b] m-0">
             {placedOrders.length === 1
-              ? `Order #${placedOrders[0].orderNumber} has been placed successfully.`
-              : `${placedOrders.length} orders placed: ${placedOrders.map(o => `#${o.orderNumber}`).join(', ')}`}
+              ? `Order #${placedOrders[0].orderNumber} has been sent to the supplier for approval.`
+              : `${placedOrders.length} orders requested: ${placedOrders.map(o => `#${o.orderNumber}`).join(', ')}`}
           </p>
         </div>
 
@@ -201,7 +278,13 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         </div>
 
         <div className="flex flex-col gap-3 w-full">
-          {placedOrders.map(order => order._id && (
+          {placedOrders.every(o => o.status === 'pending_approval') && (
+            <div className="bg-[#fff7ed] border border-[#fdba74] p-3 rounded-[10px] text-left mb-2">
+              <p className="text-xs text-[#c2410c] m-0 font-semibold mb-1 flex items-center gap-1.5"><Clock size={14}/> Awaiting Supplier Approval</p>
+              <p className="text-[10px] text-[#ea580c] m-0">The supplier must review and approve this order before the official Purchase Order is generated.</p>
+            </div>
+          )}
+          {placedOrders.some(o => o.poNumber) && placedOrders.map(order => order.poNumber && (
             <a
               key={order._id}
               href={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '')}/api/orders/${order._id}/po-download`}
@@ -410,6 +493,113 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               </div>
             )}
           </div>
+
+          {/* Signature Block */}
+          <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+            <h2 className="flex items-center gap-2 text-base font-extrabold text-[#0f172a] m-0 mb-1">
+              Authorized Signature
+            </h2>
+            <p className="text-[11px] text-[#64748b] m-0 mb-4">Required to generate a legally binding Purchase Order.</p>
+            
+            {!isChangingSignature && (tempSignature || user?.savedSignature) ? (
+              <div className="flex flex-col items-center gap-3">
+                <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full max-w-[360px] h-[100px]">
+                  <img src={tempSignature || user?.savedSignature} alt="Your Signature" className="max-w-full max-h-full object-contain" />
+                </div>
+                <button
+                  onClick={() => setIsChangingSignature(true)}
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 underline cursor-pointer bg-transparent border-none"
+                >
+                  Change Signature
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4 w-full max-w-[500px]">
+                <div className="flex justify-center gap-4 border-b border-[#e2e8f0] pb-3">
+                  <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+                    <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
+                    Draw Signature
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+                    <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
+                    Upload Image
+                  </label>
+                </div>
+                <p className="text-xs text-[#64748b] m-0 mb-1 italic">Note: Draw clearly or upload a photo of your signature on plain white paper.</p>
+
+                <div className="border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white relative flex justify-center">
+                {signatureMode === 'draw' ? (
+                  <div className="w-full flex flex-col items-center bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAACVJREFUKFNj/P///38GNIBxMCMxihjQxMkxCAsMogJkm2FygDQAn610wzC1aJ0AAAAASUVORK5CYII=')] bg-repeat">
+                    <SignatureCanvas
+                      ref={sigCanvas}
+                      penColor="black"
+                      backgroundColor="rgba(255,255,255,0)"
+                      canvasProps={{ width: 720, height: 200, className: 'w-full max-w-[500px] h-[100px] border-b border-[#e2e8f0] cursor-crosshair' }}
+                    />
+                    <button type="button" onClick={() => sigCanvas.current?.clear()} className="absolute bottom-2 right-2 text-[10px] text-gray-500 hover:text-gray-700 bg-white shadow px-2 py-1 rounded border-none cursor-pointer">
+                      Clear
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-4 w-full flex flex-col items-center bg-white">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="text-xs"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = async (ev) => {
+                            if (ev.target?.result) {
+                              const processed = await removeWhiteBackground(ev.target.result as string);
+                              setUploadedSignature(processed);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    {uploadedSignature && (
+                      <div className="mt-3 border border-[#e2e8f0] p-2 bg-white rounded flex justify-center h-[100px] w-full max-w-[360px]">
+                        <img src={uploadedSignature} alt="Uploaded" className="max-w-full max-h-full object-contain" />
+                      </div>
+                    )}
+                  </div>
+                )}
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  {isChangingSignature && (
+                    <button onClick={() => setIsChangingSignature(false)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 bg-transparent border-none cursor-pointer">
+                      Cancel
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      let sigData = '';
+                      if (signatureMode === 'upload' && uploadedSignature) {
+                        sigData = uploadedSignature;
+                      } else if (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty()) {
+                        sigData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+                      }
+                      
+                      if (!sigData) {
+                        toast.error('Please provide a signature');
+                        return;
+                      }
+                      
+                      setTempSignature(sigData);
+                      setIsChangingSignature(false);
+                      toast.success('Signature confirmed for this order');
+                    }}
+                    className="px-4 py-2 bg-[#b44b1c] hover:bg-[#9c3e14] text-white font-bold rounded-[8px] cursor-pointer border-none transition-colors"
+                  >
+                    Save Signature
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Right column: payment ── */}
@@ -440,15 +630,19 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           {/* Payment options */}
           <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
             <h3 className="text-sm font-extrabold text-[#0f172a] m-0 mb-4">Payment Method</h3>
+            
 
+
+            {/* Error Message */}
             {error && (
-              <div className="flex items-start gap-2 p-3 bg-[#fef2f2] border border-[#fecaca] rounded-[8px] text-[#dc2626] text-xs mb-4">
-                <AlertCircle size={14} className="shrink-0 mt-0.5" /> {error}
+              <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-[8px] flex items-start gap-2">
+                <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-red-600 m-0">{error}</p>
               </div>
             )}
 
             <button
-              onClick={() => setShowDealPanel(true)}
+              onClick={handleOpenDealPanel}
               disabled={!selectedAddress}
               className="w-full flex items-center gap-3 p-4 bg-[#f0fdf4] border-2 border-[#86efac] rounded-[10px] text-left cursor-pointer hover:border-[#22c55e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
             >

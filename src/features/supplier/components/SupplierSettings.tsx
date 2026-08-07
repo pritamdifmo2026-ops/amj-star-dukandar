@@ -7,6 +7,8 @@ import supplierService from '../services/supplier.service';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import walletApi from '../services/wallet.api';
 import MembershipPlan from './MembershipPlan';
+import SignatureCanvas from 'react-signature-canvas';
+import { removeWhiteBackground } from '@/shared/utils/removeBackground';
 
 interface SupplierSettingsProps { profile: any; }
 
@@ -48,6 +50,20 @@ const inputCls = "flex-1 border-none outline-none text-sm text-[#1e293b] bg-tran
 
 const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
   const qc = useQueryClient();
+  const sigCanvas = React.useRef<any>(null);
+  const [signatureMode, setSignatureMode] = useState<'upload'|'draw'>('draw');
+  const [uploadedSignature, setUploadedSignature] = useState<string|null>(null);
+
+  const updateSignatureMutation = useMutation({
+    mutationFn: supplierService.updateSignature,
+    onSuccess: () => {
+      toast.success('Authorized Signature saved successfully');
+      qc.invalidateQueries({ queryKey: ['supplierProfile'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to save signature');
+    }
+  });
   const { data: walletData } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.getWallet });
   const { data: banksData } = useQuery({ queryKey: ['supplier', 'banks'], queryFn: supplierService.getBanks });
   const adminContact = profile?.assignedAdminContact;
@@ -675,6 +691,116 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
             Set ₹0 for free shipping in any zone.
           </p>
         </div>
+      </div>
+
+      {/* Authorized Signature */}
+      <div className={cardCls}>
+        <div className={cardHeaderCls}>
+          <div className="w-8 h-8 rounded-full bg-[#f8fafc] border border-[#e2e8f0] flex items-center justify-center">
+            <Edit2 size={16} className="text-[#64748b]" />
+          </div>
+          <div>
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0">Authorized Signature</h3>
+            <p className="text-xs text-[#64748b] m-0 mt-0.5">This signature will be attached to all generated Purchase Orders.</p>
+          </div>
+        </div>
+        
+        {profile?.savedSignature ? (
+          <div className="flex flex-col items-center gap-4">
+            <div className="border border-[#e2e8f0] rounded-[8px] p-4 bg-white flex justify-center w-[360px] h-[100px]">
+              <img src={profile.savedSignature} alt="Signature" className="max-w-full max-h-full object-contain" />
+            </div>
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to remove your saved signature? You will need to add a new one.')) {
+                  updateSignatureMutation.mutate('');
+                }
+              }}
+              className="text-xs font-bold text-red-500 hover:text-red-600 underline cursor-pointer bg-transparent border-none"
+            >
+              Remove Signature
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-center gap-4 border-b border-[#e2e8f0] pb-3">
+              <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+                <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
+                Draw Signature
+              </label>
+              <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
+                <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
+                Upload Image
+              </label>
+            </div>
+            <p className="text-xs text-[#64748b] m-0 mb-1 italic">Note: Draw clearly or upload a photo of your signature on plain white paper.</p>
+
+            <div className="border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white relative flex justify-center">
+              {signatureMode === 'draw' ? (
+                <div className="w-full flex flex-col items-center bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAACVJREFUKFNj/P///38GNIBxMCMxihjQxMkxCAsMogJkm2FygDQAn610wzC1aJ0AAAAASUVORK5CYII=')] bg-repeat">
+                  <SignatureCanvas
+                    ref={sigCanvas}
+                    penColor="black"
+                    backgroundColor="rgba(255,255,255,0)"
+                    canvasProps={{ width: 720, height: 200, className: 'w-full max-w-[360px] h-[100px] border-b border-[#e2e8f0] cursor-crosshair' }}
+                  />
+                    <button type="button" onClick={() => sigCanvas.current?.clear()} className="absolute bottom-2 right-2 text-[10px] text-gray-500 hover:text-gray-700 bg-white shadow px-2 py-1 rounded border-none cursor-pointer">
+                      Clear
+                    </button>
+                  </div>
+              ) : (
+                <div className="p-4 w-full flex flex-col items-center bg-white">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="text-xs"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = async (ev) => {
+                          if (ev.target?.result) {
+                            const processed = await removeWhiteBackground(ev.target.result as string);
+                            setUploadedSignature(processed);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                  {uploadedSignature && (
+                    <div className="mt-3 border border-[#e2e8f0] p-2 bg-white rounded flex justify-center h-[100px] w-full max-w-[360px]">
+                      <img src={uploadedSignature} alt="Uploaded" className="max-w-full max-h-full object-contain" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => {
+                  let sigData = '';
+                  if (signatureMode === 'upload' && uploadedSignature) {
+                    sigData = uploadedSignature;
+                  } else if (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty()) {
+                    sigData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+                  }
+                  
+                  if (!sigData) {
+                    toast.error('Please provide a signature');
+                    return;
+                  }
+                  
+                  updateSignatureMutation.mutate(sigData);
+                }}
+                disabled={updateSignatureMutation.isPending}
+                className={primaryBtnCls}
+              >
+                {updateSignatureMutation.isPending ? 'Saving...' : 'Save Signature'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Membership Plan (view current plan + upgrade) */}

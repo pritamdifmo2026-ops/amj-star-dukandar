@@ -12,12 +12,13 @@ import { useAppSelector } from '@/store/hooks';
 import { ROUTES } from '@/shared/constants/routes';
 
 /* ─── Share Modal ────────────────────────────────────────────────────── */
-const ShareModal: React.FC<{ url: string; name: string; onClose: () => void }> = ({ url, name, onClose }) => {
+const ShareModal: React.FC<{ url: string; name: string; type?: 'store' | 'product'; onClose: () => void }> = ({ url, name, type = 'store', onClose }) => {
   const [copied, setCopied] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const encodedUrl = encodeURIComponent(url);
-  const encodedText = encodeURIComponent(`Check out ${name} on AMJSTAR!`);
+  const title = type === 'product' ? 'Share this Product' : 'Share this Store';
+  const encodedText = encodeURIComponent(type === 'product' ? `Check out ${name} on AMJSTAR!` : `Check out ${name}'s store on AMJSTAR!`);
 
   const platforms = [
     {
@@ -73,7 +74,7 @@ const ShareModal: React.FC<{ url: string; name: string; onClose: () => void }> =
         {/* header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#f1f5f9]">
           <div>
-            <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Share this Store</h3>
+            <h3 className="text-sm font-extrabold text-[#0f172a] m-0">{title}</h3>
             <p className="text-xs text-[#94a3b8] m-0 mt-0.5">Spread the word about {name}</p>
           </div>
           <button
@@ -110,7 +111,7 @@ const ShareModal: React.FC<{ url: string; name: string; onClose: () => void }> =
             <span className="text-xs text-[#475569] truncate flex-1 font-mono">{url}</span>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 text-xs font-bold text-[#e65c00] bg-white border border-[#fed7aa] px-2.5 py-1.5 rounded-[7px] cursor-pointer hover:bg-[#fff7ed] transition-colors shrink-0 whitespace-nowrap"
+              className="flex items-center gap-1.5 text-xs font-bold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] px-3.5 py-2 rounded-[8px] hover:bg-[#f1f5f9] transition-colors cursor-pointer ml-auto"
             >
               {copied ? <Check size={12} /> : <Copy size={12} />}
               {copied ? 'Copied!' : 'Copy'}
@@ -123,7 +124,7 @@ const ShareModal: React.FC<{ url: string; name: string; onClose: () => void }> =
 };
 
 /* ─── Storefront Product Card (Enquire Now variant) ─────────────────── */
-const StorefrontProductCard: React.FC<{ product: any }> = ({ product }) => {
+const StorefrontProductCard: React.FC<{ product: any; onShare: (product: any) => void }> = ({ product, onShare }) => {
   const navigate = useNavigate();
   const user = useAppSelector(state => state.auth.user);
   const productId = product.id || product._id;
@@ -165,9 +166,18 @@ const StorefrontProductCard: React.FC<{ product: any }> = ({ product }) => {
 
       {/* info */}
       <div className="p-2.5 sm:p-3 flex-1 flex flex-col">
-        <h3 className="text-[11px] sm:text-xs font-semibold text-[#0f172a] m-0 line-clamp-2 leading-[1.45] flex-1 mb-2">
-          {product.name}
-        </h3>
+        <div className="flex items-start justify-between gap-2 mb-2 flex-1">
+          <h3 className="text-[11px] sm:text-xs font-semibold text-[#0f172a] m-0 line-clamp-2 leading-[1.45]">
+            {product.name}
+          </h3>
+          <button 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShare(product); }}
+            className="shrink-0 p-1.5 rounded-full text-[#64748b] bg-[#f8fafc] hover:text-[#e65c00] hover:bg-[#fff7ed] transition-colors border border-[#e2e8f0]"
+            title="Share Product"
+          >
+            <Share2 size={13} />
+          </button>
+        </div>
         <div className="flex items-baseline justify-between mb-3">
           <span className="text-xs sm:text-sm font-extrabold text-[#0f172a]">
             ₹{(product.price || product.basePrice || 0).toLocaleString('en-IN')}
@@ -244,7 +254,7 @@ const PublicStoreFront: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareData, setShareData] = useState<{ url: string; name: string; type: 'store' | 'product' } | null>(null);
 
   const storeUrl = window.location.href;
 
@@ -305,12 +315,13 @@ const PublicStoreFront: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] overflow-x-hidden">
 
-      {/* Share Modal */}
-      {showShareModal && (
-        <ShareModal
-          url={storeUrl}
-          name={businessName}
-          onClose={() => setShowShareModal(false)}
+      {/* Modals */}
+      {shareData && (
+        <ShareModal 
+          url={shareData.url} 
+          name={shareData.name}
+          type={shareData.type}
+          onClose={() => setShareData(null)} 
         />
       )}
 
@@ -324,7 +335,7 @@ const PublicStoreFront: React.FC = () => {
           <Link to="/" className="text-white/90 font-extrabold text-lg tracking-tight no-underline hover:text-white transition-colors">AMJSTAR</Link>
         </div>
         <button
-          onClick={() => setShowShareModal(true)}
+          onClick={() => setShareData({ url: storeUrl, name: businessName, type: 'store' })}
           className="absolute top-4 right-4 lg:right-8 flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer max-[360px]:px-2"
         >
           <Share2 size={13} /> Share Store
@@ -369,7 +380,7 @@ const PublicStoreFront: React.FC = () => {
             </div>
             <div className="sm:self-center flex gap-2 shrink-0 flex-wrap w-full sm:w-auto">
               <button
-                onClick={() => setShowShareModal(true)}
+                onClick={() => setShareData({ url: storeUrl, name: businessName, type: 'store' })}
                 className="flex items-center justify-center gap-1.5 bg-[#f1f5f9] text-[#475569] text-sm font-bold px-4 py-2.5 rounded-[10px] hover:bg-[#e2e8f0] transition-colors border-none cursor-pointer"
               >
                 <Share2 size={14} /> Share
@@ -435,8 +446,16 @@ const PublicStoreFront: React.FC = () => {
             {filteredProducts.length > 0 ? (
               viewMode === 'grid' ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
-                  {filteredProducts.map((product: any) => (
-                    <StorefrontProductCard key={product.id || product._id} product={product} />
+                  {filteredProducts.map((p: any) => (
+                    <StorefrontProductCard 
+                      key={p.id || p._id} 
+                      product={p} 
+                      onShare={(product) => setShareData({
+                        url: `${window.location.origin}/products/${product.id || product._id}`,
+                        name: product.name,
+                        type: 'product'
+                      })}
+                    />
                   ))}
                 </div>
               ) : (
@@ -445,11 +464,11 @@ const PublicStoreFront: React.FC = () => {
                     <Link
                       key={product.id || product._id}
                       to={`/products/${product.id || product._id}`}
-                      className="bg-white rounded-[12px] border border-[#eef2f6] p-3 sm:p-4 flex items-center gap-3 sm:gap-4 no-underline hover:border-[#e65c00]/30 hover:shadow-[0_2px_12px_rgba(230,92,0,0.08)] transition-all"
+                      className="bg-white rounded-[12px] border border-[#eef2f6] p-3 sm:p-4 flex items-center gap-3 sm:gap-4 no-underline hover:border-[#e65c00]/30 hover:shadow-[0_2px_12px_rgba(230,92,0,0.08)] transition-all group"
                     >
                       <div className="w-16 h-16 max-[520px]:w-14 max-[520px]:h-14 rounded-[8px] overflow-hidden bg-[#f1f5f9] shrink-0">
                         {product.imageUrl ? (
-                          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-[#94a3b8]"><Package size={20} /></div>
                         )}
@@ -459,9 +478,23 @@ const PublicStoreFront: React.FC = () => {
                         <h3 className="text-sm font-bold text-[#0f172a] m-0 truncate">{product.name}</h3>
                         <p className="text-xs text-[#64748b] mt-0.5 m-0">MOQ: {product.minOrderQty || product.moq} {product.unit}</p>
                       </div>
-                      <div className="text-right shrink-0">
+                      <div className="text-right shrink-0 flex flex-col items-end gap-1.5">
+                        <button 
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            setShareData({
+                              url: `${window.location.origin}/products/${product.id || product._id}`,
+                              name: product.name,
+                              type: 'product'
+                            });
+                          }}
+                          className="shrink-0 p-1.5 rounded-full text-[#64748b] bg-white border border-[#eef2f6] shadow-sm hover:text-[#e65c00] hover:border-[#fed7aa] hover:bg-[#fff7ed] transition-all cursor-pointer"
+                          title="Share Product"
+                        >
+                          <Share2 size={12} />
+                        </button>
                         <p className="text-base font-extrabold text-[#0f172a] m-0">₹{(product.price || product.basePrice || 0).toLocaleString('en-IN')}</p>
-                        <span className="text-xs text-[#e65c00] font-bold">Enquire →</span>
                       </div>
                     </Link>
                   ))}
@@ -596,7 +629,7 @@ const PublicStoreFront: React.FC = () => {
               <p className="text-sm font-bold mb-1 m-0">Share this Store</p>
               <p className="text-xs text-white/60 mb-3 m-0">Help others discover this supplier</p>
               <button
-                onClick={() => setShowShareModal(true)}
+                onClick={() => setShareData({ url: storeUrl, name: businessName, type: 'store' })}
                 className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-bold py-2.5 rounded-[8px] hover:bg-white/20 transition-all cursor-pointer"
               >
                 <Share2 size={13} /> Share on Social Media

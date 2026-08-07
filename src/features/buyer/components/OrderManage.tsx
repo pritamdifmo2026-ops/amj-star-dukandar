@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 
 // ─── Status meta ──────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; Icon: React.FC<any> }> = {
+  pending_approval:       { label: 'Pending Approval',          color: '#ea580c', bg: '#fff7ed', border: '#fdba74',  Icon: Clock },
   pending:                { label: 'Processing',                color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd',  Icon: Clock },
   paid:                   { label: 'Pending Dispatch',          color: '#a16207', bg: '#fefce8', border: '#fde047',  Icon: Clock },
   processing:             { label: 'Pending Dispatch',          color: '#a16207', bg: '#fefce8', border: '#fde047',  Icon: Clock },
@@ -61,7 +62,7 @@ const STEPPER = [
   { key: 'completed', label: 'Completed' },
 ];
 const stepIndex = (status: string) => {
-  if (['pending', 'paid', 'processing'].includes(status)) return 0;
+  if (['pending_approval', 'pending', 'paid', 'processing'].includes(status)) return 0;
   if (status === 'packed') return 1;
   if (status === 'shipped') return 2;
   if (status === 'awaiting_confirmation' || status === 'delivered') return 3;
@@ -157,7 +158,27 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const sync = (patch: any) => { setOrder((o: any) => ({ ...o, ...patch })); onRefresh(); };
   const syncDispute = (patch: any) => { setOrder((o: any) => ({ ...o, _dispute: { ...o._dispute, ...patch } })); onRefresh(); };
 
-  // ── Actions ──
+  const handleApproveOrder = async () => {
+    setBusy(true);
+    try {
+      const res = await apiClient.put(`/orders/${order._id}/approve`);
+      sync({ status: 'pending', poNumber: res.data.order?.poNumber });
+      toast.success('Order approved and PO generated.');
+    } catch (e: any) { toast.error(e?.response?.data?.message || 'Failed to approve order'); }
+    finally { setBusy(false); }
+  };
+
+  const handleRejectOrder = async () => {
+    if (!window.confirm('Are you sure you want to reject this order?')) return;
+    setBusy(true);
+    try {
+      await apiClient.put(`/orders/${order._id}/reject`);
+      sync({ status: 'cancelled' });
+      toast.success('Order rejected.');
+    } catch (e: any) { toast.error(e?.response?.data?.message || 'Failed to reject order'); }
+    finally { setBusy(false); }
+  };
+
   const handlePack = async () => {
     setBusy(true);
     try { await orderApi.markPacked(order._id); sync({ status: 'packed' }); toast.success('Marked as packed.'); }
@@ -343,7 +364,27 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         <button
           onClick={() => {
             const url = `${window.location.origin}/orders/${order._id}`;
-            navigator.clipboard.writeText(url).then(() => toast.success('Order link copied!'));
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(url)
+                .then(() => toast.success('Order link copied!'))
+                .catch((err) => {
+                  console.error('Clipboard error:', err);
+                  toast.error('Failed to copy link.');
+                });
+            } else {
+              try {
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                toast.success('Order link copied!');
+              } catch (err) {
+                console.error('Fallback copy error:', err);
+                toast.error('Failed to copy link.');
+              }
+            }
           }}
           className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-[#475569] bg-white border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f8fafc] shrink-0"
           title="Copy shareable link"
@@ -428,10 +469,10 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             {productImage ? <img src={productImage} alt="" className="w-full h-full object-cover" /> : <Package size={24} className="text-[#cbd5e1]" />}
           </div>
           <div className="flex-1 min-w-0">
-            {order.items.map((it: any, i: number) => (
+            {order.items?.map((it: any, i: number) => (
               <div key={i} className="mb-1">
                 <p className="text-sm font-extrabold text-[#0f172a] m-0">{it.name}</p>
-                <p className="text-xs text-[#64748b] m-0">₹{it.price.toLocaleString('en-IN')}/{it.unit || 'pcs'} · Qty {it.quantity} {it.unit || 'pcs'}</p>
+                <p className="text-xs text-[#64748b] m-0">₹{it.price?.toLocaleString('en-IN')}/{it.unit || 'pcs'} · Qty {it.quantity} {it.unit || 'pcs'}</p>
               </div>
             ))}
           </div>
@@ -457,7 +498,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
               </>
             );
           })()}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#fff7ed]"><span className="text-sm font-bold text-[#0f172a]">Grand Total</span><span className="text-base font-extrabold text-primary">₹{order.totalAmount.toLocaleString('en-IN')}</span></div>
+          <div className="flex items-center justify-between px-4 py-3 bg-[#fff7ed]"><span className="text-sm font-bold text-[#0f172a]">Grand Total</span><span className="text-base font-extrabold text-primary">₹{order.totalAmount?.toLocaleString('en-IN')}</span></div>
         </div>
 
         {(snap.deliveryTimeline || snap.shippingNotes) && (
@@ -467,7 +508,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           </div>
         )}
 
-        {!isSupplier && order.poNumber && (
+        {order.poNumber && (
           <a href={`${apiBase}/api/orders/${order._id}/po-download`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-xs font-bold text-[#0369a1] bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] no-underline hover:bg-[#dbeafe]">
             <Download size={12} /> Download PO
           </a>
@@ -750,6 +791,20 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
       {isSupplier && order.status !== 'disputed' && (
         <div className={`${card} p-5`}>
           <p className={sectionTitle}>Actions</p>
+          {order.status === 'pending_approval' && (
+            <div className="flex flex-col gap-3">
+              <div className="bg-[#fff7ed] border border-[#fdba74] p-3 rounded-[8px] mb-2">
+                <p className="text-xs text-[#c2410c] m-0 font-semibold flex items-center gap-2"><Clock size={14}/> Buyer has requested to place a direct order.</p>
+                <p className="text-[10px] text-[#ea580c] m-0 mt-1">Please review the details and approve to generate the Purchase Order. Commission is currently frozen.</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={handleRejectOrder} disabled={busy} className="flex-1 py-2.5 text-sm font-bold text-[#64748b] bg-[#f1f5f9] rounded-[8px] border-none cursor-pointer hover:bg-[#e2e8f0] disabled:opacity-50">Reject</button>
+                <button onClick={handleApproveOrder} disabled={busy} className="flex-2 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50 flex items-center justify-center gap-2">
+                  <CheckCircle size={15}/> Approve Order
+                </button>
+              </div>
+            </div>
+          )}
           {['pending', 'paid', 'processing'].includes(order.status) && (
             <div className="flex flex-col gap-3">
               <button onClick={handlePack} disabled={busy} className="flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-[#0891b2] bg-[#ecfeff] border border-[#a5f3fc] rounded-[8px] cursor-pointer hover:bg-[#cffafe] disabled:opacity-50">
@@ -775,6 +830,15 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
       )}
 
       {/* ── BUYER action panel (non-dispute) ───────────────────────────────── */}
+      {!isSupplier && order.status === 'pending_approval' && (
+        <div className={`${card} p-5`}>
+          <p className={sectionTitle}>Awaiting Supplier Approval</p>
+          <div className="flex items-center gap-2 bg-[#fff7ed] border border-[#fdba74] rounded-[8px] px-3 py-2 text-xs text-[#c2410c] font-semibold">
+            <Clock size={13} /> The supplier is reviewing your direct order. You will be notified once they approve it.
+          </div>
+        </div>
+      )}
+
       {!isSupplier && order.status === 'awaiting_confirmation' && (
         <div className={`${card} p-5`}>
           <p className={sectionTitle}>Confirm Your Order</p>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, MapPin, Facebook, Twitter, Linkedin, Instagram, ShoppingBag, Factory, RefreshCw } from 'lucide-react';
+import { Mail, MapPin, Facebook, Twitter, Linkedin, Instagram, ShoppingBag, Factory, RefreshCw, ChevronRight } from 'lucide-react';
 import appConfig from '@/config/app.config';
 import logo from '@/assets/logoo.png';
 import { ROUTES } from '@/shared/constants/routes';
@@ -14,7 +14,22 @@ const fetchSettings = async () => {
 };
 
 const colTitleCls = "text-[0.78rem] sm:text-[0.82rem] font-bold uppercase tracking-wider text-[oklch(0.18_0.02_240)] mb-4 sm:mb-5";
-const linkCls = "text-[oklch(0.40_0.02_240)] text-[0.78rem] sm:text-[0.82rem] no-underline transition-colors hover:text-primary hover:underline inline-block";
+
+const FooterLink = ({ to, onClick, children }: { to?: string; onClick?: () => void; children: React.ReactNode }) => {
+  const content = (
+    <>
+      <ChevronRight size={14} className="shrink-0 text-primary/70 transition-transform group-hover:translate-x-1" />
+      <span>{children}</span>
+    </>
+  );
+  
+  const className = "group flex items-center gap-1.5 text-[oklch(0.40_0.02_240)] text-[0.78rem] sm:text-[0.82rem] no-underline transition-colors hover:text-primary";
+
+  if (onClick) {
+    return <button onClick={onClick} className={`${className} bg-transparent border-none p-0 cursor-pointer font-sans`}>{content}</button>;
+  }
+  return <Link to={to || '#'} className={className}>{content}</Link>;
+};
 
 
 const Footer: React.FC = () => {
@@ -62,13 +77,13 @@ const Footer: React.FC = () => {
             <div className="flex flex-col">
               <h4 className={colTitleCls}>Quick Links</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
-                <li><Link to="/about" className={linkCls}>About Us</Link></li>
-                <li><Link to="/careers" className={linkCls}>Careers</Link></li>
-                <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Become Supplier</Link></li>
-                <li><Link to={ROUTES.RESELLERS} className={linkCls}>Become Reseller</Link></li>
-                <li><Link to={ROUTES.BUYERS} className={linkCls}>Bulk Orders</Link></li>
-                <li><button onClick={() => setIsHelpOpen(true)} className={`${linkCls} bg-transparent border-none p-0 cursor-pointer font-sans`}>Help</button></li>
-                <li><Link to="/contact" className={linkCls}>Contact</Link></li>
+                <li><FooterLink to="/about">About Us</FooterLink></li>
+                <li><FooterLink to="/careers">Careers</FooterLink></li>
+                <li><FooterLink to={ROUTES.SUPPLIERS}>Become Supplier</FooterLink></li>
+                <li><FooterLink to={ROUTES.RESELLERS}>Become Reseller</FooterLink></li>
+                <li><FooterLink to={ROUTES.BUYERS}>Bulk Orders</FooterLink></li>
+                <li><FooterLink onClick={() => setIsHelpOpen(true)}>Help</FooterLink></li>
+                <li><FooterLink to="/contact">Contact</FooterLink></li>
               </ul>
             </div>
 
@@ -76,11 +91,11 @@ const Footer: React.FC = () => {
             <div className="flex flex-col">
               <h4 className={colTitleCls}>For Buyers</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
-                <li><Link to={ROUTES.PRODUCT_LIST || '/products'} className={linkCls}>Browse Products</Link></li>
-                <li><Link to={ROUTES.BUYERS} className={linkCls}>Request Quote</Link></li>
-                <li><Link to="/directory" className={linkCls}>Wholesale Directory</Link></li>
-                <li><button onClick={() => setIsHelpOpen(true)} className={`${linkCls} bg-transparent border-none p-0 cursor-pointer font-sans`}>Buyer FAQs</button></li>
-                <li><Link to="/orders" className={linkCls}>Track Orders</Link></li>
+                <li><FooterLink to={ROUTES.PRODUCT_LIST || '/products'}>Browse Products</FooterLink></li>
+                <li><FooterLink to={ROUTES.BUYERS}>Request Quote</FooterLink></li>
+                <li><FooterLink to="/directory">Wholesale Directory</FooterLink></li>
+                <li><FooterLink onClick={() => setIsHelpOpen(true)}>Buyer FAQs</FooterLink></li>
+                <li><FooterLink to="/orders">Track Orders</FooterLink></li>
               </ul>
             </div>
 
@@ -88,10 +103,10 @@ const Footer: React.FC = () => {
             <div className="flex flex-col">
               <h4 className={colTitleCls}>For Suppliers</h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
-                <li><Link to={ROUTES.SUPPLIERS} className={linkCls}>Sell on AMJSTAR</Link></li>
-                <li><Link to="/pricing" className={linkCls}>Wholesale Pricing</Link></li>
-                <li><Link to="/stories" className={linkCls}>Success Stories</Link></li>
-                <li><button onClick={() => setIsHelpOpen(true)} className={`${linkCls} bg-transparent border-none p-0 cursor-pointer font-sans`}>Supplier FAQs</button></li>
+                <li><FooterLink to={ROUTES.SUPPLIERS}>Sell on AMJSTAR</FooterLink></li>
+                <li><FooterLink to="/pricing">Wholesale Pricing</FooterLink></li>
+                <li><FooterLink to="/stories">Success Stories</FooterLink></li>
+                <li><FooterLink onClick={() => setIsHelpOpen(true)}>Supplier FAQs</FooterLink></li>
               </ul>
             </div>
 

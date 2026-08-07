@@ -32,7 +32,7 @@ const Buyers: React.FC = () => (
           {(() => {
             const hasLoggedInBefore = localStorage.getItem('has_logged_in_before') === 'true';
             const targetRoute = hasLoggedInBefore ? ROUTES.LOGIN : ROUTES.REGISTER;
-            const buttonText = hasLoggedInBefore ? 'Join as a Buye' : 'Join as a Buyer';
+            const buttonText = hasLoggedInBefore ? 'Join as a Buyer' : 'Join as a Buyer';
 
             return (
               <Link to={`${targetRoute}?mode=buyer`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
@@ -85,3 +85,5 @@ const Buyers: React.FC = () => (
 );
 
 export default Buyers;
+
+

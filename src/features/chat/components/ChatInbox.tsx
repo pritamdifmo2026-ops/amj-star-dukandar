@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone, Clock, X } from 'lucide-react';
+import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone, Clock, X, Eraser, Upload } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { chatApi } from '@/features/chat/services/chat.api';
+import supplierService from '@/features/supplier/services/supplier.service';
 import { quotationApi } from '@/features/supplier/services/quotation.api';
 import { useChat } from '@/shared/hooks/useChat';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { POReviewModal } from './POReviewModal';
+import { removeWhiteBackground } from '@/shared/utils/removeBackground';
 import apiClient from '@/api/client';
+import SignatureCanvas from 'react-signature-canvas';
 
 type Filter = 'all' | 'unread';
 type GstType = 'CGST_SGST' | 'IGST' | 'exempt';
@@ -142,10 +146,10 @@ const SUPPLIER_QR = [
 // ── Main component ──────────────────────────────────────────────────────────
 const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, socket, loadMessages, product, onSupplierAction }: { isLatestQuoteMsg?: boolean; msg: any; onActiveChange?: (isActive: boolean) => void; user: any; socket: any; loadMessages: () => void; product?: any; onSupplierAction?: (quote: any, isAccept: boolean) => void; }) => {
     const isSupplier = user?.role === 'supplier';
-  const handleAcceptQuote = async (quoteId: string, paymentMethod: 'direct' | 'amjstar' = 'direct') => {
+  const handleAcceptQuote = async (quoteId: string, paymentMethod: 'direct' | 'amjstar' = 'direct', buyerSignature?: string) => {
     const loadingToast = toast.loading(isSupplier ? 'Accepting offer...' : 'Confirming deal...');
     try {
-      await quotationApi.acceptQuotation(quoteId, paymentMethod);
+      await quotationApi.acceptQuotation(quoteId, paymentMethod, buyerSignature);
       loadMessages();
       toast.success(isSupplier ? 'Agreed to price! Waiting for buyer to confirm.' : 'Deal Confirmed! Order created.', { id: loadingToast });
     } catch (err: any) {
@@ -179,6 +183,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
     const [cancelSubmitting, setCancelSubmitting] = useState(false);
     const [showReviewModal, setShowReviewModal] = useState(false);
     const [reviewAck, setReviewAck] = useState(false);
+    // Removed buyerSignature
 
     const fetchQuote = () => {
       if (msg.quotationId) {
@@ -219,7 +224,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
     if (quoteNotFound) return null;
     if (!quote) return null;
 
-    const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const msgTime = msg.createdAt ? new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
     const timeRow = (
       <div className={`flex items-center gap-1 mt-1 justify-end`}>
         <span className="text-[10px] text-[#94a3b8]">{msgTime}</span>
@@ -543,7 +548,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                     onClick={() => {
                       setConfirmAction(null);
                       setDirectAck(false);
-                      handleAcceptQuote(quote._id, payMethod);
+                      handleAcceptQuote(quote._id, payMethod, user?.savedSignature || undefined);
                     }}
                     className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#059669] hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed">
                     Confirm &amp; Generate PO
@@ -793,6 +798,37 @@ const ChatInbox: React.FC = () => {
   const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
   const [isAcceptingBuyerPrice, setIsAcceptingBuyerPrice] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isSendingQuote, setIsSendingQuote] = useState(false);
+  const [supplierSignature, setSupplierSignature] = useState<string | null>(null);
+  const [hasDrawnSignature, setHasDrawnSignature] = useState(false);
+  const [signatureMode, setSignatureMode] = useState<'draw' | 'upload'>('draw');
+  // Removed unused isChangingSignature
+  const [supplierProfileData, setSupplierProfileData] = useState<any>(null);
+  const supplierSigCanvas = useRef<any>(null);
+
+  useEffect(() => {
+    if (user?.role === 'supplier') {
+      supplierService.getProfile().then(data => {
+        if (data?.supplier) {
+          setSupplierProfileData(data.supplier);
+        } else if (data && !data.success) {
+          setSupplierProfileData(data); // Fallback if structure is different
+        }
+      }).catch(() => {});
+    }
+  }, [user?.role]);
+
+  const updateSignatureMutation = useMutation({
+    mutationFn: supplierService.updateSignature,
+    onSuccess: () => {
+      // Refresh profile data to get the new signature
+      supplierService.getProfile().then(data => {
+        if (data?.supplier) setSupplierProfileData(data.supplier);
+        else if (data && !data.success) setSupplierProfileData(data);
+      }).catch(() => {});
+    }
+  });
+
   const [quoteForm, setQuoteForm] = useState({
     itemName: '',
     hsnCode: '',
@@ -810,13 +846,13 @@ const ChatInbox: React.FC = () => {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [customMsgOpen, setCustomMsgOpen] = useState(false);
+  const [supplierPaymentAck, setSupplierPaymentAck] = useState(false);
   const [customMsgText, setCustomMsgText] = useState('');
 
   const { messages, isTyping, loadMessages, sendMessage } = useChat(activeConv?._id);
   const { socket } = useSocket();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [isSendingQuote, setIsSendingQuote] = useState(false);
   const [quoteFormErrors, setQuoteFormErrors] = useState<{ price?: string; deliveryTimeline?: string }>({});
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
 
@@ -937,6 +973,24 @@ const ChatInbox: React.FC = () => {
   const handleCreateQuotation = async () => {
     if (!activeConv || isSendingQuote) return;
     setIsSendingQuote(true);
+    
+    let finalSignature = supplierProfileData?.savedSignature || user?.savedSignature;
+    
+    if (!finalSignature) {
+      if (supplierSigCanvas.current && !supplierSigCanvas.current.isEmpty()) {
+        finalSignature = supplierSigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+        // Save it permanently to their profile so they never have to do it again
+        updateSignatureMutation.mutate(finalSignature);
+      } else if (supplierSignature) {
+        finalSignature = supplierSignature;
+        updateSignatureMutation.mutate(finalSignature);
+      } else {
+        toast.error("Please draw or upload your signature.");
+        setIsSendingQuote(false);
+        return;
+      }
+    }
+
     const other = getOtherParticipant(activeConv);
     const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
     try {
@@ -961,10 +1015,14 @@ const ChatInbox: React.FC = () => {
         terms: quoteForm.terms,
         deliveryAddressSnapshot: activeConv.buyerAddress,
         priceTag: quoteForm.priceTag || undefined,
+        supplierSignature: finalSignature || undefined,
       });
       setIsQuoteModalOpen(false);
       setShowPreview(false);
       setEditingQuoteId(null);
+      setSupplierSignature(null);
+      setHasDrawnSignature(false);
+      setSupplierPaymentAck(false);
       loadMessages();
       if (payload?.held) {
         const tid = toast.custom(t => (
@@ -1080,7 +1138,7 @@ const ChatInbox: React.FC = () => {
                   })()}
                   <div className="flex items-center justify-between mt-0.5">
                     <span className={`text-sm truncate ${unread > 0 ? 'font-extrabold text-[#0f172a]' : 'font-semibold text-[#0f172a]'}`}>{other?.name || 'User'}</span>
-                    <span className="text-[10px] text-[#94a3b8] shrink-0 mr-5">{new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <span className="text-[10px] text-[#94a3b8] shrink-0 mr-5">{new Date(conv.lastMessageAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                   <div className="flex items-center justify-between mt-0.5">
                     <span className={`text-xs truncate ${unread > 0 ? 'font-bold text-[#475569]' : 'text-[#94a3b8]'}`}>
@@ -1182,6 +1240,42 @@ const ChatInbox: React.FC = () => {
                         setIsQuoteModalOpen(true);
                         setQuoteFormErrors({});
                       }} />
+                    ) : msg.messageType === 'po_supplier_approval_request' ? (
+                      <div className="w-full flex justify-center py-2">
+                        <div className="w-[85%] bg-[#fff7ed] border border-[#fed7aa] rounded-[12px] p-4 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-[#f97316]"></div>
+                          <p className="text-[11px] font-bold text-[#ea580c] uppercase tracking-wide m-0 mb-1">Final Approval Required</p>
+                          <p className="text-sm text-[#431407] m-0 mb-3">{msg.text}</p>
+                          {user?.role === 'supplier' && (() => {
+                            const isLatest = messages.filter(m => m.messageType === 'po_supplier_approval_request').pop()?._id === msg._id;
+                            const msgIdx = messages.findIndex(m => m._id === msg._id);
+                            const hasPO = messages.slice(msgIdx + 1).some(m => m.text?.includes('Purchase Order Generated'));
+                            if (isLatest && !hasPO) {
+                              return (
+                                <button
+                                  onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    btn.disabled = true;
+                                    btn.innerText = 'Approving...';
+                                    try {
+                                      await quotationApi.supplierApprove(msg.quotationId!);
+                                      loadMessages();
+                                    } catch (err: any) {
+                                      btn.disabled = false;
+                                      btn.innerText = '✓ Approve PO';
+                                      toast.error(err.response?.data?.message || 'Failed to approve');
+                                    }
+                                  }}
+                                  className="w-full py-2 bg-[#f97316] hover:bg-[#ea580c] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors disabled:opacity-50"
+                                >
+                                  ✓ Approve PO
+                                </button>
+                              );
+                            }
+                            return <p className="text-xs font-bold text-[#ea580c] m-0 italic">Approved</p>;
+                          })()}
+                        </div>
+                      </div>
                     ) : msg.messageType === 'system' ? (
                       <div className="w-full flex items-center gap-2 py-1">
                         <div className="flex-1 h-px bg-[#e2e8f0]" />
@@ -1270,7 +1364,7 @@ const ChatInbox: React.FC = () => {
                     {msg.messageType !== 'system' && msg.messageType !== 'quotation' && (
                       <div className="flex items-center gap-1 mt-0.5">
                         <span className="text-[10px] text-[#94a3b8]">
-                          {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                          {msg.createdAt ? new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
                         </span>
                         {isMine && (msg.isRead ? <CheckCheck size={13} className="text-[#38bdf8]" /> : <Check size={13} className="text-[#94a3b8]" />)}
                       </div>
@@ -1564,17 +1658,116 @@ const ChatInbox: React.FC = () => {
               <QuotePreviewCard form={quoteForm} gstAmount={computedGstAmount} grandTotal={computedGrandTotal} />
             </div>
 
+            {/* Payment Method Info for Supplier */}
+            <div className="px-5 pb-3">
+              <label className="flex items-start gap-2 bg-[#f0fdf4] border border-[#059669] rounded-[8px] p-3 cursor-pointer hover:bg-[#e6fcf0] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={supplierPaymentAck}
+                  onChange={e => setSupplierPaymentAck(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-[#059669] shrink-0 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold text-[#0f172a]">Direct Payment to Supplier</span>
+                  </div>
+                  <p className="text-[10px] text-[#047857] m-0 leading-relaxed">
+                    I acknowledge that the buyer will pay me directly (UPI / bank / cash), and phone numbers will unlock so we can coordinate.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Signature Pad */}
+          <div className="px-5 pb-2">
+            {(supplierProfileData?.savedSignature || user?.savedSignature) ? (
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0 self-start">Authorized Signature</p>
+                <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full max-w-[360px] h-[100px]">
+                  <img src={supplierProfileData?.savedSignature || user?.savedSignature} alt="Your Signature" className="max-w-full max-h-full object-contain" />
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Authorized Signature <span className="text-red-500">*</span></label>
+                  <div className="flex items-center gap-2 text-xs">
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
+                      Draw
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
+                      Upload
+                    </label>
+                  </div>
+                </div>
+                {signatureMode === 'draw' ? (
+                  <div className="border border-[#e2e8f0] rounded-[8px] bg-white relative">
+                    <SignatureCanvas 
+                      ref={supplierSigCanvas} 
+                      penColor="#0f172a" 
+                      canvasProps={{ className: 'w-full h-[120px] rounded-[8px]', style: { cursor: 'crosshair' } }}
+                      onEnd={() => setHasDrawnSignature(true)}
+                    />
+                    <button className="absolute top-2 right-2 p-1.5 bg-[#f1f5f9] text-[#64748b] rounded-[6px] hover:bg-[#e2e8f0]" onClick={() => { supplierSigCanvas.current?.clear(); setHasDrawnSignature(false); }}>
+                      <Eraser size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-[#cbd5e1] rounded-[8px] p-4 flex flex-col items-center justify-center bg-[#f8fafc] relative min-h-[120px]">
+                    {supplierSignature ? (
+                      <>
+                        <img src={supplierSignature} alt="Uploaded" className="max-w-full max-h-[100px] object-contain" />
+                        <button className="absolute top-2 right-2 p-1 text-red-500 bg-white rounded-full shadow-sm hover:bg-red-50" onClick={() => setSupplierSignature(null)}>
+                          <X size={14} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={24} className="text-[#94a3b8] mb-2" />
+                        <span className="text-xs font-semibold text-[#475569]">Click to upload signature</span>
+                        <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              const reader = new FileReader();
+                              reader.onload = async (ev) => {
+                                const result = ev.target?.result as string;
+                                try {
+                                  const processed = await removeWhiteBackground(result);
+                                  setSupplierSignature(processed);
+                                } catch {
+                                  setSupplierSignature(result);
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            } catch (e) {
+                              console.error(e);
+                            }
+                          }
+                        }} />
+                      </>
+                    )}
+                  </div>
+                )}
+                <p className="text-[10px] text-primary m-0 italic">This signature will be saved to your profile for all future quotations.</p>
+              </div>
+            )}
+          </div>
+
             {/* Action strip */}
             <div className="px-5 pb-5 pt-1 flex gap-3">
               <button
                 className="flex-1 py-2.5 text-sm font-semibold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] cursor-pointer hover:bg-[#f1f5f9] transition-colors"
-                onClick={() => setShowPreview(false)}>
+                onClick={() => { setShowPreview(false); setSupplierSignature(null); setHasDrawnSignature(false); setSupplierPaymentAck(false); }}>
                 ← Edit
               </button>
               <button
-                className="flex-1 py-2.5 text-sm font-bold text-white bg-primary rounded-[10px] border-none cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-2 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[10px] border-none cursor-pointer hover:bg-[#047857] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleCreateQuotation}
-                disabled={isSendingQuote}>
+                disabled={isSendingQuote || !supplierPaymentAck || (!(supplierProfileData?.savedSignature || user?.savedSignature) && !hasDrawnSignature && !supplierSignature)}
+              >
                 {isSendingQuote ? 'Sending...' : '✓ Confirm & Send'}
               </button>
             </div>

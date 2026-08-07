@@ -715,6 +715,45 @@ export const FloatingChat: React.FC = () => {
                       </div>
                     );
                   }
+                  if (msg.messageType === 'po_supplier_approval_request') {
+                    return (
+                      <div key={msg._id || idx} className="w-full flex justify-center py-1">
+                        <div className="w-[90%] bg-orange-50 border border-orange-200 rounded-[10px] p-3 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                          <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wide m-0 mb-1">Final Approval Required</p>
+                          <p className="text-xs text-orange-950 m-0 mb-2">{msg.text}</p>
+                          {user?.role === 'supplier' && (() => {
+                            const isLatest = messages.filter(m => m.messageType === 'po_supplier_approval_request').pop()?._id === msg._id;
+                            const msgIdx = messages.findIndex(m => m._id === msg._id);
+                            const hasPO = messages.slice(msgIdx + 1).some(m => m.text?.includes('Purchase Order Generated'));
+                            if (isLatest && !hasPO) {
+                              return (
+                                <button
+                                  onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    btn.disabled = true;
+                                    btn.innerText = 'Approving...';
+                                    try {
+                                      await quotationApi.supplierApprove(msg.quotationId!);
+                                      await loadConversations();
+                                    } catch (err: any) {
+                                      btn.disabled = false;
+                                      btn.innerText = '✓ Approve PO';
+                                      alert(err.response?.data?.message || 'Failed to approve');
+                                    }
+                                  }}
+                                  className="w-full py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold rounded-[6px] cursor-pointer border-none transition-colors disabled:opacity-50"
+                                >
+                                  ✓ Approve PO
+                                </button>
+                              );
+                            }
+                            return <p className="text-[10px] font-bold text-orange-600 m-0 italic">Approved</p>;
+                          })()}
+                        </div>
+                      </div>
+                    );
+                  }
                   return (
                     <div key={msg._id || idx} className={`whitespace-pre-wrap leading-snug max-w-[80%] px-3 py-2 rounded-[8px] text-[0.9rem] relative ${isMine ? 'self-end bg-primary text-white rounded-br-[2px]' : 'self-start bg-cream text-gray-800 rounded-bl-[4px] shadow-sm'}`}>
                       <div className="mb-0.5">{msg.text}</div>

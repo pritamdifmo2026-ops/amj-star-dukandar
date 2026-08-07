@@ -17,6 +17,11 @@ const supplierService = {
     return response.data;
   },
 
+  updateSignature: async (signature: string) => {
+    const response = await apiClient.patch('/supplier/signature', { signature });
+    return response.data;
+  },
+
   onboard: async (data: { businessName: string; phone: string; ownerName: string; email: string }) => {
     const response = await apiClient.post('/supplier/onboard', data);
     return response.data;

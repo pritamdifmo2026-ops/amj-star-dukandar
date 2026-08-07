@@ -10,34 +10,36 @@ import OrderManage from './OrderManage';
 
 // ─── Status display config ────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; Icon: React.FC<any> }> = {
-  paid:                   { label: 'Pending Dispatch',       color: '#a16207', bg: '#fefce8', border: '#fde047',  Icon: Clock },
-  processing:             { label: 'Pending Dispatch',       color: '#a16207', bg: '#fefce8', border: '#fde047',  Icon: Clock },
-  pending:                { label: 'Processing',             color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd',  Icon: Clock },
-  packed:                 { label: 'Packed',                 color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc',  Icon: Boxes },
-  shipped:                { label: 'Dispatched',             color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd',  Icon: Truck },
-  awaiting_confirmation:  { label: 'Awaiting Confirmation',  color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe',  Icon: Clock },
-  completed:              { label: 'Completed',              color: '#15803d', bg: '#f0fdf4', border: '#86efac',  Icon: CheckCircle },
-  delivered:              { label: 'Delivered',              color: '#15803d', bg: '#f0fdf4', border: '#86efac',  Icon: CheckCircle },
-  disputed:               { label: 'Disputed',               color: '#dc2626', bg: '#fef2f2', border: '#fca5a5',  Icon: AlertTriangle },
-  cancelled:              { label: 'Cancelled',              color: '#dc2626', bg: '#fef2f2', border: '#fca5a5',  Icon: XCircle },
+  paid: { label: 'Pending Dispatch', color: '#a16207', bg: '#fefce8', border: '#fde047', Icon: Clock },
+  pending_approval: { label: 'Pending Approval', color: '#ea580c', bg: '#fff7ed', border: '#fdba74', Icon: Clock },
+  processing: { label: 'Pending Dispatch', color: '#a16207', bg: '#fefce8', border: '#fde047', Icon: Clock },
+  pending: { label: 'Processing', color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', Icon: Clock },
+  packed: { label: 'Packed', color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc', Icon: Boxes },
+  shipped: { label: 'Dispatched', color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', Icon: Truck },
+  awaiting_confirmation: { label: 'Awaiting Confirmation', color: '#9333ea', bg: '#faf5ff', border: '#d8b4fe', Icon: Clock },
+  completed: { label: 'Completed', color: '#15803d', bg: '#f0fdf4', border: '#86efac', Icon: CheckCircle },
+  delivered: { label: 'Delivered', color: '#15803d', bg: '#f0fdf4', border: '#86efac', Icon: CheckCircle },
+  disputed: { label: 'Disputed', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', Icon: AlertTriangle },
+  cancelled: { label: 'Cancelled', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', Icon: XCircle },
 };
 const getStatusConfig = (s: string) => STATUS_CONFIG[s] ?? { label: s, color: '#64748b', bg: '#f8fafc', border: '#e2e8f0', Icon: Clock };
 
 const PAGE_SIZE = 10;
-type StatusFilter = 'all' | 'processing' | 'shipped' | 'completed' | 'disputed' | 'cancelled';
+type StatusFilter = 'all' | 'approval' | 'processing' | 'shipped' | 'completed' | 'disputed' | 'cancelled';
 const SUPPLIER_FILTERS: { key: StatusFilter; label: string; statuses: string[] }[] = [
-  { key: 'all',        label: 'All',              statuses: [] },
+  { key: 'all', label: 'All', statuses: [] },
+  { key: 'approval', label: 'New Requests', statuses: ['pending_approval'] },
   { key: 'processing', label: 'Pending Dispatch', statuses: ['paid', 'processing', 'pending', 'packed'] },
-  { key: 'shipped',    label: 'In Transit',       statuses: ['shipped', 'awaiting_confirmation'] },
-  { key: 'completed',  label: 'Completed',        statuses: ['completed', 'delivered'] },
-  { key: 'disputed',   label: 'Disputed',         statuses: ['disputed'] },
-  { key: 'cancelled',  label: 'Cancelled',        statuses: ['cancelled'] },
+  { key: 'shipped', label: 'In Transit', statuses: ['shipped', 'awaiting_confirmation'] },
+  { key: 'completed', label: 'Completed', statuses: ['completed', 'delivered'] },
+  { key: 'disputed', label: 'Disputed', statuses: ['disputed'] },
+  { key: 'cancelled', label: 'Cancelled', statuses: ['cancelled'] },
 ];
 
 // Does this order need attention from the current viewer?
 const needsAttention = (o: any, isSupplier: boolean) => {
   if (isSupplier) {
-    if (['pending', 'paid', 'processing', 'packed'].includes(o.status)) return true;
+    if (['pending_approval', 'pending', 'paid', 'processing', 'packed'].includes(o.status)) return true;
     if (o.status === 'disputed' && o._dispute && ['validated', 'reopened'].includes(o._dispute.status)) return true;
     return false;
   }
@@ -65,13 +67,13 @@ const OrderList: React.FC = () => {
   // Resolution methods this supplier offers (from onboarding policy); legacy/unset → both
   const policy = profile?.businessDetails?.returnPolicyType;
   const allowedMethods: ('refund' | 'replacement')[] =
-    policy === 'refund'      ? ['refund'] :
-    policy === 'replacement' ? ['replacement'] :
-    ['refund', 'replacement'];
+    policy === 'refund' ? ['refund'] :
+      policy === 'replacement' ? ['replacement'] :
+        ['refund', 'replacement'];
 
   useEffect(() => { fetchOrders(); }, [user?.role]);
 
-  const fetchOrdersRef = useRef<() => void>(() => {});
+  const fetchOrdersRef = useRef<() => void>(() => { });
   useEffect(() => {
     if (!socket) return;
     const handler = () => fetchOrdersRef.current();
@@ -187,12 +189,12 @@ const OrderList: React.FC = () => {
           {SUPPLIER_FILTERS.map(f => {
             const base = search.trim()
               ? orders.filter(o => {
-                  const q = search.trim().toLowerCase();
-                  const buyerName = (o.snapshot?.buyerName || o.buyerId?.name || '').toLowerCase();
-                  const orderNum = (o.orderNumber || '').toLowerCase();
-                  const itemNames = (o.items || []).map((i: any) => i.name.toLowerCase()).join(' ');
-                  return buyerName.includes(q) || orderNum.includes(q) || itemNames.includes(q);
-                })
+                const q = search.trim().toLowerCase();
+                const buyerName = (o.snapshot?.buyerName || o.buyerId?.name || '').toLowerCase();
+                const orderNum = (o.orderNumber || '').toLowerCase();
+                const itemNames = (o.items || []).map((i: any) => i.name.toLowerCase()).join(' ');
+                return buyerName.includes(q) || orderNum.includes(q) || itemNames.includes(q);
+              })
               : orders;
             const count = f.key === 'all' ? base.length : base.filter(o => f.statuses.includes(o.status)).length;
             const isActive = statusFilter === f.key;

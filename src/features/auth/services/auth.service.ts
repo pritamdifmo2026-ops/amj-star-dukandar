@@ -1,7 +1,7 @@
 import apiClient from '@/api/client';
-import type { 
-  SendOtpPayload, 
-  VerifyOtpPayload, 
+import type {
+  SendOtpPayload,
+  VerifyOtpPayload,
   AuthResponse,
   AuthUser
 } from '../types';
