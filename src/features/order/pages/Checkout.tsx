@@ -64,7 +64,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [tempSignature, setTempSignature] = useState<string | null>(null);
 
   const { socket } = useSocket();
-  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace('/api', '');
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
 
   // Listen for supplier approval in real-time
   useEffect(() => {

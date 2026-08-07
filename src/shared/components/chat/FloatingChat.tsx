@@ -146,8 +146,7 @@ export const FloatingChat: React.FC = () => {
     terms: 'Standard delivery terms apply.',
   });
   const [isNegotiating, setIsNegotiating] = useState(false);
-
-  // Derived totals for quote form
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
     : Math.round(quoteForm.price * quoteForm.gstRate) / 100;

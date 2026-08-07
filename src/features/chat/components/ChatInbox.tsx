@@ -146,7 +146,7 @@ const SUPPLIER_QR = [
 // ── Main component ──────────────────────────────────────────────────────────
 const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, socket, loadMessages, product, onSupplierAction }: { isLatestQuoteMsg?: boolean; msg: any; onActiveChange?: (isActive: boolean) => void; user: any; socket: any; loadMessages: () => void; product?: any; onSupplierAction?: (quote: any, isAccept: boolean) => void; }) => {
   const isSupplier = user?.role === 'supplier';
-  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace('/api', '');
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
   const handleAcceptQuote = async (quoteId: string, paymentMethod: 'direct' | 'amjstar' = 'direct', buyerSignature?: string) => {
     const loadingToast = toast.loading(isSupplier ? 'Accepting offer...' : 'Confirming deal...');
     try {

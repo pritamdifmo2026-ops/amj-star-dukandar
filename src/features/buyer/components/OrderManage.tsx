@@ -332,7 +332,8 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
     finally { setBusy(false); }
   };
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace('/api', '');
+  const isSupplier = user?.role === 'supplier';
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
   const StatusIcon = cfg.Icon;
 
   // Resolution options shown to supplier (policy-gated refund/replacement + partial/other always)

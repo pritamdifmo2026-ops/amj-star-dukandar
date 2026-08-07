@@ -58,7 +58,7 @@ const OrderList: React.FC = () => {
   const { user } = useSelector((state: any) => state.auth);
   const profile = useSelector((state: any) => state.supplier?.profile);
   const { socket } = useSocket();
-  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace('/api', '');
+  const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
 
   const isSupplier = user?.role === 'supplier';
   // V1: AMJ provides no logistics — every supplier ships with their own courier.
