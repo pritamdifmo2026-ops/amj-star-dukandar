@@ -6,7 +6,10 @@ export const chatApi = {
     supplierId: string,
     productId?: string,
     buyerAddress?: { fullAddress?: string; city?: string; state?: string; pincode?: string },
-    enquiryData?: { quantity?: number; targetPrice?: number; deliveryTimeline?: string; paymentTerms?: string; transportationTerms?: string; }
+    enquiryData?: { 
+      quantity?: number; targetPrice?: number; deliveryTimeline?: string; paymentTerms?: string; transportationTerms?: string; 
+      cartItems?: Array<{ productId: string; name: string; quantity: number; price: number; unit?: string; hsnCode?: string; imageUrl?: string; }>;
+    }
   ) => {
     const res = await apiClient.post(ENDPOINTS.CHAT.CONVERSATION, { supplierId, productId, buyerAddress, enquiryData });
     return res.data.data;

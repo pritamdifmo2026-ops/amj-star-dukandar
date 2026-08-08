@@ -879,6 +879,7 @@ const ChatInbox: React.FC = () => {
     priceTag: '' as '' | 'Best Price' | 'Last Price',
     paymentTerms: '',
     transportationTerms: '',
+    cartItems: [] as Array<{ productId: string, name: string, quantity: number, price: number, unit?: string, hsnCode?: string }>,
   });
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -910,7 +911,9 @@ const ChatInbox: React.FC = () => {
     };
   }, []);
 
-  const computedTotalPrice = quoteForm.price * quoteForm.quantity;
+  const computedTotalPrice = quoteForm.cartItems.length > 0 
+    ? quoteForm.cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+    : quoteForm.price * quoteForm.quantity;
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
     : Math.round(computedTotalPrice * quoteForm.gstRate) / 100;
@@ -1008,6 +1011,7 @@ const ChatInbox: React.FC = () => {
       deliveryTimeline: conv.initialEnquiry?.deliveryTimeline || '',
       paymentTerms: conv.initialEnquiry?.paymentTerms || 'Advance',
       transportationTerms: conv.initialEnquiry?.transportationTerms || 'FOR',
+      cartItems: conv.initialEnquiry?.cartItems || [],
     }));
   };
 
@@ -1035,16 +1039,26 @@ const ChatInbox: React.FC = () => {
     const other = getOtherParticipant(activeConv);
     const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
     try {
+      const itemsToQuote = quoteForm.cartItems.length > 0 
+        ? quoteForm.cartItems.map(it => ({
+            name: it.name,
+            quantity: it.quantity,
+            price: Number(it.price),
+            hsnCode: it.hsnCode || undefined,
+            unit: it.unit || 'pcs'
+          }))
+        : [{
+            name: quoteForm.itemName,
+            quantity: quoteForm.quantity,
+            price: Number(quoteForm.price),
+            hsnCode: quoteForm.hsnCode || undefined,
+          }];
+
       const payload = await quotationApi.createQuotation({
         conversationId: activeConv._id,
         buyerId,
         isAcceptingBuyerPrice,
-        items: [{
-          name: quoteForm.itemName,
-          quantity: quoteForm.quantity,
-          price: Number(quoteForm.price),
-          hsnCode: quoteForm.hsnCode || undefined,
-        }],
+        items: itemsToQuote,
         taxableAmount: computedTotalPrice,
         totalAmount: computedGrandTotal,
         gstType: quoteForm.gstType,
@@ -1653,47 +1667,94 @@ const ChatInbox: React.FC = () => {
           <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[480px] max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">{editingQuoteId ? 'Edit Quotation' : 'Send Quotation'}</h2>
             <div className="flex flex-col gap-4">
-              <div>
-                <label className={labelCls}>Item Name</label>
-                <input type="text" value={quoteForm.itemName} readOnly className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"} />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>HSN Code</label>
-                  <input type="text" value={quoteForm.hsnCode || '—'} readOnly className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"} />
+              {quoteForm.cartItems.length > 0 ? (
+                <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">
+                  <label className={labelCls}>Items Requesting Quotation</label>
+                  {quoteForm.cartItems.map((item, idx) => (
+                    <div key={idx} className="p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px]">
+                      <p className="text-[13px] font-bold text-[#0f172a] m-0 mb-2">{item.name}</p>
+                      <div className="grid grid-cols-2 gap-3 mb-2">
+                        <div>
+                          <label className={labelCls}>HSN Code</label>
+                          <input type="text" value={item.hsnCode || '—'} readOnly className={inputCls + " bg-[#f1f5f9] cursor-default text-[#64748b]"} />
+                        </div>
+                        <div>
+                          <label className={labelCls}>Quantity</label>
+                          <input type="text" value={item.quantity} readOnly className={inputCls + " bg-[#f1f5f9] cursor-default text-[#64748b]"} />
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelCls}>Per Unit Price ₹ <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={item.price || ''}
+                          onChange={e => {
+                            const v = Number(e.target.value.replace(/\D/g, ''));
+                            const newItems = [...quoteForm.cartItems];
+                            newItems[idx].price = v;
+                            setQuoteForm({ ...quoteForm, cartItems: newItems });
+                            if (quoteFormErrors.price) setQuoteFormErrors(prev => ({ ...prev, price: undefined }));
+                          }}
+                          className={inputCls + (quoteFormErrors.price ? ' border-red-400' : '')}
+                          placeholder="Price per unit"
+                        />
+                        {item.price > 0 && item.quantity > 0 && (
+                          <p className="text-[11px] text-[#059669] font-semibold mt-1 m-0">
+                            Item Total: ₹{(item.quantity * item.price).toLocaleString('en-IN')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {quoteFormErrors.price && <p className="text-[11px] text-red-500 mt-1 m-0">{quoteFormErrors.price}</p>}
                 </div>
-                <div>
-                  <label className={labelCls}>Quantity</label>
-                  <input
-                    type="text"
-                    value={quoteForm.quantity}
-                    readOnly
-                    className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className={labelCls}>Per Unit Price ₹ <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={quoteForm.price || ''}
-                  onChange={e => {
-                    const v = e.target.value.replace(/\D/g, '');
-                    setQuoteForm({ ...quoteForm, price: v === '' ? 0 : Number(v) });
-                    if (quoteFormErrors.price) setQuoteFormErrors(prev => ({ ...prev, price: undefined }));
-                  }}
-                  className={inputCls + (quoteFormErrors.price ? ' border-red-400' : '')}
-                  placeholder="Price per unit"
-                />
-                {quoteForm.price > 0 && quoteForm.quantity > 1 && (
-                  <p className="text-[11px] text-[#059669] font-semibold mt-1 m-0">
-                    Total: ₹{computedTotalPrice.toLocaleString('en-IN')} ({quoteForm.quantity} × ₹{quoteForm.price.toLocaleString('en-IN')})
-                  </p>
-                )}
-                {quoteFormErrors.price && <p className="text-[11px] text-red-500 mt-1 m-0">{quoteFormErrors.price}</p>}
-              </div>
+              ) : (
+                <>
+                  <div>
+                    <label className={labelCls}>Item Name</label>
+                    <input type="text" value={quoteForm.itemName} readOnly className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelCls}>HSN Code</label>
+                      <input type="text" value={quoteForm.hsnCode || '—'} readOnly className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Quantity</label>
+                      <input
+                        type="text"
+                        value={quoteForm.quantity}
+                        readOnly
+                        className={inputCls + " bg-[#f8fafc] cursor-default text-[#64748b]"}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Per Unit Price ₹ <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={quoteForm.price || ''}
+                      onChange={e => {
+                        const v = e.target.value.replace(/\D/g, '');
+                        setQuoteForm({ ...quoteForm, price: v === '' ? 0 : Number(v) });
+                        if (quoteFormErrors.price) setQuoteFormErrors(prev => ({ ...prev, price: undefined }));
+                      }}
+                      className={inputCls + (quoteFormErrors.price ? ' border-red-400' : '')}
+                      placeholder="Price per unit"
+                    />
+                    {quoteForm.price > 0 && quoteForm.quantity > 1 && (
+                      <p className="text-[11px] text-[#059669] font-semibold mt-1 m-0">
+                        Total: ₹{computedTotalPrice.toLocaleString('en-IN')} ({quoteForm.quantity} × ₹{quoteForm.price.toLocaleString('en-IN')})
+                      </p>
+                    )}
+                    {quoteFormErrors.price && <p className="text-[11px] text-red-500 mt-1 m-0">{quoteFormErrors.price}</p>}
+                  </div>
+                </>
+              )}
               <div>
                 <label className={labelCls}>GST Type</label>
                 <div className="flex gap-2">

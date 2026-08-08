@@ -7,6 +7,7 @@ import { clearCart } from '@/features/buyer/store/cart.slice';
 import apiClient from '@/api/client';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { orderApi } from '@/features/order/services/order.api';
+import { chatApi } from '@/features/chat/services/chat.api';
 import {
   ShoppingBag, MapPin, Plus, Truck, ArrowLeft,
   CheckCircle, Package, AlertCircle, X,
@@ -229,24 +230,40 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         fullAddress: [selectedAddress.houseNo, selectedAddress.area].filter(Boolean).join(', '),
       };
 
-      const res = await apiClient.post('/orders/direct', {
-        items,
-        paymentMethod,
-        buyNow: isBuyNow,
-        addressSnapshot,
-        shippingCost: totalShipping,
-        courierCharge: isThirdParty ? totalShipping : 0,
-        courierGST,
-        transportationTerms: selectedTransportation,
-        paymentTerms: selectedPaymentTerm,
-        buyerSignature: tempSignature || user?.savedSignature || uploadedSignature || (sigCanvas.current && !sigCanvas.current.isEmpty() ? sigCanvas.current.getTrimmedCanvas().toDataURL('image/png') : ''),
-      });
+      const bySupplier: Record<string, typeof items> = {};
+      for (const item of items) {
+        if (!bySupplier[item.supplierId]) bySupplier[item.supplierId] = [];
+        bySupplier[item.supplierId].push(item);
+      }
 
-      const orders = res.data.orders || [];
+      for (const [supplierId, supplierItems] of Object.entries(bySupplier)) {
+        const cartItems = supplierItems.map(it => ({
+          productId: it.productId,
+          name: it.name,
+          quantity: it.quantity,
+          price: it.price,
+          unit: it.unit,
+          hsnCode: (it as any).hsnCode,
+          imageUrl: it.imageUrl
+        }));
+        
+        await chatApi.getOrCreateConversation(
+          supplierId,
+          undefined,
+          addressSnapshot,
+          {
+            transportationTerms: selectedTransportation,
+            paymentTerms: selectedPaymentTerm,
+            cartItems
+          }
+        );
+      }
+
       if (!isBuyNow) dispatch(clearCart());
-      setPlacedOrders(orders);
+      toast.success('Quote Request Sent! Negotiate terms with the supplier in the chat.');
+      navigate('/profile?tab=messages');
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to place order.');
+      setError(err?.response?.data?.message || err?.message || 'Failed to request quote.');
     } finally {
       setPlacing(false);
     }
@@ -730,13 +747,13 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               </div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-[#15803d] m-0">Confirm Deal</p>
-                <p className="text-xs text-[#64748b] m-0">Choose your payment method</p>
+                <p className="text-xs text-[#64748b] m-0">Request final quotation</p>
               </div>
               <ChevronRight size={16} className="text-[#16a34a] shrink-0" />
             </button>
 
             {!selectedAddress && (
-              <p className="text-xs text-[#dc2626] mt-3 m-0 text-center">Add a delivery address above to place order</p>
+              <p className="text-xs text-[#dc2626] mt-3 m-0 text-center">Add a delivery address above to request quotation</p>
             )}
           </div>
 
@@ -891,7 +908,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                   <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="60" strokeDashoffset="15" />
                   </svg>
-                ) : 'Confirm & Generate'}
+                ) : 'Request Final Quotation'}
               </button>
             </div>
           </div>

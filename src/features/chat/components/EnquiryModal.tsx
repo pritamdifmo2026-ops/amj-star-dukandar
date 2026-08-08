@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { X, ChevronRight, ChevronLeft, Send, MapPin, Check } from 'lucide-react';
 import { setCredentials } from '@/features/auth/store/auth.slice';
@@ -53,10 +53,6 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 }) => {
   const user = useSelector((state: any) => state.auth.user);
   const dispatch = useDispatch();
-
-  // Saved address from profile
-  const savedAddress = user?.address?.city ? user.address as { city: string; state: string; pincode: string; fullAddress?: string } : null;
-
   const [step, setStep] = useState<Step>(1);
 
   // Step 1
@@ -70,7 +66,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 
   // Step 3 — delivery timeline + address
   const [timeline, setTimeline] = useState('Within 30 days');
-  const [addrMode, setAddrMode] = useState<AddrMode>(savedAddress ? 'saved' : 'new');
+  const [addrMode, setAddrMode] = useState<AddrMode>('new');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
@@ -82,6 +78,37 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
   const [paymentTerms, setPaymentTerms] = useState('Advance');
   const [transportationTerms, setTransportationTerms] = useState('FOR');
   const [submitting, setSubmitting] = useState(false);
+
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+
+  useEffect(() => {
+    addressApi.getAddresses().then(data => {
+      let all: any[] = data;
+      if (all.length === 0 && user?.address?.city) {
+        all = [{
+          _id: 'profile-address',
+          fullName: user.name || '',
+          phone: user.phone || '',
+          pincode: user.address.pincode || '',
+          state: user.address.state || '',
+          city: user.address.city || '',
+          fullAddress: user.address.fullAddress || '',
+          isDefault: true,
+        }];
+      }
+      setAddresses(all);
+      const def = all.find((a: any) => a.isDefault) || all[0];
+      if (def) {
+        setSelectedAddressId(def._id);
+        setAddrMode('saved');
+      } else {
+        setAddrMode('new');
+      }
+    }).catch(() => { });
+  }, []);
+
+  const savedAddress = addresses.find(a => a._id === selectedAddressId) || addresses[0];
 
   const qtyOptions = [moq, moq * 2, moq * 5].filter((v, i, a) => a.indexOf(v) === i && v <= stock);
   const finalQty = useCustomQty ? Number(customQty) || moq : quantity;
@@ -312,34 +339,41 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                   <span className="text-[10px] text-[#94a3b8] font-semibold">(helps supplier quote shipping)</span>
                 </div>
 
-                {/* Saved address card */}
-                {savedAddress && addrMode === 'saved' && (
-                  <>
-                    <div className="border border-primary/30 rounded-[10px] p-4 bg-[#fff7ed] flex items-start gap-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                        <MapPin size={14} className="text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Check size={12} className="text-primary" />
-                          <p className="text-xs font-bold text-primary m-0">Using your saved address</p>
+                {/* Saved address selection */}
+                {addresses.length > 0 && addrMode === 'saved' && (
+                  <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                    {addresses.map((addr) => (
+                      <label
+                        key={addr._id}
+                        className={`flex items-start gap-3 p-3 rounded-[10px] border cursor-pointer transition-all ${selectedAddressId === addr._id
+                            ? 'border-primary bg-[#fff7ed] shadow-[0_0_0_3px_rgba(230,92,0,0.08)]'
+                            : 'border-[#e2e8f0] bg-white hover:border-[#e65c00]/30'
+                          }`}
+                      >
+                        <input
+                          type="radio"
+                          name="enquiry_address"
+                          value={addr._id}
+                          checked={selectedAddressId === addr._id}
+                          onChange={() => setSelectedAddressId(addr._id)}
+                          className="mt-1 accent-[#e65c00]"
+                        />
+                        <div>
+                          <p className="text-xs font-bold text-[#0f172a] m-0">{addr.fullName || 'Address'}</p>
+                          <p className="text-[11px] text-[#64748b] m-0 mt-0.5 leading-relaxed">
+                            {[addr.houseNo, addr.area, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}
+                          </p>
                         </div>
-                        {savedAddress.fullAddress && (
-                          <p className="text-sm text-[#0f172a] font-medium m-0">{savedAddress.fullAddress}</p>
-                        )}
-                        <p className="text-sm text-[#475569] m-0">
-                          {[savedAddress.city, savedAddress.state].filter(Boolean).join(', ')} — {savedAddress.pincode}
-                        </p>
-                      </div>
-                    </div>
+                      </label>
+                    ))}
                     <button
                       type="button"
                       onClick={() => setAddrMode('new')}
-                      className="text-xs font-semibold text-primary bg-transparent border-none cursor-pointer text-left hover:underline p-0 w-fit"
+                      className="text-xs font-semibold text-primary bg-transparent border-none cursor-pointer text-left hover:underline p-0 w-fit mt-1"
                     >
-                      + Use a different address for this order
+                      + Add a new address for this enquiry
                     </button>
-                  </>
+                  </div>
                 )}
 
                 {/* New address form */}
