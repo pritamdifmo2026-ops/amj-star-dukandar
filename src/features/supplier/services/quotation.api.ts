@@ -21,8 +21,12 @@ export const quotationApi = {
     const response = await apiClient.post(`/quotations/${id}/supplier-approve`);
     return response.data;
   },
-  rejectQuotation: async (id: string) => {
-    const res = await apiClient.post(`/quotations/${id}/reject`);
+  rejectQuotation: async (id: string, reason?: string) => {
+    const res = await apiClient.post(`/quotations/${id}/reject`, { reason });
+    return res.data;
+  },
+  getCommissionPreview: async (id: string) => {
+    const res = await apiClient.get(`/quotations/${id}/commission-preview`);
     return res.data;
   },
   counterOffer: async (id: string, data: { price?: number; quantity?: number; note?: string; reason?: string; shippingCost?: number; shippingNotes?: string; deliveryTimeline?: string; paymentTerms?: string; transportationTerms?: string }) => {

@@ -52,7 +52,6 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
   const [supplierProfile, setSupplierProfile] = useState<any>(null);
   const [selectedTransportation, setSelectedTransportation] = useState<string>('');
-  const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<string>('');
 
   useEffect(() => {
     const supplierId = items[0]?.supplierId;
@@ -61,8 +60,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         if (res.data?.supplier) {
           const s = res.data.supplier;
           setSupplierProfile(s);
-          setSelectedTransportation(s.supportedTransportationTerms?.[0] || 'Ex. Factory');
-          setSelectedPaymentTerm(s.supportedPaymentTerms?.[0] || '100% Advance');
+          if (!selectedTransportation) {
+            setSelectedTransportation(s.supportedTransportationTerms?.[0] || 'Ex. Factory');
+          }
         }
       }).catch(console.error);
     }
@@ -253,7 +253,6 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           addressSnapshot,
           {
             transportationTerms: selectedTransportation,
-            paymentTerms: selectedPaymentTerm,
             cartItems
           }
         );
@@ -408,22 +407,6 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                         ))
                       ) : (
                         <option value="Ex. Factory">Ex. Factory</option>
-                      )}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Payment Terms</label>
-                    <select
-                      value={selectedPaymentTerm}
-                      onChange={(e) => setSelectedPaymentTerm(e.target.value)}
-                      className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
-                    >
-                      {supplierProfile?.supportedPaymentTerms?.length > 0 ? (
-                        supplierProfile.supportedPaymentTerms.map((t: string) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))
-                      ) : (
-                        <option value="100% Advance">100% Advance</option>
                       )}
                     </select>
                   </div>

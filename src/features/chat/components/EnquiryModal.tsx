@@ -30,7 +30,6 @@ export interface EnquiryPayload {
     state: string;
     pincode: string;
   };
-  paymentTerms: string;
   transportationTerms: string;
 }
 
@@ -76,7 +75,6 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 
   // Step 4
   const [requirements, setRequirements] = useState<string[]>(['Standard']);
-  const [paymentTerms, setPaymentTerms] = useState(supplierProfile?.supportedPaymentTerms?.[0] || '100% Advance');
   const [transportationTerms, setTransportationTerms] = useState(supplierProfile?.supportedTransportationTerms?.[0] || 'FOR');
   const [submitting, setSubmitting] = useState(false);
 
@@ -172,7 +170,6 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
         deliveryTimeline: timeline,
         requirements: requirements.join(', '),
         deliveryAddress,
-        paymentTerms,
         transportationTerms,
       });
     } finally {
@@ -475,18 +472,6 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 
               <div className="flex flex-col gap-3 mt-2">
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Preferred Payment Terms *</label>
-                  <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} className={inputCls}>
-                    {supplierProfile?.supportedPaymentTerms?.length > 0 ? (
-                      supplierProfile.supportedPaymentTerms.map((t: string) => (
-                        <option key={t} value={t}>{t}</option>
-                      ))
-                    ) : (
-                      <option value="100% Advance">100% Advance</option>
-                    )}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Preferred Transportation *</label>
                   <select value={transportationTerms} onChange={(e) => setTransportationTerms(e.target.value)} className={inputCls}>
                     {supplierProfile?.supportedTransportationTerms?.length > 0 ? (
@@ -512,7 +497,6 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                 <span>Delivery: <strong>{timeline}</strong></span>
                 {finalAddr && <span>Ship to: <strong>{finalAddr}</strong></span>}
                 <span>Requirements: <strong>{requirements.join(', ')}</strong></span>
-                <span>Payment: <strong>{paymentTerms}</strong></span>
                 <span>Transport: <strong>{transportationTerms}</strong></span>
               </div>
             </div>

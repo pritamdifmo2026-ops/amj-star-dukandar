@@ -995,7 +995,10 @@ const ChatInbox: React.FC = () => {
     shippingNotes: '',
     terms: 'Standard delivery terms apply.',
     priceTag: '' as '' | 'Best Price' | 'Last Price',
-    paymentTerms: '',
+    paymentType: 'Advance',
+    advancePercent: 100,
+    creditDays: 7,
+    paymentTerms: '100% Advance',
     transportationTerms: '',
     cartItems: [] as Array<{ productId: string, name: string, quantity: number, price: number, unit?: string, hsnCode?: string }>,
   });
@@ -1012,6 +1015,15 @@ const ChatInbox: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const [quoteFormErrors, setQuoteFormErrors] = useState<{ price?: string; deliveryTimeline?: string }>({});
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+
+  const [showSupplierRejectModal, setShowSupplierRejectModal] = useState(false);
+  const [supplierRejectReason, setSupplierRejectReason] = useState('');
+  const [supplierRejectTargetMsg, setSupplierRejectTargetMsg] = useState<any>(null);
+  
+  const [showWalletCommissionModal, setShowWalletCommissionModal] = useState(false);
+  const [commissionPreview, setCommissionPreview] = useState<any>(null);
+  const [isConfirmingPO, setIsConfirmingPO] = useState(false);
+  const [walletCommissionTargetMsg, setWalletCommissionTargetMsg] = useState<any>(null);
 
   const heldToastIdRef = useRef<string | null>(null);
 
@@ -1188,7 +1200,7 @@ const ChatInbox: React.FC = () => {
         terms: quoteForm.terms,
         deliveryAddressSnapshot: activeConv.buyerAddress,
         priceTag: quoteForm.priceTag || undefined,
-        paymentTerms: quoteForm.paymentTerms,
+        paymentTerms: quoteForm.paymentType === 'Advance' ? `${quoteForm.advancePercent}% Advance` : quoteForm.paymentType === 'COD' ? 'COD' : `Credit (${quoteForm.creditDays} Days)`,
         transportationTerms: quoteForm.transportationTerms,
         supplierSignature: finalSignature || undefined,
       });
@@ -1409,6 +1421,9 @@ const ChatInbox: React.FC = () => {
                             quantity: quantity,
                             deliveryTimeline: quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || prev.deliveryTimeline,
                             paymentTerms: quote.paymentTerms || prev.paymentTerms,
+                            paymentType: quote.paymentTerms?.includes('Advance') ? 'Advance' : quote.paymentTerms?.includes('COD') ? 'COD' : quote.paymentTerms?.includes('Credit') ? 'Credit' : 'Advance',
+                            advancePercent: quote.paymentTerms?.includes('Advance') ? parseInt(quote.paymentTerms) || 100 : 100,
+                            creditDays: quote.paymentTerms?.includes('Credit') ? parseInt(quote.paymentTerms.match(/\d+/)?.[0] || '7') : 7,
                             transportationTerms: quote.transportationTerms || prev.transportationTerms,
                             shipping: quote.shippingCost || prev.shipping
                           };
@@ -1429,25 +1444,41 @@ const ChatInbox: React.FC = () => {
                             const hasPO = messages.slice(msgIdx + 1).some(m => m.text?.includes('Purchase Order Generated'));
                             if (isLatest && !hasPO) {
                               return (
-                                <button
-                                  onClick={async (e) => {
-                                    const btn = e.currentTarget;
-                                    btn.disabled = true;
-                                    btn.innerText = 'Approving...';
-                                    try {
-                                      const qId = typeof msg.quotationId === 'object' ? (msg.quotationId as any)._id : msg.quotationId;
-                                      await quotationApi.supplierApprove(qId);
-                                      loadMessages();
-                                    } catch (err: any) {
-                                      btn.disabled = false;
-                                      btn.innerText = '✓ Approve PO';
-                                      toast.error(err.response?.data?.message || 'Failed to approve');
-                                    }
-                                  }}
-                                  className="w-full py-2 bg-[#f97316] hover:bg-[#ea580c] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors disabled:opacity-50"
-                                >
-                                  ✓ Approve PO
-                                </button>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setSupplierRejectTargetMsg(msg);
+                                      setSupplierRejectReason('');
+                                      setShowSupplierRejectModal(true);
+                                    }}
+                                    className="flex-1 py-2 bg-white border border-[#f97316] text-[#ea580c] hover:bg-[#fff7ed] text-xs font-bold rounded-[8px] cursor-pointer transition-colors"
+                                  >
+                                    ✕ Reject PO
+                                  </button>
+                                  <button
+                                    onClick={async (e) => {
+                                      const btn = e.currentTarget;
+                                      const originalText = btn.innerText;
+                                      btn.disabled = true;
+                                      btn.innerText = 'Loading...';
+                                      try {
+                                        const qId = typeof msg.quotationId === 'object' ? (msg.quotationId as any)._id : msg.quotationId;
+                                        const preview = await quotationApi.getCommissionPreview(qId);
+                                        setCommissionPreview(preview);
+                                        setWalletCommissionTargetMsg(msg);
+                                        setShowWalletCommissionModal(true);
+                                      } catch (err: any) {
+                                        toast.error(err.response?.data?.message || 'Failed to fetch wallet info');
+                                      } finally {
+                                        btn.disabled = false;
+                                        btn.innerText = originalText;
+                                      }
+                                    }}
+                                    className="flex-1 py-2 bg-[#f97316] hover:bg-[#ea580c] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors disabled:opacity-50"
+                                  >
+                                    ✓ Accept PO
+                                  </button>
+                                </div>
                               );
                             }
                             return <p className="text-xs font-bold text-[#ea580c] m-0 italic">Approved</p>;
@@ -1463,32 +1494,36 @@ const ChatInbox: React.FC = () => {
                           ))}
                           {msg.text.includes('Purchase Order Generated') && user?.role === 'supplier' && (() => {
                             const hasRequested = messages.some(m => m.messageType === 'payment_request' && new Date(m.createdAt) > new Date(msg.createdAt));
-                            if (!hasRequested) {
-                              return (
-                                <button
-                                  onClick={async (e) => {
-                                    const btn = e.currentTarget;
-                                    btn.disabled = true;
-                                    btn.innerText = 'Requesting...';
-                                    try {
-                                      const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
-                                      const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
-                                      const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
-                                      if (!orderId) throw new Error('Order ID not found in Chat');
-                                      await apiClient.post(`/orders/${orderId}/payment-request`);
-                                      toast.success('Payment requested successfully');
-                                      loadMessages();
-                                    } catch (err: any) {
-                                      btn.disabled = false;
-                                      btn.innerText = 'Request Payment';
-                                      toast.error(err.response?.data?.message || 'Failed to request payment');
-                                    }
-                                  }}
-                                  className="w-full mt-3 py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors"
-                                >
-                                  Request Payment
-                                </button>
-                              );
+                              const hasVerified = messages.some(m => m.messageType === 'payment_verified' && new Date(m.createdAt) > new Date(msg.createdAt));
+                              if (!hasRequested && !hasVerified) {
+                                const paymentTerms = (msg.quotationId as any)?.paymentTerms || '';
+                                const isAdvance = paymentTerms.includes('Advance');
+                                const btnLabel = isAdvance ? 'Request Advance Payment' : 'Confirm Order & Process';
+                                return (
+                                  <button
+                                    onClick={async (e) => {
+                                      const btn = e.currentTarget;
+                                      btn.disabled = true;
+                                      btn.innerText = 'Processing...';
+                                      try {
+                                        const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
+                                        const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                                        const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
+                                        if (!orderId) throw new Error('Order ID not found in Chat');
+                                        await apiClient.post(`/orders/${orderId}/payment-request`);
+                                        toast.success(isAdvance ? 'Payment requested successfully' : 'Order confirmed and processing started');
+                                        loadMessages();
+                                      } catch (err: any) {
+                                        btn.disabled = false;
+                                        btn.innerText = btnLabel;
+                                        toast.error(err.response?.data?.message || 'Failed to process request');
+                                      }
+                                    }}
+                                    className="w-full mt-3 py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors"
+                                  >
+                                    {btnLabel}
+                                  </button>
+                                );
                             }
                             return null;
                           })()}
@@ -1933,14 +1968,44 @@ const ChatInbox: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Payment Terms <span className="text-red-500">*</span></label>
-                  <select value={quoteForm.paymentTerms} onChange={e => setQuoteForm({ ...quoteForm, paymentTerms: e.target.value })} className={inputCls}>
-                      <option value="100% Advance">100% Advance</option>
-                      <option value="50% Advance">50% Advance</option>
-                      <option value="COD">Cash on Delivery (COD)</option>
-                      <option value="Credit (7 Days)">Credit (7 Days)</option>
-                      <option value="Credit (15 Days)">Credit (15 Days)</option>
-                      <option value="Credit (30 Days)">Credit (30 Days)</option>
-                    </select>
+                  <select 
+                    value={quoteForm.paymentType} 
+                    onChange={e => setQuoteForm({ ...quoteForm, paymentType: e.target.value })} 
+                    className={inputCls + " mb-2"}
+                  >
+                    <option value="Advance">Advance Payment</option>
+                    <option value="COD">Cash on Delivery (COD)</option>
+                    <option value="Credit">Credit</option>
+                  </select>
+                  
+                  {quoteForm.paymentType === 'Advance' && (
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="number" 
+                        min="1" max="100" 
+                        value={quoteForm.advancePercent} 
+                        onChange={e => setQuoteForm({ ...quoteForm, advancePercent: Number(e.target.value) })}
+                        className={inputCls} 
+                        placeholder="%"
+                      />
+                      <span className="text-xs text-[#64748b] whitespace-nowrap">% Advance</span>
+                    </div>
+                  )}
+
+                  {quoteForm.paymentType === 'Credit' && (
+                    <div className="flex items-center gap-2">
+                      <select 
+                        value={quoteForm.creditDays} 
+                        onChange={e => setQuoteForm({ ...quoteForm, creditDays: Number(e.target.value) })}
+                        className={inputCls}
+                      >
+                        <option value={7}>7 Days</option>
+                        <option value={15}>15 Days</option>
+                        <option value={30}>30 Days</option>
+                      </select>
+                      <span className="text-xs text-[#64748b]">Days</span>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Transportation <span className="text-red-500">*</span></label>
@@ -2242,6 +2307,124 @@ const ChatInbox: React.FC = () => {
                 className={`flex-1 py-2.5 rounded-[8px] text-sm font-bold text-white transition-colors border-none ${(!paymentUtr.trim() || isUploadingProof) ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:bg-[#cc5200] cursor-pointer'}`}
               >
                 {isUploadingProof ? 'Uploading...' : 'Submit Proof'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Supplier Reject PO Modal */}
+      {showSupplierRejectModal && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[100] flex items-center justify-center px-4" onClick={() => setShowSupplierRejectModal(false)}>
+          <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">Reject PO Generation</h2>
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wide mb-1.5">Reason for Rejection <span className="text-red-500">*</span></label>
+                <select
+                  value={supplierRejectReason}
+                  onChange={e => setSupplierRejectReason(e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">Select a reason</option>
+                  <option value="Out of Stock">Out of Stock</option>
+                  <option value="Cannot fulfill delivery timeline">Cannot fulfill delivery timeline</option>
+                  <option value="Pricing issue">Pricing issue</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-6">
+              <button 
+                onClick={() => setShowSupplierRejectModal(false)}
+                className="flex-1 py-2.5 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-bold text-[#475569] hover:bg-[#f8fafc] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                disabled={!supplierRejectReason}
+                onClick={async (e) => {
+                  const btn = e.currentTarget;
+                  btn.disabled = true;
+                  btn.innerText = 'Rejecting...';
+                  try {
+                    const qId = typeof supplierRejectTargetMsg?.quotationId === 'object' ? (supplierRejectTargetMsg.quotationId as any)._id : supplierRejectTargetMsg?.quotationId;
+                    await quotationApi.rejectQuotation(qId, supplierRejectReason);
+                    setShowSupplierRejectModal(false);
+                    loadMessages();
+                  } catch (err: any) {
+                    btn.disabled = false;
+                    btn.innerText = 'Reject PO';
+                    toast.error(err.response?.data?.message || 'Failed to reject PO');
+                  }
+                }}
+                className={`flex-1 py-2.5 rounded-[8px] text-sm font-bold text-white transition-colors border-none ${!supplierRejectReason ? 'bg-red-500/50 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 cursor-pointer'}`}
+              >
+                Reject PO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supplier Wallet Commission Preview Modal */}
+      {showWalletCommissionModal && commissionPreview && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[100] flex items-center justify-center px-4" onClick={() => setShowWalletCommissionModal(false)}>
+          <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">Approve PO Generation</h2>
+            
+            <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-4 mb-5">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-[#64748b]">Total Wallet Balance</span>
+                <span className="font-bold text-[#0f172a]">₹{commissionPreview.walletBalance.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-[#64748b]">Freeze on Confirm <br/><span className="text-[10px] text-[#94a3b8]">(Commission + GST)</span></span>
+                <span className="font-bold text-[#dc2626]">- ₹{commissionPreview.commissionFreezeAmount.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-[#e2e8f0] mt-2">
+                <span className="font-bold text-[#0f172a]">Remaining Balance</span>
+                <span className={`font-bold ${commissionPreview.isSufficient ? 'text-[#059669]' : 'text-[#dc2626]'}`}>
+                  ₹{(commissionPreview.walletBalance - commissionPreview.commissionFreezeAmount).toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
+            {!commissionPreview.isSufficient && (
+              <div className="bg-[#fef2f2] border border-[#fecaca] rounded-[8px] p-3 mb-5">
+                <p className="text-xs text-[#b91c1c] m-0 font-semibold mb-1">Insufficient Balance</p>
+                <p className="text-[11px] text-[#991b1b] m-0 mb-2">Please top up your wallet to accept this PO generation.</p>
+                <a href="/supplier/dashboard?tab=wallet" className="text-[11px] font-bold text-[#dc2626] hover:underline cursor-pointer block text-center bg-white border border-[#fca5a5] py-1.5 rounded-[6px]">
+                  Top Up Wallet Now
+                </a>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setShowWalletCommissionModal(false)}
+                className="flex-1 py-2.5 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-bold text-[#475569] hover:bg-[#f8fafc] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                disabled={!commissionPreview.isSufficient || isConfirmingPO}
+                onClick={async () => {
+                  setIsConfirmingPO(true);
+                  try {
+                    const qId = typeof walletCommissionTargetMsg?.quotationId === 'object' ? (walletCommissionTargetMsg.quotationId as any)._id : walletCommissionTargetMsg?.quotationId;
+                    await quotationApi.supplierApprove(qId);
+                    setShowWalletCommissionModal(false);
+                    loadMessages();
+                  } catch (err: any) {
+                    toast.error(err.response?.data?.message || 'Failed to approve PO');
+                  } finally {
+                    setIsConfirmingPO(false);
+                  }
+                }}
+                className={`flex-1 py-2.5 rounded-[8px] text-sm font-bold text-white transition-colors border-none ${(!commissionPreview.isSufficient || isConfirmingPO) ? 'bg-[#059669]/50 cursor-not-allowed' : 'bg-[#059669] hover:bg-[#047857] cursor-pointer'}`}
+              >
+                {isConfirmingPO ? 'Confirming...' : 'Confirm'}
               </button>
             </div>
           </div>
