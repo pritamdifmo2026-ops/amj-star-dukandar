@@ -260,6 +260,7 @@ const adminService = {
   updatePlatformSettings: async (data: {
     minimumWalletBalance?: number;
     minimumWithdrawalAmount?: number;
+    autoCancelHours?: number;
     contactPhone?: string;
     announcementText?: string;
     planPrices?: { VERIFIED?: number; GAMMA?: number; BETA?: number };

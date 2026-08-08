@@ -280,11 +280,11 @@ const ProductDetail: React.FC = () => {
                 <p className="text-sm font-bold text-heading mt-2">
                   {product.gstIncluded ? 'All-inclusive price' : `Total: ${formatCurrency(totalPrice)}`}
                 </p>
-                {product.supplierId?.defaultPaymentTerms && (
-                  <div className="mt-3 pt-3 border-t border-primary/20">
-                    <span className="inline-block text-xs text-[#059669] bg-[#ecfdf5] px-2 py-1 rounded-sm font-semibold">
-                      Payment Terms: {product.supplierId.defaultPaymentTerms}
-                    </span>
+                  {(product.supplierId as any)?.supportedPaymentTerms?.[0] && (
+                    <div className="mt-3 pt-3 border-t border-primary/20">
+                      <span className="inline-block text-xs text-[#059669] bg-[#ecfdf5] px-2 py-1 rounded-sm font-semibold">
+                        Payment Terms: {(product.supplierId as any).supportedPaymentTerms[0]}
+                      </span>
                   </div>
                 )}
               </div>

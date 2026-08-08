@@ -12,6 +12,7 @@ import { POReviewModal } from './POReviewModal';
 import { removeWhiteBackground } from '@/shared/utils/removeBackground';
 import apiClient from '@/api/client';
 import SignatureCanvas from 'react-signature-canvas';
+import uploadService from '@/features/product/services/upload.service';
 
 type Filter = 'all' | 'unread';
 type GstType = 'CGST_SGST' | 'IGST' | 'exempt';
@@ -182,6 +183,9 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   const [quoteNotFound, setQuoteNotFound] = useState(false);
   const [showCounter, setShowCounter] = useState(false);
   const [counterPrice, setCounterPrice] = useState('');
+  const [counterTimeline, setCounterTimeline] = useState('');
+  const [counterPaymentTerms, setCounterPaymentTerms] = useState('');
+  const [counterTransportationTerms, setCounterTransportationTerms] = useState('');
   const [counterSubmitting, setCounterSubmitting] = useState(false);
   const [contactPhone, setContactPhone] = useState<string | null>(null);
   const hasFetchedContact = useRef(false);
@@ -274,10 +278,16 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
     try {
       await quotationApi.counterOffer(quote._id, {
         price: cp,
+        deliveryTimeline: counterTimeline || undefined,
+        paymentTerms: counterPaymentTerms || undefined,
+        transportationTerms: counterTransportationTerms || undefined,
       });
       loadMessages();
       setShowCounter(false);
       setCounterPrice('');
+      setCounterTimeline('');
+      setCounterPaymentTerms('');
+      setCounterTransportationTerms('');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to send counter');
     } finally { setCounterSubmitting(false); }
@@ -481,7 +491,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             {quote.status !== 'supplier_accepted' && (
               <>
                 <button className="flex-1 py-2 text-xs font-bold text-[#2563eb] bg-[#eff6ff] rounded-[6px] border-none cursor-pointer hover:bg-[#dbeafe]"
-                  onClick={() => isSupplier ? (onSupplierAction ? onSupplierAction(quote, false) : null) : setShowCounter(true)}>Counter</button>
+                  onClick={() => isSupplier ? (onSupplierAction ? onSupplierAction(quote, false) : null) : setShowCounter(true)}>Revise Terms</button>
                 <button className="flex-1 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]"
                   onClick={() => setConfirmAction('decline')}>Decline</button>
               </>
@@ -1373,15 +1383,12 @@ const ChatInbox: React.FC = () => {
                                       const file = e.target.files[0];
                                       if (!file) return;
                                       
-                                      // Normally you'd upload this file to S3/Cloudinary and get a URL.
-                                      // For this MVP, we'll prompt for UTR and send a dummy/placeholder URL.
                                       const utr = prompt('Please enter the UTR / Transaction Number:');
                                       if (!utr) return;
 
                                       try {
                                         toast.loading('Uploading payment proof...', { id: 'payment-proof' });
-                                        // In real app, upload file here.
-                                        const dummyUrl = 'https://example.com/dummy-proof.jpg';
+                                        const proofUrl = await uploadService.uploadImage(file);
                                         
                                         // Assuming quote.orderId is available from the populated quotationId
                                         const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
@@ -1390,7 +1397,7 @@ const ChatInbox: React.FC = () => {
                                         if (!orderId) throw new Error('Order ID not found in Chat');
 
                                         await apiClient.post(`/orders/${orderId}/payment-proof`, {
-                                          paymentProofUrl: dummyUrl,
+                                          paymentProofUrl: proofUrl,
                                           paymentUtrNumber: utr
                                         });
                                         toast.success('Payment proof uploaded successfully', { id: 'payment-proof' });
@@ -1766,10 +1773,13 @@ const ChatInbox: React.FC = () => {
                 <div>
                   <label className={labelCls}>Payment Terms <span className="text-red-500">*</span></label>
                   <select value={quoteForm.paymentTerms} onChange={e => setQuoteForm({ ...quoteForm, paymentTerms: e.target.value })} className={inputCls}>
-                    <option value="Advance">Advance (100% upfront)</option>
-                    <option value="COD">Cash on Delivery (COD)</option>
-                    <option value="Credit">Credit Terms (e.g. 30 Days)</option>
-                  </select>
+                      <option value="100% Advance">100% Advance</option>
+                      <option value="50% Advance">50% Advance</option>
+                      <option value="COD">Cash on Delivery (COD)</option>
+                      <option value="Credit (7 Days)">Credit (7 Days)</option>
+                      <option value="Credit (15 Days)">Credit (15 Days)</option>
+                      <option value="Credit (30 Days)">Credit (30 Days)</option>
+                    </select>
                 </div>
                 <div>
                   <label className={labelCls}>Transportation <span className="text-red-500">*</span></label>

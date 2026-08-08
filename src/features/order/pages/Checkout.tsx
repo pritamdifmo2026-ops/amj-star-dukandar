@@ -49,6 +49,24 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const items: CheckoutItem[] = buyNowItem ? [buyNowItem] : (cartItems as CheckoutItem[]);
   const isBuyNow = !!buyNowItem;
 
+  const [supplierProfile, setSupplierProfile] = useState<any>(null);
+  const [selectedTransportation, setSelectedTransportation] = useState<string>('');
+  const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<string>('');
+
+  useEffect(() => {
+    const supplierId = items[0]?.supplierId;
+    if (supplierId) {
+      apiClient.get(`/supplier/public/${supplierId}`).then(res => {
+        if (res.data?.supplier) {
+          const s = res.data.supplier;
+          setSupplierProfile(s);
+          setSelectedTransportation(s.supportedTransportationTerms?.[0] || 'Ex. Factory');
+          setSelectedPaymentTerm(s.supportedPaymentTerms?.[0] || '100% Advance');
+        }
+      }).catch(console.error);
+    }
+  }, [items]);
+
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
@@ -186,12 +204,17 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
       return [sid, { zone, cost: item.shippingRates[zone] }];
     })
   );
-  const totalShipping = buyerState
+  const baseShippingCost = buyerState
     ? Object.values(shippingBySupplierId).reduce((s, v) => s + (v?.cost ?? 0), 0)
     : 0;
+  
+  const isFOR = selectedTransportation === 'FOR';
+  const isThirdParty = selectedTransportation === 'Third-Party Courier (Prepaid)';
+  const totalShipping = isFOR ? 0 : baseShippingCost;
+  const courierGST = isThirdParty ? Math.round(totalShipping * 0.18) : 0;
 
   const taxableAmount = financials.subtotal;
-  const grandTotal = taxableAmount + totalGst + totalShipping;
+  const grandTotal = taxableAmount + totalGst + totalShipping + courierGST;
 
   const handlePlaceOrder = async (paymentMethod: 'direct') => {
     if (!selectedAddress) { setError('Please add a delivery address.'); return; }
@@ -212,6 +235,10 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         buyNow: isBuyNow,
         addressSnapshot,
         shippingCost: totalShipping,
+        courierCharge: isThirdParty ? totalShipping : 0,
+        courierGST,
+        transportationTerms: selectedTransportation,
+        paymentTerms: selectedPaymentTerm,
         buyerSignature: tempSignature || user?.savedSignature || uploadedSignature || (sigCanvas.current && !sigCanvas.current.isEmpty() ? sigCanvas.current.getTrimmedCanvas().toDataURL('image/png') : ''),
       });
 
@@ -347,6 +374,45 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               </h2>
             </div>
 
+              {/* Commercial Terms Selection */}
+              <div className="px-5 py-4 border-b border-[#f1f5f9] bg-[#f8fafc]">
+                <h3 className="text-sm font-bold text-[#0f172a] mb-3">Commercial Terms</h3>
+                <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
+                  <div>
+                    <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Transportation Method</label>
+                    <select
+                      value={selectedTransportation}
+                      onChange={(e) => setSelectedTransportation(e.target.value)}
+                      className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
+                    >
+                      {supplierProfile?.supportedTransportationTerms?.length > 0 ? (
+                        supplierProfile.supportedTransportationTerms.map((t: string) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))
+                      ) : (
+                        <option value="Ex. Factory">Ex. Factory</option>
+                      )}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Payment Terms</label>
+                    <select
+                      value={selectedPaymentTerm}
+                      onChange={(e) => setSelectedPaymentTerm(e.target.value)}
+                      className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
+                    >
+                      {supplierProfile?.supportedPaymentTerms?.length > 0 ? (
+                        supplierProfile.supportedPaymentTerms.map((t: string) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))
+                      ) : (
+                        <option value="100% Advance">100% Advance</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
             {/* Header row */}
             <div className="grid grid-cols-[1fr_80px_90px_90px] gap-3 px-5 py-2.5 bg-[#f8fafc] border-b border-[#eef2f6] text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider max-sm:hidden">
               <span>Product</span>
@@ -427,11 +493,18 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
               {/* Shipping */}
               <div className="flex justify-between text-[#475569]">
-                <span>Shipping</span>
+                <span>Shipping {isFOR ? '(FOR - Included)' : ''}</span>
                 <span className={totalShipping === 0 ? 'text-[#059669] font-semibold' : ''}>
                   {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN')}`}
                 </span>
               </div>
+              
+              {isThirdParty && courierGST > 0 && (
+                <div className="flex justify-between text-[#0369a1]">
+                  <span>Courier GST @ 18%</span>
+                  <span>₹{courierGST.toLocaleString('en-IN')}</span>
+                </div>
+              )}
 
               <div className="flex justify-between items-center pt-2.5 border-t border-[#e2e8f0]">
                 <span className="font-extrabold text-[#0f172a] text-base">Grand Total</span>
@@ -616,11 +689,17 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 <span>GST</span><span>₹{Math.round(totalGst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-[#475569]">
-                <span>Shipping</span>
+                <span>Shipping {isFOR ? '(FOR - Included)' : ''}</span>
                 <span className={totalShipping === 0 ? 'text-[#059669] font-semibold' : ''}>
                   {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN')}`}
                 </span>
               </div>
+              {isThirdParty && courierGST > 0 && (
+                <div className="flex justify-between text-[#0369a1]">
+                  <span>Courier GST @ 18%</span>
+                  <span>₹{courierGST.toLocaleString('en-IN')}</span>
+                </div>
+              )}
               <div className="flex justify-between font-extrabold text-[#0f172a] text-base pt-2.5 border-t border-[#f1f5f9] mt-1">
                 <span>Total</span><span>₹{Math.round(grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>

@@ -165,6 +165,11 @@ const supplierService = {
     const response = await apiClient.put('/supplier/shipping-zones', zones);
     return response.data;
   },
+
+  updateSupportedTerms: async (data: { supportedTransportationTerms?: string[], supportedPaymentTerms?: string[] }) => {
+    const response = await apiClient.patch('/supplier/supported-terms', data);
+    return response.data;
+  },
 };
 
 export default supplierService;

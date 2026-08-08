@@ -25,7 +25,7 @@ const AdminPlatformSettings: React.FC = () => {
     queryFn: adminService.getPlatformSettings,
   });
 
-  const [form, setForm] = useState({ minimumWalletBalance: '', minimumWithdrawalAmount: '', contactPhone: '', announcementText: '' });
+  const [form, setForm] = useState({ minimumWalletBalance: '', minimumWithdrawalAmount: '', autoCancelHours: '', contactPhone: '', announcementText: '' });
   const [socialForm, setSocialForm] = useState({ facebook: '', twitter: '', linkedin: '', instagram: '' });
   const [phoneError, setPhoneError] = useState('');
 
@@ -37,6 +37,7 @@ const AdminPlatformSettings: React.FC = () => {
       setForm({
         minimumWalletBalance: String(settings.minimumWalletBalance),
         minimumWithdrawalAmount: String(settings.minimumWithdrawalAmount),
+        autoCancelHours: String(settings.autoCancelHours ?? 48),
         contactPhone: settings.contactPhone || '',
         announcementText: settings.announcementText || '',
       });
@@ -77,6 +78,7 @@ const AdminPlatformSettings: React.FC = () => {
     mutationFn: () => adminService.updatePlatformSettings({
       minimumWalletBalance: Number(form.minimumWalletBalance),
       minimumWithdrawalAmount: Number(form.minimumWithdrawalAmount),
+      autoCancelHours: Number(form.autoCancelHours),
       contactPhone: form.contactPhone,
       announcementText: form.announcementText,
       socialMedia: socialForm,
@@ -139,6 +141,18 @@ const AdminPlatformSettings: React.FC = () => {
               className={inputCls}
             />
             <p className="text-xs text-[#94a3b8] mt-1.5">Suppliers cannot request withdrawals below this amount</p>
+          </div>
+
+          <div>
+            <label className={labelCls}>Auto-Cancel Unpaid Orders (Hours)</label>
+            <input
+              type="number"
+              min={1}
+              value={form.autoCancelHours}
+              onChange={e => setForm(p => ({ ...p, autoCancelHours: e.target.value }))}
+              className={inputCls}
+            />
+            <p className="text-xs text-[#94a3b8] mt-1.5">Unpaid orders will automatically cancel after this many hours (default: 48).</p>
           </div>
 
           <div>

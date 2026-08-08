@@ -136,6 +136,22 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
     onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to save shipping rates'),
   });
 
+  const [commercialTermsForm, setCommercialTermsForm] = useState({
+    supportedTransportationTerms: profile?.supportedTransportationTerms || ['FOR', 'Ex. Factory'],
+    supportedPaymentTerms: profile?.supportedPaymentTerms || ['100% Advance'],
+  });
+  const [commercialTermsEditing, setCommercialTermsEditing] = useState(false);
+
+  const updateCommercialTermsMutation = useMutation({
+    mutationFn: supplierService.updateSupportedTerms,
+    onSuccess: () => {
+      toast.success('Commercial terms saved!');
+      setCommercialTermsEditing(false);
+      qc.invalidateQueries({ queryKey: ['supplierProfile'] });
+    },
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to save commercial terms'),
+  });
+
   const validateBankForm = () => {
     const errs: Record<string, string> = {};
     const e1 = bankFieldError.accountHolderName(bankForm.accountHolderName); if (e1) errs.accountHolderName = e1;
@@ -610,6 +626,99 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
           >
             <Plus size={16} /> Add Bank Account
           </button>
+        )}
+      </div>
+
+      {/* Commercial Terms */}
+      <div className={`${cardCls} mt-6`}>
+        <div className={cardHeaderCls}>
+          <ShieldCheck size={20} className="text-primary" />
+          <h3 className="text-base font-bold text-[#1e293b] m-0">Commercial Terms</h3>
+          {!commercialTermsEditing && (
+            <button
+              onClick={() => setCommercialTermsEditing(true)}
+              className={`${primaryBtnCls} ml-auto`}
+            >
+              Edit
+            </button>
+          )}
+        </div>
+
+        <p className="text-xs text-[#64748b] mb-5 m-0">
+          Select the transportation methods and payment terms you are willing to support for your buyers.
+        </p>
+
+        <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1 mb-4">
+          <div>
+            <label className={labelCls}>Supported Transportation</label>
+            <div className="flex flex-col gap-2">
+              {['FOR', 'Ex. Factory', 'Ex. Godown', 'To Pay', 'Third-Party Courier (Prepaid)'].map(term => (
+                <label key={term} className="flex items-center gap-2 text-sm text-[#1e293b]">
+                  <input
+                    type="checkbox"
+                    disabled={!commercialTermsEditing}
+                    checked={commercialTermsForm.supportedTransportationTerms.includes(term)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setCommercialTermsForm(p => ({ ...p, supportedTransportationTerms: [...p.supportedTransportationTerms, term] }));
+                      } else {
+                        setCommercialTermsForm(p => ({ ...p, supportedTransportationTerms: p.supportedTransportationTerms.filter((t: string) => t !== term) }));
+                      }
+                    }}
+                    className="accent-primary"
+                  />
+                  {term}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Supported Payment Terms</label>
+            <div className="flex flex-col gap-2">
+              {['100% Advance', '50% Advance', 'COD', 'Credit (7 Days)', 'Credit (15 Days)', 'Credit (30 Days)'].map(term => (
+                <label key={term} className="flex items-center gap-2 text-sm text-[#1e293b]">
+                  <input
+                    type="checkbox"
+                    disabled={!commercialTermsEditing}
+                    checked={commercialTermsForm.supportedPaymentTerms.includes(term)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setCommercialTermsForm(p => ({ ...p, supportedPaymentTerms: [...p.supportedPaymentTerms, term] }));
+                      } else {
+                        setCommercialTermsForm(p => ({ ...p, supportedPaymentTerms: p.supportedPaymentTerms.filter((t: string) => t !== term) }));
+                      }
+                    }}
+                    className="accent-primary"
+                  />
+                  {term}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {commercialTermsEditing && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setCommercialTermsEditing(false);
+                setCommercialTermsForm({
+                  supportedTransportationTerms: profile?.supportedTransportationTerms || ['FOR', 'Ex. Factory'],
+                  supportedPaymentTerms: profile?.supportedPaymentTerms || ['100% Advance'],
+                });
+              }}
+              className={outlineBtnCls}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => updateCommercialTermsMutation.mutate(commercialTermsForm)}
+              disabled={updateCommercialTermsMutation.isPending || commercialTermsForm.supportedTransportationTerms.length === 0 || commercialTermsForm.supportedPaymentTerms.length === 0}
+              className={primaryBtnCls}
+            >
+              {updateCommercialTermsMutation.isPending ? 'Saving…' : 'Save Terms'}
+            </button>
+          </div>
         )}
       </div>
 
