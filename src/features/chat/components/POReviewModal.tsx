@@ -102,7 +102,7 @@ export const POReviewModal: React.FC<POReviewModalProps> = ({
                 <span className="text-[#64748b]">Shipping Cost</span>
                 <span>{quote.transportationTerms?.includes('Ex.') || quote.transportationTerms?.includes('To Pay') ? '₹0 (Buyer Arranges)' : `₹${quote.shippingCost?.toLocaleString('en-IN') || 0}`}</span>
               </div>
-              {quote.transportationTerms === 'Third-Party Courier (Prepaid)' && (quote.shippingCost || 0) > 0 && (
+              {quote.transportationTerms === 'Third-Party Courier' && (quote.shippingCost || 0) > 0 && (
                 <div className="flex justify-between text-[#0369a1]">
                   <span>Courier GST (18%)</span>
                   <span>₹{Math.round((quote.shippingCost || 0) * 0.18).toLocaleString('en-IN')}</span>

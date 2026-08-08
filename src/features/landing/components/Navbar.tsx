@@ -180,7 +180,7 @@ const Navbar: React.FC = () => {
                   {userMenuOpen && (
                     <div className="absolute top-full right-0 mt-3 bg-cream border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] min-w-[200px] p-2 z-10" onClick={e => e.stopPropagation()}>
                       {isSupplier ? (
-                        <Link to="/supplier/onboarding" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                        <Link to="/supplier/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <LayoutDashboard size={14} className="inline mr-2" />Dashboard
                         </Link>
                       ) : isReseller ? (
@@ -439,7 +439,7 @@ const Navbar: React.FC = () => {
             <div className="mb-6">
               <div className="text-[11px] font-bold uppercase text-muted tracking-widest mb-3">Account & Partner</div>
               {isAuth ? (
-                <Link to={isSupplier ? "/supplier/onboarding" : isReseller ? "/reseller/dashboard" : isAdmin ? "/admin/dashboard" : "/profile"}
+                <Link to={isSupplier ? "/supplier/dashboard" : isReseller ? "/reseller/dashboard" : isAdmin ? "/admin/dashboard" : "/profile"}
                   className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}>
                   <User size={18} className="text-primary shrink-0" /><span>{isAdmin ? 'Control Panel' : 'My Profile'}</span>
                 </Link>

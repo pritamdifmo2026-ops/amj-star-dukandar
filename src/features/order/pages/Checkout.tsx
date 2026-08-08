@@ -210,7 +210,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
     : 0;
   
   const isFOR = selectedTransportation === 'FOR';
-  const isThirdParty = selectedTransportation === 'Third-Party Courier (Prepaid)';
+  const isThirdParty = selectedTransportation === 'Third-Party Courier';
   const totalShipping = isFOR ? 0 : baseShippingCost;
   const courierGST = isThirdParty ? Math.round(totalShipping * 0.18) : 0;
 

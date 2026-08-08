@@ -70,7 +70,7 @@ const QuotePreviewCard = ({
   gstAmount: number;
   grandTotal: number;
 }) => {
-  const courierGst = (form.transportationTerms === 'Third-Party Courier (Prepaid)' && form.shipping > 0) ? Math.round(form.shipping * 0.18) : 0;
+  const courierGst = (form.transportationTerms === 'Third-Party Courier' && form.shipping > 0) ? Math.round(form.shipping * 0.18) : 0;
   return (
   <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden">
     <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
@@ -186,6 +186,9 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   const [counterTimeline, setCounterTimeline] = useState('');
   const [counterPaymentTerms, setCounterPaymentTerms] = useState('');
   const [counterTransportationTerms, setCounterTransportationTerms] = useState('');
+  const [counterReason, setCounterReason] = useState('');
+  const [counterCourierName, setCounterCourierName] = useState('');
+  const [counterShippingCost, setCounterShippingCost] = useState('');
   const [counterSubmitting, setCounterSubmitting] = useState(false);
   const [contactPhone, setContactPhone] = useState<string | null>(null);
   const hasFetchedContact = useRef(false);
@@ -281,6 +284,9 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
         deliveryTimeline: counterTimeline || undefined,
         paymentTerms: counterPaymentTerms || undefined,
         transportationTerms: counterTransportationTerms || undefined,
+        reason: counterReason || undefined,
+        shippingCost: counterTransportationTerms === 'Third-Party Courier' ? Number(counterShippingCost) || 0 : (counterTransportationTerms && counterTransportationTerms !== 'Third-Party Courier') ? 0 : undefined,
+        shippingNotes: counterTransportationTerms === 'Third-Party Courier' ? counterCourierName || undefined : undefined,
       });
       loadMessages();
       setShowCounter(false);
@@ -288,6 +294,9 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
       setCounterTimeline('');
       setCounterPaymentTerms('');
       setCounterTransportationTerms('');
+      setCounterReason('');
+      setCounterCourierName('');
+      setCounterShippingCost('');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to send counter');
     } finally { setCounterSubmitting(false); }
@@ -427,11 +436,11 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             )}
             {shipCost > 0 && (
               <div className="flex justify-between text-xs text-[#475569]">
-                <span>Shipping</span>
+                <span>Shipping {quote.shippingNotes ? `(${quote.shippingNotes})` : ''}</span>
                 <span className="font-semibold">₹{shipCost.toLocaleString('en-IN')}</span>
               </div>
             )}
-            {quote.transportationTerms === 'Third-Party Courier (Prepaid)' && shipCost > 0 && (
+            {quote.transportationTerms === 'Third-Party Courier' && shipCost > 0 && (
               <div className="flex justify-between text-xs text-[#0369a1]">
                 <span>Courier GST (18%)</span>
                 <span className="font-semibold">₹{Math.round(shipCost * 0.18).toLocaleString('en-IN')}</span>
@@ -660,6 +669,110 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
               </div>
             )}
           </div>
+
+          <div className="flex flex-col gap-0.5">
+            <label className="text-[10px] text-[#64748b] font-semibold">Delivery Option (Optional)</label>
+            <select
+              value={counterTransportationTerms}
+              onChange={e => {
+                const val = e.target.value;
+                setCounterTransportationTerms(val);
+                setCounterReason('');
+                if (val !== 'Third-Party Courier') {
+                  setCounterCourierName('');
+                  setCounterShippingCost('');
+                }
+              }}
+              className="border border-[#e2e8f0] rounded-[6px] bg-white px-2 py-2 text-xs text-[#334155] focus:border-primary outline-none"
+            >
+              <option value="">No Change (Keep Original)</option>
+              <option value="FOR">FOR (Supplier delivers - Free)</option>
+              <option value="Ex. Factory">Ex. Factory (Buyer picks up)</option>
+              <option value="Ex. Godown">Ex. Godown (Buyer picks up)</option>
+              <option value="Third-Party Courier">Third-Party Courier</option>
+            </select>
+          </div>
+
+          {counterTransportationTerms === 'Third-Party Courier' && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[10px] text-[#64748b] font-semibold">Courier Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g. BlueDart"
+                  value={counterCourierName}
+                  onChange={e => setCounterCourierName(e.target.value)}
+                  className="border border-[#e2e8f0] rounded-[6px] bg-white px-2 py-2 text-xs text-[#334155] focus:border-primary outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <label className="text-[10px] text-[#64748b] font-semibold">Shipping Cost (₹) <span className="text-red-500">*</span></label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={counterShippingCost}
+                  onChange={e => setCounterShippingCost(e.target.value)}
+                  className="border border-[#e2e8f0] rounded-[6px] bg-white px-2 py-2 text-xs text-[#334155] focus:border-primary outline-none"
+                />
+              </div>
+              {Number(counterShippingCost) > 0 && (
+                <div className="col-span-2 bg-[#f0f9ff] border border-[#bae6fd] rounded-[6px] px-2 py-1.5 text-[10px] text-[#0369a1]">
+                  Courier GST (18%): ₹{Math.round(Number(counterShippingCost) * 0.18).toLocaleString('en-IN')} • Total Shipping: ₹{Math.round(Number(counterShippingCost) * 1.18).toLocaleString('en-IN')}
+                </div>
+              )}
+            </div>
+          )}
+
+          {counterTransportationTerms && (
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[10px] text-[#64748b] font-semibold">Reason (Optional)</label>
+              <select
+                value={counterReason}
+                onChange={e => setCounterReason(e.target.value)}
+                className="border border-[#e2e8f0] rounded-[6px] bg-white px-2 py-2 text-xs text-[#334155] focus:border-primary outline-none"
+              >
+                <option value="">Select a reason...</option>
+                {user?.role === 'supplier' ? (
+                  counterTransportationTerms === 'Third-Party Courier' ? (
+                    <>
+                      <option value="FOR delivery not available for your location">FOR delivery not available for your location</option>
+                      <option value="Courier provides better tracking & safety">Courier provides better tracking & safety</option>
+                      <option value="Faster delivery via third-party courier">Faster delivery via third-party courier</option>
+                    </>
+                  ) : counterTransportationTerms === 'FOR' ? (
+                    <>
+                      <option value="We can deliver directly at no extra cost">We can deliver directly at no extra cost</option>
+                      <option value="Free delivery available for your area">Free delivery available for your area</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="FOR not available — your location is out of range">FOR not available — your location is out of range</option>
+                      <option value="This option is more cost-effective for you">This option is more cost-effective for you</option>
+                    </>
+                  )
+                ) : (
+                  counterTransportationTerms === 'Third-Party Courier' ? (
+                    <>
+                      <option value="We need tracked & insured delivery">We need tracked & insured delivery</option>
+                      <option value="Prefer courier for faster shipping">Prefer courier for faster shipping</option>
+                    </>
+                  ) : counterTransportationTerms === 'FOR' ? (
+                    <>
+                      <option value="We prefer delivery to our location">We prefer delivery to our location</option>
+                      <option value="More convenient for our warehouse">More convenient for our warehouse</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="We have our own transport arrangement">We have our own transport arrangement</option>
+                      <option value="Trying to reduce overall shipping costs">Trying to reduce overall shipping costs</option>
+                    </>
+                  )
+                )}
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          )}
 
           <div className="flex gap-2 mt-1">
             <button
@@ -922,7 +1035,7 @@ const ChatInbox: React.FC = () => {
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
     : Math.round(computedTotalPrice * quoteForm.gstRate) / 100;
-  const computedCourierGst = (quoteForm.transportationTerms === 'Third-Party Courier (Prepaid)' && quoteForm.shipping > 0) ? Math.round(quoteForm.shipping * 0.18) : 0;
+  const computedCourierGst = (quoteForm.transportationTerms === 'Third-Party Courier' && quoteForm.shipping > 0) ? Math.round(quoteForm.shipping * 0.18) : 0;
   const computedGrandTotal = computedTotalPrice + computedGstAmount + quoteForm.shipping + computedCourierGst;
 
   useEffect(() => {
@@ -1344,9 +1457,9 @@ const ChatInbox: React.FC = () => {
                     ) : msg.messageType === 'system' ? (
                       <div className="w-full flex items-center gap-2 py-1">
                         <div className="flex-1 h-px bg-[#e2e8f0]" />
-                        <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] px-4 py-2.5 text-center max-w-[320px]">
+                        <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] px-4 py-3 max-w-[360px]">
                           {msg.text.split('\n').map((line: string, i: number) => (
-                            <p key={i} className={`m-0 ${i === 0 ? 'text-xs font-extrabold text-[#0f172a]' : 'text-[11px] text-[#64748b] mt-0.5'}`}>{line}</p>
+                            <p key={i} className={`m-0 ${i === 0 ? 'text-xs font-extrabold text-[#0f172a] text-center pb-1' : 'text-[11.5px] text-[#334155] mt-0.5 text-left'}`}>{line || '\u00A0'}</p>
                           ))}
                           {msg.text.includes('Purchase Order Generated') && user?.role === 'supplier' && (() => {
                             const hasRequested = messages.some(m => m.messageType === 'payment_request' && new Date(m.createdAt) > new Date(msg.createdAt));
@@ -1773,14 +1886,14 @@ const ChatInbox: React.FC = () => {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    disabled={quoteForm.transportationTerms.includes('Ex.') || quoteForm.transportationTerms.includes('To Pay') || quoteForm.transportationTerms === 'FOR'}
+                    disabled={quoteForm.transportationTerms.includes('Ex.') || quoteForm.transportationTerms === 'FOR'}
                     value={quoteForm.shipping || ''}
                     onChange={e => {
                       const v = e.target.value.replace(/\D/g, '');
                       setQuoteForm({ ...quoteForm, shipping: v === '' ? 0 : Number(v) });
                     }}
                     placeholder="0"
-                    className={inputCls + (quoteForm.transportationTerms.includes('Ex.') || quoteForm.transportationTerms.includes('To Pay') || quoteForm.transportationTerms === 'FOR' ? ' opacity-50 bg-gray-100 cursor-not-allowed' : '')}
+                    className={inputCls + (quoteForm.transportationTerms.includes('Ex.') || quoteForm.transportationTerms === 'FOR' ? ' opacity-50 bg-gray-100 cursor-not-allowed' : '')}
                   />
                 </div>
                 <div>
@@ -1836,7 +1949,7 @@ const ChatInbox: React.FC = () => {
                     onChange={e => {
                       const val = e.target.value;
                       const updates: any = { transportationTerms: val };
-                      if (val.includes('Ex.') || val.includes('To Pay') || val === 'FOR') {
+                      if (val.includes('Ex.') || val === 'FOR') {
                         updates.shipping = 0;
                       }
                       setQuoteForm({ ...quoteForm, ...updates });
@@ -1846,11 +1959,23 @@ const ChatInbox: React.FC = () => {
                     <option value="FOR">FOR (Supplier delivers - Free)</option>
                     <option value="Ex. Factory">Ex. Factory (Buyer picks up)</option>
                     <option value="Ex. Godown">Ex. Godown (Buyer picks up)</option>
-                    <option value="To Pay">To Pay (Buyer pays freight to courier)</option>
-                    <option value="Third-Party Courier (Prepaid)">Third-Party Courier (Prepaid)</option>
+                    <option value="Third-Party Courier">Third-Party Courier</option>
                   </select>
                 </div>
               </div>
+
+              {quoteForm.transportationTerms === 'Third-Party Courier' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Courier / Service Name <span className="text-red-500">*</span></label>
+                    <input type="text" placeholder="e.g. BlueDart" value={quoteForm.shippingNotes} onChange={e => setQuoteForm({ ...quoteForm, shippingNotes: e.target.value })} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Shipping Cost (₹) <span className="text-red-500">*</span></label>
+                    <input type="number" min="0" value={quoteForm.shipping || ''} onChange={e => setQuoteForm({ ...quoteForm, shipping: Number(e.target.value) })} className={inputCls} />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className={labelCls}>Price Highlight (Optional)</label>
@@ -1883,7 +2008,7 @@ const ChatInbox: React.FC = () => {
                     </>
                   )
                 ) : <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>}
-                {quoteForm.shipping > 0 && <div className="flex justify-between text-xs text-[#475569]"><span>Shipping</span><span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN')}</span></div>}
+                {quoteForm.shipping > 0 && <div className="flex justify-between text-xs text-[#475569]"><span>Shipping {quoteForm.shippingNotes ? `(${quoteForm.shippingNotes})` : ''}</span><span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN')}</span></div>}
                 {computedCourierGst > 0 && <div className="flex justify-between text-xs text-[#0369a1]"><span>Courier GST (18%)</span><span className="font-semibold">₹{computedCourierGst.toLocaleString('en-IN')}</span></div>}
                 <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-1.5 border-t border-[#e2e8f0]">
                   <span>Grand Total</span><span>₹{computedGrandTotal.toLocaleString('en-IN')}</span>

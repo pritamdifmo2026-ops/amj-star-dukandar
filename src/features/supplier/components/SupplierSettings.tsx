@@ -651,9 +651,9 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
         <div className="grid grid-cols-2 gap-6 max-sm:grid-cols-1 mb-4">
           <div>
             <label className={labelCls}>Supported Transportation</label>
-            <div className="flex flex-col gap-2">
-              {['FOR', 'Ex. Factory', 'Ex. Godown', 'To Pay', 'Third-Party Courier (Prepaid)'].map(term => (
-                <label key={term} className="flex items-center gap-2 text-sm text-[#1e293b]">
+            <div className="flex flex-wrap gap-3 mt-1">
+              {['FOR', 'Ex. Factory', 'Ex. Godown', 'Third-Party Courier'].map(term => (
+                <label key={term} className="flex items-center gap-2 text-sm text-[#475569] cursor-pointer">
                   <input
                     type="checkbox"
                     disabled={!commercialTermsEditing}
