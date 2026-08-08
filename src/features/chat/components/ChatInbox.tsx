@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone, Clock, X, Eraser, Upload } from 'lucide-react';
+import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone, Clock, X, Eraser, Upload, FileImage } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -838,7 +838,12 @@ const ChatInbox: React.FC = () => {
   const [supplierSignature, setSupplierSignature] = useState<string | null>(null);
   const [hasDrawnSignature, setHasDrawnSignature] = useState(false);
   const [signatureMode, setSignatureMode] = useState<'draw' | 'upload'>('draw');
-  // Removed unused isChangingSignature
+  
+  const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
+  const [paymentUtr, setPaymentUtr] = useState('');
+  const [paymentMsgContext, setPaymentMsgContext] = useState<any>(null);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [supplierProfileData, setSupplierProfileData] = useState<any>(null);
   const supplierSigCanvas = useRef<any>(null);
 
@@ -1009,7 +1014,7 @@ const ChatInbox: React.FC = () => {
       quantity: quantity,
       price: conv.initialEnquiry?.targetPrice ? (conv.initialEnquiry.targetPrice / quantity) : 0,
       deliveryTimeline: conv.initialEnquiry?.deliveryTimeline || '',
-      paymentTerms: conv.initialEnquiry?.paymentTerms || 'Advance',
+      paymentTerms: conv.initialEnquiry?.paymentTerms || '100% Advance',
       transportationTerms: conv.initialEnquiry?.transportationTerms || 'FOR',
       cartItems: conv.initialEnquiry?.cartItems || [],
     }));
@@ -1397,28 +1402,10 @@ const ChatInbox: React.FC = () => {
                                       const file = e.target.files[0];
                                       if (!file) return;
                                       
-                                      const utr = prompt('Please enter the UTR / Transaction Number:');
-                                      if (!utr) return;
-
-                                      try {
-                                        toast.loading('Uploading payment proof...', { id: 'payment-proof' });
-                                        const proofUrl = await uploadService.uploadImage(file);
-                                        
-                                        // Assuming quote.orderId is available from the populated quotationId
-                                        const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
-                                        const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
-                                        const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
-                                        if (!orderId) throw new Error('Order ID not found in Chat');
-
-                                        await apiClient.post(`/orders/${orderId}/payment-proof`, {
-                                          paymentProofUrl: proofUrl,
-                                          paymentUtrNumber: utr
-                                        });
-                                        toast.success('Payment proof uploaded successfully', { id: 'payment-proof' });
-                                        loadMessages();
-                                      } catch (err: any) {
-                                        toast.error(err.response?.data?.message || 'Failed to upload proof', { id: 'payment-proof' });
-                                      }
+                                      setPaymentProofFile(file);
+                                      setPaymentMsgContext(msg);
+                                      setShowPaymentProofModal(true);
+                                      setPaymentUtr('');
                                     };
                                     input.click();
                                   }}
@@ -2052,6 +2039,84 @@ const ChatInbox: React.FC = () => {
                 disabled={isSendingQuote || !supplierPaymentAck || (!(supplierProfileData?.savedSignature || user?.savedSignature) && !hasDrawnSignature && !supplierSignature)}
               >
                 {isSendingQuote ? 'Sending...' : '✓ Confirm & Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Proof Modal */}
+      {showPaymentProofModal && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[100] flex items-center justify-center px-4" onClick={() => !isUploadingProof && setShowPaymentProofModal(false)}>
+          <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">Upload Payment Proof</h2>
+            
+            <div className="flex flex-col gap-4">
+              {paymentProofFile && (
+                <div className="flex items-center gap-3 p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px]">
+                  <div className="w-10 h-10 bg-primary/10 rounded flex items-center justify-center text-primary">
+                    <FileImage size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#0f172a] m-0 truncate">{paymentProofFile.name}</p>
+                    <p className="text-xs text-[#64748b] m-0">{(paymentProofFile.size / 1024).toFixed(1)} KB</p>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wide mb-1.5">UTR / Transaction Number <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={paymentUtr}
+                  onChange={e => setPaymentUtr(e.target.value)}
+                  placeholder="e.g. UTR123456789"
+                  className={inputCls}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 mt-6">
+              <button 
+                onClick={() => setShowPaymentProofModal(false)}
+                disabled={isUploadingProof}
+                className="flex-1 py-2.5 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-bold text-[#475569] hover:bg-[#f8fafc] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                disabled={!paymentUtr.trim() || isUploadingProof}
+                onClick={async () => {
+                  if (!paymentProofFile || !paymentUtr.trim() || !paymentMsgContext) return;
+                  setIsUploadingProof(true);
+                  try {
+                    const res = await uploadService.uploadImage(paymentProofFile);
+                    // Handle Cloudinary response object properly
+                    const proofUrl = typeof res === 'object' && res.url ? res.url : res;
+
+                    const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
+                    const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                    const orderId = (paymentMsgContext.quotationId as any)?.orderId?._id || (paymentMsgContext.quotationId as any)?.orderId || fallbackOrderId;
+                    
+                    if (!orderId) throw new Error('Order ID not found in Chat');
+
+                    await apiClient.post(`/orders/${orderId}/payment-proof`, {
+                      paymentProofUrl: proofUrl,
+                      paymentUtrNumber: paymentUtr
+                    });
+                    
+                    toast.success('Payment proof uploaded successfully');
+                    setShowPaymentProofModal(false);
+                    loadMessages();
+                  } catch (err: any) {
+                    toast.error(err.response?.data?.message || 'Failed to upload proof');
+                  } finally {
+                    setIsUploadingProof(false);
+                  }
+                }}
+                className={`flex-1 py-2.5 rounded-[8px] text-sm font-bold text-white transition-colors border-none ${(!paymentUtr.trim() || isUploadingProof) ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:bg-[#cc5200] cursor-pointer'}`}
+              >
+                {isUploadingProof ? 'Uploading...' : 'Submit Proof'}
               </button>
             </div>
           </div>

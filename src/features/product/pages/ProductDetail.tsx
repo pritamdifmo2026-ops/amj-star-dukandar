@@ -318,13 +318,15 @@ const ProductDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* V1 Terms Details */}
-              <div className="bg-[#f8fafc] p-3 rounded-[var(--radius-md)] mb-5 border border-[#e2e8f0]">
-                <div className="flex flex-col gap-1.5 text-[13px]">
-                  <p className="m-0"><strong className="text-[#334155]">Default Payment Terms:</strong> <span className="text-[#64748b]">Advance, COD, Credit</span></p>
-                  <p className="m-0"><strong className="text-[#334155]">Default Transportation:</strong> <span className="text-[#64748b]">FOR Lucknow, Ex. Factory, Ex. Godown</span></p>
+              {/* Terms Details */}
+              {product.supplierId && (
+                <div className="bg-[#f8fafc] p-3 rounded-[var(--radius-md)] mb-5 border border-[#e2e8f0]">
+                  <div className="flex flex-col gap-1.5 text-[13px]">
+                    <p className="m-0"><strong className="text-[#334155]">Payment Terms:</strong> <span className="text-[#64748b]">{(product.supplierId as any)?.supportedPaymentTerms?.join(', ') || '100% Advance'}</span></p>
+                    <p className="m-0"><strong className="text-[#334155]">Transportation:</strong> <span className="text-[#64748b]">{(product.supplierId as any)?.supportedTransportationTerms?.join(', ') || 'FOR'}</span></p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action buttons */}
               {product.stock > 0 && product.stock < product.minOrderQty && (
@@ -627,6 +629,7 @@ const ProductDetail: React.FC = () => {
           moq={product.minOrderQty}
           stock={product.stock}
           unit={product.unit}
+          supplierProfile={product.supplierId as any}
           onSubmit={handleEnquirySubmit}
           onClose={() => setShowEnquiryModal(false)}
         />

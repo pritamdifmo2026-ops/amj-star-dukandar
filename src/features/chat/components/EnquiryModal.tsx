@@ -12,6 +12,7 @@ interface EnquiryModalProps {
   moq: number;
   stock: number;
   unit: string;
+  supplierProfile?: any;
   onSubmit: (enquiry: EnquiryPayload) => Promise<void>;
   onClose: () => void;
 }
@@ -49,7 +50,7 @@ const chip = (active: boolean) =>
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors bg-white";
 
 const EnquiryModal: React.FC<EnquiryModalProps> = ({
-  productName, basePrice, moq, stock, unit, onSubmit, onClose,
+  productName, basePrice, moq, stock, unit, supplierProfile, onSubmit, onClose,
 }) => {
   const user = useSelector((state: any) => state.auth.user);
   const dispatch = useDispatch();
@@ -75,8 +76,8 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 
   // Step 4
   const [requirements, setRequirements] = useState<string[]>(['Standard']);
-  const [paymentTerms, setPaymentTerms] = useState('Advance');
-  const [transportationTerms, setTransportationTerms] = useState('FOR');
+  const [paymentTerms, setPaymentTerms] = useState(supplierProfile?.supportedPaymentTerms?.[0] || '100% Advance');
+  const [transportationTerms, setTransportationTerms] = useState(supplierProfile?.supportedTransportationTerms?.[0] || 'FOR');
   const [submitting, setSubmitting] = useState(false);
 
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -476,17 +477,25 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Preferred Payment Terms *</label>
                   <select value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} className={inputCls}>
-                    <option value="Advance">Advance (100% upfront)</option>
-                    <option value="COD">Cash on Delivery (COD)</option>
-                    <option value="Credit">Credit Terms (e.g. 30 Days)</option>
+                    {supplierProfile?.supportedPaymentTerms?.length > 0 ? (
+                      supplierProfile.supportedPaymentTerms.map((t: string) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))
+                    ) : (
+                      <option value="100% Advance">100% Advance</option>
+                    )}
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Preferred Transportation *</label>
                   <select value={transportationTerms} onChange={(e) => setTransportationTerms(e.target.value)} className={inputCls}>
-                    <option value="FOR">FOR (Supplier delivers)</option>
-                    <option value="Ex. Factory">Ex. Factory (Buyer picks up)</option>
-                    <option value="Ex. Godown">Ex. Godown (Buyer picks up)</option>
+                    {supplierProfile?.supportedTransportationTerms?.length > 0 ? (
+                      supplierProfile.supportedTransportationTerms.map((t: string) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))
+                    ) : (
+                      <option value="FOR">FOR</option>
+                    )}
                   </select>
                 </div>
               </div>
