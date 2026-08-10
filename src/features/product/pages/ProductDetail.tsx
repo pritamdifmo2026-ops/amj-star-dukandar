@@ -102,6 +102,7 @@ const ProductDetail: React.FC = () => {
         `Quantity: ${enquiry.quantity} ${product.unit}s`,
         `Price: ${priceLine}`,
         `Delivery Timeline: ${enquiry.deliveryTimeline}`,
+        `Transportation: ${enquiry.transportationTerms}`,
         shipTo ? `Ship to: ${shipTo}` : '',
         `Requirements: ${enquiry.requirements}`,
         enquiry.note ? `Note: ${enquiry.note}` : '',
@@ -280,7 +281,7 @@ const ProductDetail: React.FC = () => {
                 <p className="text-sm font-bold text-heading mt-2">
                   {product.gstIncluded ? 'All-inclusive price' : `Total: ${formatCurrency(totalPrice)}`}
                 </p>
-                  {(product.supplierId as any)?.supportedPaymentTerms?.[0] && (
+                  {false && (product.supplierId as any)?.supportedPaymentTerms?.[0] && (
                     <div className="mt-3 pt-3 border-t border-primary/20">
                       <span className="inline-block text-xs text-[#059669] bg-[#ecfdf5] px-2 py-1 rounded-sm font-semibold">
                         Payment Terms: {(product.supplierId as any).supportedPaymentTerms[0]}
@@ -318,8 +319,8 @@ const ProductDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* Terms Details */}
-              {product.supplierId && (
+              {/* Terms Details hidden */}
+              {false && product.supplierId && (
                 <div className="bg-[#f8fafc] p-3 rounded-[var(--radius-md)] mb-5 border border-[#e2e8f0]">
                   <div className="flex flex-col gap-1.5 text-[13px]">
                     <p className="m-0"><strong className="text-[#334155]">Payment Terms:</strong> <span className="text-[#64748b]">{(product.supplierId as any)?.supportedPaymentTerms?.join(', ') || '100% Advance'}</span></p>
@@ -629,7 +630,7 @@ const ProductDetail: React.FC = () => {
           moq={product.minOrderQty}
           stock={product.stock}
           unit={product.unit}
-          supplierProfile={product.supplierId as any}
+          supplierProfile={product.supplier as any}
           onSubmit={handleEnquirySubmit}
           onClose={() => setShowEnquiryModal(false)}
         />

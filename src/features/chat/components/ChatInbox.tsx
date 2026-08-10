@@ -72,71 +72,71 @@ const QuotePreviewCard = ({
 }) => {
   const courierGst = (form.transportationTerms === 'Third-Party Courier' && form.shipping > 0) ? Math.round(form.shipping * 0.18) : 0;
   return (
-  <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden">
-    <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
-      <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
-      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#fffbeb] text-[#a16207]">Awaiting Response</span>
-    </div>
-    <div className="px-4 py-3 flex flex-col gap-1.5">
-      <div className="flex justify-between text-xs text-[#475569]">
-        <span className="font-medium">{form.itemName}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
+    <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
+        <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#fffbeb] text-[#a16207]">Awaiting Response</span>
       </div>
-      <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
-        <span>Unit Price</span>
-        <span>₹{form.price.toLocaleString('en-IN')}</span>
-      </div>
-      <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
-        <span>Qty</span>
-        <span>{form.quantity}</span>
-      </div>
-      <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
-        <span>Total Price (before GST)</span>
-        <span className="font-semibold">₹{(form.price * form.quantity).toLocaleString('en-IN')}</span>
-      </div>
-      {form.gstType !== 'exempt' ? (
-        form.gstType === 'IGST' ? (
-          <div className="flex justify-between text-xs text-[#0369a1]">
-            <span>IGST @ {form.gstRate}%</span>
-            <span className="font-semibold">₹{gstAmount.toLocaleString('en-IN')}</span>
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-between text-xs text-[#0369a1]">
-              <span>CGST @ {form.gstRate / 2}%</span>
-              <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN')}</span>
-            </div>
-            <div className="flex justify-between text-xs text-[#0369a1]">
-              <span>SGST @ {form.gstRate / 2}%</span>
-              <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN')}</span>
-            </div>
-          </>
-        )
-      ) : (
-        <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>
-      )}
-      {form.shipping > 0 && (
+      <div className="px-4 py-3 flex flex-col gap-1.5">
         <div className="flex justify-between text-xs text-[#475569]">
-          <span>Shipping</span>
-          <span className="font-semibold">₹{form.shipping.toLocaleString('en-IN')}</span>
+          <span className="font-medium">{form.itemName}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
         </div>
-      )}
-      {courierGst > 0 && (
-        <div className="flex justify-between text-xs text-[#0369a1]">
-          <span>Courier GST (18%)</span>
-          <span className="font-semibold">₹{courierGst.toLocaleString('en-IN')}</span>
+        <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+          <span>Unit Price</span>
+          <span>₹{form.price.toLocaleString('en-IN')}</span>
         </div>
-      )}
-      <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
-        <span>Grand Total</span>
-        <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+        <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+          <span>Qty</span>
+          <span>{form.quantity}</span>
+        </div>
+        <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
+          <span>Total Price (before GST)</span>
+          <span className="font-semibold">₹{(form.price * form.quantity).toLocaleString('en-IN')}</span>
+        </div>
+        {form.gstType !== 'exempt' ? (
+          form.gstType === 'IGST' ? (
+            <div className="flex justify-between text-xs text-[#0369a1]">
+              <span>IGST @ {form.gstRate}%</span>
+              <span className="font-semibold">₹{gstAmount.toLocaleString('en-IN')}</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between text-xs text-[#0369a1]">
+                <span>CGST @ {form.gstRate / 2}%</span>
+                <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#0369a1]">
+                <span>SGST @ {form.gstRate / 2}%</span>
+                <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN')}</span>
+              </div>
+            </>
+          )
+        ) : (
+          <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>
+        )}
+        {form.shipping > 0 && (
+          <div className="flex justify-between text-xs text-[#475569]">
+            <span>Shipping</span>
+            <span className="font-semibold">₹{form.shipping.toLocaleString('en-IN')}</span>
+          </div>
+        )}
+        {courierGst > 0 && (
+          <div className="flex justify-between text-xs text-[#0369a1]">
+            <span>Courier GST (18%)</span>
+            <span className="font-semibold">₹{courierGst.toLocaleString('en-IN')}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
+          <span>Grand Total</span>
+          <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+        </div>
+        {form.deliveryTimeline && (
+          <p className="text-[10px] text-[#94a3b8] m-0">Delivery: {form.deliveryTimeline}</p>
+        )}
+        {form.terms && <p className="text-[10px] text-[#94a3b8] m-0">Terms: {form.terms}</p>}
       </div>
-      {form.deliveryTimeline && (
-        <p className="text-[10px] text-[#94a3b8] m-0">Delivery: {form.deliveryTimeline}</p>
-      )}
-      {form.terms && <p className="text-[10px] text-[#94a3b8] m-0">Terms: {form.terms}</p>}
     </div>
-  </div>
-);
+  );
 };
 
 // ── Quick reply presets ─────────────────────────────────────────────────────
@@ -144,7 +144,6 @@ const BUYER_QR = [
   { label: '📦 Order status?', text: 'Hi, could you please share the current status of my order?' },
   { label: '⏳ No update till date', text: "I haven't received any update on my order." },
   { label: '✅ Order received', text: 'I have received my order. Thank you!' },
-  { label: '❓ Have a question', text: 'I have a question regarding my order. Could you please assist?' },
 ];
 const SUPPLIER_QR = [
   { label: '⏳ Processing', text: 'Your order is currently being processed. We will update you soon.' },
@@ -265,12 +264,17 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   };
   const meta = statusMeta[quote.status] || { label: quote.status, cls: 'bg-[#f1f5f9] text-[#475569]' };
 
-  const taxableAmt = quote.taxableAmount ?? quote.totalAmount ?? 0;
-  const actualRetailTotal = quote.items?.reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.quantity)), 0) || taxableAmt;
-  const gstAmt = quote.gstAmount ?? 0;
+  // Derive taxableAmt from items — items[] are never mutated by counter-offers, so this
+  // keeps the original quotation card showing its own prices even after a buyer/supplier counter.
+  const itemsDerivedTotal = quote.items?.reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.quantity)), 0) || 0;
+  const taxableAmt = itemsDerivedTotal > 0 ? itemsDerivedTotal : (quote.taxableAmount ?? quote.totalAmount ?? 0);
+  const actualRetailTotal = taxableAmt;
+  const gstRate = Number(quote.gstRate) || 0;
+  const gstAmt = quote.gstType === 'exempt' ? 0 : (gstRate > 0 ? Math.round(taxableAmt * gstRate / 100) : (quote.gstAmount ?? 0));
   const shipCost = quote.shippingCost ?? 0;
-  const grandTotal = taxableAmt + gstAmt + shipCost;
-  const halfRate = (quote.gstRate ?? 0) / 2;
+  const courierGst = quote.transportationTerms === 'Third-Party Courier' ? Math.round(shipCost * 0.18) : 0;
+  const grandTotal = taxableAmt + gstAmt + shipCost + courierGst;
+  const halfRate = gstRate / 2;
 
   const submitCounter = async () => {
     if (!counterPrice) return;
@@ -450,6 +454,27 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
               <span>Grand Total</span>
               <span>₹{grandTotal.toLocaleString('en-IN')}</span>
             </div>
+            {quote.paymentTerms && (() => {
+              const advMatch = quote.paymentTerms.match(/(\d+)%\s*Advance/i);
+              const advPercent = advMatch ? parseInt(advMatch[1]) : null;
+              const advAmount = advPercent !== null ? Math.round(grandTotal * advPercent / 100) : null;
+              return (
+                <p className="text-[10px] text-[#94a3b8] m-0">
+                  Payment: {quote.paymentTerms}
+                  {advAmount !== null && advPercent !== 100 && (
+                    <span className="ml-1 text-[#f97316] font-bold">
+                      (Advance: ₹{advAmount.toLocaleString('en-IN')})
+                    </span>
+                  )}
+                  {advAmount !== null && advPercent === 100 && (
+                    <span className="ml-1 text-[#f97316] font-bold">
+                      (₹{advAmount.toLocaleString('en-IN')})
+                    </span>
+                  )}
+                </p>
+              );
+            })()}
+            {quote.transportationTerms && <p className="text-[10px] text-[#94a3b8] m-0">Transport: {quote.transportationTerms}</p>}
             {quote.deliveryTimeline && <p className="text-[10px] text-[#94a3b8] m-0">Delivery: {quote.deliveryTimeline}</p>}
             {quote.terms && <p className="text-[10px] text-[#94a3b8] m-0">Terms: {quote.terms}</p>}
           </div>
@@ -478,7 +503,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
       )}
 
       {/* Waiting for other party */}
-      {isLatestQuoteMsg && quote.currentTurn !== (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || (quote.status === 'counter_offer_sent' && msg.messageType === 'buyer_counter_offer')) && (
+      {isLatestQuoteMsg && quote.currentTurn !== (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || quote.status === 'counter_offer_sent') && (
         <div className="px-4 pb-3">
           <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] px-3 py-2">
             <p className="text-[10px] text-[#2563eb] font-bold m-0 text-center">
@@ -491,7 +516,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
       )}
 
       {/* Actions: only when it's user's turn and this is the latest quotation message */}
-      {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || (quote.status === 'counter_offer_sent' && msg.messageType === 'buyer_counter_offer')) && !showCounter && (
+      {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'supplier_accepted' || quote.status === 'counter_offer_sent') && !showCounter && (
         <>
           <div className="flex gap-2 px-4 pb-3">
             <button className="flex-1 py-2 text-xs font-bold text-white bg-[#059669] rounded-[6px] border-none cursor-pointer hover:bg-[#047857]"
@@ -951,7 +976,7 @@ const ChatInbox: React.FC = () => {
   const [supplierSignature, setSupplierSignature] = useState<string | null>(null);
   const [hasDrawnSignature, setHasDrawnSignature] = useState(false);
   const [signatureMode, setSignatureMode] = useState<'draw' | 'upload'>('draw');
-  
+
   const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [paymentUtr, setPaymentUtr] = useState('');
@@ -1019,13 +1044,41 @@ const ChatInbox: React.FC = () => {
   const [showSupplierRejectModal, setShowSupplierRejectModal] = useState(false);
   const [supplierRejectReason, setSupplierRejectReason] = useState('');
   const [supplierRejectTargetMsg, setSupplierRejectTargetMsg] = useState<any>(null);
-  
+
+  const [showTransportReasonModal, setShowTransportReasonModal] = useState(false);
+  const [pendingTransportValue, setPendingTransportValue] = useState('');
+  const [transportChangeReason, setTransportChangeReason] = useState('');
+
   const [showWalletCommissionModal, setShowWalletCommissionModal] = useState(false);
   const [commissionPreview, setCommissionPreview] = useState<any>(null);
   const [isConfirmingPO, setIsConfirmingPO] = useState(false);
   const [walletCommissionTargetMsg, setWalletCommissionTargetMsg] = useState<any>(null);
 
   const heldToastIdRef = useRef<string | null>(null);
+
+  const handleOpenQuotationAction = (quote: any, isAccept: boolean) => {
+    setQuoteForm(prev => {
+      const quantity = quote.items?.[0]?.quantity || prev.quantity || 1;
+      const latestPrice = quote.counterOffer?.price || quote.proposedPrice;
+      const unitPrice = latestPrice ? Number(latestPrice) / quantity : prev.price;
+      return {
+        ...prev,
+        price: unitPrice,
+        quantity: quantity,
+        deliveryTimeline: quote.counterOffer?.deliveryTimeline || activeConv?.initialEnquiry?.deliveryTimeline || quote.deliveryTimePreference || prev.deliveryTimeline,
+        paymentTerms: quote.paymentTerms || prev.paymentTerms,
+        paymentType: quote.paymentTerms?.includes('Advance') ? 'Advance' : quote.paymentTerms?.includes('COD') ? 'COD' : quote.paymentTerms?.includes('Credit') ? 'Credit' : 'Advance',
+        advancePercent: quote.paymentTerms?.includes('Advance') ? parseInt(quote.paymentTerms) || 100 : 100,
+        creditDays: quote.paymentTerms?.includes('Credit') ? parseInt(quote.paymentTerms.match(/\d+/)?.[0] || '7') : 7,
+        transportationTerms: quote.transportationTerms || prev.transportationTerms,
+        shipping: quote.shippingCost || prev.shipping
+      };
+    });
+    setIsAcceptingBuyerPrice(isAccept);
+    setEditingQuoteId(quote._id);
+    setIsQuoteModalOpen(true);
+    setQuoteFormErrors({});
+  };
 
   useEffect(() => {
     const onHide = () => {
@@ -1041,7 +1094,7 @@ const ChatInbox: React.FC = () => {
     };
   }, []);
 
-  const computedTotalPrice = quoteForm.cartItems.length > 0 
+  const computedTotalPrice = quoteForm.cartItems.length > 0
     ? quoteForm.cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
     : quoteForm.price * quoteForm.quantity;
   const computedGstAmount = quoteForm.gstType === 'exempt'
@@ -1137,7 +1190,7 @@ const ChatInbox: React.FC = () => {
       itemName: conv.productId?.name || '',
       hsnCode: conv.productId?.hsnCode || '',
       quantity: quantity,
-      price: conv.initialEnquiry?.targetPrice ? (conv.initialEnquiry.targetPrice / quantity) : 0,
+      price: conv.initialEnquiry?.targetPrice ? (conv.initialEnquiry.targetPrice / quantity) : (conv.productId?.basePrice || 0),
       deliveryTimeline: conv.initialEnquiry?.deliveryTimeline || '',
       paymentTerms: conv.initialEnquiry?.paymentTerms || '100% Advance',
       transportationTerms: conv.initialEnquiry?.transportationTerms || 'FOR',
@@ -1169,20 +1222,20 @@ const ChatInbox: React.FC = () => {
     const other = getOtherParticipant(activeConv);
     const buyerId = typeof other === 'string' ? other : other?._id || other?.id;
     try {
-      const itemsToQuote = quoteForm.cartItems.length > 0 
+      const itemsToQuote = quoteForm.cartItems.length > 0
         ? quoteForm.cartItems.map(it => ({
-            name: it.name,
-            quantity: it.quantity,
-            price: Number(it.price),
-            hsnCode: it.hsnCode || undefined,
-            unit: it.unit || 'pcs'
-          }))
+          name: it.name,
+          quantity: it.quantity,
+          price: Number(it.price),
+          hsnCode: it.hsnCode || undefined,
+          unit: it.unit || 'pcs'
+        }))
         : [{
-            name: quoteForm.itemName,
-            quantity: quoteForm.quantity,
-            price: Number(quoteForm.price),
-            hsnCode: quoteForm.hsnCode || undefined,
-          }];
+          name: quoteForm.itemName,
+          quantity: quoteForm.quantity,
+          price: Number(quoteForm.price),
+          hsnCode: quoteForm.hsnCode || undefined,
+        }];
 
       const payload = await quotationApi.createQuotation({
         conversationId: activeConv._id,
@@ -1410,28 +1463,7 @@ const ChatInbox: React.FC = () => {
                 return (
                   <div key={msg._id || idx} className={`flex flex-col ${msg.messageType === 'system' ? 'items-center w-full' : isMine ? 'items-end' : 'items-start'}`}>
                     {msg.messageType === 'quotation' || msg.messageType === 'buyer_counter_offer' ? (
-                      <QuotationCard isLatestQuoteMsg={!messages.slice(idx + 1).some(m => m.messageType === 'quotation' || m.messageType === 'buyer_counter_offer')} msg={msg} user={user} socket={socket} loadMessages={loadMessages} product={activeConv?.productId} onSupplierAction={(quote, isAccept) => {
-                        setQuoteForm(prev => {
-                          const quantity = quote.items?.[0]?.quantity || prev.quantity || 1;
-                          const latestPrice = quote.counterOffer?.price || quote.proposedPrice;
-                          const unitPrice = latestPrice ? Number(latestPrice) / quantity : prev.price;
-                          return {
-                            ...prev,
-                            price: unitPrice,
-                            quantity: quantity,
-                            deliveryTimeline: quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || prev.deliveryTimeline,
-                            paymentTerms: quote.paymentTerms || prev.paymentTerms,
-                            paymentType: quote.paymentTerms?.includes('Advance') ? 'Advance' : quote.paymentTerms?.includes('COD') ? 'COD' : quote.paymentTerms?.includes('Credit') ? 'Credit' : 'Advance',
-                            advancePercent: quote.paymentTerms?.includes('Advance') ? parseInt(quote.paymentTerms) || 100 : 100,
-                            creditDays: quote.paymentTerms?.includes('Credit') ? parseInt(quote.paymentTerms.match(/\d+/)?.[0] || '7') : 7,
-                            transportationTerms: quote.transportationTerms || prev.transportationTerms,
-                            shipping: quote.shippingCost || prev.shipping
-                          };
-                        });
-                        setIsAcceptingBuyerPrice(isAccept);
-                        setIsQuoteModalOpen(true);
-                        setQuoteFormErrors({});
-                      }} />
+                      <QuotationCard isLatestQuoteMsg={!messages.slice(idx + 1).some(m => m.messageType === 'quotation' || m.messageType === 'buyer_counter_offer' || m.messageType === 'quotation_revision')} msg={msg} user={user} socket={socket} loadMessages={loadMessages} product={activeConv?.productId} onSupplierAction={handleOpenQuotationAction} />
                     ) : msg.messageType === 'po_supplier_approval_request' ? (
                       <div className="w-full flex justify-center py-2">
                         <div className="w-[85%] bg-[#fff7ed] border border-[#fed7aa] rounded-[12px] p-4 shadow-sm relative overflow-hidden">
@@ -1494,36 +1526,36 @@ const ChatInbox: React.FC = () => {
                           ))}
                           {msg.text.includes('Purchase Order Generated') && user?.role === 'supplier' && (() => {
                             const hasRequested = messages.some(m => m.messageType === 'payment_request' && new Date(m.createdAt) > new Date(msg.createdAt));
-                              const hasVerified = messages.some(m => m.messageType === 'payment_verified' && new Date(m.createdAt) > new Date(msg.createdAt));
-                              if (!hasRequested && !hasVerified) {
-                                const paymentTerms = (msg.quotationId as any)?.paymentTerms || '';
-                                const isAdvance = paymentTerms.includes('Advance');
-                                const btnLabel = isAdvance ? 'Request Advance Payment' : 'Confirm Order & Process';
-                                return (
-                                  <button
-                                    onClick={async (e) => {
-                                      const btn = e.currentTarget;
-                                      btn.disabled = true;
-                                      btn.innerText = 'Processing...';
-                                      try {
-                                        const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
-                                        const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
-                                        const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
-                                        if (!orderId) throw new Error('Order ID not found in Chat');
-                                        await apiClient.post(`/orders/${orderId}/payment-request`);
-                                        toast.success(isAdvance ? 'Payment requested successfully' : 'Order confirmed and processing started');
-                                        loadMessages();
-                                      } catch (err: any) {
-                                        btn.disabled = false;
-                                        btn.innerText = btnLabel;
-                                        toast.error(err.response?.data?.message || 'Failed to process request');
-                                      }
-                                    }}
-                                    className="w-full mt-3 py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors"
-                                  >
-                                    {btnLabel}
-                                  </button>
-                                );
+                            const hasVerified = messages.some(m => m.messageType === 'payment_verified' && new Date(m.createdAt) > new Date(msg.createdAt));
+                            if (!hasRequested && !hasVerified) {
+                              const paymentTerms = (msg.quotationId as any)?.paymentTerms || '';
+                              const isAdvance = paymentTerms.includes('Advance');
+                              const btnLabel = isAdvance ? 'Request Advance Payment' : 'Confirm Order & Process';
+                              return (
+                                <button
+                                  onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    btn.disabled = true;
+                                    btn.innerText = 'Processing...';
+                                    try {
+                                      const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
+                                      const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                                      const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
+                                      if (!orderId) throw new Error('Order ID not found in Chat');
+                                      await apiClient.post(`/orders/${orderId}/payment-request`);
+                                      toast.success(isAdvance ? 'Payment requested successfully' : 'Order confirmed and processing started');
+                                      loadMessages();
+                                    } catch (err: any) {
+                                      btn.disabled = false;
+                                      btn.innerText = btnLabel;
+                                      toast.error(err.response?.data?.message || 'Failed to process request');
+                                    }
+                                  }}
+                                  className="w-full mt-3 py-2 bg-[#0ea5e9] hover:bg-[#0284c7] text-white text-xs font-bold rounded-[8px] cursor-pointer border-none transition-colors"
+                                >
+                                  {btnLabel}
+                                </button>
+                              );
                             }
                             return null;
                           })()}
@@ -1549,7 +1581,7 @@ const ChatInbox: React.FC = () => {
                                     input.onchange = async (e: any) => {
                                       const file = e.target.files[0];
                                       if (!file) return;
-                                      
+
                                       setPaymentProofFile(file);
                                       setPaymentMsgContext(msg);
                                       setShowPaymentProofModal(true);
@@ -1571,8 +1603,25 @@ const ChatInbox: React.FC = () => {
                       <div className="w-full flex justify-center py-2">
                         <div className="w-[85%] bg-[#f0fdf4] border border-[#bbf7d0] rounded-[12px] p-4 shadow-sm relative overflow-hidden">
                           <div className="absolute top-0 left-0 w-1 h-full bg-[#22c55e]"></div>
-                          <p className="text-[11px] font-bold text-[#166534] uppercase tracking-wide m-0 mb-1">Payment Proof Uploaded</p>
-                          <p className="text-sm text-[#14532d] m-0 mb-3">{msg.text}</p>
+                          <p className="text-[11px] font-bold text-[#166534] uppercase tracking-wide m-0 mb-2">Payment Proof Uploaded</p>
+                          {msg.metadata?.paymentUtrNumber && (
+                            <p className="text-sm font-semibold text-[#14532d] m-0 mb-2">
+                              UTR: <span className="font-mono bg-[#dcfce7] px-1.5 py-0.5 rounded text-[#166534] border border-[#bbf7d0]">{msg.metadata.paymentUtrNumber}</span>
+                            </p>
+                          )}
+                          {msg.metadata?.paymentProofUrl && (
+                            <div className="mb-3 rounded-[8px] overflow-hidden border border-[#bbf7d0]">
+                              {msg.metadata.paymentProofUrl.toLowerCase().endsWith('.pdf') ? (
+                                <a href={msg.metadata.paymentProofUrl} target="_blank" rel="noreferrer" className="block text-center py-3 bg-[#dcfce7] text-[#166534] text-xs font-bold hover:bg-[#bbf7d0] transition-colors">
+                                  📄 View PDF Proof
+                                </a>
+                              ) : (
+                                <a href={msg.metadata.paymentProofUrl} target="_blank" rel="noreferrer">
+                                  <img src={msg.metadata.paymentProofUrl} alt="Payment Proof" className="w-full max-h-[200px] object-cover hover:opacity-90 transition-opacity" />
+                                </a>
+                              )}
+                            </div>
+                          )}
                           {user?.role === 'supplier' && (() => {
                             const isLatest = messages.filter(m => m.messageType === 'payment_proof').pop()?._id === msg._id;
                             const isVerified = messages.some(m => m.messageType === 'payment_verified' && new Date(m.createdAt) > new Date(msg.createdAt));
@@ -1588,7 +1637,7 @@ const ChatInbox: React.FC = () => {
                                       const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
                                       const orderId = (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
                                       if (!orderId) throw new Error('Order ID not found in Chat');
-                                      
+
                                       await apiClient.post(`/orders/${orderId}/payment-verify`);
                                       toast.success('Payment verified successfully');
                                       loadMessages();
@@ -1689,6 +1738,49 @@ const ChatInbox: React.FC = () => {
                             </div>
                           );
                         })()}
+                        {msg.messageType === 'quotation_revision' && !isMine && (() => {
+                          const msgIdx = messages.findIndex(m => m._id === msg._id);
+                          const isLatestRevision = !messages.slice(msgIdx + 1).some(m => m.messageType === 'quotation' || m.messageType === 'quotation_revision' || m.messageType === 'buyer_counter_offer');
+                          if (!isLatestRevision || isNegotiationDead) return null;
+
+                          const anyQuoteWithSameId = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?._id === (msg.quotationId as any)?._id);
+                          const quote = anyQuoteWithSameId ? (anyQuoteWithSameId.quotationId as any) : (typeof msg.quotationId === 'object' ? msg.quotationId : null);
+                          if (!quote || quote.status === 'supplier_accepted' || quote.status === 'rejected' || quote.status === 'po_generated') return null;
+
+                          return (
+                            <div className="mt-3 w-full flex flex-col gap-2 border-t border-[#e2e8f0]/40 pt-3">
+                              <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Your Action</span>
+                              <div className="flex gap-2">
+                                <button
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-white bg-green-600 rounded-[6px] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-50"
+                                  onClick={() => handleOpenQuotationAction(quote, true)}
+                                >
+                                  <Check size={14} /> Accept Deal
+                                </button>
+                                <button
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-[#2563eb] bg-[#eff6ff] rounded-[6px] border-none cursor-pointer hover:bg-[#dbeafe]"
+                                  onClick={() => handleOpenQuotationAction(quote, false)}
+                                >
+                                  <FileText size={14} /> Revise Terms
+                                </button>
+                                <button
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]"
+                                  onClick={async () => {
+                                    try {
+                                      await quotationApi.rejectQuotation(quote._id);
+                                      toast.success('Quotation rejected');
+                                      loadMessages();
+                                    } catch (err) {
+                                      toast.error('Failed to reject quotation');
+                                    }
+                                  }}
+                                >
+                                  <X size={14} /> Reject
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                     {msg.messageType !== 'system' && msg.messageType !== 'quotation' && (
@@ -1771,14 +1863,7 @@ const ChatInbox: React.FC = () => {
                               {qr.label}
                             </button>
                           ))}
-                          {/* Supplier custom reply button */}
-                          {user?.role === 'supplier' && (
-                            <button
-                              onClick={() => setCustomMsgOpen(true)}
-                              className="shrink-0 px-3 py-1.5 text-[11px] font-semibold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-full cursor-pointer hover:bg-[#ffedd5] transition-colors whitespace-nowrap">
-                              ✏️ Write your reply
-                            </button>
-                          )}
+                          {/* Supplier custom reply button removed as requested */}
                         </div>
                       </>
                     ) : (
@@ -1819,7 +1904,10 @@ const ChatInbox: React.FC = () => {
                         </div>
                       </div>
                       <div>
-                        <label className={labelCls}>Per Unit Price ₹ <span className="text-red-500">*</span></label>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-semibold text-body/70 m-0">Per Unit Price ₹ <span className="text-red-500">*</span></label>
+                          <span className="text-[10px] text-[#64748b] font-medium bg-[#f1f5f9] px-2 py-0.5 rounded">Original: ₹{activeConv?.productId?.basePrice || 0}</span>
+                        </div>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -1867,7 +1955,10 @@ const ChatInbox: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <label className={labelCls}>Per Unit Price ₹ <span className="text-red-500">*</span></label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-xs font-semibold text-body/70 m-0">Per Unit Price ₹ <span className="text-red-500">*</span></label>
+                      <span className="text-[10px] text-[#64748b] font-medium bg-[#f1f5f9] px-2 py-0.5 rounded">Original: ₹{activeConv?.productId?.basePrice || 0}</span>
+                    </div>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -1957,10 +2048,6 @@ const ChatInbox: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className={labelCls}>Shipping Notes</label>
-                <input type="text" value={quoteForm.shippingNotes} onChange={e => setQuoteForm({ ...quoteForm, shippingNotes: e.target.value })} placeholder="e.g. Ex-factory, door delivery included" className={inputCls} />
-              </div>
-              <div>
                 <label className={labelCls}>Terms & Conditions</label>
                 <textarea rows={2} value={quoteForm.terms} onChange={e => setQuoteForm({ ...quoteForm, terms: e.target.value })} className={inputCls + " resize-none"} />
               </div>
@@ -1968,24 +2055,24 @@ const ChatInbox: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Payment Terms <span className="text-red-500">*</span></label>
-                  <select 
-                    value={quoteForm.paymentType} 
-                    onChange={e => setQuoteForm({ ...quoteForm, paymentType: e.target.value })} 
+                  <select
+                    value={quoteForm.paymentType}
+                    onChange={e => setQuoteForm({ ...quoteForm, paymentType: e.target.value })}
                     className={inputCls + " mb-2"}
                   >
                     <option value="Advance">Advance Payment</option>
                     <option value="COD">Cash on Delivery (COD)</option>
                     <option value="Credit">Credit</option>
                   </select>
-                  
+
                   {quoteForm.paymentType === 'Advance' && (
                     <div className="flex items-center gap-2">
-                      <input 
-                        type="number" 
-                        min="1" max="100" 
-                        value={quoteForm.advancePercent} 
+                      <input
+                        type="number"
+                        min="1" max="100"
+                        value={quoteForm.advancePercent}
                         onChange={e => setQuoteForm({ ...quoteForm, advancePercent: Number(e.target.value) })}
-                        className={inputCls} 
+                        className={inputCls}
                         placeholder="%"
                       />
                       <span className="text-xs text-[#64748b] whitespace-nowrap">% Advance</span>
@@ -1994,8 +2081,8 @@ const ChatInbox: React.FC = () => {
 
                   {quoteForm.paymentType === 'Credit' && (
                     <div className="flex items-center gap-2">
-                      <select 
-                        value={quoteForm.creditDays} 
+                      <select
+                        value={quoteForm.creditDays}
                         onChange={e => setQuoteForm({ ...quoteForm, creditDays: Number(e.target.value) })}
                         className={inputCls}
                       >
@@ -2009,16 +2096,24 @@ const ChatInbox: React.FC = () => {
                 </div>
                 <div>
                   <label className={labelCls}>Transportation <span className="text-red-500">*</span></label>
-                  <select 
-                    value={quoteForm.transportationTerms} 
+                  <select
+                    value={quoteForm.transportationTerms}
                     onChange={e => {
                       const val = e.target.value;
-                      const updates: any = { transportationTerms: val };
-                      if (val.includes('Ex.') || val === 'FOR') {
-                        updates.shipping = 0;
+                      const original = activeConv?.initialEnquiry?.transportationTerms || '';
+
+                      // If supplier changes it from what buyer requested, ask for reason
+                      if (val !== original && original !== '') {
+                        setPendingTransportValue(val);
+                        setShowTransportReasonModal(true);
+                      } else {
+                        const updates: any = { transportationTerms: val };
+                        if (val.includes('Ex.') || val === 'FOR') {
+                          updates.shipping = 0;
+                        }
+                        setQuoteForm({ ...quoteForm, ...updates });
                       }
-                      setQuoteForm({ ...quoteForm, ...updates });
-                    }} 
+                    }}
                     className={inputCls}
                   >
                     <option value="FOR">FOR (Supplier delivers - Free)</option>
@@ -2240,7 +2335,7 @@ const ChatInbox: React.FC = () => {
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[100] flex items-center justify-center px-4" onClick={() => !isUploadingProof && setShowPaymentProofModal(false)}>
           <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
             <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">Upload Payment Proof</h2>
-            
+
             <div className="flex flex-col gap-4">
               {paymentProofFile && (
                 <div className="flex items-center gap-3 p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px]">
@@ -2267,14 +2362,14 @@ const ChatInbox: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3 mt-6">
-              <button 
+              <button
                 onClick={() => setShowPaymentProofModal(false)}
                 disabled={isUploadingProof}
                 className="flex-1 py-2.5 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-bold text-[#475569] hover:bg-[#f8fafc] cursor-pointer"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 disabled={!paymentUtr.trim() || isUploadingProof}
                 onClick={async () => {
                   if (!paymentProofFile || !paymentUtr.trim() || !paymentMsgContext) return;
@@ -2287,14 +2382,14 @@ const ChatInbox: React.FC = () => {
                     const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
                     const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
                     const orderId = (paymentMsgContext.quotationId as any)?.orderId?._id || (paymentMsgContext.quotationId as any)?.orderId || fallbackOrderId;
-                    
+
                     if (!orderId) throw new Error('Order ID not found in Chat');
 
                     await apiClient.post(`/orders/${orderId}/payment-proof`, {
                       paymentProofUrl: proofUrl,
                       paymentUtrNumber: paymentUtr
                     });
-                    
+
                     toast.success('Payment proof uploaded successfully');
                     setShowPaymentProofModal(false);
                     loadMessages();
@@ -2312,7 +2407,69 @@ const ChatInbox: React.FC = () => {
           </div>
         </div>
       )}
-      
+
+      {/* Supplier Transport Term Reason Modal */}
+      {showTransportReasonModal && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[100] flex items-center justify-center px-4" onClick={() => setShowTransportReasonModal(false)}>
+          <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[420px]" onClick={e => e.stopPropagation()}>
+            <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-3">Reason for Changing Transportation</h2>
+            <p className="text-xs text-[#64748b] mb-4 leading-relaxed">
+              The buyer requested <strong>{activeConv?.initialEnquiry?.transportationTerms || 'a different method'}</strong>.
+              Please select a reason for changing it to <strong>{pendingTransportValue}</strong>.
+            </p>
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wide mb-1.5">Reason <span className="text-red-500">*</span></label>
+                <select
+                  value={transportChangeReason}
+                  onChange={e => setTransportChangeReason(e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">Select a reason</option>
+                  <option value="Requested delivery location is out of our service area">Requested delivery location is out of our service area</option>
+                  <option value="We do not support the requested delivery method">We do not support the requested delivery method</option>
+                  <option value="Courier costs are too high for the requested method">Courier costs are too high for the requested method</option>
+                  <option value="Better/faster delivery option available">Better/faster delivery option available</option>
+                  <option value="Other logistical reasons">Other logistical reasons</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowTransportReasonModal(false);
+                  setTransportChangeReason('');
+                }}
+                className="flex-1 py-2.5 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-bold text-[#475569] hover:bg-[#f8fafc] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!transportChangeReason}
+                onClick={() => {
+                  const updates: any = { transportationTerms: pendingTransportValue };
+                  if (pendingTransportValue.includes('Ex.') || pendingTransportValue === 'FOR') {
+                    updates.shipping = 0;
+                  }
+
+                  const newTerms = quoteForm.terms
+                    ? `${quoteForm.terms}\nNote: Changed transportation to ${pendingTransportValue} because ${transportChangeReason.toLowerCase()}.`
+                    : `Note: Changed transportation to ${pendingTransportValue} because ${transportChangeReason.toLowerCase()}.`;
+
+                  updates.terms = newTerms;
+                  setQuoteForm({ ...quoteForm, ...updates });
+                  setShowTransportReasonModal(false);
+                  setTransportChangeReason('');
+                }}
+                className={`flex-1 py-2.5 rounded-[8px] text-sm font-bold text-white transition-colors border-none ${!transportChangeReason ? 'bg-primary/50 cursor-not-allowed' : 'bg-primary hover:bg-[#cc5200] cursor-pointer'}`}
+              >
+                Confirm Change
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Supplier Reject PO Modal */}
       {showSupplierRejectModal && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[100] flex items-center justify-center px-4" onClick={() => setShowSupplierRejectModal(false)}>
@@ -2335,13 +2492,13 @@ const ChatInbox: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3 mt-6">
-              <button 
+              <button
                 onClick={() => setShowSupplierRejectModal(false)}
                 className="flex-1 py-2.5 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-bold text-[#475569] hover:bg-[#f8fafc] cursor-pointer"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 disabled={!supplierRejectReason}
                 onClick={async (e) => {
                   const btn = e.currentTarget;
@@ -2372,15 +2529,27 @@ const ChatInbox: React.FC = () => {
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[100] flex items-center justify-center px-4" onClick={() => setShowWalletCommissionModal(false)}>
           <div className="bg-white rounded-[14px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-6 w-full max-w-[400px]" onClick={e => e.stopPropagation()}>
             <h2 className="text-base font-extrabold text-[#0f172a] m-0 mb-5">Approve PO Generation</h2>
-            
+
             <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-4 mb-5">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-[#64748b]">Total Wallet Balance</span>
                 <span className="font-bold text-[#0f172a]">₹{commissionPreview.walletBalance.toLocaleString('en-IN')}</span>
               </div>
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-[#64748b]">Freeze on Confirm <br/><span className="text-[10px] text-[#94a3b8]">(Commission + GST)</span></span>
-                <span className="font-bold text-[#dc2626]">- ₹{commissionPreview.commissionFreezeAmount.toLocaleString('en-IN')}</span>
+                <span className="text-[#64748b]">Total Product Cost</span>
+                <span className="font-semibold text-[#0f172a]">₹{commissionPreview.taxableAmount?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || '0'}</span>
+              </div>
+              <div className="flex justify-between text-sm mb-1.5">
+                <span className="text-[#64748b]">Commission ({commissionPreview.commissionRate}%)</span>
+                <span className="font-semibold text-[#0f172a]">₹{commissionPreview.commissionBase?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || '0'}</span>
+              </div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-[#64748b]">GST on Commission (18%)</span>
+                <span className="font-semibold text-[#0f172a]">₹{commissionPreview.serviceGst?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || '0'}</span>
+              </div>
+              <div className="flex justify-between text-sm mb-2 mt-2 pt-2 border-t border-[#f1f5f9]">
+                <span className="text-[#0f172a] font-bold">Total Freeze on Confirm</span>
+                <span className="font-bold text-[#dc2626]">- ₹{commissionPreview.commissionFreezeAmount?.toLocaleString('en-IN', { maximumFractionDigits: 2 }) || '0'}</span>
               </div>
               <div className="flex justify-between text-sm pt-2 border-t border-[#e2e8f0] mt-2">
                 <span className="font-bold text-[#0f172a]">Remaining Balance</span>
@@ -2401,13 +2570,13 @@ const ChatInbox: React.FC = () => {
             )}
 
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => setShowWalletCommissionModal(false)}
                 className="flex-1 py-2.5 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-bold text-[#475569] hover:bg-[#f8fafc] cursor-pointer"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 disabled={!commissionPreview.isSufficient || isConfirmingPO}
                 onClick={async () => {
                   setIsConfirmingPO(true);

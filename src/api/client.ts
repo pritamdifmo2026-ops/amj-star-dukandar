@@ -4,7 +4,7 @@ import { attachInterceptors } from './interceptors';
 
 const apiClient = axios.create({
   baseURL: env.API_BASE_URL,
-  timeout: 15000,
+  timeout: 60000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

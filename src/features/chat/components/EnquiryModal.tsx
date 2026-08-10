@@ -31,6 +31,7 @@ export interface EnquiryPayload {
     pincode: string;
   };
   transportationTerms: string;
+  paymentTerms: string;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -76,6 +77,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
   // Step 4
   const [requirements, setRequirements] = useState<string[]>(['Standard']);
   const [transportationTerms, setTransportationTerms] = useState(supplierProfile?.supportedTransportationTerms?.[0] || 'FOR');
+  const [paymentTerms, setPaymentTerms] = useState(supplierProfile?.supportedPaymentTerms?.[0] || '100% Advance');
   const [submitting, setSubmitting] = useState(false);
 
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -171,6 +173,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
         requirements: requirements.join(', '),
         deliveryAddress,
         transportationTerms,
+        paymentTerms,
       });
     } finally {
       setSubmitting(false);
@@ -479,7 +482,10 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                         <option key={t} value={t}>{t}</option>
                       ))
                     ) : (
-                      <option value="FOR">FOR</option>
+                      <>
+                        <option value="FOR">FOR (Free on Road)</option>
+                        <option value="Ex-Works">Ex-Works</option>
+                      </>
                     )}
                   </select>
                 </div>
