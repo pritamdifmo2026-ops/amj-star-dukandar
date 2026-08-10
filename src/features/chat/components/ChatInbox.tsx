@@ -272,7 +272,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   const gstRate = Number(quote.gstRate) || 0;
   const gstAmt = quote.gstType === 'exempt' ? 0 : (gstRate > 0 ? Math.round(taxableAmt * gstRate / 100) : (quote.gstAmount ?? 0));
   const shipCost = quote.shippingCost ?? 0;
-  const courierGst = quote.transportationTerms === 'Third-Party Courier' ? Math.round(shipCost * 0.18) : 0;
+  const courierGst = quote.transportationTerms?.includes('Courier') ? Math.round(shipCost * 0.18) : 0;
   const grandTotal = taxableAmt + gstAmt + shipCost + courierGst;
   const halfRate = gstRate / 2;
 
@@ -444,7 +444,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                 <span className="font-semibold">₹{shipCost.toLocaleString('en-IN')}</span>
               </div>
             )}
-            {quote.transportationTerms === 'Third-Party Courier' && shipCost > 0 && (
+            {quote.transportationTerms?.includes('Courier') && shipCost > 0 && (
               <div className="flex justify-between text-xs text-[#0369a1]">
                 <span>Courier GST (18%)</span>
                 <span className="font-semibold">₹{Math.round(shipCost * 0.18).toLocaleString('en-IN')}</span>
@@ -1315,7 +1315,7 @@ const ChatInbox: React.FC = () => {
   let isNegotiationDead = false;
   for (let i = messages.length - 1; i >= 0; i--) {
     const txt = messages[i].text || '';
-    if (txt.includes('Enquiry:') && messages[i].messageType !== 'system') {
+    if ((txt.includes('Enquiry:') || txt.includes('Order Request')) && messages[i].messageType !== 'system') {
       isNegotiationDead = false;
       break;
     }
@@ -1658,22 +1658,32 @@ const ChatInbox: React.FC = () => {
                         </div>
                       </div>
                     ) : msg.messageType === 'payment_verified' ? (
-                      <div className="w-full flex justify-center py-2">
-                        <div className="w-[85%] bg-[#ecfdf5] border border-[#a7f3d0] rounded-[12px] p-4 shadow-sm relative overflow-hidden">
-                          <div className="absolute top-0 left-0 w-1 h-full bg-[#10b981]"></div>
-                          <p className="text-[11px] font-bold text-[#047857] uppercase tracking-wide m-0 mb-1">Payment Verified</p>
-                          <p className="text-sm text-[#064e3b] m-0">{msg.text}</p>
-                        </div>
-                      </div>
+                      (() => {
+                        const isCOD = msg.text?.includes('COD');
+                        const isCredit = msg.text?.includes('Credit');
+                        const title = isCOD ? 'COD Order Confirmed' : isCredit ? 'Credit Order Confirmed' : 'Payment Verified';
+                        const badgeColor = isCOD ? 'bg-blue-500' : isCredit ? 'bg-indigo-500' : 'bg-[#10b981]';
+                        const textColor = isCOD ? 'text-blue-700' : isCredit ? 'text-indigo-700' : 'text-[#047857]';
+                        const bgColor = isCOD ? 'bg-blue-50 border-blue-200' : isCredit ? 'bg-indigo-50 border-indigo-200' : 'bg-[#ecfdf5] border-[#a7f3d0]';
+                        return (
+                          <div className="w-full flex justify-center py-2">
+                            <div className={`w-[85%] ${bgColor} border rounded-[12px] p-4 shadow-sm relative overflow-hidden`}>
+                              <div className={`absolute top-0 left-0 w-1 h-full ${badgeColor}`}></div>
+                              <p className={`text-[11px] font-bold ${textColor} uppercase tracking-wide m-0 mb-1`}>{title}</p>
+                              <p className="text-sm text-[#334155] m-0 whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                            </div>
+                          </div>
+                        );
+                      })()
                     ) : (
                       <div className={`whitespace-pre-wrap leading-relaxed max-w-[75%] px-4 py-2.5 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
                         {msg.text}
-                        {msg.text.includes('Enquiry:') && user?.role === 'supplier' && (() => {
+                        {(msg.text.includes('Enquiry:') || msg.text.includes('Order Request')) && user?.role === 'supplier' && (() => {
                           let showActions = false;
-                          // Show actions only if this is the LATEST enquiry and there's no active negotiation after it
+                          // Show actions only if this is the LATEST enquiry/request and there's no active negotiation after it
                           const msgIdx = messages.findIndex(m => m._id === msg._id);
                           if (msgIdx !== -1) {
-                            const isLatestEnquiry = !messages.slice(msgIdx + 1).some(m => m.text.includes('Enquiry:'));
+                            const isLatestEnquiry = !messages.slice(msgIdx + 1).some(m => m.text.includes('Enquiry:') || m.text.includes('Order Request'));
                             const hasQuotationAfter = messages.slice(msgIdx + 1).some(m => m.messageType === 'quotation');
                             showActions = isLatestEnquiry && !hasQuotationAfter && !isNegotiationDead;
                           }
@@ -1689,7 +1699,7 @@ const ChatInbox: React.FC = () => {
                             <div className="mt-3 w-full flex flex-col gap-2 border-t border-[#e2e8f0]/40 pt-3">
                               <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Your Action</span>
                               <div className="grid grid-cols-2 gap-2">
-                                {(parsedTargetPrice || msg.text.includes('Price: As listed')) && (
+                                {(parsedTargetPrice || msg.text.includes('Price: As listed') || msg.text.includes('Order Request (Checkout)')) && (
                                   <button
                                     className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-green-600 rounded-[8px] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-50"
                                     disabled={isSendingQuote}
@@ -1699,9 +1709,14 @@ const ChatInbox: React.FC = () => {
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
                                         setQuoteForm(prev => ({ ...prev, price: parsedTargetPrice / qty, quantity: qty }));
                                       } else {
-                                        const qtyMatch = msg.text.match(/Quantity: (\d+)/);
+                                        const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                        setQuoteForm(prev => ({ ...prev, price: activeConv?.productId?.basePrice || 0, quantity: qty, priceTag: '' as any }));
+                                        
+                                        // For checkout, we can also parse the target price from the item line (e.g. "@ 1,499")
+                                        const priceMatch = msg.text.match(/@\s*₹?([0-9,]+)/);
+                                        const unitPrice = priceMatch ? Number(priceMatch[1].replace(/,/g, '')) : (activeConv?.productId?.basePrice || 0);
+
+                                        setQuoteForm(prev => ({ ...prev, price: unitPrice, quantity: qty, priceTag: '' as any }));
                                       }
                                       setIsAcceptingBuyerPrice(true);
                                       setIsQuoteModalOpen(true);
@@ -1711,12 +1726,13 @@ const ChatInbox: React.FC = () => {
                                   </button>
                                 )}
                                 <button
-                                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold ${(!parsedTargetPrice && !msg.text.includes('Price: As listed')) ? 'col-span-2 text-white bg-primary hover:bg-primary/90' : 'text-[#475569] bg-white border border-[#e2e8f0] hover:bg-[#f8fafc]'} rounded-[8px] cursor-pointer transition-colors`}
+                                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold ${(!parsedTargetPrice && !msg.text.includes('Price: As listed') && !msg.text.includes('Order Request (Checkout)')) ? 'col-span-2 text-white bg-primary hover:bg-primary/90' : 'text-[#475569] bg-white border border-[#e2e8f0] hover:bg-[#f8fafc]'} rounded-[8px] cursor-pointer transition-colors`}
                                   onClick={() => {
-                                    const qtyMatch = msg.text.match(/Quantity: (\d+)/);
-                                    if (qtyMatch) {
-                                      setQuoteForm(prev => ({ ...prev, quantity: Number(qtyMatch[1]) }));
-                                    }
+                                    const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
+                                    const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
+                                    const priceMatch = msg.text.match(/@\s*₹?([0-9,]+)/);
+                                    const unitPrice = priceMatch ? Number(priceMatch[1].replace(/,/g, '')) : (activeConv?.productId?.basePrice || 0);
+                                    setQuoteForm(prev => ({ ...prev, quantity: qty, price: unitPrice, priceTag: '' as any }));
                                     setIsAcceptingBuyerPrice(false);
                                     setIsQuoteModalOpen(true);
                                     setQuoteFormErrors({});
@@ -1798,7 +1814,7 @@ const ChatInbox: React.FC = () => {
             </div>
 
             {(() => {
-              const lastEnquiryIdx = messages.findLastIndex(m => m.text?.includes('Enquiry:'));
+              const lastEnquiryIdx = messages.findLastIndex(m => m.text?.includes('Enquiry:') || m.text?.includes('Order Request'));
               const lastPOIdx = messages.findLastIndex(m => m.text?.includes('Purchase Order Generated'));
               const lastDeliveredIdx = messages.findLastIndex(m => m.text?.includes('marked delivered by the supplier'));
               const isPOActive = lastPOIdx !== -1 && lastPOIdx > lastEnquiryIdx;

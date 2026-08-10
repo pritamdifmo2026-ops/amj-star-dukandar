@@ -210,8 +210,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
     : 0;
   
   const isFOR = selectedTransportation === 'FOR';
+  const isExWorks = selectedTransportation === 'Ex. Factory' || selectedTransportation === 'Ex. Godown';
   const isThirdParty = selectedTransportation === 'Third-Party Courier';
-  const totalShipping = isFOR ? 0 : baseShippingCost;
+  const totalShipping = (isFOR || isExWorks) ? 0 : baseShippingCost;
   const courierGST = isThirdParty ? Math.round(totalShipping * 0.18) : 0;
 
   const taxableAmount = financials.subtotal;
@@ -247,15 +248,38 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           imageUrl: it.imageUrl
         }));
         
-        await chatApi.getOrCreateConversation(
+        const conversation = await chatApi.getOrCreateConversation(
           supplierId,
-          undefined,
+          cartItems[0]?.productId,
           addressSnapshot,
           {
             transportationTerms: selectedTransportation,
             cartItems
           }
         );
+
+        // Send chat message so that the enquiry is visible in the chat log immediately
+        const shipTo = [
+          addressSnapshot.fullAddress,
+          addressSnapshot.city,
+          addressSnapshot.state,
+          addressSnapshot.pincode,
+        ].filter(Boolean).join(', ');
+
+        const itemsLines = cartItems.map(it => `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'} @ ₹${it.price.toLocaleString('en-IN')})`).join('\n');
+        
+        const text = [
+          `📦 Order Request (Checkout)`,
+          itemsLines,
+          `Transportation: ${selectedTransportation}`,
+          shipTo ? `Ship to: ${shipTo}` : '',
+        ].filter(Boolean).join('\n');
+
+        if (socket) {
+          socket.emit('join_conversation', conversation._id);
+          const receiverId = conversation.supplierId;
+          socket.emit('send_message', { conversationId: conversation._id, text, receiverId });
+        }
       }
 
       if (!isBuyNow) dispatch(clearCart());
@@ -689,7 +713,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 <span>GST</span><span>₹{Math.round(totalGst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-[#475569]">
-                <span>Shipping {isFOR ? '(FOR - Included)' : ''}</span>
+                <span>Shipping {isFOR ? '(FOR)' : isExWorks ? `(${selectedTransportation})` : ''}</span>
                 <span className={totalShipping === 0 ? 'text-[#059669] font-semibold' : ''}>
                   {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN')}`}
                 </span>
@@ -816,9 +840,15 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-[#64748b]">Shipping Cost</span>
+                    <span className="text-[#64748b]">Shipping Cost {isExWorks ? `(${selectedTransportation})` : ''}</span>
                     <span>{totalShipping === 0 ? 'Free' : `₹${Math.round(totalShipping).toLocaleString('en-IN')}`}</span>
                   </div>
+                  {isThirdParty && courierGST > 0 && (
+                    <div className="flex justify-between text-[#0369a1]">
+                      <span>Courier GST @ 18%</span>
+                      <span>₹{courierGST.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between pt-2 mt-0.5 border-t border-[#e2e8f0] font-extrabold text-sm text-[#0f172a]">
                     <span>Grand Total</span>
                     <span>₹{Math.round(grandTotal).toLocaleString('en-IN')}</span>
