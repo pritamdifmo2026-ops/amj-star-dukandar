@@ -77,7 +77,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
   // Step 4
   const [requirements, setRequirements] = useState<string[]>(['Standard']);
   const [transportationTerms, setTransportationTerms] = useState(supplierProfile?.supportedTransportationTerms?.[0] || 'FOR');
-  const [paymentTerms, setPaymentTerms] = useState(supplierProfile?.supportedPaymentTerms?.[0] || '100% Advance');
+  const [paymentTerms] = useState(supplierProfile?.supportedPaymentTerms?.[0] || '100% Advance');
   const [submitting, setSubmitting] = useState(false);
 
   const [addresses, setAddresses] = useState<any[]>([]);

@@ -218,7 +218,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const taxableAmount = financials.subtotal;
   const grandTotal = taxableAmount + totalGst + totalShipping + courierGST;
 
-  const handlePlaceOrder = async (paymentMethod: 'direct') => {
+  const handlePlaceOrder = async (_paymentMethod: 'direct') => {
     if (!selectedAddress) { setError('Please add a delivery address.'); return; }
     setPlacing(true); setError(null);
     try {
