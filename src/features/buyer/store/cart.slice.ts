@@ -64,6 +64,11 @@ export const removeFromCartAsync = createAsyncThunk('cart/remove', async (produc
   return response.data.items;
 });
 
+export const clearCartAsync = createAsyncThunk('cart/clearBackend', async () => {
+  const response = await cartApi.clearCart();
+  return response.data.items;
+});
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
@@ -85,6 +90,9 @@ const cartSlice = createSlice({
         state.items = action.payload;
       })
       .addCase(removeFromCartAsync.fulfilled, (state, action) => {
+        state.items = action.payload;
+      })
+      .addCase(clearCartAsync.fulfilled, (state, action) => {
         state.items = action.payload;
       });
   },

@@ -113,7 +113,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 
   const qtyOptions = [moq, moq * 2, moq * 5].filter((v, i, a) => a.indexOf(v) === i && v <= stock);
   const finalQty = useCustomQty ? Number(customQty) || moq : quantity;
-  const finalPrice = priceMode === 'negotiate' ? Number(customPrice) || null : null;
+  const finalPrice = priceMode === 'negotiate' ? (Number(customPrice) * finalQty) || null : null;
 
   const newAddrValid = city.trim() !== '' && state.trim() !== '' && /^\d{6}$/.test(pincode.trim());
 
@@ -127,8 +127,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
     if (step === 2) {
       if (priceMode === 'quoted') return true;
       const cp = Number(customPrice);
-      const listPrice = basePrice * finalQty;
-      return cp >= (listPrice * 0.5) && cp <= listPrice;
+      return cp >= (basePrice * 0.5) && cp <= basePrice;
     }
     if (step === 3) return addrMode === 'saved' || newAddrValid;
     return true;
@@ -284,30 +283,51 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                 })}
               </div>
               {priceMode === 'negotiate' && (
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center border border-[#e2e8f0] rounded-[8px] bg-white focus-within:border-primary transition-colors">
-                    <span className="px-3 py-2.5 text-sm text-[#94a3b8] font-bold border-r border-[#e2e8f0] bg-[#f8fafc] rounded-l-[8px]">₹</span>
-                    <input autoFocus type="number" min={Math.ceil(basePrice * finalQty * 0.5)} max={basePrice * finalQty} value={customPrice} onChange={e => setCustomPrice(e.target.value)}
-                      placeholder={`e.g. ${Math.round(basePrice * finalQty * 0.9)}`}
-                      className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent" />
-                    <span className="px-3 text-sm text-[#94a3b8] font-semibold border-l border-[#e2e8f0]">total (excl. GST)</span>
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-[#64748b]">Your target price per {unit}</label>
+                    <div className="flex items-center gap-4">
+                      <input 
+                        type="range" 
+                        min={Math.ceil(basePrice * 0.5)} 
+                        max={basePrice} 
+                        value={customPrice || Math.round(basePrice * 0.9)} 
+                        onChange={e => setCustomPrice(e.target.value)}
+                        className="flex-1 accent-primary cursor-pointer h-2 bg-[#e2e8f0] rounded-lg appearance-none"
+                      />
+                      <div className="flex items-center border border-[#e2e8f0] rounded-[8px] bg-white focus-within:border-primary transition-colors w-[120px] shrink-0">
+                        <span className="px-2 py-2 text-sm text-[#94a3b8] font-bold border-r border-[#e2e8f0] bg-[#f8fafc] rounded-l-[8px]">₹</span>
+                        <input autoFocus type="number" min={Math.ceil(basePrice * 0.5)} max={basePrice} value={customPrice} onChange={e => setCustomPrice(e.target.value)}
+                          placeholder={`${Math.round(basePrice * 0.9)}`}
+                          className="w-full border-none outline-none px-2 py-2 text-sm bg-transparent" />
+                      </div>
+                    </div>
                   </div>
+                  
                   {Number(customPrice) > 0 && finalQty > 0 && (
-                    <div className="flex flex-col gap-0.5 mt-0.5">
-                      <p className="text-xs text-[#64748b] m-0 pl-1">
-                        = ₹{(Number(customPrice) / finalQty).toFixed(2)} / {unit}
-                        <span className="text-[#94a3b8] ml-2 font-normal">(Est. Total with 18% GST: ₹{Math.round(Number(customPrice) * 1.18).toLocaleString('en-IN')})</span>
-                        {Number(customPrice) < basePrice * finalQty && (
-                          <span className="ml-1 text-primary font-semibold">
-                            ({Math.round((1 - Number(customPrice) / (basePrice * finalQty)) * 100)}% below listed)
+                    <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 flex flex-col gap-1.5">
+                      <div className="flex justify-between items-center text-xs text-[#64748b]">
+                        <span>Total Price (excl. GST)</span>
+                        <span className="font-bold text-[#0f172a]">₹{(Number(customPrice) * finalQty).toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-[#94a3b8]">
+                        <span>Est. Total with 18% GST</span>
+                        <span>₹{Math.round(Number(customPrice) * finalQty * 1.18).toLocaleString('en-IN')}</span>
+                      </div>
+                      
+                      {Number(customPrice) < basePrice && (
+                        <div className="mt-1 pt-1.5 border-t border-[#e2e8f0] text-right">
+                          <span className="text-[10px] text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded">
+                            {Math.round((1 - Number(customPrice) / basePrice) * 100)}% below listed
                           </span>
-                        )}
-                      </p>
-                      {Number(customPrice) > basePrice * finalQty && (
-                        <p className="text-[10px] text-[#ef4444] m-0 pl-1 font-medium">Your offer cannot exceed the listed price.</p>
+                        </div>
                       )}
-                      {Number(customPrice) < basePrice * finalQty * 0.5 && (
-                        <p className="text-[10px] text-[#ef4444] m-0 pl-1 font-medium">Your offer cannot be less than 50% of the listed price.</p>
+                      
+                      {Number(customPrice) > basePrice && (
+                        <p className="text-[10px] text-[#ef4444] m-0 font-medium">Your offer cannot exceed the listed price per {unit} (₹{basePrice.toLocaleString()}).</p>
+                      )}
+                      {Number(customPrice) < basePrice * 0.5 && (
+                        <p className="text-[10px] text-[#ef4444] m-0 font-medium">Your offer cannot be less than 50% of the listed price per {unit} (₹{Math.ceil(basePrice * 0.5).toLocaleString()}).</p>
                       )}
                     </div>
                   )}

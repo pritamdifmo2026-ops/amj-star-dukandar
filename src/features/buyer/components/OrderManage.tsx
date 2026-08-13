@@ -464,18 +464,25 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
       {/* Order summary */}
       <div className={`${card} p-5`}>
         <p className={sectionTitle}>Order Summary</p>
-        <div className="flex gap-4 items-start mb-4">
-          <div className="w-16 h-16 rounded-[10px] overflow-hidden bg-[#f8fafc] border border-[#eef2f6] shrink-0 flex items-center justify-center">
-            {productImage ? <img src={productImage} alt="" className="w-full h-full object-cover" /> : <Package size={24} className="text-[#cbd5e1]" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            {order.items?.map((it: any, i: number) => (
-              <div key={i} className="mb-1">
-                <p className="text-sm font-extrabold text-[#0f172a] m-0">{it.name}</p>
-                <p className="text-xs text-[#64748b] m-0">₹{it.price?.toLocaleString('en-IN')}/{it.unit || 'pcs'} · Qty {it.quantity} {it.unit || 'pcs'}</p>
+        <div className="flex flex-col gap-4 mb-4">
+          {order.items?.map((it: any, i: number) => {
+            const itemImage = it.image || it.imageUrl || (i === 0 ? productImage : '');
+            return (
+              <div key={i} className="flex gap-4 items-start">
+                <div className="w-12 h-12 rounded-[8px] overflow-hidden bg-[#f8fafc] border border-[#eef2f6] shrink-0 flex items-center justify-center shadow-inner">
+                  {itemImage ? (
+                    <img src={itemImage} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Package size={20} className="text-[#cbd5e1]" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-extrabold text-[#0f172a] m-0 line-clamp-2">{it.name}</p>
+                  <p className="text-xs text-[#64748b] m-0 mt-1">₹{it.price?.toLocaleString('en-IN')}/{it.unit || 'pcs'} · Qty {it.quantity} {it.unit || 'pcs'}</p>
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
         {/* Cost breakdown */}

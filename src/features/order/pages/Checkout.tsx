@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { clearCart } from '@/features/buyer/store/cart.slice';
+import { clearCartAsync } from '@/features/buyer/store/cart.slice';
 import apiClient from '@/api/client';
 import { useSocket } from '@/shared/contexts/SocketContext';
 import { orderApi } from '@/features/order/services/order.api';
@@ -278,11 +278,20 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         if (socket) {
           socket.emit('join_conversation', conversation._id);
           const receiverId = conversation.supplierId;
-          socket.emit('send_message', { conversationId: conversation._id, text, receiverId });
+          const images = cartItems.map(it => it.imageUrl).filter(Boolean);
+          socket.emit('send_message', { 
+            conversationId: conversation._id, 
+            text, 
+            receiverId,
+            metadata: { 
+              imageUrl: images[0],
+              images: images 
+            }
+          });
         }
       }
 
-      if (!isBuyNow) dispatch(clearCart());
+      if (!isBuyNow) dispatch(clearCartAsync());
       toast.success('Quote Request Sent! Negotiate terms with the supplier in the chat.');
       navigate('/profile?tab=messages');
     } catch (err: any) {
@@ -297,12 +306,19 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
       setError('Please add a delivery address.');
       return;
     }
-    if (!user?.savedSignature || isChangingSignature) {
-      const hasSig = (signatureMode === 'upload' && uploadedSignature) || (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty());
-      if (!hasSig) {
+    const currentSig = tempSignature || user?.savedSignature;
+    if (!currentSig) {
+      const hasUnsaved = (signatureMode === 'upload' && uploadedSignature) || (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty());
+      if (hasUnsaved) {
+        setError('Please click "Save Signature" first.');
+      } else {
         setError('Please provide your Authorized Signature below.');
-        return;
       }
+      return;
+    }
+    if (isChangingSignature) {
+      setError('Please save or cancel your signature changes.');
+      return;
     }
     setError(null);
     setShowDealPanel(true);
@@ -672,7 +688,8 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                     </button>
                   )}
                   <button
-                    onClick={() => {
+                    disabled={isChangingSignature && (signatureMode === 'upload' ? !uploadedSignature : false)} // basic disable
+                    onClick={async () => {
                       let sigData = '';
                       if (signatureMode === 'upload' && uploadedSignature) {
                         sigData = uploadedSignature;
@@ -685,9 +702,20 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                         return;
                       }
 
-                      setTempSignature(sigData);
-                      setIsChangingSignature(false);
-                      toast.success('Signature confirmed for this order');
+                      try {
+                        const loadingToast = toast.loading('Saving signature...');
+                        const res = await apiClient.put('/user/profile', { savedSignature: sigData });
+                        
+                        import('@/features/auth/store/auth.slice').then(({ setCredentials }) => {
+                          dispatch(setCredentials({ user: res.data.user }));
+                        });
+
+                        setTempSignature(sigData);
+                        setIsChangingSignature(false);
+                        toast.success('Signature saved for this and future orders', { id: loadingToast });
+                      } catch (err: any) {
+                        toast.error(err.response?.data?.message || 'Failed to save signature');
+                      }
                     }}
                     className="px-4 py-2 bg-[#b44b1c] hover:bg-[#9c3e14] text-white font-bold rounded-[8px] cursor-pointer border-none transition-colors"
                   >

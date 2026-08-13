@@ -94,7 +94,7 @@ const ProductDetail: React.FC = () => {
       const priceLine =
         enquiry.priceMode === 'negotiate'
           ? enquiry.targetPrice
-            ? `Open to negotiation (Target budget: ₹${enquiry.targetPrice.toLocaleString()} total (excl. GST))`
+            ? `Open to negotiation (Target budget: ₹${(enquiry.targetPrice / enquiry.quantity).toLocaleString('en-IN')} x ${enquiry.quantity} = ₹${enquiry.targetPrice.toLocaleString('en-IN')} total (excl. GST))`
             : 'Open to negotiation'
           : 'As listed';
       const text = [
@@ -110,9 +110,18 @@ const ProductDetail: React.FC = () => {
       socket?.emit('join_conversation', conversation._id);
       // conversation.supplierId is the User ID of the supplier, returned by the backend API.
       // Do NOT use product.supplierId._id, as that is the Supplier Profile ID.
-      socket?.emit('send_message', { conversationId: conversation._id, text, receiverId: (conversation as any).supplierId });
+      socket?.emit('send_message', { 
+        conversationId: conversation._id, 
+        text, 
+        receiverId: (conversation as any).supplierId,
+        metadata: { imageUrl: product.imageUrl || product.images?.[0] } 
+      });
       
       setShowEnquiryModal(false);
+      
+      // Give the backend a moment to save the message via socket before fetching messages
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       setActiveChatId(conversation._id);
     } finally {
       setContactingSupplier(false);

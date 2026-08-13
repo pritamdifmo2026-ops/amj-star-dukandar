@@ -35,29 +35,33 @@ export const POReviewModal: React.FC<POReviewModalProps> = ({
         <div className="p-5 flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
           <div className="flex flex-col gap-1.5">
             <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Product Details</p>
-            <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155]">
-              <div className="flex items-center gap-3 mb-2 pb-2 border-b border-[#e2e8f0]">
-                {product?.images?.[0] ? (
-                  <img src={product.images[0]} alt={quote.items?.[0]?.name} className="w-10 h-10 object-cover rounded-[6px] border border-[#cbd5e1]" />
-                ) : (
-                  <div className="w-10 h-10 bg-[#e2e8f0] rounded-[6px] flex items-center justify-center shrink-0 border border-[#cbd5e1]">
-                    <ImageIcon size={16} className="text-[#94a3b8]" />
+            <div className="flex flex-col gap-3">
+              {quote.items?.map((item: any, idx: number) => (
+                <div key={idx} className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155]">
+                  <div className="flex items-center gap-3 mb-2 pb-2 border-b border-[#e2e8f0]">
+                    {item.image || item.imageUrl || product?.images?.[0] ? (
+                      <img src={item.image || item.imageUrl || product?.images?.[0]} alt={item.name} className="w-10 h-10 object-cover rounded-[6px] border border-[#cbd5e1]" />
+                    ) : (
+                      <div className="w-10 h-10 bg-[#e2e8f0] rounded-[6px] flex items-center justify-center shrink-0 border border-[#cbd5e1]">
+                        <ImageIcon size={16} className="text-[#94a3b8]" />
+                      </div>
+                    )}
+                    <span className="font-semibold text-sm text-[#0f172a] line-clamp-2">{item.name}</span>
                   </div>
-                )}
-                <span className="font-semibold text-sm text-[#0f172a]">{quote.items?.[0]?.name}</span>
-              </div>
-              <div className="flex justify-between text-[#64748b]">
-                <span>Quantity</span>
-                <span>{quote.items?.[0]?.quantity} Units</span>
-              </div>
-              <div className="flex justify-between text-[#64748b]">
-                <span>Unit Price</span>
-                <span>₹{quote.items?.[0]?.price?.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex justify-between text-[#64748b] mt-1 pt-1 border-t border-[#e2e8f0]">
-                <span>Subtotal</span>
-                <span className="font-semibold text-[#0f172a]">₹{(quote.items?.[0]?.quantity * quote.items?.[0]?.price)?.toLocaleString('en-IN')}</span>
-              </div>
+                  <div className="flex justify-between text-[#64748b]">
+                    <span>Quantity</span>
+                    <span>{item.quantity} {item.unit || 'Units'}</span>
+                  </div>
+                  <div className="flex justify-between text-[#64748b]">
+                    <span>Unit Price</span>
+                    <span>₹{item.price?.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between text-[#64748b] mt-1 pt-1 border-t border-[#e2e8f0]">
+                    <span>Subtotal</span>
+                    <span className="font-semibold text-[#0f172a]">₹{(item.quantity * item.price)?.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

@@ -62,23 +62,40 @@ const PhoneReveal = ({ phone, label }: { phone: string; label: string }) => {
 const QuotePreviewCard = ({
   form, gstAmount, grandTotal,
 }: {
-  form: { itemName: string; hsnCode: string; quantity: number; price: number; gstType: GstType; gstRate: number; shipping: number; deliveryTimeline: string; terms: string };
+  form: { cartItems?: any[]; itemName: string; hsnCode: string; quantity: number; price: number; gstType: GstType; gstRate: number; shipping: number; deliveryTimeline: string; terms: string };
   gstAmount: number;
   grandTotal: number;
-}) => (
+}) => {
+  const computedTotalBeforeGst = form.cartItems && form.cartItems.length > 0
+    ? form.cartItems.reduce((acc, it) => acc + (Number(it.price) || 0) * (Number(it.quantity) || 1), 0)
+    : form.price * form.quantity;
+
+  return (
   <div className="bg-white border border-gray-100 rounded-[10px] overflow-hidden">
     <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-100">
       <span className="text-[12px] font-extrabold text-slate-800">Quotation</span>
       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700">Awaiting Response</span>
     </div>
     <div className="px-3 py-2 flex flex-col gap-1 text-xs">
-      <div className="flex justify-between">
-        <span>{form.itemName} × {form.quantity}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
-        <span className="font-semibold">₹{form.price.toLocaleString('en-IN')}</span>
-      </div>
+      {form.cartItems && form.cartItems.length > 0 ? (
+        form.cartItems.map((it: any, idx: number) => (
+          <div key={idx} className="flex flex-col border-b border-gray-100 pb-1.5 mb-1 last:border-0 last:pb-0 last:mb-0">
+            <span className="text-gray-700 font-medium">{it.name}{it.hsnCode ? ` (HSN: ${it.hsnCode})` : ''}</span>
+            <div className="flex justify-between text-gray-500 mt-0.5">
+              <span>₹{(Number(it.price) || 0).toLocaleString('en-IN')} × {it.quantity}</span>
+              <span>₹{((Number(it.price) || 0) * (Number(it.quantity) || 1)).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="flex justify-between">
+          <span>{form.itemName} × {form.quantity}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
+          <span className="font-semibold">₹{form.price.toLocaleString('en-IN')}</span>
+        </div>
+      )}
       <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-100">
         <span>Price</span>
-        <span className="font-semibold">₹{form.price.toLocaleString('en-IN')}</span>
+        <span className="font-semibold">₹{computedTotalBeforeGst.toLocaleString('en-IN')}</span>
       </div>
       {form.gstType !== 'exempt' ? (
         form.gstType === 'IGST' ? (
@@ -114,7 +131,8 @@ const QuotePreviewCard = ({
       {form.terms && <p className="text-[10px] text-gray-400 m-0">Terms: {form.terms}</p>}
     </div>
   </div>
-);
+  );
+};
 
 export const FloatingChat: React.FC = () => {
   const { isAuthenticated, user } = useSelector((state: any) => state.auth);
@@ -235,6 +253,7 @@ export const FloatingChat: React.FC = () => {
           quantity: quoteForm.quantity,
           price: quoteForm.quantity > 0 ? quoteForm.price / quoteForm.quantity : quoteForm.price,
           hsnCode: quoteForm.hsnCode || undefined,
+          image: activeConv?.productId?.images?.[0] || undefined,
         }],
         taxableAmount: quoteForm.price,
         totalAmount: quoteForm.price,

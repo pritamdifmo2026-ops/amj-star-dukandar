@@ -238,21 +238,31 @@ const OrderList: React.FC = () => {
 
               {/* Body */}
               <div className="p-5 flex gap-5 items-start max-sm:flex-col">
-                <div className="w-[88px] h-[88px] rounded-[12px] overflow-hidden bg-[#f8fafc] border border-[#eef2f6] shrink-0 flex items-center justify-center shadow-inner max-sm:w-full max-sm:h-[120px]">
-                  {productImage ? <img src={productImage} alt={order.items[0]?.name || 'Product'} className="w-full h-full object-cover" /> : (
-                    <div className="flex flex-col items-center justify-center gap-1 text-[#cbd5e1]"><Package size={28} strokeWidth={1.5} /><span className="text-[8px] font-bold uppercase tracking-wide text-[#94a3b8]">No Image</span></div>
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0 flex flex-col gap-2">
-                  {order.items.map((item: any, idx: number) => (
-                    <div key={idx}>
-                      <h4 className="text-sm font-extrabold text-[#0f172a] m-0 line-clamp-2">{item.name}</h4>
-                      <div className="flex items-center gap-2 text-xs font-semibold text-[#64748b]">
-                        <span>₹{item.price.toLocaleString('en-IN')}/{item.unit || 'pcs'}</span><span className="text-[#cbd5e1]">•</span><span>Qty: {item.quantity} {item.unit || 'pcs'}</span>
+                <div className="flex-1 min-w-0 flex flex-col gap-4">
+                  {order.items.map((item: any, idx: number) => {
+                    const itemImage = item.image || item.imageUrl || (idx === 0 ? productImage : '');
+                    return (
+                      <div key={idx} className="flex gap-4 items-center">
+                        <div className="w-[64px] h-[64px] rounded-[8px] overflow-hidden bg-[#f8fafc] border border-[#eef2f6] shrink-0 flex items-center justify-center shadow-inner">
+                          {itemImage ? (
+                            <img src={itemImage} alt={item.name || 'Product'} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-[#cbd5e1]">
+                              <Package size={24} strokeWidth={1.5} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-extrabold text-[#0f172a] m-0 line-clamp-2">{item.name}</h4>
+                          <div className="flex items-center gap-2 text-xs font-semibold text-[#64748b] mt-1">
+                            <span>₹{item.price.toLocaleString('en-IN')}/{item.unit || 'pcs'}</span>
+                            <span className="text-[#cbd5e1]">•</span>
+                            <span>Qty: {item.quantity} {item.unit || 'pcs'}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {order.status === 'disputed' && order._dispute && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#b91c1c] bg-[#fef2f2] border border-[#fca5a5] px-2 py-0.5 rounded-full w-fit mt-1">
                       <AlertTriangle size={10} /> {order._dispute.issueType} issue

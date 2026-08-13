@@ -182,6 +182,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   const [quoteNotFound, setQuoteNotFound] = useState(false);
   const [showCounter, setShowCounter] = useState(false);
   const [counterPrice, setCounterPrice] = useState('');
+  const [counterItemPrices, setCounterItemPrices] = useState<Record<string, number>>({});
   const [counterTimeline, setCounterTimeline] = useState('');
   const [counterPaymentTerms, setCounterPaymentTerms] = useState('');
   const [counterTransportationTerms, setCounterTransportationTerms] = useState('');
@@ -276,14 +277,18 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   const grandTotal = taxableAmt + gstAmt + shipCost + courierGst;
   const halfRate = gstRate / 2;
 
+  const isSingleItem = quote?.items?.length === 1;
+  const totalQty = quote?.items?.reduce((acc: number, item: any) => acc + Number(item.quantity), 0) || 1;
+  const unit = isSingleItem ? quote.items[0].unit || 'pcs' : 'items';
+
   const submitCounter = async () => {
     if (!counterPrice) return;
-    const cp = Number(counterPrice);
+    const cp = isSingleItem ? (Number(counterPrice) * totalQty) : Number(counterPrice);
     if (cp < actualRetailTotal * 0.5 || cp > actualRetailTotal) return;
 
     setCounterSubmitting(true);
     try {
-      await quotationApi.counterOffer(quote._id, {
+      const payload: any = {
         price: cp,
         deliveryTimeline: counterTimeline || undefined,
         paymentTerms: counterPaymentTerms || undefined,
@@ -291,7 +296,16 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
         reason: counterReason || undefined,
         shippingCost: counterTransportationTerms === 'Third-Party Courier' ? Number(counterShippingCost) || 0 : (counterTransportationTerms && counterTransportationTerms !== 'Third-Party Courier') ? 0 : undefined,
         shippingNotes: counterTransportationTerms === 'Third-Party Courier' ? counterCourierName || undefined : undefined,
-      });
+      };
+
+      if (!isSingleItem) {
+        payload.itemPrices = quote.items.map((it: any) => ({
+          productId: it._id,
+          price: counterItemPrices[it._id] || Math.round(it.price * 0.9)
+        }));
+      }
+
+      await quotationApi.counterOffer(quote._id, payload);
       loadMessages();
       setShowCounter(false);
       setCounterPrice('');
@@ -380,7 +394,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             </span>
             <div className="mt-1.5">
               Quantity: {quote.items?.[0]?.quantity || 0} {quote.items?.[0]?.unit || 'pcs'}<br />
-              Price: ₹{(quote.counterOffer?.price || quote.proposedPrice).toLocaleString('en-IN')}<br />
+              Price: {quote.items?.length === 1 ? `₹${((quote.counterOffer?.price || quote.proposedPrice) / (quote.items[0]?.quantity || 1)).toLocaleString('en-IN')} x ${quote.items[0]?.quantity || 1} = ` : ''}₹{(quote.counterOffer?.price || quote.proposedPrice).toLocaleString('en-IN')}<br />
               Delivery Timeline: {quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || 'Standard'}<br />
               {quote.paymentTerms && <>Payment: {quote.paymentTerms}<br /></>}
               {quote.transportationTerms && <>Transport: {quote.transportationTerms}<br /></>}
@@ -649,50 +663,117 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
       {isLatestQuoteMsg && quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'negotiation_pending' || quote.status === 'counter_offer_sent') && showCounter && (
         <div className="px-4 pb-3 flex flex-col gap-2">
           <p className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Counter Offer</p>
-          {/* Price counter */}
           <div className="flex flex-col gap-0.5">
-            <label className="text-[10px] text-[#64748b] font-semibold">Counter Total Price (excl. GST &amp; shipping)</label>
-            <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary">
-              <span className="px-2 py-2 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
-              <input
-                autoFocus
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={counterPrice}
-                onChange={e => setCounterPrice(e.target.value.replace(/\D/g, ''))}
-                placeholder={`e.g. ${taxableAmt}`}
-                className="flex-1 border-none outline-none px-2 py-2 text-xs bg-transparent"
-              />
-            </div>
-
-            {counterPrice && Number(counterPrice) > 0 && Number(counterPrice) < actualRetailTotal * 0.5 && (
-              <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
-                Counter price cannot be less than 50% of the original price (₹{Math.round(actualRetailTotal * 0.5).toLocaleString('en-IN')})
-              </p>
-            )}
-            {counterPrice && Number(counterPrice) > 0 && Number(counterPrice) > actualRetailTotal && (
-              <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
-                Counter price cannot be higher than the original price (₹{actualRetailTotal.toLocaleString('en-IN')})
-              </p>
-            )}
-
-            {counterPrice && Number(counterPrice) > 0 && (
-              <div className="mt-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] p-2 flex flex-col gap-1">
-                <div className="flex justify-between text-[10px] text-[#64748b]">
-                  <span>Amount (before GST)</span>
-                  <span>₹{Number(counterPrice).toLocaleString('en-IN')}</span>
+            {isSingleItem ? (
+              <>
+                <label className="text-[10px] text-[#64748b] font-semibold">Your Counter Price per {unit}</label>
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="range" 
+                    min={Math.ceil((actualRetailTotal / totalQty) * 0.5)} 
+                    max={actualRetailTotal / totalQty} 
+                    value={counterPrice || Math.round((actualRetailTotal / totalQty) * 0.9)} 
+                    onChange={e => setCounterPrice(e.target.value)}
+                    className="flex-1 accent-[#2563eb] cursor-pointer h-1.5 bg-[#e2e8f0] rounded-lg appearance-none"
+                  />
+                  <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary w-[90px] shrink-0">
+                    <span className="px-1.5 py-1.5 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
+                    <input
+                      type="number"
+                      min={Math.ceil((actualRetailTotal / totalQty) * 0.5)}
+                      max={actualRetailTotal / totalQty}
+                      value={counterPrice}
+                      onChange={e => setCounterPrice(e.target.value)}
+                      placeholder={`${Math.round((actualRetailTotal / totalQty) * 0.9)}`}
+                      className="w-full border-none outline-none px-1.5 py-1.5 text-xs bg-transparent"
+                    />
+                  </div>
                 </div>
-                <div className="flex justify-between text-[10px] text-[#64748b]">
-                  <span>GST @ {quote.gstRate ?? 18}%</span>
-                  <span>₹{Math.round(Number(counterPrice) * (quote.gstRate ?? 18) / 100).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between text-[11px] font-bold text-[#0f172a] pt-1 border-t border-[#e2e8f0]">
-                  <span>Grand Total</span>
-                  <span>₹{Math.round(Number(counterPrice) + (Number(counterPrice) * (quote.gstRate ?? 18) / 100) + shipCost).toLocaleString('en-IN')}</span>
-                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {quote.items?.map((item: any) => {
+                  const maxPrice = Number(item.price);
+                  const minPrice = Math.ceil(maxPrice * 0.5);
+                  const currentVal = counterItemPrices[item._id] || Math.round(maxPrice * 0.9);
+                  return (
+                    <div key={item._id} className="flex flex-col gap-1 border-b border-[#f1f5f9] pb-2 last:border-0">
+                      <p className="text-[10px] font-bold text-[#475569] m-0 mb-1 line-clamp-1">{item.name}</p>
+                      <label className="text-[10px] text-[#64748b] font-semibold">Counter Price per {item.unit || 'pcs'}</label>
+                      <div className="flex items-center gap-3">
+                        <input 
+                          type="range" 
+                          min={minPrice} 
+                          max={maxPrice} 
+                          value={currentVal}
+                          onChange={e => {
+                            setCounterItemPrices(prev => ({ ...prev, [item._id]: Number(e.target.value) }));
+                            // Automatically update the total counter price
+                            const updatedPrices: Record<string, number> = { ...counterItemPrices, [item._id]: Number(e.target.value) };
+                            const newTotal = quote.items.reduce((acc: number, it: any) => acc + (updatedPrices[it._id as string] || Math.round(it.price * 0.9)) * it.quantity, 0);
+                            setCounterPrice(newTotal.toString());
+                          }}
+                          className="flex-1 accent-[#2563eb] cursor-pointer h-1.5 bg-[#e2e8f0] rounded-lg appearance-none"
+                        />
+                        <div className="flex items-center border border-[#e2e8f0] rounded-[6px] bg-white focus-within:border-primary w-[90px] shrink-0">
+                          <span className="px-1.5 py-1.5 text-xs text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
+                          <input
+                            type="number"
+                            min={minPrice}
+                            max={maxPrice}
+                            value={currentVal}
+                            onChange={e => {
+                              const val = Number(e.target.value);
+                              setCounterItemPrices(prev => ({ ...prev, [item._id]: val }));
+                              const updatedPrices: Record<string, number> = { ...counterItemPrices, [item._id]: val };
+                              const newTotal = quote.items.reduce((acc: number, it: any) => acc + (updatedPrices[it._id as string] || Math.round(it.price * 0.9)) * it.quantity, 0);
+                              setCounterPrice(newTotal.toString());
+                            }}
+                            className="w-full border-none outline-none px-1.5 py-1.5 text-xs bg-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
+
+            {(() => {
+              const cpNum = Number(counterPrice) || 0;
+              const cpTotal = isSingleItem ? cpNum * totalQty : cpNum;
+              
+              if (!cpNum || cpNum <= 0) return null;
+
+              return (
+                <>
+                  {cpTotal < actualRetailTotal * 0.5 && (
+                    <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
+                      Counter price cannot be less than 50% of the original price
+                    </p>
+                  )}
+                  {cpTotal > actualRetailTotal && (
+                    <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">
+                      Counter price cannot be higher than the original price
+                    </p>
+                  )}
+                  <div className="mt-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] p-2 flex flex-col gap-1">
+                    <div className="flex justify-between text-[10px] text-[#64748b]">
+                      <span>Total Amount (excl. GST)</span>
+                      <span>₹{cpTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-[#64748b]">
+                      <span>GST @ {quote.gstRate ?? 18}%</span>
+                      <span>₹{Math.round(cpTotal * (quote.gstRate ?? 18) / 100).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between text-[11px] font-bold text-[#0f172a] pt-1 border-t border-[#e2e8f0]">
+                      <span>Grand Total</span>
+                      <span>₹{Math.round(cpTotal + (cpTotal * (quote.gstRate ?? 18) / 100) + shipCost).toLocaleString('en-IN')}</span>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           <div className="flex flex-col gap-0.5">
@@ -806,7 +887,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             >Cancel</button>
             <button
               onClick={submitCounter}
-              disabled={counterSubmitting || !counterPrice || Number(counterPrice) < actualRetailTotal * 0.5 || Number(counterPrice) > actualRetailTotal}
+              disabled={counterSubmitting || !counterPrice || (isSingleItem ? Number(counterPrice) * totalQty : Number(counterPrice)) < actualRetailTotal * 0.5 || (isSingleItem ? Number(counterPrice) * totalQty : Number(counterPrice)) > actualRetailTotal}
               className="flex-1 py-2 text-xs font-bold text-white bg-[#2563eb] rounded-[6px] border-none cursor-pointer disabled:opacity-50"
             >
               {counterSubmitting ? 'Sending…' : 'Send Counter'}
@@ -1224,17 +1305,21 @@ const ChatInbox: React.FC = () => {
     try {
       const itemsToQuote = quoteForm.cartItems.length > 0
         ? quoteForm.cartItems.map(it => ({
+          productId: (it as any).productId || undefined,
           name: it.name,
           quantity: it.quantity,
           price: Number(it.price),
           hsnCode: it.hsnCode || undefined,
-          unit: it.unit || 'pcs'
+          unit: it.unit || 'pcs',
+          image: (it as any).imageUrl || (it as any).image
         }))
         : [{
+          productId: activeConv?.productId?._id || undefined,
           name: quoteForm.itemName,
           quantity: quoteForm.quantity,
           price: Number(quoteForm.price),
           hsnCode: quoteForm.hsnCode || undefined,
+          image: activeConv?.productId?.images?.[0] || undefined
         }];
 
       const payload = await quotationApi.createQuotation({
@@ -1611,15 +1696,9 @@ const ChatInbox: React.FC = () => {
                           )}
                           {msg.metadata?.paymentProofUrl && (
                             <div className="mb-3 rounded-[8px] overflow-hidden border border-[#bbf7d0]">
-                              {msg.metadata.paymentProofUrl.toLowerCase().endsWith('.pdf') ? (
-                                <a href={msg.metadata.paymentProofUrl} target="_blank" rel="noreferrer" className="block text-center py-3 bg-[#dcfce7] text-[#166534] text-xs font-bold hover:bg-[#bbf7d0] transition-colors">
-                                  📄 View PDF Proof
-                                </a>
-                              ) : (
-                                <a href={msg.metadata.paymentProofUrl} target="_blank" rel="noreferrer">
-                                  <img src={msg.metadata.paymentProofUrl} alt="Payment Proof" className="w-full max-h-[200px] object-cover hover:opacity-90 transition-opacity" />
-                                </a>
-                              )}
+                              <a href={msg.metadata.paymentProofUrl} target="_blank" rel="noreferrer" className="block text-center py-3 bg-[#dcfce7] text-[#166534] text-xs font-bold hover:bg-[#bbf7d0] transition-colors no-underline">
+                                📄 View Payment Proof
+                              </a>
                             </div>
                           )}
                           {user?.role === 'supplier' && (() => {
@@ -1676,8 +1755,30 @@ const ChatInbox: React.FC = () => {
                         );
                       })()
                     ) : (
-                      <div className={`whitespace-pre-wrap leading-relaxed max-w-[75%] px-4 py-2.5 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
-                        {msg.text}
+                      <div className={`max-w-[85%] px-4 py-3 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
+                        <div className="flex flex-col gap-2.5">
+                          {(msg.metadata?.images && msg.metadata.images.length > 0) ? (
+                            <div className="flex flex-wrap gap-2">
+                              {msg.metadata.images.slice(0, 5).map((img: string, idx: number) => (
+                                <div key={idx} className={`shrink-0 rounded-[6px] overflow-hidden border ${isMine ? 'border-white/20 bg-white/10' : 'border-[#e2e8f0]/60 bg-white'} p-1 w-14 h-14 flex items-center justify-center`}>
+                                  <img src={img} alt="Product" className="max-w-full max-h-full object-contain rounded-[2px]" />
+                                </div>
+                              ))}
+                              {msg.metadata.images.length > 5 && (
+                                <div className={`shrink-0 rounded-[6px] border ${isMine ? 'border-white/20 bg-white/10 text-white' : 'border-[#e2e8f0]/60 bg-[#f8fafc] text-[#64748b]'} w-14 h-14 flex items-center justify-center text-xs font-bold`}>
+                                  +{msg.metadata.images.length - 5}
+                                </div>
+                              )}
+                            </div>
+                          ) : msg.metadata?.imageUrl && (
+                            <div className={`shrink-0 rounded-[6px] overflow-hidden border ${isMine ? 'border-white/20 bg-white/10' : 'border-[#e2e8f0]/60 bg-white'} p-1 w-14 h-14 flex items-center justify-center`}>
+                              <img src={msg.metadata.imageUrl} alt="Product" className="max-w-full max-h-full object-contain rounded-[2px]" />
+                            </div>
+                          )}
+                          <div className="whitespace-pre-wrap leading-relaxed">
+                            {msg.text}
+                          </div>
+                        </div>
                         {(msg.text.includes('Enquiry:') || msg.text.includes('Order Request')) && user?.role === 'supplier' && (() => {
                           let showActions = false;
                           // Show actions only if this is the LATEST enquiry/request and there's no active negotiation after it
@@ -1691,23 +1792,37 @@ const ChatInbox: React.FC = () => {
                           if (!showActions) return null;
 
                           // Parse target price
-                          const match = msg.text.match(/Target budget: ₹([0-9,]+)/);
-                          const targetPriceStr = match ? match[1].replace(/,/g, '') : null;
-                          const parsedTargetPrice = targetPriceStr ? Number(targetPriceStr) : null;
+                          // Support new format (₹2,500 x 20 = ₹50,000) and old format (₹50,000 total)
+                          const newFormatMatch = msg.text.match(/Target budget: ₹([0-9,.]+)\s*x/);
+                          const oldFormatMatch = msg.text.match(/Target budget: ₹([0-9,.]+)\s*total/);
+                          
+                          let parsedUnitPrice: number | null = null;
+                          
+                          if (newFormatMatch) {
+                            parsedUnitPrice = Number(newFormatMatch[1].replace(/,/g, ''));
+                          } else if (oldFormatMatch) {
+                            const total = Number(oldFormatMatch[1].replace(/,/g, ''));
+                            const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
+                            const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
+                            parsedUnitPrice = total / qty;
+                          }
+                          
+                          // For showing the accept button, we just need to know if there's a target budget
+                          const hasTargetBudget = !!parsedUnitPrice;
 
                           return (
                             <div className="mt-3 w-full flex flex-col gap-2 border-t border-[#e2e8f0]/40 pt-3">
                               <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Your Action</span>
                               <div className="grid grid-cols-2 gap-2">
-                                {(parsedTargetPrice || msg.text.includes('Price: As listed') || msg.text.includes('Order Request (Checkout)')) && (
+                                {(hasTargetBudget || msg.text.includes('Price: As listed') || msg.text.includes('Order Request (Checkout)')) && (
                                   <button
                                     className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-green-600 rounded-[8px] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-50"
                                     disabled={isSendingQuote}
                                     onClick={() => {
-                                      if (parsedTargetPrice) {
+                                      if (hasTargetBudget && parsedUnitPrice) {
                                         const qtyMatch = msg.text.match(/Quantity: (\d+)/);
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                        setQuoteForm(prev => ({ ...prev, price: parsedTargetPrice / qty, quantity: qty }));
+                                        setQuoteForm(prev => ({ ...prev, price: parsedUnitPrice!, quantity: qty }));
                                       } else {
                                         const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
@@ -1726,12 +1841,14 @@ const ChatInbox: React.FC = () => {
                                   </button>
                                 )}
                                 <button
-                                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold ${(!parsedTargetPrice && !msg.text.includes('Price: As listed') && !msg.text.includes('Order Request (Checkout)')) ? 'col-span-2 text-white bg-primary hover:bg-primary/90' : 'text-[#475569] bg-white border border-[#e2e8f0] hover:bg-[#f8fafc]'} rounded-[8px] cursor-pointer transition-colors`}
+                                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold ${(!hasTargetBudget && !msg.text.includes('Price: As listed') && !msg.text.includes('Order Request (Checkout)')) ? 'col-span-2 text-white bg-primary hover:bg-primary/90' : 'text-[#475569] bg-white border border-[#e2e8f0] hover:bg-[#f8fafc]'} rounded-[8px] cursor-pointer transition-colors`}
                                   onClick={() => {
                                     const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
                                     const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                    const priceMatch = msg.text.match(/@\s*₹?([0-9,]+)/);
-                                    const unitPrice = priceMatch ? Number(priceMatch[1].replace(/,/g, '')) : (activeConv?.productId?.basePrice || 0);
+                                    
+                                    // Pre-fill with the buyer's target price if available, otherwise base price
+                                    const unitPrice = parsedUnitPrice || (activeConv?.productId?.basePrice || 0);
+                                    
                                     setQuoteForm(prev => ({ ...prev, quantity: qty, price: unitPrice, priceTag: '' as any }));
                                     setIsAcceptingBuyerPrice(false);
                                     setIsQuoteModalOpen(true);
