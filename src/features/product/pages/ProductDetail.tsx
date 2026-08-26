@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import {
   ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart,
   CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck, RotateCcw, Store,
@@ -66,6 +67,10 @@ const ProductDetail: React.FC = () => {
     if (isNonBuyer) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`); return; }
     if (!user.name?.trim() || !user.email?.trim()) { setShowProfilePrompt(true); return; }
+    if (!user.gstin?.trim()) {
+      toast.error('GST not available. Please add and verify your GST details to use this feature.');
+      return;
+    }
     setShowEnquiryModal(true);
   };
 

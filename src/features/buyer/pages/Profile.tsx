@@ -76,6 +76,7 @@ const Profile: React.FC = () => {
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editEmail, setEditEmail] = useState(user?.email || '');
+  const [editGstin, setEditGstin] = useState(user?.gstin || '');
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [enquiryForm, setEnquiryForm] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', message: '' });
   const [enquirySubmitting, setEnquirySubmitting] = useState(false);
@@ -411,6 +412,13 @@ const Profile: React.FC = () => {
           }
           payload.email = editEmail.trim();
         }
+        if (editGstin && editGstin.trim().length > 0) {
+          if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i.test(editGstin.trim())) {
+            toast.error('Please enter a valid Indian GST Number');
+            return;
+          }
+          payload.gstin = editGstin.trim().toUpperCase();
+        }
         const response = await authService.updateProfile(payload);
         dispatch(setCredentials({ user: response.user }));
         setIsEditingInfo(false);
@@ -664,6 +672,13 @@ const Profile: React.FC = () => {
                           <p className="text-sm text-[#0f172a] font-medium m-0 mt-0.5">{user?.phone || 'Not provided'}</p>
                         </div>
                       </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-[8px] bg-[#fff7ed] flex items-center justify-center shrink-0 mt-0.5 text-primary"><ClipboardList size={15} /></div>
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider m-0">GST Number</p>
+                          <p className="text-sm text-[#0f172a] font-medium m-0 mt-0.5">{user?.gstin || 'Not provided'}</p>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-4">
@@ -674,6 +689,10 @@ const Profile: React.FC = () => {
                       <div>
                         <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">Email Address</label>
                         <input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} className={inputCls()} placeholder="Enter email" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5">GST Number</label>
+                        <input type="text" value={editGstin} onChange={e => setEditGstin(e.target.value.toUpperCase())} className={inputCls()} placeholder="e.g. 27ABCDE1234F1Z5" />
                       </div>
                     </div>
                   )}

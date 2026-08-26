@@ -49,5 +49,6 @@ export interface AuthUser {
   isEmailVerified?: boolean;
   isPhoneVerified?: boolean;
   avatar?: string;
+  gstin?: string;
 }
 

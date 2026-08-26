@@ -1138,6 +1138,10 @@ const ChatInbox: React.FC = () => {
   const heldToastIdRef = useRef<string | null>(null);
 
   const handleOpenQuotationAction = (quote: any, isAccept: boolean) => {
+    if (user?.role === 'buyer' && !user?.gstin) {
+      toast.error('GST not available. Please add and verify your GST details to use this feature.');
+      return;
+    }
     setQuoteForm(prev => {
       const quantity = quote.items?.[0]?.quantity || prev.quantity || 1;
       const latestPrice = quote.counterOffer?.price || quote.proposedPrice;
@@ -1894,11 +1898,15 @@ const ChatInbox: React.FC = () => {
                                   className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-[#2563eb] bg-[#eff6ff] rounded-[6px] border-none cursor-pointer hover:bg-[#dbeafe]"
                                   onClick={() => handleOpenQuotationAction(quote, false)}
                                 >
-                                  <FileText size={14} /> Revise Terms
+                                  <FileText size={14} /> Negotiate
                                 </button>
                                 <button
                                   className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]"
                                   onClick={async () => {
+                                    if (user?.role === 'buyer' && !user?.gstin) {
+                                      toast.error('GST not available. Please add and verify your GST details to use this feature.');
+                                      return;
+                                    }
                                     try {
                                       await quotationApi.rejectQuotation(quote._id);
                                       toast.success('Quotation rejected');
