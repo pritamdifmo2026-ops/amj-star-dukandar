@@ -67,8 +67,9 @@ const SupplierDashboard: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [showUnpublishModal, setShowUnpublishModal] = useState(false);
-  const [productToUnpublish, setProductToUnpublish] = useState<any>(null);
-  const [msgModal, setMsgModal] = useState<{ isOpen: boolean; type: 'success' | 'error'; title: string; message: string }>({
+  const [productToUnpublish, setProductToUnpublish] = useState<any | null>(null);
+  const [clonedProduct, setClonedProduct] = useState<any | null>(null);
+  const [msgModal, setMsgModal] = useState<{ isOpen: boolean; type: 'success' | 'error' | 'info'; title: string; message: string }>({
     isOpen: false,
     type: 'success',
     title: '',
@@ -205,8 +206,9 @@ const SupplierDashboard: React.FC = () => {
     setWalletAlertNotif(null);
   };
 
-  const handleAddProduct = () => { setPreviousTab(activeView); setActiveView('add-product'); };
-  const handleEdit = (product: any) => { setPreviousTab(activeView); setEditingProduct(product); setActiveView('edit-product'); };
+  const handleAddProduct = () => { setPreviousTab(activeView); setClonedProduct(null); setEditingProduct(null); setActiveView('add-product'); };
+  const handleEdit = (product: any) => { setPreviousTab(activeView); setClonedProduct(null); setEditingProduct(product); setActiveView('edit-product'); };
+  const handleClone = (product: any) => { setPreviousTab(activeView); setEditingProduct(null); setClonedProduct(product); setActiveView('add-product'); };
   const handleDelete = (product: any) => { setProductToDelete(product); setShowDeleteModal(true); };
 
   const confirmDelete = async () => {
@@ -260,7 +262,7 @@ const SupplierDashboard: React.FC = () => {
   const handleLogout = () => setShowLogoutModal(true);
   const confirmLogout = () => { dispatch(logout()); window.location.href = '/'; };
   const isTrusted = products.filter(p => p.status === 'APPROVED').length >= 4;
-  const handleFormSuccess = async () => { await fetchProducts(); setActiveView('inventory'); setEditingProduct(null); };
+  const handleFormSuccess = async () => { await fetchProducts(); setActiveView('inventory'); setEditingProduct(null); setClonedProduct(null); };
 
   const handleProductLiveUpdated = (updatedProduct: any) => {
     setProducts(prev => prev.map(p =>
@@ -269,7 +271,7 @@ const SupplierDashboard: React.FC = () => {
   };
 
   const renderProductListing = (productList: any[]) => {
-    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} onToggleLive={handleToggleLive} onRefresh={() => fetchProducts(false)} onProductLiveUpdated={handleProductLiveUpdated} />;
+    return <ProductTable products={productList} loading={loading} onEdit={handleEdit} onDelete={handleDelete} onAdd={handleAddProduct} onUnpublish={handleUnpublish} onViewReason={setRejectionReasonModal} onToggleLive={handleToggleLive} onRefresh={() => fetchProducts(false)} onProductLiveUpdated={handleProductLiveUpdated} onClone={handleClone} />;
   };
 
   const modalContentCls = "text-center p-4";
@@ -463,7 +465,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'meetings' && <MeetingRequests />}
         {(activeView === 'add-product' || activeView === 'edit-product') && (
           <div className="animate-fade-in -mt-4">
-            <AddProductForm onBack={() => { setActiveView('inventory'); setEditingProduct(null); }} onSuccess={handleFormSuccess} editingProduct={editingProduct} returnTab={previousTab} />
+            <AddProductForm onBack={() => { setActiveView('inventory'); setEditingProduct(null); setClonedProduct(null); }} onSuccess={handleFormSuccess} editingProduct={editingProduct} clonedProduct={clonedProduct} returnTab={previousTab} />
           </div>
         )}
       </main>

@@ -9,6 +9,8 @@ import walletApi from '../services/wallet.api';
 import MembershipPlan from './MembershipPlan';
 import SignatureCanvas from 'react-signature-canvas';
 import { removeWhiteBackground } from '@/shared/utils/removeBackground';
+import { useAppDispatch } from '@/store/hooks';
+import { setSupplierProfile } from '@/features/supplier/store/supplier.slice';
 
 interface SupplierSettingsProps { profile: any; }
 
@@ -49,6 +51,7 @@ const inputWrapCls = "flex items-center gap-3 border border-[#e2e8f0] rounded-[8
 const inputCls = "flex-1 border-none outline-none text-sm text-[#1e293b] bg-transparent disabled:text-[#64748b] disabled:cursor-not-allowed";
 
 const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
+  const dispatch = useAppDispatch();
   const qc = useQueryClient();
   const sigCanvas = React.useRef<any>(null);
   const [signatureMode, setSignatureMode] = useState<'upload'|'draw'>('draw');
@@ -56,8 +59,13 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
 
   const updateSignatureMutation = useMutation({
     mutationFn: supplierService.updateSignature,
-    onSuccess: () => {
-      toast.success('Authorized Signature saved successfully');
+    onSuccess: (data, variables) => {
+      if (variables === '') {
+        toast.success('Authorized Signature removed successfully');
+      } else {
+        toast.success('Authorized Signature saved successfully');
+      }
+      dispatch(setSupplierProfile({ ...profile, savedSignature: variables }));
       qc.invalidateQueries({ queryKey: ['supplierProfile'] });
     },
     onError: (err: any) => {
@@ -831,7 +839,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 max-w-[500px]">
             <div className="flex justify-center gap-4 border-b border-[#e2e8f0] pb-3">
               <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
                 <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
@@ -844,16 +852,16 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
             </div>
             <p className="text-xs text-[#64748b] m-0 mb-1 italic">Note: Draw clearly or upload a photo of your signature on plain white paper.</p>
 
-            <div className="border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white relative flex justify-center">
+            <div className="border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white relative flex justify-center w-full">
               {signatureMode === 'draw' ? (
-                <div className="w-full flex flex-col items-center bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAACVJREFUKFNj/P///38GNIBxMCMxihjQxMkxCAsMogJkm2FygDQAn610wzC1aJ0AAAAASUVORK5CYII=')] bg-repeat">
+                <div className="w-full flex flex-col items-center bg-white overflow-x-auto">
                   <SignatureCanvas
                     ref={sigCanvas}
                     penColor="black"
-                    backgroundColor="rgba(255,255,255,0)"
-                    canvasProps={{ width: 720, height: 200, className: 'w-full max-w-[360px] h-[100px] border-b border-[#e2e8f0] cursor-crosshair' }}
+                    backgroundColor="white"
+                    canvasProps={{ width: 498, height: 200, className: 'cursor-crosshair bg-white block' }}
                   />
-                    <button type="button" onClick={() => sigCanvas.current?.clear()} className="absolute bottom-2 right-2 text-[10px] text-gray-500 hover:text-gray-700 bg-white shadow px-2 py-1 rounded border-none cursor-pointer">
+                    <button type="button" onClick={() => sigCanvas.current?.clear()} className="absolute bottom-2 right-2 text-[10px] text-gray-500 hover:text-gray-700 bg-white shadow px-2 py-1 rounded border-none cursor-pointer z-10">
                       Clear
                     </button>
                   </div>
@@ -892,7 +900,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
                   if (signatureMode === 'upload' && uploadedSignature) {
                     sigData = uploadedSignature;
                   } else if (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty()) {
-                    sigData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+                    sigData = sigCanvas.current.getCanvas().toDataURL('image/png');
                   }
                   
                   if (!sigData) {

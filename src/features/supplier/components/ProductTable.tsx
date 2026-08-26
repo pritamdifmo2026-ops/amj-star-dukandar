@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi, Ban, SlidersHorizontal, X, AlertCircle } from 'lucide-react';
+import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi, Ban, SlidersHorizontal, X, AlertCircle, Copy } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import LiveUpdateModal from './LiveUpdateModal';
 
@@ -27,9 +27,10 @@ interface ProductTableProps {
   onToggleLive: (product: any) => void;
   onRefresh: () => void;
   onProductLiveUpdated: (updatedProduct: any) => void;
+  onClone: (product: any) => void;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason, onToggleLive, onProductLiveUpdated }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason, onToggleLive, onProductLiveUpdated, onClone }) => {
   const [liveUpdateProduct, setLiveUpdateProduct] = useState<any | null>(null);
   const [unpublishTarget, setUnpublishTarget] = useState<any | null>(null);
 
@@ -107,6 +108,9 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
                         <Edit2 size={16} />
                       </button>
                     )}
+                    <button onClick={() => onClone(product)} title="Clone / Duplicate" className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f0fdfa] text-[#0d9488] border border-[#ccfbf1] cursor-pointer hover:bg-[#0d9488] hover:text-white transition-all">
+                      <Copy size={16} />
+                    </button>
                     {product.status === 'APPROVED' && (
                       <button
                         onClick={() => product.isDisabledBySeller ? onToggleLive(product) : setUnpublishTarget(product)}

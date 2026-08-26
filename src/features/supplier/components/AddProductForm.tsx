@@ -13,6 +13,7 @@ interface AddProductFormProps {
   onBack: () => void;
   onSuccess: () => void;
   editingProduct?: any;
+  clonedProduct?: any;
   returnTab?: string;
 }
 
@@ -152,7 +153,7 @@ const rowsToSpecs = (rows: SpecRow[]): Record<string, string> => {
   return out;
 };
 
-const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProduct, returnTab }) => {
+const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProduct, clonedProduct, returnTab }) => {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState<'publish' | 'draft' | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
@@ -349,39 +350,40 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
         setCategories(data.categories);
         setAvailableCertTypes((certTypesData.data || []).filter((ct: any) => ct.isActive !== false));
 
-        if (editingProduct) {
-          const wStr: string = editingProduct.packagingWeight || '';
+        const sourceProduct = editingProduct || clonedProduct;
+        if (sourceProduct) {
+          const wStr: string = sourceProduct.packagingWeight || '';
           const wUnitMatch = wStr.match(/\s*(g|kg|lbs|ton|mt)\s*$/i);
           if (wUnitMatch) setPackagingWeightUnit(wUnitMatch[1].toLowerCase());
 
           setFormData({
-            name: editingProduct.name || '',
-            sku: editingProduct.sku || '',
-            description: editingProduct.description || '',
-            hsnCode: editingProduct.hsnCode || '',
-            basePrice: editingProduct.basePrice || 0,
-            moq: editingProduct.moq || 1,
-            unit: editingProduct.unit || 'pcs',
-            category: editingProduct.category || '',
-            categoryId: editingProduct.categoryId || '',
-            subcategoryId: editingProduct.subcategoryId || '',
-            images: editingProduct.images || [],
-            stock: editingProduct.stock || 0,
-            brand: editingProduct.brand || '',
-            keywords: editingProduct.keywords || [],
-            leadTime: editingProduct.leadTime || '',
-            packagingType: editingProduct.packagingType || 'bulk',
-            packagingSize: editingProduct.packagingSize || '',
-            packagingDimensions: editingProduct.packagingDimensions || '',
+            name: sourceProduct.name || '',
+            sku: sourceProduct.sku || '',
+            description: sourceProduct.description || '',
+            hsnCode: sourceProduct.hsnCode || '',
+            basePrice: clonedProduct ? 0 : (sourceProduct.basePrice || 0),
+            moq: sourceProduct.moq || 1,
+            unit: sourceProduct.unit || 'pcs',
+            category: sourceProduct.category || '',
+            categoryId: sourceProduct.categoryId || '',
+            subcategoryId: sourceProduct.subcategoryId || '',
+            images: clonedProduct ? [] : (sourceProduct.images || []),
+            stock: clonedProduct ? 0 : (sourceProduct.stock || 0),
+            brand: sourceProduct.brand || '',
+            keywords: sourceProduct.keywords || [],
+            leadTime: sourceProduct.leadTime || '',
+            packagingType: sourceProduct.packagingType || 'bulk',
+            packagingSize: sourceProduct.packagingSize || '',
+            packagingDimensions: sourceProduct.packagingDimensions || '',
             packagingWeight: wStr,
-            countryOfOrigin: editingProduct.countryOfOrigin || 'India',
-            gstIncluded: editingProduct.gstIncluded ?? false,
-            gstRate: editingProduct.gstRate ?? 18,
+            countryOfOrigin: sourceProduct.countryOfOrigin || 'India',
+            gstIncluded: sourceProduct.gstIncluded ?? false,
+            gstRate: sourceProduct.gstRate ?? 18,
           });
-          setSpecRows(specsToRows(editingProduct.specifications || {}));
+          setSpecRows(specsToRows(sourceProduct.specifications || {}));
 
-          const pType = editingProduct.packagingType || 'bulk';
-          const pSize = editingProduct.packagingSize || '';
+          const pType = sourceProduct.packagingType || 'bulk';
+          const pSize = sourceProduct.packagingSize || '';
           if (pType === 'bulk' || pType === 'retail') {
             const standardSizes = PACKAGING_SIZES[pType] || [];
             const isCustom = pSize !== '' && !standardSizes.slice(0, -1).includes(pSize);
@@ -390,12 +392,12 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
             setIsCustomSizeSelected(false);
           }
 
-          const catForEdit = editingProduct.categoryId
-            ? data.categories.find((c: any) => c._id === editingProduct.categoryId)
-            : data.categories.find((c: any) => c.name === editingProduct.category);
+          const catForEdit = sourceProduct.categoryId
+            ? data.categories.find((c: any) => c._id === sourceProduct.categoryId)
+            : data.categories.find((c: any) => c.name === sourceProduct.category);
           if (catForEdit?.subcategories) setAvailableSubcategories(catForEdit.subcategories);
           if (catForEdit?.requiredCertifications?.length) {
-            initCertDocs(catForEdit.requiredCertifications, editingProduct.certificationDocs || []);
+            initCertDocs(catForEdit.requiredCertifications, sourceProduct.certificationDocs || []);
           }
         }
       } catch {
@@ -403,7 +405,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
       }
     };
     fetchCategories();
-  }, [editingProduct]);
+  }, [editingProduct, clonedProduct]);
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = e.target.value;

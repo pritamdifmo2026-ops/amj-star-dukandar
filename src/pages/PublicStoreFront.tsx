@@ -602,7 +602,7 @@ const PublicStoreFront: React.FC = () => {
                 <h3 className="text-sm font-extrabold text-[#0f172a] m-0">Contact Supplier</h3>
               </div>
               <div className="px-5 py-4 space-y-3">
-                {businessDetails?.email && <InfoRow icon={<Mail size={14} />} text={businessDetails.email} href={`mailto:${businessDetails.email}`} />}
+                {/* {businessDetails?.email && <InfoRow icon={<Mail size={14} />} text={businessDetails.email} href={`mailto:${businessDetails.email}`} />} */}
                 {location && <InfoRow icon={<MapPin size={14} />} text={location + (businessDetails?.pinCode ? ` - ${businessDetails.pinCode}` : '')} />}
                 {businessDetails?.website && <InfoRow icon={<Globe size={14} />} text={businessDetails.website.replace(/^https?:\/\//, '')} href={businessDetails.website} />}
               </div>

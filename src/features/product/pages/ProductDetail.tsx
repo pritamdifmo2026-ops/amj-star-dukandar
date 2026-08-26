@@ -110,18 +110,18 @@ const ProductDetail: React.FC = () => {
       socket?.emit('join_conversation', conversation._id);
       // conversation.supplierId is the User ID of the supplier, returned by the backend API.
       // Do NOT use product.supplierId._id, as that is the Supplier Profile ID.
-      socket?.emit('send_message', { 
-        conversationId: conversation._id, 
-        text, 
+      socket?.emit('send_message', {
+        conversationId: conversation._id,
+        text,
         receiverId: (conversation as any).supplierId,
-        metadata: { imageUrl: product.imageUrl || product.images?.[0] } 
+        metadata: { imageUrl: product.imageUrl || product.images?.[0] }
       });
-      
+
       setShowEnquiryModal(false);
-      
+
       // Give the backend a moment to save the message via socket before fetching messages
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       setActiveChatId(conversation._id);
     } finally {
       setContactingSupplier(false);
@@ -150,21 +150,21 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
     if (isNonBuyer) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
-    
+
     // Add to cart automatically and then go to cart (buying page)
     if (!isInCart) {
-      dispatch(addToCartAsync({ 
-        productId: currentProductId, 
-        name: product.name, 
-        price: product.price, 
-        quantity: product.minOrderQty, 
-        unit: product.unit, 
-        supplierId: product.supplierId, 
-        imageUrl: currentImage, 
-        moq: product.minOrderQty, 
-        stock: product.stock, 
-        gstRate: product.gstRate, 
-        gstIncluded: product.gstIncluded 
+      dispatch(addToCartAsync({
+        productId: currentProductId,
+        name: product.name,
+        price: product.price,
+        quantity: product.minOrderQty,
+        unit: product.unit,
+        supplierId: product.supplierId,
+        imageUrl: currentImage,
+        moq: product.minOrderQty,
+        stock: product.stock,
+        gstRate: product.gstRate,
+        gstIncluded: product.gstIncluded
       }));
     }
     navigate(ROUTES.CHECKOUT);
@@ -290,11 +290,11 @@ const ProductDetail: React.FC = () => {
                 <p className="text-sm font-bold text-heading mt-2">
                   {product.gstIncluded ? 'All-inclusive price' : `Total: ${formatCurrency(totalPrice)}`}
                 </p>
-                  {false && (product?.supplierId as any)?.supportedPaymentTerms?.[0] && (
-                    <div className="mt-3 pt-3 border-t border-primary/20">
-                      <span className="inline-block text-xs text-[#059669] bg-[#ecfdf5] px-2 py-1 rounded-sm font-semibold">
-                        Payment Terms: {(product?.supplierId as any).supportedPaymentTerms[0]}
-                      </span>
+                {false && (product?.supplierId as any)?.supportedPaymentTerms?.[0] && (
+                  <div className="mt-3 pt-3 border-t border-primary/20">
+                    <span className="inline-block text-xs text-[#059669] bg-[#ecfdf5] px-2 py-1 rounded-sm font-semibold">
+                      Payment Terms: {(product?.supplierId as any).supportedPaymentTerms[0]}
+                    </span>
                   </div>
                 )}
               </div>
@@ -328,12 +328,22 @@ const ProductDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* Terms Details hidden */}
-              {false && product?.supplierId && (
+              {/* Terms Details */}
+              {product.supplier && (
                 <div className="bg-[#f8fafc] p-3 rounded-[var(--radius-md)] mb-5 border border-[#e2e8f0]">
                   <div className="flex flex-col gap-1.5 text-[13px]">
-                    <p className="m-0"><strong className="text-[#334155]">Payment Terms:</strong> <span className="text-[#64748b]">{(product?.supplierId as any)?.supportedPaymentTerms?.join(', ') || '100% Advance'}</span></p>
-                    <p className="m-0"><strong className="text-[#334155]">Transportation:</strong> <span className="text-[#64748b]">{(product?.supplierId as any)?.supportedTransportationTerms?.join(', ') || 'FOR'}</span></p>
+                    <p className="m-0">
+                      <strong className="text-[#334155]">Available Payment Terms:</strong>{' '}
+                      <span className="text-[#64748b]">
+                        {(product.supplier as any)?.supportedPaymentTerms?.join(', ') || '100% Advance'}
+                      </span>
+                    </p>
+                    <p className="m-0">
+                      <strong className="text-[#334155]">Transportation:</strong>{' '}
+                      <span className="text-[#64748b]">
+                        {(product.supplier as any)?.supportedTransportationTerms?.join(', ') || 'FOR'}
+                      </span>
+                    </p>
                   </div>
                 </div>
               )}
@@ -428,11 +438,10 @@ const ProductDetail: React.FC = () => {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors cursor-pointer bg-transparent ${
-                    activeTab === tab
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted hover:text-heading'
-                  }`}
+                  className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors cursor-pointer bg-transparent ${activeTab === tab
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted hover:text-heading'
+                    }`}
                 >
                   {tab === 'details' ? 'Product Details' : 'Company Details'}
                 </button>

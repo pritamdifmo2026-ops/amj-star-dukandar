@@ -4,6 +4,7 @@ import { ShieldCheck, TrendingUp, Handshake, ImageIcon, Quote } from 'lucide-rea
 import MainLayout from '@/shared/layout/MainLayout';
 import api from '@/api/client';
 import logo from '@/assets/logoo.png';
+import aboutImage from '@/assets/images/about-image.png';
 
 interface Section {
   id: string;
@@ -29,7 +30,7 @@ const VALUE_ICONS = [
 ];
 
 const About: React.FC = () => {
-  const { data } = useQuery<PageData>({
+  const { data, isLoading } = useQuery<PageData>({
     queryKey: ['page', 'about'],
     queryFn: async () => {
       const res = await api.get('/pages/about');
@@ -76,18 +77,13 @@ const About: React.FC = () => {
           </div>
 
           <div className="rounded-[18px] overflow-hidden shadow-xl">
-            {hero?.url ? (
-              <img
-                src={hero.url}
-                alt={hm.heroAlt ?? 'About AMJSTAR'}
-                className="w-full h-full object-cover max-h-[420px]"
-              />
-            ) : (
-              <div className="min-h-[280px] bg-[#f1f5f9] border-2 border-dashed border-[#e2e8f0] rounded-[18px] flex flex-col items-center justify-center gap-3 text-[#94a3b8]">
-                <ImageIcon size={36} className="opacity-40" />
-                <span className="text-sm">No image set</span>
-              </div>
-            )}
+
+            <img
+              src={aboutImage}
+              alt={hm.heroAlt ?? 'About AMJSTAR'}
+              className="w-full h-full object-cover max-h-[420px]"
+            />
+
           </div>
         </div>
       </section>
