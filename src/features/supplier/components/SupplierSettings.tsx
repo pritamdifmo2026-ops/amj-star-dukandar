@@ -59,7 +59,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
 
   const updateSignatureMutation = useMutation({
     mutationFn: supplierService.updateSignature,
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       if (variables === '') {
         toast.success('Authorized Signature removed successfully');
       } else {

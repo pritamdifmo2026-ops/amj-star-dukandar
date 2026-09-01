@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  Store, MapPin, Globe, Mail, ShieldCheck, ChevronDown, ChevronUp,
+  Store, MapPin, Globe, ShieldCheck, ChevronDown, ChevronUp,
   Package, Calendar, TrendingUp, Award, Building2, ArrowUpRight,
   Factory, Star, CheckCircle, Share2, Copy, Check,
   LayoutGrid, List, X, Instagram, Facebook, Twitter,

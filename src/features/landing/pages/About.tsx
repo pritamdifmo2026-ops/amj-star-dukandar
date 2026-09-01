@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ShieldCheck, TrendingUp, Handshake, ImageIcon, Quote } from 'lucide-react';
+import { ShieldCheck, TrendingUp, Handshake, Quote } from 'lucide-react';
 import MainLayout from '@/shared/layout/MainLayout';
 import api from '@/api/client';
 import logo from '@/assets/logoo.png';
@@ -30,7 +30,7 @@ const VALUE_ICONS = [
 ];
 
 const About: React.FC = () => {
-  const { data, isLoading } = useQuery<PageData>({
+  const { data } = useQuery<PageData>({
     queryKey: ['page', 'about'],
     queryFn: async () => {
       const res = await api.get('/pages/about');

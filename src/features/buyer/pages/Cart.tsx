@@ -10,7 +10,7 @@ import {
 import { toggleWishlistItem } from '@/features/buyer/store/wishlist.slice';
 import { ROUTES } from '@/shared/constants/routes';
 import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
-import { pincodeToState, normaliseState, getShippingZone } from '@/shared/utils/pincodeToState';
+import { pincodeToState, normaliseState } from '@/shared/utils/pincodeToState';
 import { addressApi } from '@/features/buyer/services/address.api';
 
 export const CartContent: React.FC = () => {
@@ -83,19 +83,7 @@ export const CartContent: React.FC = () => {
   ].reduce((s, v) => s + v, 0);
 
   // Shipping: one charge per unique supplier, determined by zone
-  const shippingBySupplierId = Object.fromEntries(
-    Object.entries(
-      cartItems.reduce((acc, item) => {
-        if (!acc[item.supplierId]) acc[item.supplierId] = item;
-        return acc;
-      }, {} as Record<string, typeof cartItems[0]>)
-    ).map(([sid, item]) => {
-      if (!buyerState || !item.supplierState || !item.shippingRates) return [sid, null];
-      const zone = getShippingZone(buyerState, item.supplierState);
-      return [sid, { zone, cost: item.shippingRates[zone] }];
-    })
-  );
-  const totalShipping = Object.values(shippingBySupplierId).reduce((s, v) => s + (v?.cost ?? 0), 0);
+
   const grandTotal = gstSummary.subtotal + totalGst;
 
   const handleQty = (productId: string, newQty: number, moq = 1, stock?: number) => {
