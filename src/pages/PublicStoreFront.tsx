@@ -180,7 +180,7 @@ const StorefrontProductCard: React.FC<{ product: any; onShare: (product: any) =>
         </div>
         <div className="flex items-baseline justify-between mb-3">
           <span className="text-xs sm:text-sm font-extrabold text-[#0f172a]">
-            ₹{(product.price || product.basePrice || 0).toLocaleString('en-IN')}
+            ₹{(product.price || product.basePrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
           <div className="flex flex-col items-end gap-0.5">
             <span className="text-[9px] sm:text-[10px] text-[#94a3b8] font-medium">
@@ -274,6 +274,7 @@ const PublicStoreFront: React.FC = () => {
           api.get(`/products?supplierId=${id}`),
         ]);
         setSupplier(profileRes.data.supplier);
+        document.title = `${profileRes.data.supplier.businessName || 'Store'} - AMJSTAR`;
         setProducts(productsRes.data.products || []);
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load storefront');
@@ -401,10 +402,10 @@ const PublicStoreFront: React.FC = () => {
           <StatPill icon={<Package size={17} />} label="Products Listed" value={`${products.length} Product${products.length !== 1 ? 's' : ''}`} />
           {yearsActive && <StatPill icon={<Building2 size={17} />} label="In Business" value={yearsActive} />}
           {businessDetails?.annualTurnover && (
-            <StatPill icon={<TrendingUp size={17} />} label="Annual Turnover" value={`₹${Number(businessDetails.annualTurnover).toLocaleString('en-IN')}`} />
+            <StatPill icon={<TrendingUp size={17} />} label="Annual Turnover" value={`₹${Number(businessDetails.annualTurnover).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
           )}
           {businessDetails?.monthlyProductionCapacity && (
-            <StatPill icon={<Factory size={17} />} label="Monthly Capacity" value={`${Number(businessDetails.monthlyProductionCapacity).toLocaleString()} units`} />
+            <StatPill icon={<Factory size={17} />} label="Monthly Capacity" value={`${Number(businessDetails.monthlyProductionCapacity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} units`} />
           )}
         </div>
 
@@ -503,7 +504,7 @@ const PublicStoreFront: React.FC = () => {
                         </button>
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           <span className="text-sm font-extrabold text-[#0f172a]">
-                            ₹{(product.price || product.basePrice || 0).toLocaleString('en-IN')}
+                            ₹{(product.price || product.basePrice || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                           {supplier?.defaultPaymentTerms && (
                             <span className="text-[9px] text-[#059669] bg-[#ecfdf5] px-1.5 py-[2px] rounded-sm font-semibold">
@@ -568,10 +569,10 @@ const PublicStoreFront: React.FC = () => {
                           <div className="flex justify-between text-sm"><span className="text-[#64748b]">Year of Establishment</span><span className="font-bold text-[#0f172a]">{estYear}</span></div>
                         )}
                         {businessDetails?.annualTurnover && (
-                          <div className="flex justify-between text-sm"><span className="text-[#64748b]">Annual Turnover</span><span className="font-bold text-[#0f172a]">₹{Number(businessDetails.annualTurnover).toLocaleString('en-IN')}</span></div>
+                          <div className="flex justify-between text-sm"><span className="text-[#64748b]">Annual Turnover</span><span className="font-bold text-[#0f172a]">₹{Number(businessDetails.annualTurnover).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
                         )}
                         {businessDetails?.monthlyProductionCapacity && (
-                          <div className="flex justify-between text-sm"><span className="text-[#64748b]">Monthly Production</span><span className="font-bold text-[#0f172a]">{Number(businessDetails.monthlyProductionCapacity).toLocaleString()} units</span></div>
+                          <div className="flex justify-between text-sm"><span className="text-[#64748b]">Monthly Production</span><span className="font-bold text-[#0f172a]">{Number(businessDetails.monthlyProductionCapacity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} units</span></div>
                         )}
                         {gstRegistered && (
                           <div className="flex justify-between gap-3 text-sm"><span className="text-[#64748b]">GST</span><span className="text-xs font-bold text-[#059669]">Registered ✓</span></div>

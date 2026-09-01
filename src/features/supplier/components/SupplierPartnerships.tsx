@@ -83,7 +83,7 @@ const SupplierPartnerships: React.FC = () => {
                   )}
                   <div>
                     <h4 className="font-bold text-[#1e293b] text-base m-0">{req.product?.name}</h4>
-                    <span className="text-primary font-bold text-sm">₹{req.product?.basePrice?.toLocaleString()}</span>
+                    <span className="text-primary font-bold text-sm">₹{req.product?.basePrice?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 mb-4 text-sm text-[#475569]">

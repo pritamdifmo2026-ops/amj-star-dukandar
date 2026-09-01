@@ -166,7 +166,7 @@ const ProductDetailView: React.FC<{
           <div className="bg-white rounded-[12px] border border-[#eef2f6] p-5">
             <div className="flex items-start justify-between gap-4 mb-2">
               <h2 className="text-xl font-extrabold text-[#0f172a] m-0 leading-tight">{product.name}</h2>
-              <span className="text-2xl font-extrabold text-[#0f172a] shrink-0">₹{product.basePrice?.toLocaleString()}</span>
+              <span className="text-2xl font-extrabold text-[#0f172a] shrink-0">₹{product.basePrice?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             {product.supplierId?.businessName && (
               <p className="text-sm text-[#64748b] font-medium mb-3">
@@ -395,7 +395,7 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
                     </div>
                   </td>
                   <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Supplier</span> {p.supplierId?.businessName || '—'}</td>
-                  <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Price</span> ₹{p.basePrice?.toLocaleString()}</td>
+                  <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Price</span> ₹{p.basePrice?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Category</span> {p.category}</td>
                   <td className={tdCls}>
                     <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Actions</span>

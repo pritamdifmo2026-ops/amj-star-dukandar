@@ -66,11 +66,15 @@ const PhoneReveal = ({ phone, label }: { phone: string; label: string }) => {
 const QuotePreviewCard = ({
   form, gstAmount, grandTotal,
 }: {
-  form: { itemName: string; hsnCode: string; quantity: number; price: number; gstType: GstType; gstRate: number; shipping: number; deliveryTimeline: string; terms: string; transportationTerms?: string };
+  form: { itemName: string; hsnCode: string; quantity: number; price: number; gstType: GstType; gstRate: number; shipping: number; deliveryTimeline: string; terms: string; transportationTerms?: string; cartItems?: any[] };
   gstAmount: number;
   grandTotal: number;
 }) => {
-  const courierGst = (form.transportationTerms === 'Third-Party Courier' && form.shipping > 0) ? Math.round(form.shipping * 0.18) : 0;
+  const courierGst = (form.transportationTerms === 'Third-Party Courier' && form.shipping > 0) ? (Math.round((form.shipping * 0.18) * 100) / 100) : 0;
+  
+  const totalPriceBeforeGst = form.cartItems && form.cartItems.length > 0
+    ? form.cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
+    : form.price * form.quantity;
   return (
     <div className="bg-white border border-[#eef2f6] rounded-[10px] overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 bg-[#f8fafc] border-b border-[#f1f5f9]">
@@ -78,36 +82,56 @@ const QuotePreviewCard = ({
         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#fffbeb] text-[#a16207]">Awaiting Response</span>
       </div>
       <div className="px-4 py-3 flex flex-col gap-1.5">
-        <div className="flex justify-between text-xs text-[#475569]">
-          <span className="font-medium">{form.itemName}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
-        </div>
-        <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
-          <span>Unit Price</span>
-          <span>₹{form.price.toLocaleString('en-IN')}</span>
-        </div>
-        <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
-          <span>Qty</span>
-          <span>{form.quantity}</span>
-        </div>
+        {form.cartItems && form.cartItems.length > 0 ? (
+          form.cartItems.map((item, i) => (
+            <div key={i} className="mb-2 last:mb-0">
+              <div className="flex justify-between text-xs text-[#475569]">
+                <span className="font-medium">{item.name}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+                <span>Unit Price</span>
+                <span>₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+                <span>Qty</span>
+                <span>{item.quantity}</span>
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            <div className="flex justify-between text-xs text-[#475569]">
+              <span className="font-medium">{form.itemName}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
+            </div>
+            <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+              <span>Unit Price</span>
+              <span>₹{form.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
+              <span>Qty</span>
+              <span>{form.quantity}</span>
+            </div>
+          </>
+        )}
         <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
           <span>Total Price (before GST)</span>
-          <span className="font-semibold">₹{(form.price * form.quantity).toLocaleString('en-IN')}</span>
+          <span className="font-semibold">₹{totalPriceBeforeGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {form.gstType !== 'exempt' ? (
           form.gstType === 'IGST' ? (
             <div className="flex justify-between text-xs text-[#0369a1]">
               <span>IGST @ {form.gstRate}%</span>
-              <span className="font-semibold">₹{gstAmount.toLocaleString('en-IN')}</span>
+              <span className="font-semibold">₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ) : (
             <>
               <div className="flex justify-between text-xs text-[#0369a1]">
                 <span>CGST @ {form.gstRate / 2}%</span>
-                <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN')}</span>
+                <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-xs text-[#0369a1]">
                 <span>SGST @ {form.gstRate / 2}%</span>
-                <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN')}</span>
+                <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </>
           )
@@ -117,18 +141,18 @@ const QuotePreviewCard = ({
         {form.shipping > 0 && (
           <div className="flex justify-between text-xs text-[#475569]">
             <span>Shipping</span>
-            <span className="font-semibold">₹{form.shipping.toLocaleString('en-IN')}</span>
+            <span className="font-semibold">₹{form.shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         {courierGst > 0 && (
           <div className="flex justify-between text-xs text-[#0369a1]">
             <span>Courier GST (18%)</span>
-            <span className="font-semibold">₹{courierGst.toLocaleString('en-IN')}</span>
+            <span className="font-semibold">₹{courierGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         )}
         <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
           <span>Grand Total</span>
-          <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+          <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         {form.deliveryTimeline && (
           <p className="text-[10px] text-[#94a3b8] m-0">Delivery: {form.deliveryTimeline}</p>
@@ -271,9 +295,9 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   const taxableAmt = itemsDerivedTotal > 0 ? itemsDerivedTotal : (quote.taxableAmount ?? quote.totalAmount ?? 0);
   const actualRetailTotal = taxableAmt;
   const gstRate = Number(quote.gstRate) || 0;
-  const gstAmt = quote.gstType === 'exempt' ? 0 : (gstRate > 0 ? Math.round(taxableAmt * gstRate / 100) : (quote.gstAmount ?? 0));
+  const gstAmt = quote.gstType === 'exempt' ? 0 : (gstRate > 0 ? (Math.round((taxableAmt * gstRate / 100) * 100) / 100) : (quote.gstAmount ?? 0));
   const shipCost = quote.shippingCost ?? 0;
-  const courierGst = quote.transportationTerms?.includes('Courier') ? Math.round(shipCost * 0.18) : 0;
+  const courierGst = quote.transportationTerms?.includes('Courier') ? (Math.round((shipCost * 0.18) * 100) / 100) : 0;
   const grandTotal = taxableAmt + gstAmt + shipCost + courierGst;
   const halfRate = gstRate / 2;
 
@@ -301,7 +325,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
       if (!isSingleItem) {
         payload.itemPrices = quote.items.map((it: any) => ({
           productId: it._id,
-          price: counterItemPrices[it._id] || Math.round(it.price * 0.9)
+          price: counterItemPrices[it._id] || (Math.round((it.price * 0.9) * 100) / 100)
         }));
       }
 
@@ -394,7 +418,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             </span>
             <div className="mt-1.5">
               Quantity: {quote.items?.[0]?.quantity || 0} {quote.items?.[0]?.unit || 'pcs'}<br />
-              Price: {quote.items?.length === 1 ? `₹${((quote.counterOffer?.price || quote.proposedPrice) / (quote.items[0]?.quantity || 1)).toLocaleString('en-IN')} x ${quote.items[0]?.quantity || 1} = ` : ''}₹{(quote.counterOffer?.price || quote.proposedPrice).toLocaleString('en-IN')}<br />
+              Price: {quote.items?.length === 1 ? `₹${((quote.counterOffer?.price || quote.proposedPrice) / (quote.items[0]?.quantity || 1)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} x ${quote.items[0]?.quantity || 1} = ` : ''}₹{(quote.counterOffer?.price || quote.proposedPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<br />
               Delivery Timeline: {quote.counterOffer?.deliveryTimeline || quote.deliveryTimePreference || 'Standard'}<br />
               {quote.paymentTerms && <>Payment: {quote.paymentTerms}<br /></>}
               {quote.transportationTerms && <>Transport: {quote.transportationTerms}<br /></>}
@@ -415,7 +439,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                 </div>
                 <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
                   <span>Unit Price</span>
-                  <span>₹{item.price.toLocaleString('en-IN')}</span>
+                  <span>₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-xs text-[#94a3b8] pl-2">
                   <span>Qty</span>
@@ -423,29 +447,29 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                 </div>
                 <div className="flex justify-between text-xs text-[#475569] font-semibold">
                   <span>Total Price</span>
-                  <span>₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                  <span>₹{(item.price * item.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
             ))}
             <div className="flex justify-between text-xs text-[#475569] pt-1.5 border-t border-[#f1f5f9]">
               <span>Amount (before GST)</span>
-              <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN')}</span>
+              <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             {quote.gstType && quote.gstType !== 'exempt' && gstAmt > 0 ? (
               quote.gstType === 'IGST' ? (
                 <div className="flex justify-between text-xs text-[#0369a1]">
                   <span>IGST @ {quote.gstRate}%</span>
-                  <span className="font-semibold">₹{gstAmt.toLocaleString('en-IN')}</span>
+                  <span className="font-semibold">₹{gstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               ) : (
                 <>
                   <div className="flex justify-between text-xs text-[#0369a1]">
                     <span>CGST @ {halfRate}%</span>
-                    <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                    <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-xs text-[#0369a1]">
                     <span>SGST @ {halfRate}%</span>
-                    <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                    <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </>
               )
@@ -455,34 +479,34 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             {shipCost > 0 && (
               <div className="flex justify-between text-xs text-[#475569]">
                 <span>Shipping {quote.shippingNotes ? `(${quote.shippingNotes})` : ''}</span>
-                <span className="font-semibold">₹{shipCost.toLocaleString('en-IN')}</span>
+                <span className="font-semibold">₹{shipCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             )}
             {quote.transportationTerms?.includes('Courier') && shipCost > 0 && (
               <div className="flex justify-between text-xs text-[#0369a1]">
                 <span>Courier GST (18%)</span>
-                <span className="font-semibold">₹{Math.round(shipCost * 0.18).toLocaleString('en-IN')}</span>
+                <span className="font-semibold">₹{(Math.round((shipCost * 0.18) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             )}
             <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-2 border-t border-[#f1f5f9]">
               <span>Grand Total</span>
-              <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+              <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             {quote.paymentTerms && (() => {
               const advMatch = quote.paymentTerms.match(/(\d+)%\s*Advance/i);
               const advPercent = advMatch ? parseInt(advMatch[1]) : null;
-              const advAmount = advPercent !== null ? Math.round(grandTotal * advPercent / 100) : null;
+              const advAmount = advPercent !== null ? (Math.round((grandTotal * advPercent / 100) * 100) / 100) : null;
               return (
                 <p className="text-[10px] text-[#94a3b8] m-0">
                   Payment: {quote.paymentTerms}
                   {advAmount !== null && advPercent !== 100 && (
                     <span className="ml-1 text-[#f97316] font-bold">
-                      (Advance: ₹{advAmount.toLocaleString('en-IN')})
+                      (Advance: ₹{advAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                     </span>
                   )}
                   {advAmount !== null && advPercent === 100 && (
                     <span className="ml-1 text-[#f97316] font-bold">
-                      (₹{advAmount.toLocaleString('en-IN')})
+                      (₹{advAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                     </span>
                   )}
                 </p>
@@ -501,7 +525,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
           {quote.counterOffer.price ? (
             <div className="flex justify-between items-center mb-0.5">
               <span className="text-[#3b82f6]">Requested Price</span>
-              <span className="font-bold">₹{quote.counterOffer.price.toLocaleString('en-IN')} <span className="text-[#93c5fd] font-normal">(excl. GST &amp; shipping)</span></span>
+              <span className="font-bold">₹{quote.counterOffer.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[#93c5fd] font-normal">(excl. GST &amp; shipping)</span></span>
             </div>
           ) : null}
           {quote.counterOffer.deliveryTimeline ? (
@@ -672,7 +696,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                     type="range" 
                     min={Math.ceil((actualRetailTotal / totalQty) * 0.5)} 
                     max={actualRetailTotal / totalQty} 
-                    value={counterPrice || Math.round((actualRetailTotal / totalQty) * 0.9)} 
+                    value={counterPrice || (Math.round(((actualRetailTotal / totalQty) * 0.9) * 100) / 100)} 
                     onChange={e => setCounterPrice(e.target.value)}
                     className="flex-1 accent-[#2563eb] cursor-pointer h-1.5 bg-[#e2e8f0] rounded-lg appearance-none"
                   />
@@ -684,7 +708,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                       max={actualRetailTotal / totalQty}
                       value={counterPrice}
                       onChange={e => setCounterPrice(e.target.value)}
-                      placeholder={`${Math.round((actualRetailTotal / totalQty) * 0.9)}`}
+                      placeholder={`${(Math.round(((actualRetailTotal / totalQty) * 0.9) * 100) / 100)}`}
                       className="w-full border-none outline-none px-1.5 py-1.5 text-xs bg-transparent"
                     />
                   </div>
@@ -695,7 +719,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                 {quote.items?.map((item: any) => {
                   const maxPrice = Number(item.price);
                   const minPrice = Math.ceil(maxPrice * 0.5);
-                  const currentVal = counterItemPrices[item._id] || Math.round(maxPrice * 0.9);
+                  const currentVal = counterItemPrices[item._id] || (Math.round((maxPrice * 0.9) * 100) / 100);
                   return (
                     <div key={item._id} className="flex flex-col gap-1 border-b border-[#f1f5f9] pb-2 last:border-0">
                       <p className="text-[10px] font-bold text-[#475569] m-0 mb-1 line-clamp-1">{item.name}</p>
@@ -710,7 +734,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                             setCounterItemPrices(prev => ({ ...prev, [item._id]: Number(e.target.value) }));
                             // Automatically update the total counter price
                             const updatedPrices: Record<string, number> = { ...counterItemPrices, [item._id]: Number(e.target.value) };
-                            const newTotal = quote.items.reduce((acc: number, it: any) => acc + (updatedPrices[it._id as string] || Math.round(it.price * 0.9)) * it.quantity, 0);
+                            const newTotal = quote.items.reduce((acc: number, it: any) => acc + (updatedPrices[it._id as string] || (Math.round((it.price * 0.9) * 100) / 100)) * it.quantity, 0);
                             setCounterPrice(newTotal.toString());
                           }}
                           className="flex-1 accent-[#2563eb] cursor-pointer h-1.5 bg-[#e2e8f0] rounded-lg appearance-none"
@@ -726,7 +750,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                               const val = Number(e.target.value);
                               setCounterItemPrices(prev => ({ ...prev, [item._id]: val }));
                               const updatedPrices: Record<string, number> = { ...counterItemPrices, [item._id]: val };
-                              const newTotal = quote.items.reduce((acc: number, it: any) => acc + (updatedPrices[it._id as string] || Math.round(it.price * 0.9)) * it.quantity, 0);
+                              const newTotal = quote.items.reduce((acc: number, it: any) => acc + (updatedPrices[it._id as string] || (Math.round((it.price * 0.9) * 100) / 100)) * it.quantity, 0);
                               setCounterPrice(newTotal.toString());
                             }}
                             className="w-full border-none outline-none px-1.5 py-1.5 text-xs bg-transparent"
@@ -760,15 +784,15 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                   <div className="mt-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[6px] p-2 flex flex-col gap-1">
                     <div className="flex justify-between text-[10px] text-[#64748b]">
                       <span>Total Amount (excl. GST)</span>
-                      <span>₹{cpTotal.toLocaleString('en-IN')}</span>
+                      <span>₹{cpTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-[10px] text-[#64748b]">
                       <span>GST @ {quote.gstRate ?? 18}%</span>
-                      <span>₹{Math.round(cpTotal * (quote.gstRate ?? 18) / 100).toLocaleString('en-IN')}</span>
+                      <span>₹{(Math.round((cpTotal * (quote.gstRate ?? 18) / 100) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-[11px] font-bold text-[#0f172a] pt-1 border-t border-[#e2e8f0]">
                       <span>Grand Total</span>
-                      <span>₹{Math.round(cpTotal + (cpTotal * (quote.gstRate ?? 18) / 100) + shipCost).toLocaleString('en-IN')}</span>
+                      <span>₹{(Math.round((cpTotal + (cpTotal * (quote.gstRate ?? 18) / 100) + shipCost) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 </>
@@ -824,7 +848,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
               </div>
               {Number(counterShippingCost) > 0 && (
                 <div className="col-span-2 bg-[#f0f9ff] border border-[#bae6fd] rounded-[6px] px-2 py-1.5 text-[10px] text-[#0369a1]">
-                  Courier GST (18%): ₹{Math.round(Number(counterShippingCost) * 0.18).toLocaleString('en-IN')} • Total Shipping: ₹{Math.round(Number(counterShippingCost) * 1.18).toLocaleString('en-IN')}
+                  Courier GST (18%): ₹{(Math.round((Number(counterShippingCost) * 0.18) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} • Total Shipping: ₹{(Math.round((Number(counterShippingCost) * 1.18) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               )}
             </div>
@@ -1109,6 +1133,12 @@ const ChatInbox: React.FC = () => {
     cartItems: [] as Array<{ productId: string, name: string, quantity: number, price: number, unit?: string, hsnCode?: string }>,
   });
 
+  useEffect(() => {
+    if (activeConv?.productId?.gstRate !== undefined) {
+      setQuoteForm(prev => ({ ...prev, gstRate: activeConv.productId.gstRate }));
+    }
+  }, [activeConv?.productId?.gstRate]);
+
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [customMsgOpen, setCustomMsgOpen] = useState(false);
@@ -1138,10 +1168,6 @@ const ChatInbox: React.FC = () => {
   const heldToastIdRef = useRef<string | null>(null);
 
   const handleOpenQuotationAction = (quote: any, isAccept: boolean) => {
-    if (user?.role === 'buyer' && !user?.gstin) {
-      toast.error('GST not available. Please add and verify your GST details to use this feature.');
-      return;
-    }
     setQuoteForm(prev => {
       const quantity = quote.items?.[0]?.quantity || prev.quantity || 1;
       const latestPrice = quote.counterOffer?.price || quote.proposedPrice;
@@ -1184,8 +1210,8 @@ const ChatInbox: React.FC = () => {
     : quoteForm.price * quoteForm.quantity;
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
-    : Math.round(computedTotalPrice * quoteForm.gstRate) / 100;
-  const computedCourierGst = (quoteForm.transportationTerms === 'Third-Party Courier' && quoteForm.shipping > 0) ? Math.round(quoteForm.shipping * 0.18) : 0;
+    : Math.round(((computedTotalPrice * quoteForm.gstRate) / 100) * 100) / 100;
+  const computedCourierGst = (quoteForm.transportationTerms === 'Third-Party Courier' && quoteForm.shipping > 0) ? (Math.round((quoteForm.shipping * 0.18) * 100) / 100) : 0;
   const computedGrandTotal = computedTotalPrice + computedGstAmount + quoteForm.shipping + computedCourierGst;
 
   useEffect(() => {
@@ -1783,12 +1809,12 @@ const ChatInbox: React.FC = () => {
                             {msg.text}
                           </div>
                         </div>
-                        {(msg.text.includes('Enquiry:') || msg.text.includes('Order Request')) && user?.role === 'supplier' && (() => {
+                        {(msg.text.includes('Enquiry:') || msg.text.includes('Order Request') || msg.text.includes('Negotiation Request')) && user?.role === 'supplier' && (() => {
                           let showActions = false;
                           // Show actions only if this is the LATEST enquiry/request and there's no active negotiation after it
                           const msgIdx = messages.findIndex(m => m._id === msg._id);
                           if (msgIdx !== -1) {
-                            const isLatestEnquiry = !messages.slice(msgIdx + 1).some(m => m.text.includes('Enquiry:') || m.text.includes('Order Request'));
+                            const isLatestEnquiry = !messages.slice(msgIdx + 1).some(m => m.text.includes('Enquiry:') || m.text.includes('Order Request') || m.text.includes('Negotiation Request'));
                             const hasQuotationAfter = messages.slice(msgIdx + 1).some(m => m.messageType === 'quotation');
                             showActions = isLatestEnquiry && !hasQuotationAfter && !isNegotiationDead;
                           }
@@ -1813,17 +1839,29 @@ const ChatInbox: React.FC = () => {
                           
                           // For showing the accept button, we just need to know if there's a target budget
                           const hasTargetBudget = !!parsedUnitPrice;
+                          const hasNegotiationItems = Array.isArray(msg.metadata?.negotiationItems) && msg.metadata.negotiationItems.length > 0;
 
                           return (
                             <div className="mt-3 w-full flex flex-col gap-2 border-t border-[#e2e8f0]/40 pt-3">
                               <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Your Action</span>
                               <div className="grid grid-cols-2 gap-2">
-                                {(hasTargetBudget || msg.text.includes('Price: As listed') || msg.text.includes('Order Request (Checkout)')) && (
+                                {(hasTargetBudget || msg.text.includes('Price: As listed') || msg.text.includes('Order Request (Checkout)') || hasNegotiationItems) && (
                                   <button
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-green-600 rounded-[8px] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-50"
+                                    className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-white bg-green-600 rounded-[8px] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-50 ${(msg.text.includes('Order Request (Checkout)') || hasNegotiationItems) ? 'col-span-2' : ''}`}
                                     disabled={isSendingQuote}
                                     onClick={() => {
-                                      if (hasTargetBudget && parsedUnitPrice) {
+                                      if (hasNegotiationItems) {
+                                        setQuoteForm(prev => ({
+                                          ...prev,
+                                          cartItems: msg.metadata.negotiationItems.map((it: any) => ({
+                                            productId: it.productId,
+                                            name: it.name,
+                                            price: it.price,
+                                            quantity: it.quantity,
+                                            unit: it.unit || 'pcs'
+                                          }))
+                                        }));
+                                      } else if (hasTargetBudget && parsedUnitPrice) {
                                         const qtyMatch = msg.text.match(/Quantity: (\d+)/);
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
                                         setQuoteForm(prev => ({ ...prev, price: parsedUnitPrice!, quantity: qty }));
@@ -1844,22 +1882,37 @@ const ChatInbox: React.FC = () => {
                                     <Check size={14} /> Accept
                                   </button>
                                 )}
-                                <button
-                                  className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold ${(!hasTargetBudget && !msg.text.includes('Price: As listed') && !msg.text.includes('Order Request (Checkout)')) ? 'col-span-2 text-white bg-primary hover:bg-primary/90' : 'text-[#475569] bg-white border border-[#e2e8f0] hover:bg-[#f8fafc]'} rounded-[8px] cursor-pointer transition-colors`}
-                                  onClick={() => {
-                                    const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
-                                    const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                    
-                                    // Pre-fill with the buyer's target price if available, otherwise base price
-                                    const unitPrice = parsedUnitPrice || (activeConv?.productId?.basePrice || 0);
-                                    
-                                    setQuoteForm(prev => ({ ...prev, quantity: qty, price: unitPrice, priceTag: '' as any }));
+                                {!msg.text.includes('Order Request (Checkout)') && (
+                                  <button
+                                    className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold ${(!hasTargetBudget && !msg.text.includes('Price: As listed')) ? 'col-span-2 text-white bg-primary hover:bg-primary/90' : 'text-[#475569] bg-white border border-[#e2e8f0] hover:bg-[#f8fafc]'} rounded-[8px] cursor-pointer transition-colors`}
+                                    onClick={() => {
+                                    if (hasNegotiationItems) {
+                                      setQuoteForm(prev => ({
+                                        ...prev,
+                                        cartItems: msg.metadata.negotiationItems.map((it: any) => ({
+                                          productId: it.productId,
+                                          name: it.name,
+                                          price: it.price,
+                                          quantity: it.quantity,
+                                          unit: it.unit || 'pcs'
+                                        }))
+                                      }));
+                                    } else {
+                                      const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
+                                      const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
+                                      
+                                      // Pre-fill with the buyer's target price if available, otherwise base price
+                                      const unitPrice = parsedUnitPrice || (activeConv?.productId?.basePrice || 0);
+                                      
+                                      setQuoteForm(prev => ({ ...prev, quantity: qty, price: unitPrice, priceTag: '' as any }));
+                                    }
                                     setIsAcceptingBuyerPrice(false);
                                     setIsQuoteModalOpen(true);
                                     setQuoteFormErrors({});
                                   }}>
-                                  <FileText size={14} /> Negotiate
-                                </button>
+                                    <FileText size={14} /> Negotiate
+                                  </button>
+                                )}
                               </div>
                               <button
                                 className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-[8px] cursor-pointer hover:bg-red-100 transition-colors"
@@ -1903,10 +1956,6 @@ const ChatInbox: React.FC = () => {
                                 <button
                                   className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border-none cursor-pointer hover:bg-[#fee2e2]"
                                   onClick={async () => {
-                                    if (user?.role === 'buyer' && !user?.gstin) {
-                                      toast.error('GST not available. Please add and verify your GST details to use this feature.');
-                                      return;
-                                    }
                                     try {
                                       await quotationApi.rejectQuotation(quote._id);
                                       toast.success('Quotation rejected');
@@ -2066,7 +2115,7 @@ const ChatInbox: React.FC = () => {
                         />
                         {item.price > 0 && item.quantity > 0 && (
                           <p className="text-[11px] text-[#059669] font-semibold mt-1 m-0">
-                            Item Total: ₹{(item.quantity * item.price).toLocaleString('en-IN')}
+                            Item Total: ₹{(item.quantity * item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         )}
                       </div>
@@ -2115,7 +2164,7 @@ const ChatInbox: React.FC = () => {
                     />
                     {quoteForm.price > 0 && quoteForm.quantity > 1 && (
                       <p className="text-[11px] text-[#059669] font-semibold mt-1 m-0">
-                        Total: ₹{computedTotalPrice.toLocaleString('en-IN')} ({quoteForm.quantity} × ₹{quoteForm.price.toLocaleString('en-IN')})
+                        Total: ₹{computedTotalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({quoteForm.quantity} × ₹{quoteForm.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                       </p>
                     )}
                     {quoteFormErrors.price && <p className="text-[11px] text-red-500 mt-1 m-0">{quoteFormErrors.price}</p>}
@@ -2294,25 +2343,25 @@ const ChatInbox: React.FC = () => {
               <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-4 py-3 flex flex-col gap-1.5">
                 <div className="flex justify-between text-xs text-[#94a3b8]">
                   <span>Unit Price × Qty</span>
-                  <span>₹{quoteForm.price.toLocaleString('en-IN')} × {quoteForm.quantity}</span>
+                  <span>₹{quoteForm.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × {quoteForm.quantity}</span>
                 </div>
                 <div className="flex justify-between text-xs text-[#475569]">
-                  <span>Total Price (before GST)</span><span className="font-semibold">₹{computedTotalPrice.toLocaleString('en-IN')}</span>
+                  <span>Total Price (before GST)</span><span className="font-semibold">₹{computedTotalPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 {quoteForm.gstType !== 'exempt' ? (
                   quoteForm.gstType === 'IGST' ? (
-                    <div className="flex justify-between text-xs text-[#0369a1]"><span>IGST @ {quoteForm.gstRate}%</span><span className="font-semibold">₹{computedGstAmount.toLocaleString('en-IN')}</span></div>
+                    <div className="flex justify-between text-xs text-[#0369a1]"><span>IGST @ {quoteForm.gstRate}%</span><span className="font-semibold">₹{computedGstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
                   ) : (
                     <>
-                      <div className="flex justify-between text-xs text-[#0369a1]"><span>CGST @ {quoteForm.gstRate / 2}%</span><span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN')}</span></div>
-                      <div className="flex justify-between text-xs text-[#0369a1]"><span>SGST @ {quoteForm.gstRate / 2}%</span><span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN')}</span></div>
+                      <div className="flex justify-between text-xs text-[#0369a1]"><span>CGST @ {quoteForm.gstRate / 2}%</span><span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                      <div className="flex justify-between text-xs text-[#0369a1]"><span>SGST @ {quoteForm.gstRate / 2}%</span><span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
                     </>
                   )
                 ) : <div className="flex justify-between text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>}
-                {quoteForm.shipping > 0 && <div className="flex justify-between text-xs text-[#475569]"><span>Shipping {quoteForm.shippingNotes ? `(${quoteForm.shippingNotes})` : ''}</span><span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN')}</span></div>}
-                {computedCourierGst > 0 && <div className="flex justify-between text-xs text-[#0369a1]"><span>Courier GST (18%)</span><span className="font-semibold">₹{computedCourierGst.toLocaleString('en-IN')}</span></div>}
+                {quoteForm.shipping > 0 && <div className="flex justify-between text-xs text-[#475569]"><span>Shipping {quoteForm.shippingNotes ? `(${quoteForm.shippingNotes})` : ''}</span><span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>}
+                {computedCourierGst > 0 && <div className="flex justify-between text-xs text-[#0369a1]"><span>Courier GST (18%)</span><span className="font-semibold">₹{computedCourierGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>}
                 <div className="flex justify-between text-sm font-extrabold text-[#0f172a] pt-1.5 border-t border-[#e2e8f0]">
-                  <span>Grand Total</span><span>₹{computedGrandTotal.toLocaleString('en-IN')}</span>
+                  <span>Grand Total</span><span>₹{computedGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>
@@ -2321,8 +2370,17 @@ const ChatInbox: React.FC = () => {
               <button
                 className="px-5 py-2 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90"
                 onClick={() => {
-                  const errors: { price?: string; deliveryTimeline?: string } = {};
-                  if (!quoteForm.price || quoteForm.price <= 0) errors.price = 'Per unit price is required';
+                  const errors: { price?: string; deliveryTimeline?: string; cartItems?: string } = {};
+                  
+                  if (quoteForm.cartItems.length > 0) {
+                    if (quoteForm.cartItems.some(it => !it.price || it.price <= 0)) {
+                      errors.cartItems = 'Per unit price is required for all items';
+                      toast.error('Per unit price is required for all items');
+                    }
+                  } else {
+                    if (!quoteForm.price || quoteForm.price <= 0) errors.price = 'Per unit price is required';
+                  }
+
                   if (!quoteForm.deliveryTimeline.trim()) errors.deliveryTimeline = 'Delivery timeline is required';
                   if (Object.keys(errors).length > 0) { setQuoteFormErrors(errors); return; }
                   setQuoteFormErrors({});
@@ -2401,6 +2459,7 @@ const ChatInbox: React.FC = () => {
                           <SignatureCanvas
                             ref={supplierSigCanvas}
                             penColor="#0f172a"
+                            backgroundColor="white"
                             canvasProps={{ className: 'w-full h-[80px] rounded-[8px]', style: { cursor: 'crosshair' } }}
                             onEnd={() => setHasDrawnSignature(true)}
                           />
@@ -2674,7 +2733,7 @@ const ChatInbox: React.FC = () => {
             <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-4 mb-5">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-[#64748b]">Total Wallet Balance</span>
-                <span className="font-bold text-[#0f172a]">₹{commissionPreview.walletBalance.toLocaleString('en-IN')}</span>
+                <span className="font-bold text-[#0f172a]">₹{commissionPreview.walletBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-[#64748b]">Total Product Cost</span>
@@ -2695,7 +2754,7 @@ const ChatInbox: React.FC = () => {
               <div className="flex justify-between text-sm pt-2 border-t border-[#e2e8f0] mt-2">
                 <span className="font-bold text-[#0f172a]">Remaining Balance</span>
                 <span className={`font-bold ${commissionPreview.isSufficient ? 'text-[#059669]' : 'text-[#dc2626]'}`}>
-                  ₹{(commissionPreview.walletBalance - commissionPreview.commissionFreezeAmount).toLocaleString('en-IN')}
+                  ₹{(commissionPreview.walletBalance - commissionPreview.commissionFreezeAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

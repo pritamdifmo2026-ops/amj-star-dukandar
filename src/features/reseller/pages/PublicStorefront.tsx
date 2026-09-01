@@ -444,7 +444,7 @@ const PublicStorefront: React.FC = () => {
                         </h3>
                         <div className="flex items-baseline justify-between mb-3">
                           <span className="text-xs sm:text-sm font-extrabold" style={{ color: themeColor }}>
-                            ₹{(product.price || 0).toLocaleString('en-IN')}
+                            ₹{(product.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                           <span className="text-[9px] sm:text-[10px] text-[#94a3b8] font-medium">
                             MOQ: {product.moq || 1} {product.unit}
@@ -480,7 +480,7 @@ const PublicStorefront: React.FC = () => {
                         <p className="text-xs text-[#64748b] mt-0.5 m-0">MOQ: {product.moq || 1} {product.unit}</p>
                       </div>
                       <div className="text-right shrink-0 flex flex-col items-end gap-2">
-                        <p className="text-base font-extrabold m-0" style={{ color: themeColor }}>₹{(product.price || 0).toLocaleString('en-IN')}</p>
+                        <p className="text-base font-extrabold m-0" style={{ color: themeColor }}>₹{(product.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         <div className="flex items-center mt-1">
                           <button onClick={() => openLeadModal(product)} className="text-[11px] font-bold bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa] px-3 py-1.5 rounded-[6px] cursor-pointer hover:bg-[#e65c00] hover:text-white transition-all">For Bulk Purchase</button>
                         </div>

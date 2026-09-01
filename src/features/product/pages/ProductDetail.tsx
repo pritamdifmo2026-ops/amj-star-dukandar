@@ -99,7 +99,7 @@ const ProductDetail: React.FC = () => {
       const priceLine =
         enquiry.priceMode === 'negotiate'
           ? enquiry.targetPrice
-            ? `Open to negotiation (Target budget: ₹${(enquiry.targetPrice / enquiry.quantity).toLocaleString('en-IN')} x ${enquiry.quantity} = ₹${enquiry.targetPrice.toLocaleString('en-IN')} total (excl. GST))`
+            ? `Open to negotiation (Target budget: ₹${(enquiry.targetPrice / enquiry.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} x ${enquiry.quantity} = ₹${enquiry.targetPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total (excl. GST))`
             : 'Open to negotiation'
           : 'As listed';
       const text = [
@@ -156,23 +156,21 @@ const ProductDetail: React.FC = () => {
     if (isNonBuyer) { setShowAdminModal(true); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
 
-    // Add to cart automatically and then go to cart (buying page)
-    if (!isInCart) {
-      dispatch(addToCartAsync({
-        productId: currentProductId,
-        name: product.name,
-        price: product.price,
-        quantity: product.minOrderQty,
-        unit: product.unit,
-        supplierId: product.supplierId,
-        imageUrl: currentImage,
-        moq: product.minOrderQty,
-        stock: product.stock,
-        gstRate: product.gstRate,
-        gstIncluded: product.gstIncluded
-      }));
-    }
-    navigate(ROUTES.CHECKOUT);
+    const itemToBuy = {
+      productId: currentProductId,
+      name: product.name,
+      price: product.price,
+      quantity: product.minOrderQty,
+      unit: product.unit,
+      supplierId: product.supplierId,
+      imageUrl: currentImage,
+      moq: product.minOrderQty,
+      stock: product.stock,
+      gstRate: product.gstRate,
+      gstIncluded: product.gstIncluded
+    };
+
+    navigate('/profile?tab=checkout', { state: { buyNowItem: itemToBuy } });
   };
 
   const gstAmount = product.gstIncluded ? 0 : calculateGST(product.price, product.gstRate);
@@ -359,15 +357,17 @@ const ProductDetail: React.FC = () => {
                   Available stock ({product.stock} {product.unit}s) is below the minimum order quantity — use "For Bulk Purchase" to enquire.
                 </p>
               )}
-              <div className="flex flex-col sm:flex-row gap-3 mb-8">
-                <Button size="lg" onClick={handleAddToCart} disabled={product.stock < product.minOrderQty} className="flex-1 h-[52px] whitespace-nowrap">
-                  <ShoppingCart size={18} /> {isInCart ? 'Go to Cart' : 'Add to Cart'}
-                </Button>
-                <Button size="lg" variant="primary" onClick={handleBuyNow} disabled={product.stock < product.minOrderQty} className="flex-1 h-[52px] whitespace-nowrap">
-                  <CreditCard size={18} /> Buy Now
-                </Button>
-                <Button variant="outline" size="lg" onClick={handleContactSupplier} disabled={contactingSupplier} className="flex-1 h-[52px]">
-                  <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'For Bulk Purchase'}
+              <div className="flex flex-col gap-3 mb-8">
+                <div className="flex flex-row gap-3">
+                  <Button size="lg" onClick={handleAddToCart} disabled={product.stock < product.minOrderQty} className="flex-1 h-[52px] whitespace-nowrap">
+                    <ShoppingCart size={18} /> {isInCart ? 'Go to Cart' : 'Add to Cart'}
+                  </Button>
+                  <Button size="lg" variant="primary" onClick={handleBuyNow} disabled={product.stock < product.minOrderQty} className="flex-1 h-[52px] whitespace-nowrap">
+                    <CreditCard size={18} /> Buy Now
+                  </Button>
+                </div>
+                <Button variant="outline" size="lg" onClick={handleContactSupplier} disabled={contactingSupplier} className="w-full h-[52px]">
+                  <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'Negotiate Bulk Price'}
                 </Button>
               </div>
 
@@ -653,6 +653,7 @@ const ProductDetail: React.FC = () => {
           moq={product.minOrderQty}
           stock={product.stock}
           unit={product.unit}
+          gstRate={product.gstRate}
           supplierProfile={product.supplier as any}
           onSubmit={handleEnquirySubmit}
           onClose={() => setShowEnquiryModal(false)}

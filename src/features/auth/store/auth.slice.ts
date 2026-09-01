@@ -19,6 +19,7 @@ interface AuthUser {
   permissions?: string[];
   mustChangePassword?: boolean;
   adminRoleLabel?: string;
+  gstin?: string;
 }
 
 interface AuthState {

@@ -12,13 +12,14 @@ import {
   ShoppingBag, MapPin, Plus, Truck, ArrowLeft,
   CheckCircle, Package, AlertCircle, X,
   ChevronRight, Receipt, Handshake, FileText, Clock,
-  Image as ImageIcon
+  Image as ImageIcon, MessageSquare
 } from 'lucide-react';
 import { addressApi } from '@/features/buyer/services/address.api';
 import SignatureCanvas from 'react-signature-canvas';
 import { removeWhiteBackground } from '@/shared/utils/removeBackground';
 import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
 import { pincodeToState, normaliseState, getShippingZone } from '@/shared/utils/pincodeToState';
+import Modal from '@/shared/components/ui/Modal';
 
 interface CheckoutItem {
   productId: string;
@@ -52,6 +53,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
   const [supplierProfile, setSupplierProfile] = useState<any>(null);
   const [selectedTransportation, setSelectedTransportation] = useState<string>('');
+  const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<string>('');
 
   useEffect(() => {
     const supplierId = items[0]?.supplierId;
@@ -62,6 +64,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           setSupplierProfile(s);
           if (!selectedTransportation) {
             setSelectedTransportation(s.supportedTransportationTerms?.[0] || 'Ex. Factory');
+          }
+          if (!selectedPaymentTerm) {
+            setSelectedPaymentTerm(s.supportedPaymentTerms?.[0] || '100% Advance');
           }
         }
       }).catch(console.error);
@@ -81,6 +86,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [uploadedSignature, setUploadedSignature] = useState<string | null>(null);
   const [isChangingSignature, setIsChangingSignature] = useState(false);
   const [tempSignature, setTempSignature] = useState<string | null>(null);
+
+  const [showNegotiationModal, setShowNegotiationModal] = useState(false);
+  const [negotiatedPrices, setNegotiatedPrices] = useState<Record<string, number>>({});
 
   const { socket } = useSocket();
   const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
@@ -213,12 +221,34 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const isExWorks = selectedTransportation === 'Ex. Factory' || selectedTransportation === 'Ex. Godown';
   const isThirdParty = selectedTransportation === 'Third-Party Courier';
   const totalShipping = (isFOR || isExWorks) ? 0 : baseShippingCost;
-  const courierGST = isThirdParty ? Math.round(totalShipping * 0.18) : 0;
+  const courierGST = isThirdParty ? (Math.round((totalShipping * 0.18) * 100) / 100) : 0;
 
   const taxableAmount = financials.subtotal;
   const grandTotal = taxableAmount + totalGst + totalShipping + courierGST;
 
-  const handlePlaceOrder = async (_paymentMethod: 'direct') => {
+  const handleNegotiateClick = () => {
+    if (!user?.gstin) {
+      toast.error('GST not available. You cannot use this feature.');
+      return;
+    }
+    if (!selectedAddress) { setError('Please add a delivery address.'); return; }
+    
+    const initPrices: Record<string, number> = {};
+    items.forEach(it => { initPrices[it.productId] = it.price; });
+    setNegotiatedPrices(initPrices);
+    setShowNegotiationModal(true);
+  };
+
+  const submitNegotiation = () => {
+    setShowNegotiationModal(false);
+    handlePlaceOrder('negotiate', negotiatedPrices);
+  };
+
+  const handlePlaceOrder = async (action: 'confirm' | 'negotiate', customPrices?: Record<string, number>) => {
+    if (action === 'negotiate' && !user?.gstin) {
+      toast.error('GST not available. You cannot use this feature.');
+      return;
+    }
     if (!selectedAddress) { setError('Please add a delivery address.'); return; }
     setPlacing(true); setError(null);
     try {
@@ -254,6 +284,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           addressSnapshot,
           {
             transportationTerms: selectedTransportation,
+            paymentTerms: selectedPaymentTerm,
             cartItems
           }
         );
@@ -266,10 +297,17 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           addressSnapshot.pincode,
         ].filter(Boolean).join(', ');
 
-        const itemsLines = cartItems.map(it => `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'} @ ₹${it.price.toLocaleString('en-IN')})`).join('\n');
+        const itemsLines = items.map(it => {
+          const p = customPrices && customPrices[it.productId] !== undefined ? customPrices[it.productId] : it.price;
+          if (customPrices && customPrices[it.productId] !== undefined && p !== it.price) {
+             return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'}) - Proposed: ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Listed: ₹${it.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+          } else {
+             return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'} @ ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+          }
+        }).join('\n');
         
         const text = [
-          `📦 Order Request (Checkout)`,
+          `📦 ${action === 'negotiate' ? 'Negotiation Request (Bulk Inquiry)' : 'Order Request (Checkout)'}`,
           itemsLines,
           `Transportation: ${selectedTransportation}`,
           shipTo ? `Ship to: ${shipTo}` : '',
@@ -278,21 +316,28 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         if (socket) {
           socket.emit('join_conversation', conversation._id);
           const receiverId = conversation.supplierId;
-          const images = cartItems.map(it => it.imageUrl).filter(Boolean);
+          const images = items.map(it => it.imageUrl).filter(Boolean);
           socket.emit('send_message', { 
             conversationId: conversation._id, 
             text, 
             receiverId,
             metadata: { 
               imageUrl: images[0],
-              images: images 
+              images: images,
+              negotiationItems: items.map(it => ({
+                productId: it.productId,
+                name: it.name,
+                quantity: it.quantity,
+                price: customPrices && customPrices[it.productId] !== undefined ? customPrices[it.productId] : it.price,
+                unit: it.unit
+              }))
             }
           });
         }
       }
 
       if (!isBuyNow) dispatch(clearCartAsync());
-      toast.success('Quote Request Sent! Negotiate terms with the supplier in the chat.');
+      toast.success(action === 'negotiate' ? 'Negotiation started! You can chat with the supplier.' : 'Quote Request Sent! Negotiate terms with the supplier in the chat.');
       navigate('/profile?tab=messages');
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Failed to request quote.');
@@ -450,6 +495,22 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                       )}
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Payment Terms</label>
+                    <select
+                      value={selectedPaymentTerm}
+                      onChange={(e) => setSelectedPaymentTerm(e.target.value)}
+                      className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
+                    >
+                      {supplierProfile?.supportedPaymentTerms?.length > 0 ? (
+                        supplierProfile.supportedPaymentTerms.map((t: string) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))
+                      ) : (
+                        <option value="100% Advance">100% Advance</option>
+                      )}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -482,15 +543,15 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                       </div>
                       {/* Mobile-only price */}
                       <div className="sm:hidden mt-1 flex items-center gap-3 text-sm">
-                        <span className="text-[#475569]">₹{item.price.toLocaleString('en-IN')} × {item.quantity}</span>
-                        <span className="font-bold text-[#0f172a]">= ₹{lineTotal.toLocaleString('en-IN')}</span>
+                        <span className="text-[#475569]">₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × {item.quantity}</span>
+                        <span className="font-bold text-[#0f172a]">= ₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                     {/* Desktop price columns */}
                     <div className="hidden sm:grid grid-cols-[80px_90px_90px] gap-3 text-sm text-right shrink-0">
-                      <span className="text-[#475569]">₹{item.price.toLocaleString('en-IN')}</span>
+                      <span className="text-[#475569]">₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       <span className="text-[#475569]">{item.quantity} {item.unit}</span>
-                      <span className="font-bold text-[#0f172a]">₹{lineTotal.toLocaleString('en-IN')}</span>
+                      <span className="font-bold text-[#0f172a]">₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </div>
                 );
@@ -501,23 +562,23 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
             <div className="px-5 py-4 bg-[#f8fafc] border-t border-[#eef2f6] flex flex-col gap-2.5 text-sm">
               <div className="flex justify-between text-[#475569]">
                 <span>Taxable Amount</span>
-                <span>₹{Math.round(taxableAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>₹{(Math.round((taxableAmount) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
 
               {/* CGST + SGST (intra-state) */}
               {Object.entries(financials.cgstSgst).map(([rateStr, amt]) => {
                 const rate = Number(rateStr);
                 const half = rate / 2;
-                const halfAmt = Math.round(amt / 2);
+                const halfAmt = (Math.round((amt / 2) * 100) / 100);
                 return (
                   <React.Fragment key={`intra-${rate}`}>
                     <div className="flex justify-between text-[#475569]">
                       <span>CGST @{half}%</span>
-                      <span>₹{halfAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span>₹{halfAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between text-[#475569]">
                       <span>SGST @{half}%</span>
-                      <span>₹{halfAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span>₹{halfAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   </React.Fragment>
                 );
@@ -527,7 +588,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               {Object.entries(financials.igst).map(([rateStr, amt]) => (
                 <div key={`igst-${rateStr}`} className="flex justify-between text-[#475569]">
                   <span>IGST @{rateStr}%</span>
-                  <span>₹{Math.round(amt).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                  <span>₹{(Math.round((amt) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               ))}
 
@@ -535,21 +596,21 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               <div className="flex justify-between text-[#475569]">
                 <span>Shipping {isFOR ? '(FOR - Included)' : ''}</span>
                 <span className={totalShipping === 0 ? 'text-[#059669] font-semibold' : ''}>
-                  {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN')}`}
+                  {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </span>
               </div>
               
               {isThirdParty && courierGST > 0 && (
                 <div className="flex justify-between text-[#0369a1]">
                   <span>Courier GST @ 18%</span>
-                  <span>₹{courierGST.toLocaleString('en-IN')}</span>
+                  <span>₹{courierGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
 
               <div className="flex justify-between items-center pt-2.5 border-t border-[#e2e8f0]">
                 <span className="font-extrabold text-[#0f172a] text-base">Grand Total</span>
                 <span className="font-extrabold text-[#0f172a] text-base">
-                  ₹{Math.round(grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  ₹{(Math.round((grandTotal) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>
@@ -694,7 +755,11 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                       if (signatureMode === 'upload' && uploadedSignature) {
                         sigData = uploadedSignature;
                       } else if (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty()) {
-                        sigData = sigCanvas.current.getCanvas().toDataURL('image/png');
+                        try {
+                          sigData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+                        } catch (e) {
+                          sigData = sigCanvas.current.getCanvas().toDataURL('image/png');
+                        }
                       }
 
                       if (!sigData) {
@@ -727,6 +792,56 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           </div>
         </div>
 
+        <Modal isOpen={showNegotiationModal} onClose={() => setShowNegotiationModal(false)} title="Negotiate Order Prices" widthClass="w-[90%] max-w-[600px]">
+          <div className="flex flex-col gap-5 max-h-[60vh] overflow-y-auto pr-1">
+            {items.map(it => {
+              const currentVal = negotiatedPrices[it.productId] ?? it.price;
+              const minVal = Math.max(1, Math.floor(it.price * 0.5));
+              return (
+                <div key={it.productId} className="flex flex-col gap-3 p-4 border border-[#e2e8f0] rounded-[10px] bg-white">
+                  <div className="flex justify-between items-start gap-4">
+                    <span className="font-bold text-[#0f172a] text-[15px]">{it.name}</span>
+                    <span className="text-sm font-semibold text-[#475569] whitespace-nowrap">Listed: ₹{it.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 mt-2">
+                    <div className="flex-1 flex flex-col gap-2">
+                      <div className="flex justify-between text-[11px] text-[#64748b] font-medium px-1">
+                        <span>₹{minVal.toLocaleString('en-IN')} (50%)</span>
+                        <span className="text-[#0ea5e9] font-bold text-xs border border-[#0ea5e9]/30 bg-[#f0f9ff] px-2 py-0.5 rounded-full">Proposed: ₹{currentVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>₹{it.price.toLocaleString('en-IN')}</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min={minVal} 
+                        max={it.price} 
+                        step={0.5}
+                        value={currentVal} 
+                        onChange={e => setNegotiatedPrices(prev => ({ ...prev, [it.productId]: Number(e.target.value) }))}
+                        className="w-full accent-[#0ea5e9] h-2 bg-[#e2e8f0] rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-6 pt-5 border-t border-[#e2e8f0] flex justify-end gap-3">
+            <button
+              onClick={() => setShowNegotiationModal(false)}
+              className="px-5 py-2.5 text-sm font-semibold text-[#475569] bg-white border border-[#cbd5e1] rounded-[8px] cursor-pointer hover:bg-[#f8fafc] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={submitNegotiation}
+              className="px-6 py-2.5 text-sm font-bold text-white bg-[#0ea5e9] border-none rounded-[8px] cursor-pointer hover:bg-[#0284c7] transition-colors flex items-center gap-2 shadow-sm shadow-[#0ea5e9]/20"
+            >
+              <MessageSquare size={16} /> Send for Negotiation
+            </button>
+          </div>
+        </Modal>
+
         {/* ── Right column: payment ── */}
         <div className="w-[300px] max-lg:w-full shrink-0 flex flex-col gap-4 sticky top-6">
 
@@ -735,25 +850,25 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
             <h3 className="text-sm font-extrabold text-[#0f172a] m-0 mb-3">Summary</h3>
             <div className="flex flex-col gap-2 text-sm">
               <div className="flex justify-between text-[#475569]">
-                <span>Subtotal</span><span>₹{Math.round(taxableAmount).toLocaleString('en-IN')}</span>
+                <span>Subtotal</span><span>₹{(Math.round((taxableAmount) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-[#475569]">
-                <span>GST</span><span>₹{Math.round(totalGst).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>GST</span><span>₹{(Math.round((totalGst) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between text-[#475569]">
                 <span>Shipping {isFOR ? '(FOR)' : isExWorks ? `(${selectedTransportation})` : ''}</span>
                 <span className={totalShipping === 0 ? 'text-[#059669] font-semibold' : ''}>
-                  {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN')}`}
+                  {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </span>
               </div>
               {isThirdParty && courierGST > 0 && (
                 <div className="flex justify-between text-[#0369a1]">
                   <span>Courier GST @ 18%</span>
-                  <span>₹{courierGST.toLocaleString('en-IN')}</span>
+                  <span>₹{courierGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
               <div className="flex justify-between font-extrabold text-[#0f172a] text-base pt-2.5 border-t border-[#f1f5f9] mt-1">
-                <span>Total</span><span>₹{Math.round(grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                <span>Total</span><span>₹{(Math.round((grandTotal) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -772,20 +887,30 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               </div>
             )}
 
-            <button
-              onClick={handleOpenDealPanel}
-              disabled={!selectedAddress}
-              className="w-full flex items-center gap-3 p-4 bg-[#f0fdf4] border-2 border-[#86efac] rounded-[10px] text-left cursor-pointer hover:border-[#22c55e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
-            >
-              <div className="w-10 h-10 rounded-[8px] bg-white border border-[#86efac] flex items-center justify-center shrink-0 group-hover:border-[#22c55e]">
-                <Handshake size={18} className="text-[#16a34a]" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-[#15803d] m-0">Confirm Deal</p>
-                <p className="text-xs text-[#64748b] m-0">Request final quotation</p>
-              </div>
-              <ChevronRight size={16} className="text-[#16a34a] shrink-0" />
-            </button>
+            <div className="flex flex-col gap-3 w-full">
+              <button
+                onClick={handleNegotiateClick}
+                disabled={!selectedAddress || placing}
+                className="flex-1 flex items-center justify-center gap-2 p-4 bg-white border-2 border-[#3b82f6] hover:bg-[#eff6ff] rounded-[10px] text-[#2563eb] font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <MessageSquare size={18} />
+                Negotiate Order
+              </button>
+              <button
+                onClick={handleOpenDealPanel}
+                disabled={!selectedAddress || placing}
+                className="flex-[1.2] flex items-center gap-3 p-4 bg-[#f0fdf4] border-2 border-[#86efac] rounded-[10px] text-left cursor-pointer hover:border-[#22c55e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                <div className="w-10 h-10 rounded-[8px] bg-white border border-[#86efac] flex items-center justify-center shrink-0 group-hover:border-[#22c55e]">
+                  <Handshake size={18} className="text-[#16a34a]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#15803d] m-0 truncate">Buy at Listed Price</p>
+                  <p className="text-[11px] text-[#64748b] m-0 truncate">Sign & Request PO</p>
+                </div>
+                <ChevronRight size={16} className="text-[#16a34a] shrink-0 hidden sm:block" />
+              </button>
+            </div>
 
             {!selectedAddress && (
               <p className="text-xs text-[#dc2626] mt-3 m-0 text-center">Add a delivery address above to request quotation</p>
@@ -842,11 +967,11 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                       </div>
                       <div className="flex justify-between text-[#64748b]">
                         <span>Unit Price</span>
-                        <span>₹{item.price?.toLocaleString('en-IN')}</span>
+                        <span>₹{item.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between text-[#64748b] mt-1 pt-1 border-t border-[#e2e8f0]">
                         <span>Subtotal</span>
-                        <span className="font-semibold text-[#0f172a]">₹{(item.quantity * item.price)?.toLocaleString('en-IN')}</span>
+                        <span className="font-semibold text-[#0f172a]">₹{(item.quantity * item.price)?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                   ))}
@@ -859,27 +984,27 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155] flex flex-col gap-1.5">
                   <div className="flex justify-between">
                     <span className="text-[#64748b]">Taxable Amount</span>
-                    <span>₹{Math.round(taxableAmount).toLocaleString('en-IN')}</span>
+                    <span>₹{(Math.round((taxableAmount) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   {totalGst > 0 && (
                     <div className="flex justify-between">
                       <span className="text-[#64748b]">GST</span>
-                      <span>₹{Math.round(totalGst).toLocaleString('en-IN')}</span>
+                      <span>₹{(Math.round((totalGst) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-[#64748b]">Shipping Cost {isExWorks ? `(${selectedTransportation})` : ''}</span>
-                    <span>{totalShipping === 0 ? 'Free' : `₹${Math.round(totalShipping).toLocaleString('en-IN')}`}</span>
+                    <span>{totalShipping === 0 ? 'Free' : `₹${(Math.round((totalShipping) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
                   </div>
                   {isThirdParty && courierGST > 0 && (
                     <div className="flex justify-between text-[#0369a1]">
                       <span>Courier GST @ 18%</span>
-                      <span>₹{courierGST.toLocaleString('en-IN')}</span>
+                      <span>₹{courierGST.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="flex justify-between pt-2 mt-0.5 border-t border-[#e2e8f0] font-extrabold text-sm text-[#0f172a]">
                     <span>Grand Total</span>
-                    <span>₹{Math.round(grandTotal).toLocaleString('en-IN')}</span>
+                    <span>₹{(Math.round((grandTotal) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
@@ -942,7 +1067,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               </button>
               <button
                 disabled={placing || (dealPayMethod === 'direct' && !dealAck)}
-                onClick={() => { setShowDealPanel(false); handlePlaceOrder('direct'); }}
+                onClick={() => { setShowDealPanel(false); handlePlaceOrder('confirm'); }}
                 className="flex-1 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[10px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {placing ? (

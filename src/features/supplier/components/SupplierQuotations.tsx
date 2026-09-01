@@ -89,16 +89,16 @@ const SupplierQuotations: React.FC<{ onGoToWallet?: () => void }> = ({ onGoToWal
                   {q.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between text-sm">
                       <span className="font-medium text-[#1e293b]">{item.name}</span>
-                      <span className="text-[#64748b]">{item.quantity} {item.unit} × ₹{item.price.toLocaleString()}</span>
+                      <span className="text-[#64748b]">{item.quantity} {item.unit} × ₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   ))}
                 </div>
 
                 <div className="flex justify-between items-end text-sm border-t border-[#f1f5f9] pt-3">
                   <div className="flex flex-col gap-0.5 text-[#475569]">
-                    <span>Subtotal: <strong>₹{q.totalAmount.toLocaleString()}</strong></span>
-                    {q.shippingCost > 0 && <span>Shipping: <strong>₹{q.shippingCost.toLocaleString()}</strong></span>}
-                    <span className="text-[#0f172a] font-bold">Total: ₹{(q.totalAmount + (q.shippingCost || 0)).toLocaleString()}</span>
+                    <span>Subtotal: <strong>₹{q.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                    {q.shippingCost > 0 && <span>Shipping: <strong>₹{q.shippingCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>}
+                    <span className="text-[#0f172a] font-bold">Total: ₹{(q.totalAmount + (q.shippingCost || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex flex-col items-end gap-0.5 text-xs text-[#94a3b8]">
                     <span>Valid until: {new Date(q.validUntil).toLocaleDateString()}</span>

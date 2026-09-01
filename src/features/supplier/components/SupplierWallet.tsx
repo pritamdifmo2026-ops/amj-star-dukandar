@@ -289,8 +289,17 @@ const SupplierWallet: React.FC = () => {
                   <div className="text-sm font-semibold text-[#1e293b] truncate">{txTypeLabel[tx.type] ?? tx.type}</div>
                   <div className="text-xs text-[#94a3b8] truncate">{tx.description}</div>
                 </div>
-                <div className={`text-sm font-bold shrink-0 ${tx.type === 'topup' ? 'text-[#059669]' : 'text-[#dc2626]'}`}>
-                  {tx.type === 'topup' ? '+' : '-'}₹{tx.amount.toFixed(2)}
+                <div className="flex flex-col items-end shrink-0 min-w-[80px]">
+                  {tx.type === 'topup' || tx.type === 'unfreeze' ? (
+                    <div className="text-sm font-bold text-[#059669]">+₹{tx.amount.toFixed(2)}</div>
+                  ) : tx.type === 'release_to_amj' || tx.type === 'withdrawal_complete' ? (
+                    <div className="text-sm font-bold text-[#64748b]">₹{tx.amount.toFixed(2)}</div>
+                  ) : (
+                    <div className="text-sm font-bold text-[#dc2626]">-₹{tx.amount.toFixed(2)}</div>
+                  )}
+                  {typeof tx.balanceAfter === 'number' && (
+                    <div className="text-[10px] text-[#64748b] mt-0.5 whitespace-nowrap font-medium hidden sm:block">Bal: ₹{tx.balanceAfter.toFixed(2)}</div>
+                  )}
                 </div>
                 <div className="text-xs text-[#94a3b8] shrink-0 hidden sm:block">{new Date(tx.createdAt).toLocaleDateString()}</div>
                 <button

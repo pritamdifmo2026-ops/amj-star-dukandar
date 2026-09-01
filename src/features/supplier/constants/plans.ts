@@ -95,16 +95,16 @@ export const getUpgradeCost = (currentTier: SupplierTier, targetTier: SupplierTi
   const cur = getPlan(currentTier);
   const tgt = getPlan(targetTier);
   const priceDifference = tgt.price - cur.price;
-  const gstAmount = Math.round((priceDifference * tgt.gstPercent) / 100);
+  const gstAmount = (Math.round(((priceDifference * tgt.gstPercent) / 100) * 100) / 100);
   return { priceDifference, gstAmount, total: priceDifference + gstAmount };
 };
 
 export const getPlanGstAmount = (plan: PlanDefinition): number =>
-  Math.round((plan.price * plan.gstPercent) / 100);
+  (Math.round(((plan.price * plan.gstPercent) / 100) * 100) / 100);
 
 export const getPlanTotal = (plan: PlanDefinition): number =>
   plan.price + getPlanGstAmount(plan);
 
 /** Formats a rupee amount with Indian-style grouping, no decimals. */
 export const formatINR = (amount: number): string =>
-  `₹${amount.toLocaleString('en-IN')}`;
+  `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

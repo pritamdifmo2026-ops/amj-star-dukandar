@@ -12,6 +12,7 @@ interface EnquiryModalProps {
   moq: number;
   stock: number;
   unit: string;
+  gstRate?: number;
   supplierProfile?: any;
   onSubmit: (enquiry: EnquiryPayload) => Promise<void>;
   onClose: () => void;
@@ -50,7 +51,7 @@ const chip = (active: boolean) =>
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors bg-white";
 
 const EnquiryModal: React.FC<EnquiryModalProps> = ({
-  productName, basePrice, moq, stock, unit, supplierProfile, onSubmit, onClose,
+  productName, basePrice, moq, stock, unit, gstRate, supplierProfile, onSubmit, onClose,
 }) => {
   const user = useSelector((state: any) => state.auth.user);
   const dispatch = useDispatch();
@@ -267,8 +268,8 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
               <div>
                 <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">What's your budget for this order?</h3>
                 <p className="text-xs text-[#94a3b8] m-0">
-                  Listed total: ₹{(basePrice * finalQty).toLocaleString()} for {finalQty} {unit}s
-                  <span className="ml-1 text-[#cbd5e1]">(₹{basePrice?.toLocaleString()}/{unit})</span>
+                  Listed total: ₹{(basePrice * finalQty).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} for {finalQty} {unit}s
+                  <span className="ml-1 text-[#cbd5e1]">(₹{basePrice?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/{unit})</span>
                 </p>
               </div>
               <div className="flex flex-col gap-2">
@@ -291,14 +292,14 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                         type="range" 
                         min={Math.ceil(basePrice * 0.5)} 
                         max={basePrice} 
-                        value={customPrice || Math.round(basePrice * 0.9)} 
+                        value={customPrice || (Math.round((basePrice * 0.9) * 100) / 100)} 
                         onChange={e => setCustomPrice(e.target.value)}
                         className="flex-1 accent-primary cursor-pointer h-2 bg-[#e2e8f0] rounded-lg appearance-none"
                       />
                       <div className="flex items-center border border-[#e2e8f0] rounded-[8px] bg-white focus-within:border-primary transition-colors w-[120px] shrink-0">
                         <span className="px-2 py-2 text-sm text-[#94a3b8] font-bold border-r border-[#e2e8f0] bg-[#f8fafc] rounded-l-[8px]">₹</span>
                         <input autoFocus type="number" min={Math.ceil(basePrice * 0.5)} max={basePrice} value={customPrice} onChange={e => setCustomPrice(e.target.value)}
-                          placeholder={`${Math.round(basePrice * 0.9)}`}
+                          placeholder={`${(Math.round((basePrice * 0.9) * 100) / 100)}`}
                           className="w-full border-none outline-none px-2 py-2 text-sm bg-transparent" />
                       </div>
                     </div>
@@ -308,11 +309,11 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                     <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs text-[#64748b]">
                         <span>Total Price (excl. GST)</span>
-                        <span className="font-bold text-[#0f172a]">₹{(Number(customPrice) * finalQty).toLocaleString('en-IN')}</span>
+                        <span className="font-bold text-[#0f172a]">₹{(Number(customPrice) * finalQty).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center text-[11px] text-[#94a3b8]">
-                        <span>Est. Total with 18% GST</span>
-                        <span>₹{Math.round(Number(customPrice) * finalQty * 1.18).toLocaleString('en-IN')}</span>
+                        <span>Est. Total with {gstRate ?? 18}% GST</span>
+                        <span>₹{(Math.round((Number(customPrice) * finalQty * (1 + (gstRate ?? 18) / 100)) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       
                       {Number(customPrice) < basePrice && (
@@ -324,10 +325,10 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                       )}
                       
                       {Number(customPrice) > basePrice && (
-                        <p className="text-[10px] text-[#ef4444] m-0 font-medium">Your offer cannot exceed the listed price per {unit} (₹{basePrice.toLocaleString()}).</p>
+                        <p className="text-[10px] text-[#ef4444] m-0 font-medium">Your offer cannot exceed the listed price per {unit} (₹{basePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).</p>
                       )}
                       {Number(customPrice) < basePrice * 0.5 && (
-                        <p className="text-[10px] text-[#ef4444] m-0 font-medium">Your offer cannot be less than 50% of the listed price per {unit} (₹{Math.ceil(basePrice * 0.5).toLocaleString()}).</p>
+                        <p className="text-[10px] text-[#ef4444] m-0 font-medium">Your offer cannot be less than 50% of the listed price per {unit} (₹{Math.ceil(basePrice * 0.5).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}).</p>
                       )}
                     </div>
                   )}
@@ -517,8 +518,8 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                 <span>Quantity: <strong>{finalQty} {unit}s</strong></span>
                 <span>Price: <strong>
                   {priceMode === 'quoted'
-                    ? `₹${(basePrice * finalQty).toLocaleString()} total (as listed)`
-                    : `₹${Number(customPrice).toLocaleString()} total`}
+                    ? `₹${(basePrice * finalQty).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total (as listed)`
+                    : `₹${Number(customPrice).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total`}
                 </strong></span>
                 <span>Delivery: <strong>{timeline}</strong></span>
                 {finalAddr && <span>Ship to: <strong>{finalAddr}</strong></span>}
@@ -544,7 +545,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
             {step < 4 ? (
               <><span>Next</span><ChevronRight size={15} /></>
             ) : submitting ? 'Sending…' : (
-              <><Send size={15} /><span>Send Enquiry</span></>
+              <><Send size={15} /><span>{Number(customPrice) === basePrice ? 'Buy at Listed Price' : 'Send Enquiry'}</span></>
             )}
           </button>
         </div>

@@ -16,7 +16,7 @@ interface BillingManagementProps {
 
 const cardCls = 'bg-white rounded-[10px] border border-[#eef2f6] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)]';
 
-const fmt = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+const fmt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fmtDate = (iso: string | null | undefined) => {
   if (!iso) return '—';
@@ -65,7 +65,7 @@ const InvoiceModal: React.FC<{
     win.close();
   };
 
-  const cgst = Math.round(payment.gstAmount / 2);
+  const cgst = (Math.round((payment.gstAmount / 2) * 100) / 100);
   const sgst = payment.gstAmount - cgst;
   const isUpgrade = payment.type === 'upgrade';
 

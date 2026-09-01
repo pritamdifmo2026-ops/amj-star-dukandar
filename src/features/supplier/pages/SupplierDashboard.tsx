@@ -68,6 +68,10 @@ const SupplierDashboard: React.FC = () => {
   const [productToDelete, setProductToDelete] = useState<any>(null);
   const [showUnpublishModal, setShowUnpublishModal] = useState(false);
   const [productToUnpublish, setProductToUnpublish] = useState<any | null>(null);
+
+  useEffect(() => {
+    document.title = 'Supplier Hub - AMJSTAR';
+  }, []);
   const [clonedProduct, setClonedProduct] = useState<any | null>(null);
   const [msgModal, setMsgModal] = useState<{ isOpen: boolean; type: 'success' | 'error' | 'info'; title: string; message: string }>({
     isOpen: false,

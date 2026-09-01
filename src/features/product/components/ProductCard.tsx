@@ -85,7 +85,7 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
         {!hidePrice && (
           <div className="mt-auto">
             <div className="flex justify-between items-baseline mb-1.5">
-              <p className="font-display text-[15px] font-normal text-heading">₹{(product.price || 0).toLocaleString('en-IN')}</p>
+              <p className="font-display text-[15px] font-normal text-heading">₹{(product.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-[10px] text-muted">MOQ: {product.minOrderQty} {product.unit}</p>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">

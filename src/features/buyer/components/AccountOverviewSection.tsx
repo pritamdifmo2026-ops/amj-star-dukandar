@@ -6,6 +6,8 @@ import {
   Briefcase, MapPin, ShieldCheck, AlignLeft, BarChart2,
 } from 'lucide-react';
 import { buyerProfileApi } from '../services/buyer-profile.api';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setCredentials } from '@/features/auth/store/auth.slice';
 
 // Local type definitions matching the API interfaces
 type BusinessProfileData = {
@@ -91,6 +93,9 @@ const AccountOverviewSection: React.FC = () => {
   const [bizData, setBizData] = useState<BusinessProfileData>(emptyBiz);
   const [reqData, setReqData] = useState<RequirementData>(emptyReq);
 
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(state => state.auth.user);
+
   // ── edit state ──
   const [bizEditing, setBizEditing] = useState(false);
   const [reqEditing, setReqEditing] = useState(false);
@@ -156,6 +161,12 @@ const AccountOverviewSection: React.FC = () => {
       const res = await buyerProfileApi.upsertBusinessProfile(payload);
       setBizData(res.businessProfile);
       setBizEditing(false);
+      
+      // Sync GSTIN to Redux auth state so it's instantly available globally (e.g. for Checkout)
+      if (user && payload.gstNumber !== undefined) {
+        dispatch(setCredentials({ user: { ...user, gstin: payload.gstNumber } }));
+      }
+      
       toast.success('Business profile saved!');
     } catch {
       toast.error('Failed to save business profile.');

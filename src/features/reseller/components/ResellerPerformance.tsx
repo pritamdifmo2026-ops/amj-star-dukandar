@@ -25,7 +25,7 @@ const ResellerPerformance: React.FC = () => {
 
   const topProducts = products.slice(0, 5).map(req => {
     const base = req.product?.basePrice || 0;
-    const selling = req.sellingPrice || Math.round(base * 1.3);
+    const selling = req.sellingPrice || (Math.round((base * 1.3) * 100) / 100);
     return { name: req.customTitle || req.product?.name || 'Unnamed Product', views: req.views || 0, orders: req.orders || 0, margin: `₹${selling - base}` };
   });
 

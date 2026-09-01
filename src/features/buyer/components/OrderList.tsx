@@ -255,7 +255,7 @@ const OrderList: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <h4 className="text-sm font-extrabold text-[#0f172a] m-0 line-clamp-2">{item.name}</h4>
                           <div className="flex items-center gap-2 text-xs font-semibold text-[#64748b] mt-1">
-                            <span>₹{item.price.toLocaleString('en-IN')}/{item.unit || 'pcs'}</span>
+                            <span>₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/{item.unit || 'pcs'}</span>
                             <span className="text-[#cbd5e1]">•</span>
                             <span>Qty: {item.quantity} {item.unit || 'pcs'}</span>
                           </div>
@@ -273,7 +273,7 @@ const OrderList: React.FC = () => {
                 <div className="flex flex-col items-end justify-between self-stretch shrink-0 text-right min-h-[88px] max-sm:items-start max-sm:text-left max-sm:w-full max-sm:self-auto max-sm:min-h-0 max-sm:gap-3 max-sm:border-t max-sm:border-[#f1f5f9] max-sm:pt-4">
                   <div>
                     <p className="text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider m-0 mb-1">Total Amount</p>
-                    <p className="text-xl font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN')}</p>
+                    <p className="text-xl font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border shadow-sm w-fit" style={{ color: cfg.color, backgroundColor: cfg.bg, borderColor: cfg.border }}>
                     <StatusIcon size={12} /> {cfg.label}

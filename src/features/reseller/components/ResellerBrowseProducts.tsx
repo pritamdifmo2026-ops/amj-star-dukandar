@@ -144,7 +144,7 @@ const ResellerBrowseProducts: React.FC = () => {
                         </td>
                         <td className={tdCls}><span className="bg-[#f1f5f9] text-[#475569] px-2.5 py-1 rounded-full text-xs font-semibold">{product.category}</span></td>
                         <td className={tdCls}>
-                          <span className="font-bold text-[#0f172a]">₹{product.basePrice?.toLocaleString()}</span>
+                          <span className="font-bold text-[#0f172a]">₹{product.basePrice?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           <span className="text-xs text-[#94a3b8] ml-1">/ {product.unit}</span>
                         </td>
                         <td className={tdCls}><span className="font-semibold">{product.moq} {product.unit}</span></td>
@@ -185,7 +185,7 @@ const ResellerBrowseProducts: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5 mb-3 text-xs">
-                    <div className="flex justify-between"><span className="text-[#94a3b8]">Price</span><span className="font-bold text-primary">₹{product.basePrice?.toLocaleString()} <small className="text-[#94a3b8]">/ {product.unit}</small></span></div>
+                    <div className="flex justify-between"><span className="text-[#94a3b8]">Price</span><span className="font-bold text-primary">₹{product.basePrice?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <small className="text-[#94a3b8]">/ {product.unit}</small></span></div>
                     <div className="flex justify-between"><span className="text-[#94a3b8]">Min Order</span><span className="font-semibold">{product.moq} {product.unit}</span></div>
                     <div className="flex justify-between"><span className="text-[#94a3b8]">Supplier</span><span className="font-semibold">{supplier.businessName || 'Verified'}</span></div>
                   </div>

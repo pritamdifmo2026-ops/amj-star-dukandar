@@ -239,7 +239,7 @@ const AdminPlatformSettings: React.FC = () => {
         <div className="flex flex-col gap-4">
           {planKeys.map(key => {
             const base = planEditing ? Number(planForm[key]) || 0 : (settings?.planPrices?.[key] ?? PLAN_DEFAULTS[key]);
-            const gst = Math.round((base * GST_RATE) / 100);
+            const gst = (Math.round(((base * GST_RATE) / 100) * 100) / 100);
             const total = base + gst;
             return (
               <div key={key} className="border border-[#eef2f6] rounded-[10px] p-4">
@@ -262,15 +262,15 @@ const AdminPlatformSettings: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-[#f8fafc] rounded-[8px] p-2">
                     <p className="text-[10px] text-[#94a3b8] font-bold uppercase tracking-wide m-0">Base</p>
-                    <p className="text-sm font-extrabold text-[#0f172a] m-0">₹{base.toLocaleString('en-IN')}</p>
+                    <p className="text-sm font-extrabold text-[#0f172a] m-0">₹{base.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   <div className="bg-[#f8fafc] rounded-[8px] p-2">
                     <p className="text-[10px] text-[#94a3b8] font-bold uppercase tracking-wide m-0">GST 18%</p>
-                    <p className="text-sm font-bold text-[#64748b] m-0">₹{gst.toLocaleString('en-IN')}</p>
+                    <p className="text-sm font-bold text-[#64748b] m-0">₹{gst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   <div className="bg-[#eff6ff] rounded-[8px] p-2">
                     <p className="text-[10px] text-[#3b82f6] font-bold uppercase tracking-wide m-0">Total</p>
-                    <p className="text-sm font-extrabold text-[#1d4ed8] m-0">₹{total.toLocaleString('en-IN')}</p>
+                    <p className="text-sm font-extrabold text-[#1d4ed8] m-0">₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                 </div>
               </div>

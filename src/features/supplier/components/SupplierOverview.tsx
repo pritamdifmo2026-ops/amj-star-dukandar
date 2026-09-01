@@ -46,7 +46,7 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
   const orders = orderData?.data || [];
   const orderStats = orderData?.stats;
 
-  const fmt = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+  const fmt = (n: number) => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const money = (n: number) => `₹${fmt(n || 0)}`;
 
   const { salesTrend, orderStatusData, topProductData } = useMemo(() => {

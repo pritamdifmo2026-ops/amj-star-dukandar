@@ -147,7 +147,7 @@ const AdminDisputes: React.FC = () => {
                     {order?.totalAmount != null && (
                       <div className="text-right">
                         <p className="text-[10px] text-[#94a3b8] uppercase tracking-wide m-0">Order Value</p>
-                        <p className="text-base font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN')}</p>
+                        <p className="text-base font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                     )}
                   </div>

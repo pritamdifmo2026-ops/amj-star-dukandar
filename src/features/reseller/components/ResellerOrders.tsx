@@ -138,7 +138,7 @@ const ResellerOrders: React.FC = () => {
         {[
           { label: 'Total Orders', val: String(orders.length), icon: <ShoppingBag size={20} />, cls: 'bg-blue-100 text-blue-800' },
           { label: 'Active Orders', val: String(activeCount), icon: <Truck size={20} />, cls: 'bg-amber-100 text-amber-800' },
-          { label: 'Total Order Value', val: `₹${totalValue.toLocaleString('en-IN')}`, icon: <IndianRupee size={20} />, cls: 'bg-green-100 text-green-800' },
+          { label: 'Total Order Value', val: `₹${totalValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <IndianRupee size={20} />, cls: 'bg-green-100 text-green-800' },
         ].map(stat => (
           <div key={stat.label} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
             <div>
@@ -195,7 +195,7 @@ const ResellerOrders: React.FC = () => {
                         <span className="text-gray-700 block truncate max-w-[200px]">{order.items?.[0]?.name}</span>
                         {order.items?.length > 1 && <span className="text-xs text-gray-500">+{order.items.length - 1} more</span>}
                       </td>
-                      <td className="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">₹{order.totalAmount?.toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">₹{order.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${meta.cls}`}>
                           {meta.icon} {meta.label}
@@ -304,23 +304,23 @@ const ResellerOrders: React.FC = () => {
                       <tr key={idx}>
                         <td className="px-4 py-3 font-semibold text-gray-800">{item.name}</td>
                         <td className="px-4 py-3 text-center text-gray-600">{item.quantity} {item.unit || ''}</td>
-                        <td className="px-4 py-3 text-right text-gray-600">₹{item.price?.toLocaleString('en-IN')}</td>
-                        <td className="px-4 py-3 text-right font-bold text-gray-900">₹{(item.price * item.quantity)?.toLocaleString('en-IN')}</td>
+                        <td className="px-4 py-3 text-right text-gray-600">₹{item.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-900">₹{(item.price * item.quantity)?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot className="bg-gray-50">
                     <tr>
                       <td colSpan={3} className="px-4 py-2 text-right text-xs text-gray-500">Subtotal</td>
-                      <td className="px-4 py-2 text-right font-semibold text-gray-800">₹{selected.subtotal?.toLocaleString('en-IN')}</td>
+                      <td className="px-4 py-2 text-right font-semibold text-gray-800">₹{selected.subtotal?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                     <tr>
                       <td colSpan={3} className="px-4 py-2 text-right text-xs text-gray-500">Shipping</td>
-                      <td className="px-4 py-2 text-right font-semibold text-gray-800">₹{selected.shippingCost?.toLocaleString('en-IN') || 0}</td>
+                      <td className="px-4 py-2 text-right font-semibold text-gray-800">₹{selected.shippingCost?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 0}</td>
                     </tr>
                     <tr className="border-t border-gray-200">
                       <td colSpan={3} className="px-4 py-3 text-right text-sm font-bold text-gray-900">Total</td>
-                      <td className="px-4 py-3 text-right text-base font-extrabold text-primary">₹{selected.totalAmount?.toLocaleString('en-IN')}</td>
+                      <td className="px-4 py-3 text-right text-base font-extrabold text-primary">₹{selected.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                   </tfoot>
                 </table>

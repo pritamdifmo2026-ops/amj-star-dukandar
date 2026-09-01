@@ -36,7 +36,7 @@ const ResellerMyProducts: React.FC = () => {
       const base = drawerProduct.product?.basePrice || 0;
       const selling = drawerProduct.sellingPrice || base;
       setEditSellingPrice(String(selling));
-      const margin = base > 0 ? Math.round(((selling - base) / base) * 100) : 0;
+      const margin = base > 0 ? (Math.round((((selling - base) / base) * 100) * 100) / 100) : 0;
       setEditMarginPct(String(margin));
       setEditTitle(drawerProduct.customTitle || drawerProduct.product?.name || '');
       setEditDesc(drawerProduct.customDescription || drawerProduct.product?.description || '');
@@ -76,7 +76,7 @@ const ResellerMyProducts: React.FC = () => {
 
   const onSellingPriceChange = (v: string) => {
     const base = getBasePrice();
-    const maxAllowed = Math.round(base * 1.5);
+    const maxAllowed = (Math.round((base * 1.5) * 100) / 100);
     let sp = parseFloat(v);
     
     if (!v || isNaN(sp)) {
@@ -94,7 +94,7 @@ const ResellerMyProducts: React.FC = () => {
     }
 
     if (base > 0) {
-      const marginPct = Math.min(50, Math.max(0, Math.round(((sp - base) / base) * 100)));
+      const marginPct = Math.min(50, Math.max(0, (Math.round((((sp - base) / base) * 100) * 100) / 100)));
       setEditMarginPct(String(marginPct));
     }
   };
@@ -117,7 +117,7 @@ const ResellerMyProducts: React.FC = () => {
       setEditMarginPct(v);
     }
 
-    const calculatedPrice = Math.round(base * (1 + Math.max(0, pct) / 100));
+    const calculatedPrice = (Math.round((base * (1 + Math.max(0, pct) / 100)) * 100) / 100);
     setEditSellingPrice(String(calculatedPrice));
   };
 
@@ -125,7 +125,7 @@ const ResellerMyProducts: React.FC = () => {
     if (!drawerProduct) return;
     const sp = parseFloat(editSellingPrice);
     const base = getBasePrice();
-    const maxAllowed = Math.round(base * 1.5);
+    const maxAllowed = (Math.round((base * 1.5) * 100) / 100);
 
     if (isNaN(sp) || sp < base) {
       toast.error(`Selling price cannot be lower than supplier base price (₹${base})`);
@@ -324,9 +324,9 @@ const ResellerMyProducts: React.FC = () => {
                       <label className="text-xs font-bold text-[#475569]">Set Selling Price (₹)</label>
                       <div className="flex items-center border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-[#f8fafc] focus-within:border-primary">
                         <span className="px-3 py-2.5 text-sm text-[#94a3b8] border-r border-[#e2e8f0]">₹</span>
-                        <input className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent font-medium" type="number" value={editSellingPrice} onChange={e => onSellingPriceChange(e.target.value)} min={getBasePrice()} max={Math.round(getBasePrice() * 1.5)} placeholder={`e.g. ${Math.round(getBasePrice() * 1.15)}`} />
+                        <input className="flex-1 border-none outline-none px-3 py-2.5 text-sm bg-transparent font-medium" type="number" value={editSellingPrice} onChange={e => onSellingPriceChange(e.target.value)} min={getBasePrice()} max={(Math.round((getBasePrice() * 1.5) * 100) / 100)} placeholder={`e.g. ${(Math.round((getBasePrice() * 1.15) * 100) / 100)}`} />
                       </div>
-                      <small className="text-xs text-[#94a3b8]">Range: ₹{getBasePrice()} – ₹{Math.round(getBasePrice() * 1.5)} (Max 50% margin allowed)</small>
+                      <small className="text-xs text-[#94a3b8]">Range: ₹{getBasePrice()} – ₹{(Math.round((getBasePrice() * 1.5) * 100) / 100)} (Max 50% margin allowed)</small>
                     </div>
                     <div className="text-center text-xs font-bold text-[#94a3b8]">— OR —</div>
                     <div className="flex flex-col gap-1.5">

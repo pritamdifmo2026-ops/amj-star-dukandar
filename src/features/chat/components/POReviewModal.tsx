@@ -54,11 +54,11 @@ export const POReviewModal: React.FC<POReviewModalProps> = ({
                   </div>
                   <div className="flex justify-between text-[#64748b]">
                     <span>Unit Price</span>
-                    <span>₹{item.price?.toLocaleString('en-IN')}</span>
+                    <span>₹{item.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-[#64748b] mt-1 pt-1 border-t border-[#e2e8f0]">
                     <span>Subtotal</span>
-                    <span className="font-semibold text-[#0f172a]">₹{(item.quantity * item.price)?.toLocaleString('en-IN')}</span>
+                    <span className="font-semibold text-[#0f172a]">₹{(item.quantity * item.price)?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               ))}
@@ -94,27 +94,27 @@ export const POReviewModal: React.FC<POReviewModalProps> = ({
             <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155] flex flex-col gap-1.5">
               <div className="flex justify-between">
                 <span className="text-[#64748b]">Taxable Amount</span>
-                <span>₹{quote.taxableAmount?.toLocaleString('en-IN') || (quote.items?.[0]?.quantity * quote.items?.[0]?.price)?.toLocaleString('en-IN')}</span>
+                <span>₹{quote.taxableAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || (quote.items?.[0]?.quantity * quote.items?.[0]?.price)?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               {quote.gstType !== 'exempt' && (
                 <div className="flex justify-between">
                   <span className="text-[#64748b]">GST ({quote.gstType === 'IGST' ? 'IGST' : 'CGST+SGST'} @ {quote.gstRate}%)</span>
-                  <span>₹{quote.gstAmount?.toLocaleString('en-IN') || 0}</span>
+                  <span>₹{quote.gstAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 0}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-[#64748b]">Shipping Cost</span>
-                <span>{quote.transportationTerms?.includes('Ex.') || quote.transportationTerms?.includes('To Pay') ? '₹0 (Buyer Arranges)' : `₹${quote.shippingCost?.toLocaleString('en-IN') || 0}`}</span>
+                <span>{quote.transportationTerms?.includes('Ex.') || quote.transportationTerms?.includes('To Pay') ? '₹0 (Buyer Arranges)' : `₹${quote.shippingCost?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || 0}`}</span>
               </div>
               {quote.transportationTerms === 'Third-Party Courier' && (quote.shippingCost || 0) > 0 && (
                 <div className="flex justify-between text-[#0369a1]">
                   <span>Courier GST (18%)</span>
-                  <span>₹{Math.round((quote.shippingCost || 0) * 0.18).toLocaleString('en-IN')}</span>
+                  <span>₹{(Math.round(((quote.shippingCost || 0) * 0.18) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
               <div className="flex justify-between pt-2 mt-0.5 border-t border-[#e2e8f0] font-extrabold text-sm text-[#0f172a]">
                 <span>Grand Total</span>
-                <span>₹{quote.totalAmount?.toLocaleString('en-IN')}</span>
+                <span>₹{quote.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>

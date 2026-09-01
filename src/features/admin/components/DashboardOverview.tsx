@@ -129,7 +129,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   formatter={(value, name) => {
                     const formattedValue = typeof value === 'number'
-                      ? value.toLocaleString('en-IN')
+                      ? value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                       : String(value ?? 0);
 
                     return [
@@ -192,9 +192,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
               <div key={label} className="flex justify-between items-center gap-3">
                 <span className="text-sm text-[#64748b] shrink-0 w-[140px]">{label}</span>
                 <div className="flex-1 h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
-                  <div style={{ width: `${Math.min(100, Math.round(pct))}%`, background: color, height: '100%' }} />
+                  <div style={{ width: `${Math.min(100, (Math.round((pct) * 100) / 100))}%`, background: color, height: '100%' }} />
                 </div>
-                <span className="font-bold text-sm w-10 text-right">{Math.min(100, Math.round(pct))}%</span>
+                <span className="font-bold text-sm w-10 text-right">{Math.min(100, (Math.round((pct) * 100) / 100))}%</span>
               </div>
             ))}
           </div>

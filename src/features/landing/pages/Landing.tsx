@@ -118,7 +118,7 @@ const CategorySection: React.FC<{ cat: any; products: Product[]; loading: boolea
                       <span className="text-primary text-xs font-medium">{product.supplierName}</span>
                     )}
                     <span className="text-muted text-xs">MOQ: {product.minOrderQty} units</span>
-                    <span className="text-primary text-[15px] font-bold mt-0.5">₹{product.price?.toLocaleString('en-IN')}</span>
+                    <span className="text-primary text-[15px] font-bold mt-0.5">₹{product.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </Link>
               ))}

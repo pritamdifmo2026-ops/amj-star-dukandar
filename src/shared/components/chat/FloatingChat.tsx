@@ -82,36 +82,36 @@ const QuotePreviewCard = ({
           <div key={idx} className="flex flex-col border-b border-gray-100 pb-1.5 mb-1 last:border-0 last:pb-0 last:mb-0">
             <span className="text-gray-700 font-medium">{it.name}{it.hsnCode ? ` (HSN: ${it.hsnCode})` : ''}</span>
             <div className="flex justify-between text-gray-500 mt-0.5">
-              <span>₹{(Number(it.price) || 0).toLocaleString('en-IN')} × {it.quantity}</span>
-              <span>₹{((Number(it.price) || 0) * (Number(it.quantity) || 1)).toLocaleString('en-IN')}</span>
+              <span>₹{(Number(it.price) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × {it.quantity}</span>
+              <span>₹{((Number(it.price) || 0) * (Number(it.quantity) || 1)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         ))
       ) : (
         <div className="flex justify-between">
           <span>{form.itemName} × {form.quantity}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
-          <span className="font-semibold">₹{form.price.toLocaleString('en-IN')}</span>
+          <span className="font-semibold">₹{form.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
       )}
       <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-100">
         <span>Price</span>
-        <span className="font-semibold">₹{computedTotalBeforeGst.toLocaleString('en-IN')}</span>
+        <span className="font-semibold">₹{computedTotalBeforeGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
       {form.gstType !== 'exempt' ? (
         form.gstType === 'IGST' ? (
           <div className="flex justify-between text-blue-600">
             <span>IGST @ {form.gstRate}%</span>
-            <span className="font-semibold">₹{gstAmount.toLocaleString('en-IN')}</span>
+            <span className="font-semibold">₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         ) : (
           <>
             <div className="flex justify-between text-blue-600">
               <span>CGST @ {form.gstRate / 2}%</span>
-              <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN')}</span>
+              <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex justify-between text-blue-600">
               <span>SGST @ {form.gstRate / 2}%</span>
-              <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN')}</span>
+              <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </>
         )
@@ -119,11 +119,11 @@ const QuotePreviewCard = ({
         <div className="flex justify-between text-gray-400"><span>GST</span><span>Exempt / Nil</span></div>
       )}
       {form.shipping > 0 && (
-        <div className="flex justify-between text-gray-400"><span>Shipping</span><span>₹{form.shipping.toLocaleString('en-IN')}</span></div>
+        <div className="flex justify-between text-gray-400"><span>Shipping</span><span>₹{form.shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
       )}
       <div className="flex justify-between font-extrabold text-[13px] border-t border-gray-100 pt-1.5 mt-0.5">
         <span>Grand Total</span>
-        <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+        <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
       {form.deliveryTimeline && (
         <p className="text-[10px] text-gray-400 m-0">Delivery: {form.deliveryTimeline}</p>
@@ -167,7 +167,7 @@ export const FloatingChat: React.FC = () => {
   const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
-    : Math.round(quoteForm.price * quoteForm.gstRate) / 100;
+    : (Math.round((quoteForm.price * quoteForm.gstRate) * 100) / 100) / 100;
   const computedGrandTotal = quoteForm.price + computedGstAmount + quoteForm.shipping;
 
   const getOtherUser = (conv: any) => {
@@ -396,30 +396,30 @@ export const FloatingChat: React.FC = () => {
           {quote.items.map((item: any, i: number) => (
             <div key={i} className="flex justify-between">
               <span>{item.name} × {item.quantity} {item.unit}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
-              <span className="font-semibold">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+              <span className="font-semibold">₹{(item.price * item.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ))}
 
           <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-100">
             <span>Amount</span>
-            <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN')}</span>
+            <span className="font-semibold">₹{taxableAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
 
           {quote.gstType && quote.gstType !== 'exempt' && gstAmt > 0 ? (
             quote.gstType === 'IGST' ? (
               <div className="flex justify-between text-blue-600">
                 <span>IGST @ {quote.gstRate}%</span>
-                <span className="font-semibold">₹{gstAmt.toLocaleString('en-IN')}</span>
+                <span className="font-semibold">₹{gstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             ) : (
               <>
                 <div className="flex justify-between text-blue-600">
                   <span>CGST @ {halfRate}%</span>
-                  <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-blue-600">
                   <span>SGST @ {halfRate}%</span>
-                  <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold">₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </>
             )
@@ -428,12 +428,12 @@ export const FloatingChat: React.FC = () => {
           )}
 
           {shipCost > 0 && (
-            <div className="flex justify-between text-gray-400"><span>Shipping</span><span>₹{shipCost.toLocaleString('en-IN')}</span></div>
+            <div className="flex justify-between text-gray-400"><span>Shipping</span><span>₹{shipCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
           )}
 
           <div className="flex justify-between font-extrabold text-[13px] border-t border-gray-100 pt-1.5 mt-0.5">
             <span>Grand Total</span>
-            <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+            <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
 
           {quote.deliveryTimeline && (
@@ -446,7 +446,7 @@ export const FloatingChat: React.FC = () => {
         {quote.counterOffer && (
           <div className="mx-3 mb-2 bg-blue-50 border border-blue-100 rounded-[6px] px-2 py-1.5 text-xs text-blue-700">
             <span className="font-bold block">Counter from Buyer</span>
-            <span>₹{quote.counterOffer.price.toLocaleString('en-IN')} total <span className="font-normal text-blue-400">(excl. GST &amp; shipping)</span></span>
+            <span>₹{quote.counterOffer.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total <span className="font-normal text-blue-400">(excl. GST &amp; shipping)</span></span>
             {quote.counterOffer.note && <span className="block text-blue-500 mt-0.5">{quote.counterOffer.note}</span>}
           </div>
         )}
@@ -621,8 +621,9 @@ export const FloatingChat: React.FC = () => {
         )}
       </div>
     );
+  };
 
-    if (!isAuthenticated) return null;
+  if (!isAuthenticated) return null;
     const otherUser = getOtherUser(activeConv);
 
     return (
@@ -1019,23 +1020,23 @@ export const FloatingChat: React.FC = () => {
                 <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-3 py-2.5 flex flex-col gap-1 text-[12px]">
                   <div className="flex justify-between text-gray-500">
                     <span>Amount</span>
-                    <span className="font-semibold">₹{quoteForm.price.toLocaleString('en-IN')}</span>
+                    <span className="font-semibold">₹{quoteForm.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   {quoteForm.gstType !== 'exempt' ? (
                     quoteForm.gstType === 'IGST' ? (
                       <div className="flex justify-between text-blue-600">
                         <span>IGST @ {quoteForm.gstRate}%</span>
-                        <span className="font-semibold">₹{computedGstAmount.toLocaleString('en-IN')}</span>
+                        <span className="font-semibold">₹{computedGstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     ) : (
                       <>
                         <div className="flex justify-between text-blue-600">
                           <span>CGST @ {quoteForm.gstRate / 2}%</span>
-                          <span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN')}</span>
+                          <span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between text-blue-600">
                           <span>SGST @ {quoteForm.gstRate / 2}%</span>
-                          <span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN')}</span>
+                          <span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       </>
                     )
@@ -1045,12 +1046,12 @@ export const FloatingChat: React.FC = () => {
                   {quoteForm.shipping > 0 && (
                     <div className="flex justify-between text-gray-500">
                       <span>Shipping</span>
-                      <span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN')}</span>
+                      <span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-[13px] border-t border-gray-200 pt-1.5 mt-0.5 text-slate-900">
                     <span>Grand Total</span>
-                    <span>₹{computedGrandTotal.toLocaleString('en-IN')}</span>
+                    <span>₹{computedGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
@@ -1093,5 +1094,4 @@ export const FloatingChat: React.FC = () => {
         )}
       </div>
     );
-  };
-}
+};

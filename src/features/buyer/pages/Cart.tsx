@@ -96,7 +96,7 @@ export const CartContent: React.FC = () => {
     })
   );
   const totalShipping = Object.values(shippingBySupplierId).reduce((s, v) => s + (v?.cost ?? 0), 0);
-  const grandTotal = gstSummary.subtotal + totalGst + (buyerState ? totalShipping : 0);
+  const grandTotal = gstSummary.subtotal + totalGst;
 
   const handleQty = (productId: string, newQty: number, moq = 1, stock?: number) => {
     if (newQty < moq) return;
@@ -113,6 +113,9 @@ export const CartContent: React.FC = () => {
 
   const uniqueSupplierCount = new Set(cartItems.map(i => i.supplierId)).size;
   const isMultiSupplier = uniqueSupplierCount > 1;
+
+  const uniqueGstRates = new Set(cartItems.map(i => i.gstRate ?? 18)).size;
+  const isMultiGst = uniqueGstRates > 1;
 
   const handleCheckout = () => {
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/profile?tab=cart`); return; }
@@ -163,7 +166,7 @@ export const CartContent: React.FC = () => {
                 </Link>
                 <p className="text-xs text-[#94a3b8] m-0">MOQ: {item.moq} {item.unit}</p>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-base font-extrabold text-[#0f172a]">₹{item.price.toLocaleString('en-IN')}</span>
+                  <span className="text-base font-extrabold text-[#0f172a]">₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   <span className="text-xs text-[#94a3b8]">/ {item.unit || 'pcs'}</span>
                   {item.gstRate !== undefined && item.gstRate > 0 && (
                     <span className="text-[10px] font-semibold text-[#64748b] bg-[#f1f5f9] px-1.5 py-0.5 rounded-[4px]">
@@ -249,23 +252,23 @@ export const CartContent: React.FC = () => {
           <div className="flex flex-col gap-2 text-sm">
             <div className="flex justify-between text-[#475569]">
               <span>{cartItems.length} item{cartItems.length !== 1 ? 's' : ''} (excl. GST)</span>
-              <span>₹{Math.round(gstSummary.subtotal).toLocaleString('en-IN')}</span>
+              <span>₹{(Math.round((gstSummary.subtotal) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
 
             {/* CGST + SGST lines (intra-state) */}
             {Object.entries(gstSummary.cgstSgst).map(([rateStr, gstAmt]) => {
               const rate = Number(rateStr);
               const half = rate / 2;
-              const halfAmt = Math.round(gstAmt / 2);
+              const halfAmt = (Math.round((gstAmt / 2) * 100) / 100);
               return (
                 <React.Fragment key={`intra-${rate}`}>
                   <div className="flex justify-between text-[#64748b] text-xs">
                     <span>CGST @{half}%</span>
-                    <span>₹{halfAmt.toLocaleString('en-IN')}</span>
+                    <span>₹{halfAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-[#64748b] text-xs">
                     <span>SGST @{half}%</span>
-                    <span>₹{halfAmt.toLocaleString('en-IN')}</span>
+                    <span>₹{halfAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </React.Fragment>
               );
@@ -275,7 +278,7 @@ export const CartContent: React.FC = () => {
             {Object.entries(gstSummary.igst).map(([rateStr, gstAmt]) => (
               <div key={`igst-${rateStr}`} className="flex justify-between text-[#64748b] text-xs">
                 <span>IGST @{rateStr}%</span>
-                <span>₹{Math.round(gstAmt).toLocaleString('en-IN')}</span>
+                <span>₹{(Math.round((gstAmt) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             ))}
 
@@ -283,30 +286,17 @@ export const CartContent: React.FC = () => {
             {Object.entries(gstSummary.pending).map(([rateStr, gstAmt]) => (
               <div key={`gst-${rateStr}`} className="flex justify-between text-[#94a3b8] text-xs">
                 <span>GST @{rateStr}% <span className="text-[10px]">(enter pincode)</span></span>
-                <span>₹{Math.round(gstAmt).toLocaleString('en-IN')}</span>
+                <span>₹{(Math.round((gstAmt) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             ))}
 
-            {/* Shipping */}
-            {buyerState ? (
-              Object.values(shippingBySupplierId).map((v, i) =>
-                v ? (
-                  <div key={i} className="flex justify-between text-[#64748b] text-xs">
-                    <span>Shipping ({v.zone})</span>
-                    <span>{v.cost === 0 ? <span className="text-[#16a34a] font-bold">Free</span> : `₹${v.cost.toLocaleString('en-IN')}`}</span>
-                  </div>
-                ) : null
-              )
-            ) : (
-              <div className="flex justify-between text-[#94a3b8] text-xs">
-                <span>Shipping <span className="text-[10px]">(enter pincode)</span></span>
-                <span>—</span>
-              </div>
-            )}
+            <div className="text-[10px] text-[#64748b] bg-[#f8fafc] p-2 rounded border border-[#e2e8f0] mt-1 italic">
+              Note: Shipping charges will only apply at checkout if you select a Third-Party Courier.
+            </div>
 
             <div className="flex justify-between font-extrabold text-[#0f172a] pt-3 mt-1 border-t border-[#f1f5f9] text-base">
               <span>Total</span>
-              <span>₹{Math.round(grandTotal).toLocaleString('en-IN')}</span>
+              <span>₹{(Math.round((grandTotal) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
           {isMultiSupplier && (
@@ -315,8 +305,14 @@ export const CartContent: React.FC = () => {
               <span>Your cart has items from <strong>multiple suppliers</strong>. Please checkout one supplier at a time — remove items from other suppliers first.</span>
             </div>
           )}
+          {isMultiGst && !isMultiSupplier && (
+            <div className="mt-4 flex items-start gap-2 p-3 bg-[#fffbeb] border border-[#fcd34d] rounded-[8px] text-xs text-[#92400e]">
+              <span className="shrink-0 mt-0.5">⚠️</span>
+              <span>Your cart has items with <strong>different GST rates</strong>. Please checkout items with the same GST rate together — remove items with different rates.</span>
+            </div>
+          )}
           <button
-            disabled={isMultiSupplier}
+            disabled={isMultiSupplier || isMultiGst}
             className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-white font-bold text-sm rounded-[10px] border-none cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={handleCheckout}
           >

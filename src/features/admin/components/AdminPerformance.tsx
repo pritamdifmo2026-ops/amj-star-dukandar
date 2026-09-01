@@ -95,10 +95,10 @@ const SupplierCard: React.FC<{ row: any; isTopEarner: boolean }> = ({ row, isTop
           <p className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] m-0 mb-1">AMJ Commission</p>
           <div className="flex items-center gap-0.5">
             <IndianRupee size={14} className="text-[#059669]" />
-            <span className="text-base font-extrabold text-[#059669]">{row.totalCommissionToAmj.toLocaleString('en-IN')}</span>
+            <span className="text-base font-extrabold text-[#059669]">{row.totalCommissionToAmj.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           {row.totalRevenue > 0 && (
-            <p className="text-[10px] text-[#94a3b8] m-0 mt-0.5">GMV ₹{row.totalRevenue.toLocaleString('en-IN')}</p>
+            <p className="text-[10px] text-[#94a3b8] m-0 mt-0.5">GMV ₹{row.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           )}
         </div>
         <div className="px-4 py-3">
@@ -225,7 +225,7 @@ const AdminPerformance: React.FC = () => {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="bg-white border border-[#e2e8f0] rounded-[12px] p-5">
           <p className="text-xs font-bold uppercase text-[#94a3b8] tracking-wider m-0 mb-1">Total AMJ Commission</p>
-          <p className="text-2xl font-extrabold text-[#0f172a] m-0">₹{(totals.totalCommissionToAmj || 0).toLocaleString('en-IN')}</p>
+          <p className="text-2xl font-extrabold text-[#0f172a] m-0">₹{(totals.totalCommissionToAmj || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           <p className="text-xs text-[#64748b] m-0 mt-1">from {totals.totalCompleted || 0} completed orders</p>
         </div>
         <div className="bg-white border border-[#e2e8f0] rounded-[12px] p-5">
@@ -345,10 +345,10 @@ const AdminPerformance: React.FC = () => {
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-0.5">
                         <IndianRupee size={13} className="text-[#059669] shrink-0" />
-                        <span className="text-sm font-extrabold text-[#059669]">{row.totalCommissionToAmj.toLocaleString('en-IN')}</span>
+                        <span className="text-sm font-extrabold text-[#059669]">{row.totalCommissionToAmj.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       {row.totalRevenue > 0 && (
-                        <p className="text-[10px] text-[#94a3b8] m-0 mt-0.5 truncate">GMV ₹{row.totalRevenue.toLocaleString('en-IN')}</p>
+                        <p className="text-[10px] text-[#94a3b8] m-0 mt-0.5 truncate">GMV ₹{row.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       )}
                     </td>
 

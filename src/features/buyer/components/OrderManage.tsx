@@ -478,7 +478,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-extrabold text-[#0f172a] m-0 line-clamp-2">{it.name}</p>
-                  <p className="text-xs text-[#64748b] m-0 mt-1">₹{it.price?.toLocaleString('en-IN')}/{it.unit || 'pcs'} · Qty {it.quantity} {it.unit || 'pcs'}</p>
+                  <p className="text-xs text-[#64748b] m-0 mt-1">₹{it.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/{it.unit || 'pcs'} · Qty {it.quantity} {it.unit || 'pcs'}</p>
                 </div>
               </div>
             );
@@ -497,15 +497,15 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             const showGst = gstType && gstType !== 'exempt' && gstAmt > 0;
             return (
               <>
-                <div className="flex items-center justify-between px-4 py-2 text-xs text-[#64748b]"><span>Taxable Amount</span><span className="font-medium text-[#0f172a]">₹{taxable.toLocaleString('en-IN')}</span></div>
-                {showGst && gstType === 'IGST' && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>IGST @ {gstRate}%</span><span>₹{gstAmt.toLocaleString('en-IN')}</span></div>}
-                {showGst && gstType === 'CGST_SGST' && (<><div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>CGST @ {halfRate}%</span><span>₹{(gstAmt / 2).toLocaleString('en-IN')}</span></div><div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>SGST @ {halfRate}%</span><span>₹{(gstAmt / 2).toLocaleString('en-IN')}</span></div></>)}
+                <div className="flex items-center justify-between px-4 py-2 text-xs text-[#64748b]"><span>Taxable Amount</span><span className="font-medium text-[#0f172a]">₹{taxable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                {showGst && gstType === 'IGST' && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>IGST @ {gstRate}%</span><span>₹{gstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>}
+                {showGst && gstType === 'CGST_SGST' && (<><div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>CGST @ {halfRate}%</span><span>₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div><div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>SGST @ {halfRate}%</span><span>₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div></>)}
                 {!showGst && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>}
-                {shipping > 0 && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#64748b]"><span>Shipping</span><span className="font-medium text-[#0f172a]">₹{shipping.toLocaleString('en-IN')}</span></div>}
+                {shipping > 0 && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#64748b]"><span>Shipping</span><span className="font-medium text-[#0f172a]">₹{shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>}
               </>
             );
           })()}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#fff7ed]"><span className="text-sm font-bold text-[#0f172a]">Grand Total</span><span className="text-base font-extrabold text-primary">₹{order.totalAmount?.toLocaleString('en-IN')}</span></div>
+          <div className="flex items-center justify-between px-4 py-3 bg-[#fff7ed]"><span className="text-sm font-bold text-[#0f172a]">Grand Total</span><span className="text-base font-extrabold text-primary">₹{order.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
         </div>
 
         {(snap.deliveryTimeline || snap.shippingNotes) && (

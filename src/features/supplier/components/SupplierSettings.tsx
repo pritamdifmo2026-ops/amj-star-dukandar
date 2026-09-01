@@ -439,7 +439,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               { label: 'Tier', val: profile?.tier || 'FREE' },
               { label: 'PAN Number', val: profile?.businessDetails?.pan },
               { label: 'Verification Status', val: profile?.kycStatus === 'VERIFIED' ? '✅ Approved' : `⚠️ ${profile?.kycStatus || 'In Review'}` },
-              { label: 'Plan Limit', val: profile?.maxProducts == null ? 'N/A' : (profile.maxProducts < 0 ? 'Unlimited' : `${profile.maxProducts.toLocaleString()} Products`) },
+              { label: 'Plan Limit', val: profile?.maxProducts == null ? 'N/A' : (profile.maxProducts < 0 ? 'Unlimited' : `${profile.maxProducts.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Products`) },
             ].map(({ label, val }) => (
               <div key={label}>
                 <label className={labelCls}>{label}</label>
@@ -469,8 +469,8 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
             {profile?.commissionRate != null && (
               <div className="text-center bg-white border border-[#86efac] rounded-[8px] px-4 py-3 shrink-0">
                 <p className="text-[10px] font-bold text-[#64748b] uppercase tracking-wide m-0 mb-1">Example on ₹1,00,000 deal</p>
-                <p className="text-sm font-extrabold text-[#dc2626] m-0">−₹{(1000 * profile.commissionRate).toLocaleString('en-IN')} AMJ fee</p>
-                <p className="text-sm font-extrabold text-[#15803d] m-0">₹{(1000 * (100 - profile.commissionRate)).toLocaleString('en-IN')} your earning</p>
+                <p className="text-sm font-extrabold text-[#dc2626] m-0">−₹{(1000 * profile.commissionRate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} AMJ fee</p>
+                <p className="text-sm font-extrabold text-[#15803d] m-0">₹{(1000 * (100 - profile.commissionRate)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} your earning</p>
               </div>
             )}
           </div>
@@ -900,7 +900,11 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
                   if (signatureMode === 'upload' && uploadedSignature) {
                     sigData = uploadedSignature;
                   } else if (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty()) {
-                    sigData = sigCanvas.current.getCanvas().toDataURL('image/png');
+                    try {
+                      sigData = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+                    } catch (e) {
+                      sigData = sigCanvas.current.getCanvas().toDataURL('image/png');
+                    }
                   }
                   
                   if (!sigData) {

@@ -84,7 +84,7 @@ const dispatch = useAppDispatch();
   }, []);
 
   const statsData = [
-    { label: 'Total Earnings', val: `₹${overview.totalEarned.toLocaleString('en-IN')}`, sub: 'Lifetime commission', icon: <TrendingUp size={22} />, iconCls: 'bg-[#f0f9ff] text-[#0369a1]' },
+    { label: 'Total Earnings', val: `₹${overview.totalEarned.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, sub: 'Lifetime commission', icon: <TrendingUp size={22} />, iconCls: 'bg-[#f0f9ff] text-[#0369a1]' },
     { label: 'Total Orders', val: String(overview.totalOrders), sub: `${overview.activeOrders} active now`, icon: <ShoppingBag size={22} />, iconCls: 'bg-[#f0fdf4] text-[#15803d]' },
     { label: 'Shared Products', val: String(overview.sharedProducts), sub: 'Items in your shop', icon: <Package size={22} />, iconCls: 'bg-[#fdf2f8] text-[#be185d]' },
     { label: 'Customer Reach', val: String(profile?.reach || 'N/A'), sub: 'Target Market', icon: <Users size={22} />, iconCls: 'bg-[#fff7ed] text-[#c2410c]' },
@@ -132,7 +132,7 @@ const dispatch = useAppDispatch();
                     <span className="text-xs text-[#64748b] truncate block">{order.buyerId?.name || 'Customer'} · {order.items?.[0]?.name}</span>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-sm font-extrabold text-[#0f172a] block">₹{order.totalAmount?.toLocaleString('en-IN')}</span>
+                    <span className="text-sm font-extrabold text-[#0f172a] block">₹{order.totalAmount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     <span className="text-[11px] text-[#64748b] capitalize">{String(order.status || '').replace(/_/g, ' ')}</span>
                   </div>
                 </button>

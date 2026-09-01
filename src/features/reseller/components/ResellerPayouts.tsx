@@ -129,17 +129,17 @@ const ResellerPayouts: React.FC = () => {
       <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-1">
         <div className="bg-gradient-to-br from-primary to-[#c2410c] text-white rounded-2xl p-6 shadow-lg">
           <div className="flex items-center gap-2 mb-3 opacity-90"><Wallet size={18} /><span className="text-xs font-bold uppercase tracking-wider">Available Balance</span></div>
-          <p className="text-3xl font-extrabold m-0 mb-1">₹{available.toLocaleString('en-IN')}</p>
-          <span className="text-xs opacity-80">Withdrawable: ₹{maxWithdrawable.toLocaleString('en-IN')}{minBalance > 0 ? ` (min balance ₹${minBalance} held)` : ''}</span>
+          <p className="text-3xl font-extrabold m-0 mb-1">₹{available.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <span className="text-xs opacity-80">Withdrawable: ₹{maxWithdrawable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{minBalance > 0 ? ` (min balance ₹${minBalance} held)` : ''}</span>
         </div>
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-3 text-[#0369a1]"><Snowflake size={18} /><span className="text-xs font-bold uppercase tracking-wider text-gray-500">Pending / On Hold</span></div>
-          <p className="text-3xl font-extrabold text-gray-900 m-0 mb-1">₹{frozen.toLocaleString('en-IN')}</p>
+          <p className="text-3xl font-extrabold text-gray-900 m-0 mb-1">₹{frozen.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           <span className="text-xs text-gray-500">Released after order completion</span>
         </div>
         <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-3 text-[#15803d]"><TrendingUp size={18} /><span className="text-xs font-bold uppercase tracking-wider text-gray-500">Lifetime Earnings</span></div>
-          <p className="text-3xl font-extrabold text-gray-900 m-0 mb-1">₹{totalEarned.toLocaleString('en-IN')}</p>
+          <p className="text-3xl font-extrabold text-gray-900 m-0 mb-1">₹{totalEarned.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           <span className="text-xs text-gray-500">Total commission earned to date</span>
         </div>
       </div>
@@ -203,7 +203,7 @@ const ResellerPayouts: React.FC = () => {
                         {tx.status !== 'completed' && <span className="ml-2 capitalize text-amber-600 font-semibold">• {tx.status}</span>}
                       </span>
                     </div>
-                    <span className={`text-sm font-extrabold whitespace-nowrap ${meta.cls}`}>{meta.sign}₹{tx.amount?.toLocaleString('en-IN')}</span>
+                    <span className={`text-sm font-extrabold whitespace-nowrap ${meta.cls}`}>{meta.sign}₹{tx.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 );
               })
@@ -235,7 +235,7 @@ const ResellerPayouts: React.FC = () => {
                 ) : (
                   withdrawals.map(wd => (
                     <tr key={wd._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-extrabold text-gray-900">₹{wd.amount?.toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-4 font-extrabold text-gray-900">₹{wd.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td className="px-6 py-4 text-gray-700">
                         {wd.bankDetails?.bankName || 'Bank'} •••• {wd.bankDetails?.accountNumber?.slice(-4) || '----'}
                       </td>
@@ -269,8 +269,8 @@ const ResellerPayouts: React.FC = () => {
             </div>
             <div className="p-6 flex flex-col gap-4">
               <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-lg px-4 py-3 text-xs text-gray-600">
-                Withdrawable balance: <strong className="text-gray-900">₹{maxWithdrawable.toLocaleString('en-IN')}</strong>
-                {minWithdrawal > 0 && <> · Minimum: <strong className="text-gray-900">₹{minWithdrawal.toLocaleString('en-IN')}</strong></>}
+                Withdrawable balance: <strong className="text-gray-900">₹{maxWithdrawable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                {minWithdrawal > 0 && <> · Minimum: <strong className="text-gray-900">₹{minWithdrawal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></>}
               </div>
 
               <div>
