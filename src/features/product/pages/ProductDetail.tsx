@@ -107,6 +107,7 @@ const ProductDetail: React.FC = () => {
         `Quantity: ${enquiry.quantity} ${product.unit}s`,
         `Price: ${priceLine}`,
         `Delivery Timeline: ${enquiry.deliveryTimeline}`,
+        `Payment Terms: ${enquiry.paymentTerms}`,
         `Transportation: ${enquiry.transportationTerms}`,
         shipTo ? `Ship to: ${shipTo}` : '',
         `Requirements: ${enquiry.requirements}`,
@@ -119,7 +120,12 @@ const ProductDetail: React.FC = () => {
         conversationId: conversation._id,
         text,
         receiverId: (conversation as any).supplierId,
-        metadata: { imageUrl: product.imageUrl || product.images?.[0] }
+        metadata: {
+          imageUrl: product.imageUrl || product.images?.[0],
+          deliveryTimeline: enquiry.deliveryTimeline,
+          paymentTerms: enquiry.paymentTerms,
+          transportationTerms: enquiry.transportationTerms
+        }
       });
 
       setShowEnquiryModal(false);

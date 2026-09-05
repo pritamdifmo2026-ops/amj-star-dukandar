@@ -22,7 +22,7 @@ export const POReviewModal: React.FC<POReviewModalProps> = ({
   onConfirm
 }) => {
   return createPortal(
-    <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-50 flex items-center justify-center px-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[9999] flex items-center justify-center px-4" onClick={onClose}>
       <div className="bg-white rounded-[12px] w-full max-w-[400px] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="px-5 py-4 border-b border-[#e2e8f0] flex justify-between items-center bg-[#f8fafc]">
           <div>

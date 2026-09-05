@@ -162,6 +162,7 @@ export const FloatingChat: React.FC = () => {
     deliveryTimeline: '',
     shippingNotes: '',
     terms: 'Standard delivery terms apply.',
+    priceTag: '' as '' | 'Best Price' | 'Last Price',
   });
   const [isNegotiating, setIsNegotiating] = useState(false);
   const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
@@ -264,6 +265,7 @@ export const FloatingChat: React.FC = () => {
         deliveryTimeline: quoteForm.deliveryTimeline || undefined,
         shippingNotes: quoteForm.shippingNotes || undefined,
         terms: quoteForm.terms,
+        priceTag: quoteForm.priceTag || undefined,
       });
       setIsQuoteModalOpen(false);
       setShowPreview(false);
@@ -344,11 +346,26 @@ export const FloatingChat: React.FC = () => {
     };
     const meta = statusMeta[quote.status] || { label: quote.status, cls: 'bg-gray-100 text-gray-500' };
 
-    const taxableAmt = quote.taxableAmount ?? quote.totalAmount ?? 0;
-    const gstAmt = quote.gstAmount ?? 0;
-    const shipCost = quote.shippingCost ?? 0;
-    const grandTotal = taxableAmt + gstAmt + shipCost;
-    const halfRate = (quote.gstRate ?? 0) / 2;
+    const displayItems = ((msg as any)?.metadata?.items && Array.isArray((msg as any).metadata.items) && (msg as any).metadata.items.length > 0)
+      ? (msg as any).metadata.items
+      : (quote.items || []);
+
+    const itemsDerivedTotal = displayItems.reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.quantity)), 0);
+    const taxableAmt = ((msg as any)?.metadata?.taxableAmount !== undefined)
+      ? Number((msg as any).metadata.taxableAmount)
+      : (itemsDerivedTotal > 0 ? itemsDerivedTotal : (Number(quote.taxableAmount) ?? Number(quote.totalAmount) ?? 0));
+    const gstRate = Number(quote.gstRate) || 0;
+    const gstAmt = ((msg as any)?.metadata?.gstAmount !== undefined)
+      ? Number((msg as any).metadata.gstAmount)
+      : (quote.gstType === 'exempt' ? 0 : (gstRate > 0 ? (Math.round((taxableAmt * gstRate / 100) * 100) / 100) : (Number(quote.gstAmount) ?? 0)));
+    const shipCost = ((msg as any)?.metadata?.shippingCost !== undefined)
+      ? Number((msg as any).metadata.shippingCost)
+      : (Number(quote.shippingCost) ?? 0);
+    const courierGst = quote.transportationTerms?.includes('Courier') ? (Math.round((shipCost * 0.18) * 100) / 100) : 0;
+    const grandTotal = ((msg as any)?.metadata?.totalAmount !== undefined)
+      ? Number((msg as any).metadata.totalAmount)
+      : (taxableAmt + gstAmt + shipCost + courierGst);
+    const halfRate = gstRate / 2;
 
     const fmtTimeline = (v: string) => {
       if (!v) return v;
@@ -376,15 +393,22 @@ export const FloatingChat: React.FC = () => {
       } finally { setCounterSubmitting(false); }
     };
 
+    const effectivePriceTag = quote.priceTag || (msg as any)?.metadata?.priceTag || '';
+    const isFinalPrice = effectivePriceTag === 'Best Price' || effectivePriceTag === 'Last Price';
+
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm text-gray-700 overflow-hidden my-1">
         {/* Header */}
         <div className="flex justify-between items-center px-3 py-2 bg-gray-50 border-b border-gray-100">
           <span className="text-[12px] font-extrabold text-slate-800">Quotation</span>
           <div className="flex items-center gap-1.5">
-            {quote.priceTag && (
-              <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-sm bg-red-100 text-red-700 uppercase tracking-wide border border-red-200">
-                {quote.priceTag}
+            {effectivePriceTag && (
+              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider border flex items-center gap-1 shadow-xs ${
+                effectivePriceTag === 'Best Price'
+                  ? 'bg-amber-500 text-white border-amber-600'
+                  : 'bg-indigo-600 text-white border-indigo-700'
+              }`}>
+                {effectivePriceTag === 'Best Price' ? '⚡ Best Price' : '🏷️ Last Price'}
               </span>
             )}
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${meta.cls}`}>{meta.label}</span>
@@ -393,10 +417,10 @@ export const FloatingChat: React.FC = () => {
 
         {/* Items + Totals */}
         <div className="px-3 py-2 flex flex-col gap-1 text-xs">
-          {quote.items.map((item: any, i: number) => (
+          {displayItems.map((item: any, i: number) => (
             <div key={i} className="flex justify-between">
               <span>{item.name} × {item.quantity} {item.unit}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
-              <span className="font-semibold">₹{(item.price * item.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="font-semibold">₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ))}
 
@@ -443,11 +467,63 @@ export const FloatingChat: React.FC = () => {
         </div>
 
         {/* Counter offer details */}
-        {quote.counterOffer && (
-          <div className="mx-3 mb-2 bg-blue-50 border border-blue-100 rounded-[6px] px-2 py-1.5 text-xs text-blue-700">
-            <span className="font-bold block">Counter from Buyer</span>
-            <span>₹{quote.counterOffer.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total <span className="font-normal text-blue-400">(excl. GST &amp; shipping)</span></span>
-            {quote.counterOffer.note && <span className="block text-blue-500 mt-0.5">{quote.counterOffer.note}</span>}
+        {quote.status !== 'CANCELLED' && quote.status !== 'cancelled' && quote.counterOffer && (quote.counterOffer.price || quote.counterOffer.note || quote.counterOffer.deliveryTimeline) && (() => {
+          const counterAuthor = quote.counterOffer.counteredBy
+            ? (quote.counterOffer.counteredBy === 'buyer' ? 'Buyer' : 'Supplier')
+            : (quote.currentTurn === 'supplier' ? 'Buyer' : (quote.currentTurn === 'buyer' ? 'Supplier' : (quote.initiatedBy === 'buyer' ? 'Buyer' : 'Supplier')));
+          return (
+            <div className="mx-3 mb-2 bg-blue-50 border border-blue-100 rounded-[6px] px-2 py-1.5 text-xs text-blue-700">
+              <span className="font-bold block">Counter Offer from {counterAuthor}</span>
+              {quote.items?.length > 1 && quote.counterOffer.itemPrices && quote.counterOffer.itemPrices.length > 0 ? (
+                <div className="flex flex-col gap-1 my-1 border-y border-blue-200 py-1 text-[11px]">
+                  {quote.items.map((it: any, idx: number) => {
+                    const counterIt = quote.counterOffer.itemPrices?.find((cip: any) =>
+                      cip.productId?.toString() === it._id?.toString() || cip.productId?.toString() === it.productId?.toString()
+                    );
+                    const unitPrice = counterIt?.price ?? it.price;
+                    return (
+                      <div key={idx} className="flex justify-between">
+                        <span className="truncate pr-1">{it.name} ({it.quantity} {it.unit || 'pcs'})</span>
+                        <span className="font-semibold shrink-0">₹{(unitPrice * it.quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between font-bold pt-0.5 border-t border-blue-200">
+                    <span>Total Counter:</span>
+                    <span>₹{quote.counterOffer.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              ) : (
+                <span>
+                  ₹{quote.counterOffer.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
+                  {quote.items?.[0]?.quantity > 1 && (
+                    <span className="text-blue-500 font-normal ml-1">
+                      (₹{(quote.counterOffer.price / quote.items[0].quantity).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/{quote.items[0].unit || 'pcs'})
+                    </span>
+                  )}
+                  <span className="font-normal text-blue-400"> (excl. GST &amp; shipping)</span>
+                </span>
+              )}
+              {quote.counterOffer.deliveryTimeline && (
+                <span className="block text-[11px] text-blue-600 mt-0.5">Timeline: {fmtTimeline(quote.counterOffer.deliveryTimeline)}</span>
+              )}
+              {quote.counterOffer.note && <span className="block text-blue-500 mt-0.5">{quote.counterOffer.note}</span>}
+            </div>
+          );
+        })()}
+
+        {/* Final Offer Banner */}
+        {isFinalPrice && (
+          <div className="mx-3 mb-2 p-2 rounded-[6px] bg-amber-50 border border-amber-200 flex items-start gap-1.5">
+            <span className="text-xs shrink-0 mt-0.5">🔒</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-amber-900 m-0">
+                {effectivePriceTag === 'Best Price' ? '⚡ Best Price Offered' : '🏷️ Last Price Offered'}
+              </p>
+              <p className="text-[9px] text-amber-700 m-0 mt-0.5 leading-snug">
+                This is the supplier's final price. Negotiation is closed—you can only accept or decline this offer.
+              </p>
+            </div>
           </div>
         )}
 
@@ -468,10 +544,12 @@ export const FloatingChat: React.FC = () => {
                 className="flex-1 py-1.5 bg-green-500 text-white text-[11px] font-bold border-none rounded-[6px] cursor-pointer hover:bg-green-600">
                 Accept Deal
               </button>
-              <button onClick={() => setShowCounter(true)}
-                className="flex-1 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold border border-blue-200 rounded-[6px] cursor-pointer hover:bg-blue-100">
-                Counter
-              </button>
+              {(!(!isSupplier && isFinalPrice)) && (
+                <button onClick={() => setShowCounter(true)}
+                  className="flex-1 py-1.5 bg-blue-50 text-blue-700 text-[11px] font-bold border border-blue-200 rounded-[6px] cursor-pointer hover:bg-blue-100">
+                  Counter
+                </button>
+              )}
               <button onClick={() => setConfirmAction('decline')}
                 className="flex-1 py-1.5 bg-red-50 text-red-600 text-[11px] font-bold border border-red-100 rounded-[6px] cursor-pointer hover:bg-red-100">
                 Decline
@@ -554,7 +632,7 @@ export const FloatingChat: React.FC = () => {
         )}
 
         {/* Counter form — only when it's user's turn */}
-        {quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT') && showCounter && (
+        {quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT') && showCounter && !(!isSupplier && isFinalPrice) && (
           <div className="px-3 pb-3 flex flex-col gap-1.5">
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center border border-gray-200 rounded-[6px] focus-within:border-blue-400">
@@ -1014,6 +1092,33 @@ export const FloatingChat: React.FC = () => {
                   <textarea rows={2} value={quoteForm.terms}
                     onChange={e => setQuoteForm(p => ({ ...p, terms: e.target.value }))}
                     className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none resize-none" />
+                </div>
+
+                {/* Price Highlight (Optional) */}
+                <div>
+                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Price Highlight (Optional)</label>
+                  <div className="flex gap-2">
+                    {(['', 'Best Price', 'Last Price'] as const).map(t => (
+                      <button
+                        key={t || 'none'}
+                        type="button"
+                        className={`flex-1 py-1.5 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${
+                          quoteForm.priceTag === t
+                            ? 'bg-orange-500 text-white border-orange-500'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-orange-400'
+                        }`}
+                        onClick={() => setQuoteForm(p => ({ ...p, priceTag: t }))}
+                      >
+                        {t || 'None'}
+                      </button>
+                    ))}
+                  </div>
+                  {quoteForm.priceTag && (
+                    <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-[6px] p-2 mt-1.5 m-0 flex items-start gap-1">
+                      <span>🔒</span>
+                      <span><strong>Final Offer:</strong> Choosing <strong>{quoteForm.priceTag}</strong> disables further negotiations for the buyer.</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Live Breakdown */}

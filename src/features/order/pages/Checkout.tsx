@@ -42,6 +42,15 @@ interface CheckoutContentProps {
   onOrderPlaced?: () => void;
 }
 
+const DELIVERY_TIMELINE_OPTIONS = [
+  'Standard (5–7 business days)',
+  'Within 3 days',
+  'Within 7 days',
+  'Within 15 days',
+  'Within 30 days',
+  'Flexible',
+];
+
 export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, onBack, onOrderPlaced }) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -54,6 +63,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [supplierProfile, setSupplierProfile] = useState<any>(null);
   const [selectedTransportation, setSelectedTransportation] = useState<string>('');
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<string>('');
+  const [selectedDeliveryTimeline, setSelectedDeliveryTimeline] = useState<string>('Standard (5–7 business days)');
 
   useEffect(() => {
     const supplierId = items[0]?.supplierId;
@@ -216,7 +226,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const baseShippingCost = buyerState
     ? Object.values(shippingBySupplierId).reduce((s, v) => s + (v?.cost ?? 0), 0)
     : 0;
-  
+
   const isFOR = selectedTransportation === 'FOR';
   const isExWorks = selectedTransportation === 'Ex. Factory' || selectedTransportation === 'Ex. Godown';
   const isThirdParty = selectedTransportation === 'Third-Party Courier';
@@ -232,7 +242,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
       return;
     }
     if (!selectedAddress) { setError('Please add a delivery address.'); return; }
-    
+
     const initPrices: Record<string, number> = {};
     items.forEach(it => { initPrices[it.productId] = it.price; });
     setNegotiatedPrices(initPrices);
@@ -277,7 +287,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           hsnCode: (it as any).hsnCode,
           imageUrl: it.imageUrl
         }));
-        
+
         const conversation = await chatApi.getOrCreateConversation(
           supplierId,
           cartItems[0]?.productId,
@@ -285,6 +295,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           {
             transportationTerms: selectedTransportation,
             paymentTerms: selectedPaymentTerm,
+            deliveryTimeline: selectedDeliveryTimeline,
             cartItems
           }
         );
@@ -300,15 +311,17 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         const itemsLines = items.map(it => {
           const p = customPrices && customPrices[it.productId] !== undefined ? customPrices[it.productId] : it.price;
           if (customPrices && customPrices[it.productId] !== undefined && p !== it.price) {
-             return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'}) - Proposed: ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Listed: ₹${it.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+            return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'}) - Proposed: ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Listed: ₹${it.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
           } else {
-             return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'} @ ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+            return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'} @ ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
           }
         }).join('\n');
-        
+
         const text = [
           `📦 ${action === 'negotiate' ? 'Negotiation Request (Bulk Inquiry)' : 'Order Request (Checkout)'}`,
           itemsLines,
+          `Delivery Terms: ${selectedDeliveryTimeline}`,
+          `Payment Terms: ${selectedPaymentTerm}`,
           `Transportation: ${selectedTransportation}`,
           shipTo ? `Ship to: ${shipTo}` : '',
         ].filter(Boolean).join('\n');
@@ -317,13 +330,16 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           socket.emit('join_conversation', conversation._id);
           const receiverId = conversation.supplierId;
           const images = items.map(it => it.imageUrl).filter(Boolean);
-          socket.emit('send_message', { 
-            conversationId: conversation._id, 
-            text, 
+          socket.emit('send_message', {
+            conversationId: conversation._id,
+            text,
             receiverId,
-            metadata: { 
+            metadata: {
               imageUrl: images[0],
               images: images,
+              deliveryTimeline: selectedDeliveryTimeline,
+              paymentTerms: selectedPaymentTerm,
+              transportationTerms: selectedTransportation,
               negotiationItems: items.map(it => ({
                 productId: it.productId,
                 name: it.name,
@@ -475,44 +491,56 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               </h2>
             </div>
 
-              {/* Commercial Terms Selection */}
-              <div className="px-5 py-4 border-b border-[#f1f5f9] bg-[#f8fafc]">
-                <h3 className="text-sm font-bold text-[#0f172a] mb-3">Commercial Terms</h3>
-                <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Transportation Method</label>
-                    <select
-                      value={selectedTransportation}
-                      onChange={(e) => setSelectedTransportation(e.target.value)}
-                      className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
-                    >
-                      {supplierProfile?.supportedTransportationTerms?.length > 0 ? (
-                        supplierProfile.supportedTransportationTerms.map((t: string) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))
-                      ) : (
-                        <option value="Ex. Factory">Ex. Factory</option>
-                      )}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Payment Terms</label>
-                    <select
-                      value={selectedPaymentTerm}
-                      onChange={(e) => setSelectedPaymentTerm(e.target.value)}
-                      className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
-                    >
-                      {supplierProfile?.supportedPaymentTerms?.length > 0 ? (
-                        supplierProfile.supportedPaymentTerms.map((t: string) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))
-                      ) : (
-                        <option value="100% Advance">100% Advance</option>
-                      )}
-                    </select>
-                  </div>
+            {/* Commercial Terms Selection */}
+            <div className="px-5 py-4 border-b border-[#f1f5f9] bg-[#f8fafc]">
+              <h3 className="text-sm font-bold text-[#0f172a] mb-3">Commercial Terms</h3>
+              <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+                <div>
+                  <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Transportation Method</label>
+                  <select
+                    value={selectedTransportation}
+                    onChange={(e) => setSelectedTransportation(e.target.value)}
+                    className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
+                  >
+                    {supplierProfile?.supportedTransportationTerms?.length > 0 ? (
+                      supplierProfile.supportedTransportationTerms.map((t: string) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))
+                    ) : (
+                      <option value="Ex. Factory">Ex. Factory</option>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Payment Terms</label>
+                  <select
+                    value={selectedPaymentTerm}
+                    onChange={(e) => setSelectedPaymentTerm(e.target.value)}
+                    className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
+                  >
+                    {supplierProfile?.supportedPaymentTerms?.length > 0 ? (
+                      supplierProfile.supportedPaymentTerms.map((t: string) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))
+                    ) : (
+                      <option value="100% Advance">100% Advance</option>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-2">Delivery Terms</label>
+                  <select
+                    value={selectedDeliveryTimeline}
+                    onChange={(e) => setSelectedDeliveryTimeline(e.target.value)}
+                    className="w-full border border-[#e2e8f0] rounded-[6px] px-3 py-2 text-sm text-[#0f172a] outline-none bg-white focus:border-primary"
+                  >
+                    {DELIVERY_TIMELINE_OPTIONS.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
+            </div>
 
             {/* Header row */}
             <div className="grid grid-cols-[1fr_80px_90px_90px] gap-3 px-5 py-2.5 bg-[#f8fafc] border-b border-[#eef2f6] text-[10px] font-bold uppercase text-[#94a3b8] tracking-wider max-sm:hidden">
@@ -599,7 +627,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                   {!buyerState ? '—' : totalShipping === 0 ? 'Free' : `₹${totalShipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 </span>
               </div>
-              
+
               {isThirdParty && courierGST > 0 && (
                 <div className="flex justify-between text-[#0369a1]">
                   <span>Courier GST @ 18%</span>
@@ -643,8 +671,8 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                   <label
                     key={addr._id}
                     className={`flex items-start gap-3 p-4 rounded-[10px] border cursor-pointer transition-all ${selectedAddressId === addr._id
-                        ? 'border-primary bg-[#fff7ed] shadow-[0_0_0_3px_rgba(230,92,0,0.08)]'
-                        : 'border-[#e2e8f0] hover:border-[#e65c00]/30'
+                      ? 'border-primary bg-[#fff7ed] shadow-[0_0_0_3px_rgba(230,92,0,0.08)]'
+                      : 'border-[#e2e8f0] hover:border-[#e65c00]/30'
                       }`}
                   >
                     <input
@@ -770,7 +798,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                       try {
                         const loadingToast = toast.loading('Saving signature...');
                         const res = await apiClient.put('/user/profile', { savedSignature: sigData });
-                        
+
                         import('@/features/auth/store/auth.slice').then(({ setCredentials }) => {
                           dispatch(setCredentials({ user: res.data.user }));
                         });
@@ -803,7 +831,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                     <span className="font-bold text-[#0f172a] text-[15px]">{it.name}</span>
                     <span className="text-sm font-semibold text-[#475569] whitespace-nowrap">Listed: ₹{it.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-4 mt-2">
                     <div className="flex-1 flex flex-col gap-2">
                       <div className="flex justify-between text-[11px] text-[#64748b] font-medium px-1">
@@ -811,12 +839,12 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                         <span className="text-[#0ea5e9] font-bold text-xs border border-[#0ea5e9]/30 bg-[#f0f9ff] px-2 py-0.5 rounded-full">Proposed: ₹{currentVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         <span>₹{it.price.toLocaleString('en-IN')}</span>
                       </div>
-                      <input 
-                        type="range" 
-                        min={minVal} 
-                        max={it.price} 
+                      <input
+                        type="range"
+                        min={minVal}
+                        max={it.price}
                         step={0.5}
-                        value={currentVal} 
+                        value={currentVal}
                         onChange={e => setNegotiatedPrices(prev => ({ ...prev, [it.productId]: Number(e.target.value) }))}
                         className="w-full accent-[#0ea5e9] h-2 bg-[#e2e8f0] rounded-lg appearance-none cursor-pointer"
                       />
@@ -1009,6 +1037,25 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 </div>
               </div>
 
+              {/* Commercial Terms Summary */}
+              <div className="flex flex-col gap-1.5 mb-5">
+                <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Commercial Terms</p>
+                <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155] flex flex-col gap-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-[#64748b]">Delivery Terms</span>
+                    <span className="font-semibold text-[#0f172a]">{selectedDeliveryTimeline}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#64748b]">Payment Terms</span>
+                    <span className="font-semibold text-[#0f172a]">{selectedPaymentTerm}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#64748b]">Transportation</span>
+                    <span className="font-semibold text-[#0f172a]">{selectedTransportation}</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-1.5 mb-2">
                 <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Payment Method</p>
                 {/* Direct Payment option */}
@@ -1074,7 +1121,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                   <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" strokeDasharray="60" strokeDashoffset="15" />
                   </svg>
-                ) : 'Request Final Quotation'}
+                ) : 'Checkout'}
               </button>
             </div>
           </div>

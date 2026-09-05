@@ -205,6 +205,19 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
     finally { setBusy(false); }
   };
 
+  const handleRequestPayment = async (type: string) => {
+    setBusy(true);
+    try {
+      await apiClient.post(`/orders/${order._id}/payment-request`);
+      toast.success(`${type} payment requested successfully`);
+      onRefresh();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Failed to request payment');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleResolve = async () => {
     if (!resolveMethod) { toast.error('Choose a resolution method.'); return; }
     if (resolveMethod === 'replacement' && requiresReturn === null) { toast.error('Choose whether the original must be returned.'); return; }
@@ -843,6 +856,99 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           {order.status === 'awaiting_confirmation' && <p className="text-sm text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={14} /> Delivered — waiting for buyer confirmation (auto-completes in 72h).</p>}
           {(order.status === 'completed' || order.status === 'delivered') && <p className="text-sm text-[#15803d] m-0 flex items-center gap-1.5"><CheckCircle size={14} /> Order completed. Commission released.</p>}
           {order.status === 'cancelled' && <p className="text-sm text-[#dc2626] m-0">This order was cancelled.</p>}
+
+          {/* Supplier Payment Request Actions */}
+          {order.paymentStatus !== 'completed' && (() => {
+            const paymentTerms = order.paymentTerms || '';
+            const isCOD = paymentTerms.includes('COD');
+            const isCredit = paymentTerms.includes('Credit');
+            const isAdvance = paymentTerms.includes('Advance') || (!isCOD && !isCredit && (order.advanceAmountRequired || 0) > 0);
+            
+            const totalAmount = Number(order.totalAmount || 0);
+            const termsMatch = paymentTerms.match(/(\d+)%/);
+            const advancePercent = termsMatch ? parseInt(termsMatch[1]) : (totalAmount > 0 && order.advanceAmountRequired ? Math.round((order.advanceAmountRequired / totalAmount) * 100) : 100);
+            const remainingPercent = Math.max(0, 100 - advancePercent);
+            const advanceAmount = Number(order.advanceAmountRequired || Math.round(totalAmount * (advancePercent / 100)));
+            const remainingAmount = Math.max(0, totalAmount - advanceAmount);
+
+            const hasRequested = !!order.paymentRequestedAt;
+
+            if (isCOD && ['awaiting_confirmation', 'delivered', 'completed'].includes(order.status)) {
+              const codLabel = `₹${totalAmount.toLocaleString('en-IN')}`;
+              return (
+                <button
+                  onClick={() => !hasRequested && handleRequestPayment('COD')}
+                  disabled={busy || hasRequested}
+                  className={`w-full mt-3 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white rounded-[8px] border-none transition-colors ${hasRequested ? 'bg-[#94a3b8] cursor-not-allowed' : 'bg-[#2563eb] hover:bg-[#1d4ed8] cursor-pointer disabled:opacity-50'}`}
+                >
+                  <Clock size={15} /> {busy ? 'Requesting…' : (hasRequested ? `COD Payment Requested (${codLabel})` : `Request COD Payment (${codLabel})`)}
+                </button>
+              );
+            }
+
+            if (isCredit) {
+              const isCreditDue = order.creditPaymentDue || (order.creditDueDate && new Date(order.creditDueDate) <= new Date());
+              const creditLabel = `₹${totalAmount.toLocaleString('en-IN')}`;
+              if (isCreditDue) {
+                return (
+                  <button
+                    onClick={() => !hasRequested && handleRequestPayment('Credit')}
+                    disabled={busy || hasRequested}
+                    className={`w-full mt-3 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white rounded-[8px] border-none transition-colors ${hasRequested ? 'bg-[#94a3b8] cursor-not-allowed' : 'bg-[#4f46e5] hover:bg-[#4338ca] cursor-pointer disabled:opacity-50'}`}
+                  >
+                    <Clock size={15} /> {busy ? 'Requesting…' : (hasRequested ? `Credit Payment Requested (${creditLabel})` : `Request Credit Payment (${creditLabel})`)}
+                  </button>
+                );
+              }
+              return (
+                <div className="mt-3 p-2.5 bg-indigo-50 border border-indigo-200 rounded-[8px] text-xs text-indigo-700 font-medium">
+                  ⏳ Credit Period Active ({order.creditDays || 7} Days • {creditLabel}) — payment request unlocks once due.
+                </div>
+              );
+            }
+
+            if (isAdvance) {
+              const advanceLabel = advancePercent > 0 && advancePercent < 100 
+                ? `${advancePercent}% • ₹${advanceAmount.toLocaleString('en-IN')}` 
+                : `₹${advanceAmount.toLocaleString('en-IN')}`;
+              const remainingLabel = remainingPercent > 0 
+                ? `${remainingPercent}% • ₹${remainingAmount.toLocaleString('en-IN')}` 
+                : `₹${remainingAmount.toLocaleString('en-IN')}`;
+
+              if (!order.advancePaid && ['pending', 'pending_approval'].includes(order.status)) {
+                return (
+                  <button
+                    onClick={() => !hasRequested && handleRequestPayment('Advance')}
+                    disabled={busy || hasRequested}
+                    className={`w-full mt-3 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white rounded-[8px] border-none transition-colors ${hasRequested ? 'bg-[#94a3b8] cursor-not-allowed' : 'bg-[#0ea5e9] hover:bg-[#0284c7] cursor-pointer disabled:opacity-50'}`}
+                  >
+                    <Clock size={15} /> {busy ? 'Requesting…' : (hasRequested ? `Advance Payment Requested (${advanceLabel})` : `Request Advance Payment (${advanceLabel})`)}
+                  </button>
+                );
+              }
+              if (order.advancePaid) {
+                const isDelivered = ['awaiting_confirmation', 'delivered', 'completed'].includes(order.status) || !!order.awaitingConfirmationAt;
+                if (!isDelivered) {
+                  return (
+                    <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-[8px] text-xs text-amber-700 font-medium">
+                      🚚 Advance Payment Received ({advancePercent > 0 && advancePercent < 100 ? `${advancePercent}% • ` : ''}₹{advanceAmount.toLocaleString('en-IN')}). Remaining balance request ({remainingLabel}) will unlock once the product is delivered.
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    onClick={() => !hasRequested && handleRequestPayment('Remaining Balance')}
+                    disabled={busy || hasRequested}
+                    className={`w-full mt-3 flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white rounded-[8px] border-none transition-colors ${hasRequested ? 'bg-[#94a3b8] cursor-not-allowed' : 'bg-[#f59e0b] hover:bg-[#d97706] cursor-pointer disabled:opacity-50'}`}
+                  >
+                    <Clock size={15} /> {busy ? 'Requesting…' : (hasRequested ? `Remaining Balance Requested (${remainingLabel})` : `Request Remaining Balance (${remainingLabel})`)}
+                  </button>
+                );
+              }
+            }
+
+            return null;
+          })()}
         </div>
       )}
 

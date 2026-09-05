@@ -78,8 +78,17 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
   // Step 4
   const [requirements, setRequirements] = useState<string[]>(['Standard']);
   const [transportationTerms, setTransportationTerms] = useState(supplierProfile?.supportedTransportationTerms?.[0] || 'FOR');
-  const [paymentTerms] = useState(supplierProfile?.supportedPaymentTerms?.[0] || '100% Advance');
+  const [paymentTerms, setPaymentTerms] = useState(supplierProfile?.supportedPaymentTerms?.[0] || '100% Advance');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (supplierProfile?.supportedTransportationTerms?.[0]) {
+      setTransportationTerms(supplierProfile.supportedTransportationTerms[0]);
+    }
+    if (supplierProfile?.supportedPaymentTerms?.[0]) {
+      setPaymentTerms(supplierProfile.supportedPaymentTerms[0]);
+    }
+  }, [supplierProfile]);
 
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -496,6 +505,30 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
 
               <div className="flex flex-col gap-3 mt-2">
                 <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Preferred Payment Terms *</label>
+                  <select
+                    value={paymentTerms}
+                    onChange={(e) => setPaymentTerms(e.target.value)}
+                    className={inputCls}
+                  >
+                    {supplierProfile?.supportedPaymentTerms && supplierProfile.supportedPaymentTerms.length > 0 ? (
+                      supplierProfile.supportedPaymentTerms.map((term: string) => (
+                        <option key={term} value={term}>{term}</option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="100% Advance">100% Advance</option>
+                        <option value="50% Advance">50% Advance</option>
+                        <option value="COD">Cash on Delivery (COD)</option>
+                        <option value="Credit (7 Days)">Credit (7 Days)</option>
+                        <option value="Credit (15 Days)">Credit (15 Days)</option>
+                        <option value="Credit (30 Days)">Credit (30 Days)</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-[#64748b] uppercase tracking-wide">Preferred Transportation *</label>
                   <select value={transportationTerms} onChange={(e) => setTransportationTerms(e.target.value)} className={inputCls}>
                     {supplierProfile?.supportedTransportationTerms?.length > 0 ? (
@@ -506,6 +539,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                       <>
                         <option value="FOR">FOR (Free on Road)</option>
                         <option value="Ex-Works">Ex-Works</option>
+                        <option value="Third-Party Courier">Third-Party Courier</option>
                       </>
                     )}
                   </select>
@@ -523,8 +557,9 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                 </strong></span>
                 <span>Delivery: <strong>{timeline}</strong></span>
                 {finalAddr && <span>Ship to: <strong>{finalAddr}</strong></span>}
-                <span>Requirements: <strong>{requirements.join(', ')}</strong></span>
+                <span>Payment Terms: <strong>{paymentTerms}</strong></span>
                 <span>Transport: <strong>{transportationTerms}</strong></span>
+                <span>Requirements: <strong>{requirements.join(', ')}</strong></span>
               </div>
             </div>
           )}

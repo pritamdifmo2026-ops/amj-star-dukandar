@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { Trash2, Plus, Minus, ShoppingBag, ShoppingCart, ArrowRight, Bookmark, MapPin } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ShoppingCart, ArrowRight, Bookmark, MapPin, Truck } from 'lucide-react';
 import {
   removeFromCartAsync,
   updateQuantityAsync,
@@ -280,6 +280,11 @@ export const CartContent: React.FC = () => {
 
             <div className="text-[10px] text-[#64748b] bg-[#f8fafc] p-2 rounded border border-[#e2e8f0] mt-1 italic">
               Note: Shipping charges will only apply at checkout if you select a Third-Party Courier.
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs text-[#1e40af] bg-[#eff6ff] border border-[#bfdbfe] p-2.5 rounded-[8px] mt-1">
+              <Truck size={14} className="shrink-0" />
+              <span>Standard delivery: <strong>5–7 business days</strong></span>
             </div>
 
             <div className="flex justify-between font-extrabold text-[#0f172a] pt-3 mt-1 border-t border-[#f1f5f9] text-base">
