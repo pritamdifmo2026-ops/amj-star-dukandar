@@ -11,6 +11,7 @@ export interface CartItem {
   imageUrl?: string;
   moq: number;
   stock?: number;
+  hsnCode?: string;
   gstRate?: number;
   gstIncluded?: boolean;
   supplierState?: string;

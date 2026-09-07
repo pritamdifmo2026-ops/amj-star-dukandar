@@ -44,7 +44,7 @@ const needsAttention = (o: any, isSupplier: boolean) => {
     return false;
   }
   if (['shipped', 'awaiting_confirmation', 'delivered'].includes(o.status)) return true;
-  if (o.status === 'disputed' && o._dispute?.status === 'supplier_resolved') return true;
+  if (o.status === 'disputed' && o._dispute?.status === 'supplier_resolved' && !o._dispute?.buyerConfirmedAt) return true;
   return false;
 };
 
@@ -79,18 +79,22 @@ const OrderList: React.FC = () => {
     if (!socket) return;
     const handler = () => fetchOrdersRef.current();
     socket.on('order_update', handler);
-    return () => { socket.off('order_update', handler); };
+    socket.on('dispute_update', handler);
+    return () => {
+      socket.off('order_update', handler);
+      socket.off('dispute_update', handler);
+    };
   }, [socket]);
 
   const fetchOrders = async () => {
     try {
       const res = user?.role === 'supplier' ? await orderApi.supplierOrders() : await orderApi.list();
       const list = (res.data ?? []) as any[];
-      const disputed = list.filter(o => o.status === 'disputed');
+      const disputed = list.filter(o => o.status === 'disputed' || o._dispute);
       if (disputed.length) {
         const disputes = await Promise.all(disputed.map(o => orderApi.getDispute(o._id).catch(() => null)));
         const map = new Map(disputed.map((o, i) => [o._id, disputes[i]]));
-        list.forEach(o => { if (map.has(o._id)) o._dispute = map.get(o._id); });
+        list.forEach(o => { if (map.has(o._id) && map.get(o._id)) o._dispute = map.get(o._id); });
       }
       const DONE = new Set(['completed', 'delivered', 'cancelled']);
       list.sort((a, b) => {
@@ -263,10 +267,25 @@ const OrderList: React.FC = () => {
                       </div>
                     );
                   })}
-                  {order.status === 'disputed' && order._dispute && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#b91c1c] bg-[#fef2f2] border border-[#fca5a5] px-2 py-0.5 rounded-full w-fit mt-1">
-                      <AlertTriangle size={10} /> {order._dispute.issueType} issue
-                    </span>
+                  {order._dispute && (
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#b91c1c] bg-[#fef2f2] border border-[#fca5a5] px-2 py-0.5 rounded-full w-fit">
+                        <AlertTriangle size={10} /> {order._dispute.issueType} issue
+                      </span>
+                      {order._dispute.adminRefundVerified ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#15803d] bg-[#dcfce7] border border-[#86efac] px-2 py-0.5 rounded-full w-fit">
+                          <CheckCircle size={10} /> Admin Verified Refund
+                        </span>
+                      ) : order._dispute.buyerConfirmedAt ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#0284c7] bg-[#f0f9ff] border border-[#bae6fd] px-2 py-0.5 rounded-full w-fit">
+                          <CheckCircle size={10} /> Buyer Confirmed Refund
+                        </span>
+                      ) : order._dispute.status === 'supplier_resolved' ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#9333ea] bg-[#faf5ff] border border-[#d8b4fe] px-2 py-0.5 rounded-full w-fit">
+                          <Clock size={10} /> Awaiting Buyer Confirmation
+                        </span>
+                      ) : null}
+                    </div>
                   )}
                 </div>
 

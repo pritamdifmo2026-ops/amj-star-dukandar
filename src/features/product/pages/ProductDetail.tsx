@@ -154,7 +154,7 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
     if (isNonBuyer) { setShowAdminModal(true); return; }
     if (isInCart) { navigate(ROUTES.CART); return; }
-    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage, moq: product.minOrderQty, stock: product.stock, gstRate: product.gstRate, gstIncluded: product.gstIncluded }));
+    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage, moq: product.minOrderQty, stock: product.stock, hsnCode: product.hsnCode, gstRate: product.gstRate, gstIncluded: product.gstIncluded }));
   };
 
   const handleBuyNow = () => {
@@ -172,6 +172,7 @@ const ProductDetail: React.FC = () => {
       imageUrl: currentImage,
       moq: product.minOrderQty,
       stock: product.stock,
+      hsnCode: product.hsnCode,
       gstRate: product.gstRate,
       gstIncluded: product.gstIncluded
     };

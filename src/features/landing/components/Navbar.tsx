@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ShoppingCart, ChevronDown, Menu, X, User, LogOut,
+  ShoppingCart, ChevronDown, ChevronRight, Menu, X, User, LogOut,
   Store, ShoppingBag, Truck, List, LayoutDashboard, Search,
   Info, Factory, RefreshCw, ShieldCheck
 } from 'lucide-react';
@@ -341,26 +341,36 @@ const Navbar: React.FC = () => {
         </nav>
 
         {/* Category bar — desktop only */}
-        <div className="hidden lg:block bg-surface border-b border-border">
-          <div className="max-w-[var(--width-container)] mx-auto px-8 flex items-center gap-6">
-            <div className="flex items-center gap-5 flex-1">
-              {categories.map(cat => {
+        <div className="hidden lg:block bg-surface border-b border-border w-full overflow-x-clip">
+          <div className="max-w-[var(--width-container)] mx-auto px-4 lg:px-8 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 xl:gap-5 flex-1 min-w-0">
+              {categories.slice(0, 6).map((cat, index) => {
                 const hasSubs = cat.subcategories?.length > 0;
+                // Responsive visibility:
+                // 0..3: always visible on lg (1024px+)
+                // 4: hidden on lg, visible on xl (1280px+)
+                // 5: hidden on lg/xl, visible on 2xl (1536px+)
+                const visibilityCls =
+                  index < 4 ? 'block' :
+                  index === 4 ? 'hidden xl:block' :
+                  'hidden 2xl:block';
+
                 return (
-                  <div key={cat._id} className="relative py-2.5 group">
+                  <div key={cat._id} className={`relative py-2.5 group shrink-0 ${visibilityCls}`}>
                     <Link
                       to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
                       className="flex items-center gap-1.5 text-body no-underline text-xs font-semibold transition-colors group-hover:text-primary whitespace-nowrap"
+                      title={cat.name}
                     >
-                      <span>{cat.name}</span>
-                      {hasSubs && <ChevronDown size={12} />}
+                      <span className="truncate max-w-[125px] lg:max-w-[145px] xl:max-w-[175px] 2xl:max-w-[210px]">{cat.name}</span>
+                      {hasSubs && <ChevronDown size={12} className="shrink-0 transition-transform group-hover:rotate-180" />}
                     </Link>
                     {hasSubs && (
-                      <div className="absolute top-full left-0 min-w-[200px] bg-white border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] p-2 z-[100] opacity-0 invisible translate-y-2.5 transition-all group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
+                      <div className="absolute top-full left-0 min-w-[210px] bg-white border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] p-2 z-[100] opacity-0 invisible translate-y-2.5 transition-all group-hover:opacity-100 group-hover:visible group-hover:translate-y-0">
                         {cat.subcategories.map((sub: any) => (
                           <Link key={sub._id}
                             to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                            className="block px-3 py-2 text-heading no-underline text-xs rounded-[6px] transition-all hover:bg-slate-50 hover:text-primary hover:pl-4">
+                            className="block px-3 py-1.5 text-heading no-underline text-xs rounded-[6px] transition-all hover:bg-slate-50 hover:text-primary hover:pl-4">
                             {sub.name}
                           </Link>
                         ))}
@@ -369,8 +379,63 @@ const Navbar: React.FC = () => {
                   </div>
                 );
               })}
+
+              {/* More Categories dropdown when categories exceed visible slots */}
+              {categories.length > 4 && (
+                <div className={`relative py-2.5 group/more shrink-0 ${
+                  categories.length <= 4 ? 'hidden' :
+                  categories.length === 5 ? 'block xl:hidden' :
+                  categories.length === 6 ? 'block 2xl:hidden' :
+                  'block'
+                }`}>
+                  <button className="flex items-center gap-1.5 text-body no-underline text-xs font-semibold transition-colors group-hover/more:text-primary whitespace-nowrap bg-transparent border-none cursor-pointer p-0">
+                    <span>More Categories</span>
+                    <ChevronDown size={12} className="shrink-0 transition-transform group-hover/more:rotate-180" />
+                  </button>
+                  <div className="absolute top-full left-0 min-w-[230px] max-h-[400px] overflow-y-auto bg-white border border-border rounded-[10px] shadow-[0_12px_28px_rgba(0,0,0,0.12)] p-2 z-[120] opacity-0 invisible translate-y-2 transition-all group-hover/more:opacity-100 group-hover/more:visible group-hover/more:translate-y-0">
+                    {categories.slice(4).map((cat, sliceIdx) => {
+                      const actualIdx = sliceIdx + 4;
+                      const hasSubs = cat.subcategories?.length > 0;
+                      // actualIdx 4: shown on lg, hidden on xl+ (where it is in the main bar)
+                      // actualIdx 5: shown on lg & xl, hidden on 2xl+ (where it is in the main bar)
+                      // actualIdx >= 6: always shown in More dropdown
+                      const itemVisCls =
+                        actualIdx === 4 ? 'block xl:hidden' :
+                        actualIdx === 5 ? 'block 2xl:hidden' :
+                        'block';
+
+                      return (
+                        <div key={cat._id} className={`relative group/moreitem py-0.5 ${itemVisCls}`}>
+                          <Link
+                            to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                            className="flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-heading no-underline rounded-[6px] hover:bg-slate-50 hover:text-primary transition-colors"
+                            title={cat.name}
+                          >
+                            <span className="truncate max-w-[170px]">{cat.name}</span>
+                            {hasSubs && <ChevronRight size={12} className="text-muted shrink-0 ml-2" />}
+                          </Link>
+                          {hasSubs && (
+                            <div className="absolute right-full top-0 mr-1 min-w-[200px] max-h-[300px] overflow-y-auto bg-white border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] p-2 z-[130] opacity-0 invisible -translate-x-1 transition-all group-hover/moreitem:opacity-100 group-hover/moreitem:visible group-hover/moreitem:translate-x-0">
+                              {cat.subcategories.map((sub: any) => (
+                                <Link
+                                  key={sub._id}
+                                  to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
+                                  className="block px-3 py-1.5 text-heading no-underline text-xs rounded-[6px] transition-all hover:bg-slate-50 hover:text-primary hover:pl-4"
+                                >
+                                  {sub.name}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-6 border-l border-border pl-6 py-2.5">
+
+            <div className="flex items-center shrink-0 border-l border-border pl-4 xl:pl-6 py-2.5">
               <Link to="/verified-manufacturers" className="text-xs font-semibold text-heading no-underline whitespace-nowrap hover:text-primary">
                 Verified manufacturers
               </Link>

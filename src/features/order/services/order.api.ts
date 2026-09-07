@@ -21,7 +21,7 @@ export const orderApi = {
 
   detail: async (id: string): Promise<Order> => {
     const res = await apiClient.get(ENDPOINTS.ORDERS.DETAIL(id));
-    return res.data;
+    return (res.data as any)?.data ?? res.data;
   },
 
   create: async (payload: CreateOrderPayload): Promise<Order> => {
@@ -83,6 +83,13 @@ export const orderApi = {
       issueType: string;
       description: string;
       evidence: { url: string; type: 'image' | 'video' }[];
+      buyerRefundDetails?: {
+        accountHolderName?: string;
+        bankName?: string;
+        accountNumber?: string;
+        ifscCode?: string;
+        upiId?: string;
+      };
     }
   ): Promise<void> => {
     await apiClient.post(ENDPOINTS.ORDERS.RAISE_DISPUTE(id), payload);

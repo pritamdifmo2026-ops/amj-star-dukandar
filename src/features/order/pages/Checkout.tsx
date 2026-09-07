@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -30,6 +30,7 @@ interface CheckoutItem {
   supplierId: string;
   imageUrl?: string;
   moq: number;
+  hsnCode?: string;
   gstRate?: number;
   gstIncluded?: boolean;
   supplierState?: string;
@@ -57,7 +58,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const cartItems = useAppSelector(state => state.cart.items);
   const user = useAppSelector(state => state.auth.user) as any;
 
-  const items: CheckoutItem[] = buyNowItem ? [buyNowItem] : (cartItems as CheckoutItem[]);
+  const items: CheckoutItem[] = useMemo(() => {
+    return buyNowItem ? [buyNowItem] : (cartItems as CheckoutItem[]);
+  }, [buyNowItem, cartItems]);
   const isBuyNow = !!buyNowItem;
 
   const [supplierProfile, setSupplierProfile] = useState<any>(null);
@@ -65,23 +68,22 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const [selectedPaymentTerm, setSelectedPaymentTerm] = useState<string>('');
   const [selectedDeliveryTimeline, setSelectedDeliveryTimeline] = useState<string>('Standard (5–7 business days)');
 
+  const supplierId = items[0]?.supplierId;
+
   useEffect(() => {
-    const supplierId = items[0]?.supplierId;
-    if (supplierId) {
-      apiClient.get(`/supplier/public/${supplierId}`).then(res => {
-        if (res.data?.supplier) {
-          const s = res.data.supplier;
-          setSupplierProfile(s);
-          if (!selectedTransportation) {
-            setSelectedTransportation(s.supportedTransportationTerms?.[0] || 'Ex. Factory');
-          }
-          if (!selectedPaymentTerm) {
-            setSelectedPaymentTerm(s.supportedPaymentTerms?.[0] || '100% Advance');
-          }
-        }
-      }).catch(console.error);
-    }
-  }, [items]);
+    if (!supplierId) return;
+    let active = true;
+    apiClient.get(`/supplier/public/${supplierId}`).then(res => {
+      if (!active) return;
+      if (res.data?.supplier) {
+        const s = res.data.supplier;
+        setSupplierProfile(s);
+        setSelectedTransportation(prev => prev || s.supportedTransportationTerms?.[0] || 'Ex. Factory');
+        setSelectedPaymentTerm(prev => prev || s.supportedPaymentTerms?.[0] || '100% Advance');
+      }
+    }).catch(console.error);
+    return () => { active = false; };
+  }, [supplierId]);
 
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -284,7 +286,8 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
           quantity: it.quantity,
           price: it.price,
           unit: it.unit,
-          hsnCode: (it as any).hsnCode,
+          hsnCode: it.hsnCode || (it as any).hsnCode,
+          gstRate: it.gstRate,
           imageUrl: it.imageUrl
         }));
 
@@ -310,10 +313,11 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
         const itemsLines = items.map(it => {
           const p = customPrices && customPrices[it.productId] !== undefined ? customPrices[it.productId] : it.price;
+          const gstText = it.gstRate !== undefined ? `, GST: ${it.gstRate}%` : '';
           if (customPrices && customPrices[it.productId] !== undefined && p !== it.price) {
-            return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'}) - Proposed: ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Listed: ₹${it.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+            return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'}${gstText}) - Proposed: ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Listed: ₹${it.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
           } else {
-            return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'} @ ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+            return `• ${it.name} (Qty: ${it.quantity} ${it.unit || 'pcs'} @ ₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${gstText})`;
           }
         }).join('\n');
 
@@ -345,7 +349,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 name: it.name,
                 quantity: it.quantity,
                 price: customPrices && customPrices[it.productId] !== undefined ? customPrices[it.productId] : it.price,
-                unit: it.unit
+                unit: it.unit,
+                hsnCode: it.hsnCode || (it as any).hsnCode,
+                gstRate: it.gstRate,
               }))
             }
           });
@@ -568,6 +574,9 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                       <p className="text-sm font-bold text-[#0f172a] m-0 leading-snug">{item.name}</p>
                       <div className="flex flex-wrap items-center gap-3 mt-1">
                         <p className="text-xs text-[#94a3b8] m-0">MOQ: {item.moq} {item.unit}</p>
+                        <span className="text-[10px] font-semibold text-[#0369a1] bg-[#e0f2fe] border border-[#bae6fd] px-1.5 py-0.5 rounded-[4px]">
+                          GST({item.gstRate ?? 18}%)
+                        </span>
                       </div>
                       {/* Mobile-only price */}
                       <div className="sm:hidden mt-1 flex items-center gap-3 text-sm">
@@ -880,9 +889,30 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               <div className="flex justify-between text-[#475569]">
                 <span>Subtotal</span><span>₹{(Math.round((taxableAmount) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-              <div className="flex justify-between text-[#475569]">
-                <span>GST</span><span>₹{(Math.round((totalGst) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
+              {(() => {
+                const rates = Array.from(new Set(items.map(i => i.gstRate ?? 18)));
+                if (rates.length === 1) {
+                  return (
+                    <div className="flex justify-between text-[#475569]">
+                      <span>GST({rates[0]}%)</span>
+                      <span>₹{(Math.round((totalGst) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  );
+                }
+                const byRate: Record<number, number> = {};
+                items.forEach(it => {
+                  const r = it.gstRate ?? 18;
+                  const base = it.gstIncluded ? priceWithoutGST(it.price, r) : it.price;
+                  const tax = (it.gstIncluded ? (it.price - base) : calculateGST(it.price, r)) * it.quantity;
+                  byRate[r] = (byRate[r] || 0) + tax;
+                });
+                return Object.entries(byRate).map(([r, val]) => (
+                  <div key={r} className="flex justify-between text-[#475569]">
+                    <span>GST({r}%)</span>
+                    <span>₹{(Math.round(val * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                ));
+              })()}
               <div className="flex justify-between text-[#475569]">
                 <span>Shipping {isFOR ? '(FOR)' : isExWorks ? `(${selectedTransportation})` : ''}</span>
                 <span className={totalShipping === 0 ? 'text-[#059669] font-semibold' : ''}>
@@ -997,6 +1027,10 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                         <span>Unit Price</span>
                         <span>₹{item.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
+                      <div className="flex justify-between text-[#0369a1]">
+                        <span>GST</span>
+                        <span className="font-semibold">GST({item.gstRate ?? 18}%)</span>
+                      </div>
                       <div className="flex justify-between text-[#64748b] mt-1 pt-1 border-t border-[#e2e8f0]">
                         <span>Subtotal</span>
                         <span className="font-semibold text-[#0f172a]">₹{(item.quantity * item.price)?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -1014,12 +1048,30 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                     <span className="text-[#64748b]">Taxable Amount</span>
                     <span>₹{(Math.round((taxableAmount) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
-                  {totalGst > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-[#64748b]">GST</span>
-                      <span>₹{(Math.round((totalGst) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    </div>
-                  )}
+                  {totalGst > 0 && (() => {
+                    const rates = Array.from(new Set(items.map(i => i.gstRate ?? 18)));
+                    if (rates.length === 1) {
+                      return (
+                        <div className="flex justify-between">
+                          <span className="text-[#64748b]">GST({rates[0]}%)</span>
+                          <span>₹{(Math.round((totalGst) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                      );
+                    }
+                    const byRate: Record<number, number> = {};
+                    items.forEach(it => {
+                      const r = it.gstRate ?? 18;
+                      const base = it.gstIncluded ? priceWithoutGST(it.price, r) : it.price;
+                      const tax = (it.gstIncluded ? (it.price - base) : calculateGST(it.price, r)) * it.quantity;
+                      byRate[r] = (byRate[r] || 0) + tax;
+                    });
+                    return Object.entries(byRate).map(([r, val]) => (
+                      <div key={r} className="flex justify-between text-[#0369a1]">
+                        <span>GST({r}%)</span>
+                        <span>₹{(Math.round(val * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    ));
+                  })()}
                   <div className="flex justify-between">
                     <span className="text-[#64748b]">Shipping Cost {isExWorks ? `(${selectedTransportation})` : ''}</span>
                     <span>{totalShipping === 0 ? 'Free' : `₹${(Math.round((totalShipping) * 100) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>

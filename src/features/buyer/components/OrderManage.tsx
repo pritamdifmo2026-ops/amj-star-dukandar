@@ -4,8 +4,11 @@ import apiClient from '@/api/client';
 import {
   ArrowLeft, Phone, Mail, Package, Truck, Boxes, CheckCircle, AlertTriangle,
   Clock, XCircle, Download, Star, Upload, X, ShieldCheck, Wifi, Link2, MapPin,
+  Video, CreditCard, Copy, Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useSocket } from '@/shared/contexts/SocketContext';
+import { uploadVideoInChunks, type ChunkedUploadProgress } from '@/shared/utils/chunkedVideoUpload';
 
 // ─── Status meta ──────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; Icon: React.FC<any> }> = {
@@ -98,8 +101,36 @@ interface OrderManageProps {
 
 const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSupplier, isOwnShipping, allowedMethods, onBack, onRefresh }) => {
   const [order, setOrder] = useState<any>(initialOrder);
+  const { socket } = useSocket();
+
   // Re-sync when the parent refetches (e.g. a real-time order_update arrives)
   useEffect(() => { setOrder(initialOrder); }, [initialOrder]);
+
+  // Fetch fresh dispute data on mount and listen to real-time dispute events
+  useEffect(() => {
+    if (order?._id) {
+      orderApi.getDispute(order._id).then(fresh => {
+        if (fresh) setOrder((prev: any) => ({ ...prev, _dispute: fresh }));
+      }).catch(() => {});
+    }
+  }, [order?._id]);
+
+  useEffect(() => {
+    if (!socket || !order?._id) return;
+    const handleDisputeUpdate = () => {
+      orderApi.getDispute(order._id).then(fresh => {
+        if (fresh) setOrder((prev: any) => ({ ...prev, _dispute: fresh }));
+      }).catch(() => {});
+      if (onRefresh) onRefresh();
+    };
+    socket.on('dispute_update', handleDisputeUpdate);
+    socket.on('order_update', handleDisputeUpdate);
+    return () => {
+      socket.off('dispute_update', handleDisputeUpdate);
+      socket.off('order_update', handleDisputeUpdate);
+    };
+  }, [socket, order?._id, onRefresh]);
+
   // Open at the top — otherwise (esp. on mobile) the page appears scrolled down
   useEffect(() => {
     window.scrollTo({ top: 0 });
@@ -152,6 +183,19 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const [issueDesc, setIssueDesc] = useState('');
   const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoProgress, setVideoProgress] = useState<number | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const [refundBankDetails, setRefundBankDetails] = useState({
+    accountHolderName: '',
+    bankName: '',
+    accountNumber: '',
+    ifscCode: '',
+    upiId: '',
+  });
+
   const [reopenReason, setReopenReason] = useState('');
   const [showReopen, setShowReopen] = useState(false);
 
@@ -296,6 +340,29 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
     finally { setUploading(false); }
   };
 
+  const handleVideoUpload = async (files: FileList | null) => {
+    if (!files?.[0]) return;
+    const file = files[0];
+    if (file.size > 40 * 1024 * 1024) {
+      toast.error('Video size must be 40MB or less.');
+      return;
+    }
+    setVideoUploading(true);
+    setVideoProgress(0);
+    try {
+      const url = await uploadVideoInChunks(file, (p: ChunkedUploadProgress) => {
+        setVideoProgress(p.percent);
+      });
+      setVideoUrl(url);
+      toast.success('Video uploaded successfully!');
+    } catch (err: any) {
+      toast.error(err?.message || 'Video upload failed. Try again.');
+    } finally {
+      setVideoUploading(false);
+      setVideoProgress(null);
+    }
+  };
+
   const handleConfirmGood = async (withRating: boolean) => {
     setBusy(true);
     try {
@@ -316,15 +383,41 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const handleRaiseTicket = async () => {
     if (!issueType) { toast.error('Select an issue type.'); return; }
     if (!issueDesc.trim()) { toast.error('Describe the issue.'); return; }
-    if (evidenceUrls.length === 0) { toast.error('Attach at least one photo.'); return; }
+    if (evidenceUrls.length === 0 && !videoUrl) { toast.error('Attach at least one photo or video evidence.'); return; }
+    if (uploading || videoUploading) { toast.error('Please wait for media to finish uploading.'); return; }
+
+    const combinedEvidence: { url: string; type: 'image' | 'video' }[] = [
+      ...evidenceUrls.map(url => ({ url, type: 'image' as const })),
+      ...(videoUrl ? [{ url: videoUrl, type: 'video' as const }] : []),
+    ];
+
+    const hasBank = refundBankDetails.accountNumber.trim() || refundBankDetails.upiId.trim();
+    const cleanRefund = hasBank ? {
+      accountHolderName: refundBankDetails.accountHolderName.trim() || undefined,
+      bankName: refundBankDetails.bankName.trim() || undefined,
+      accountNumber: refundBankDetails.accountNumber.trim() || undefined,
+      ifscCode: refundBankDetails.ifscCode.trim().toUpperCase() || undefined,
+      upiId: refundBankDetails.upiId.trim() || undefined,
+    } : undefined;
+
     setBusy(true);
     try {
       await orderApi.raiseDispute(order._id, {
         issueType,
         description: issueDesc.trim(),
-        evidence: evidenceUrls.map(url => ({ url, type: 'image' as const })),
+        evidence: combinedEvidence,
+        buyerRefundDetails: cleanRefund,
       });
-      sync({ status: 'disputed', _dispute: { status: 'open', issueType, description: issueDesc.trim(), evidence: evidenceUrls.map(url => ({ url, type: 'image' })) } });
+      sync({
+        status: 'disputed',
+        _dispute: {
+          status: 'open',
+          issueType,
+          description: issueDesc.trim(),
+          evidence: combinedEvidence,
+          buyerRefundDetails: cleanRefund,
+        }
+      });
       toast.success('Ticket raised. Our team will review it shortly.');
       setConfirmMode('idle');
     } catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); }
@@ -333,7 +426,18 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
 
   const handleConfirmResolved = async () => {
     setBusy(true);
-    try { await orderApi.buyerConfirmResolved(dispute._id); sync({ status: 'completed', _dispute: { ...dispute, status: 'resolved' } }); toast.success('Confirmed. Order completed!'); }
+    try {
+      await orderApi.buyerConfirmResolved(dispute._id);
+      if (dispute.resolutionMethod === 'refund') {
+        // Refund: buyer only acknowledges. The order is NOT completed here — an admin must
+        // verify the refund before the supplier's commission is released.
+        syncDispute({ buyerConfirmedAt: new Date().toISOString() });
+        toast.success('Refund confirmed. Our team will verify it and close the ticket shortly.');
+      } else {
+        sync({ status: 'completed', _dispute: { ...dispute, status: 'resolved' } });
+        toast.success('Confirmed. Order completed!');
+      }
+    }
     catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); }
     finally { setBusy(false); }
   };
@@ -491,7 +595,14 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-extrabold text-[#0f172a] m-0 line-clamp-2">{it.name}</p>
-                  <p className="text-xs text-[#64748b] m-0 mt-1">₹{it.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/{it.unit || 'pcs'} · Qty {it.quantity} {it.unit || 'pcs'}</p>
+                  <p className="text-xs text-[#64748b] m-0 mt-1 flex items-center flex-wrap gap-1.5">
+                    <span>₹{it.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/{it.unit || 'pcs'} · Qty {it.quantity} {it.unit || 'pcs'}</span>
+                    {it.gstRate !== undefined && (
+                      <span className="text-[10px] font-semibold text-[#0369a1] bg-[#e0f2fe] border border-[#bae6fd] px-1.5 py-0.5 rounded">
+                        GST({it.gstRate}%)
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
             );
@@ -504,17 +615,57 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             const taxable = snap.taxableAmount ?? order.subtotal ?? 0;
             const gstAmt = snap.gstAmount ?? 0;
             const shipping = order.shippingCost ?? 0;
+            const courierGst = order.courierGST ?? 0;
             const gstType = snap.gstType;
             const gstRate = snap.gstRate ?? 0;
-            const halfRate = gstRate / 2;
             const showGst = gstType && gstType !== 'exempt' && gstAmt > 0;
+            const gstLines = (snap.gstBreakdown || []).filter((l: any) => l.rate > 0 && l.gst > 0);
             return (
               <>
                 <div className="flex items-center justify-between px-4 py-2 text-xs text-[#64748b]"><span>Taxable Amount</span><span className="font-medium text-[#0f172a]">₹{taxable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-                {showGst && gstType === 'IGST' && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>IGST @ {gstRate}%</span><span>₹{gstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>}
-                {showGst && gstType === 'CGST_SGST' && (<><div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>CGST @ {halfRate}%</span><span>₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div><div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>SGST @ {halfRate}%</span><span>₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div></>)}
-                {!showGst && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>}
+                {showGst && gstLines.length > 0 ? (
+                  gstLines.map((line: any, idx: number) => (
+                    gstType === 'IGST' ? (
+                      <div key={idx} className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                        <span>IGST @ {line.rate}%</span>
+                        <span>₹{line.gst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    ) : (
+                      <React.Fragment key={idx}>
+                        <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                          <span>CGST @ {line.rate / 2}%</span>
+                          <span>₹{(line.gst / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                          <span>SGST @ {line.rate / 2}%</span>
+                          <span>₹{(line.gst / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                      </React.Fragment>
+                    )
+                  ))
+                ) : showGst ? (
+                  gstType === 'IGST' ? (
+                    <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                      <span>IGST @ {gstRate}%</span>
+                      <span>₹{gstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                        <span>CGST @ {gstRate / 2}%</span>
+                        <span>₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]">
+                        <span>SGST @ {gstRate / 2}%</span>
+                        <span>₹{(gstAmt / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </>
+                  )
+                ) : (
+                  <div className="flex items-center justify-between px-4 py-2 text-xs text-[#94a3b8]"><span>GST</span><span>Exempt / Nil</span></div>
+                )}
                 {shipping > 0 && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#64748b]"><span>Shipping</span><span className="font-medium text-[#0f172a]">₹{shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>}
+                {courierGst > 0 && <div className="flex items-center justify-between px-4 py-2 text-xs text-[#0369a1]"><span>Courier GST (18%)</span><span className="font-medium">₹{courierGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>}
               </>
             );
           })()}
@@ -556,13 +707,29 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
       )}
 
       {/* ── DISPUTE PANEL ──────────────────────────────────────────────────── */}
-      {order.status === 'disputed' && dispute && (
+      {dispute && (
         <div className={`${card} p-5 border-[#fca5a5]`}>
           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <p className="text-xs font-bold uppercase tracking-wider text-[#dc2626] m-0 flex items-center gap-1.5"><AlertTriangle size={14} /> Dispute</p>
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#b91c1c] bg-[#fef2f2] border border-[#fca5a5] px-2.5 py-0.5 rounded-full">
-              <ShieldCheck size={11} /> {DISPUTE_LABEL[dispute.status] || dispute.status}
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {dispute.adminRefundVerified ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#15803d] bg-[#dcfce7] border border-[#86efac] px-2.5 py-0.5 rounded-full">
+                  <CheckCircle size={11} /> Admin Verified Refund
+                </span>
+              ) : dispute.status === 'resolved' ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#15803d] bg-[#dcfce7] border border-[#86efac] px-2.5 py-0.5 rounded-full">
+                  <CheckCircle size={11} /> Resolved
+                </span>
+              ) : dispute.buyerConfirmedAt ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0284c7] bg-[#f0f9ff] border border-[#bae6fd] px-2.5 py-0.5 rounded-full">
+                  <CheckCircle size={11} /> Buyer Confirmed Refund — Awaiting Admin
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#b91c1c] bg-[#fef2f2] border border-[#fca5a5] px-2.5 py-0.5 rounded-full">
+                  <ShieldCheck size={11} /> {DISPUTE_LABEL[dispute.status] || dispute.status}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-4 py-3 mb-3">
@@ -571,12 +738,89 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           </div>
 
           {dispute.evidence?.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-2.5 mb-3">
               {dispute.evidence.map((ev: any, i: number) => (
-                <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 rounded-[8px] overflow-hidden border border-[#e2e8f0]">
-                  <img src={ev.url} alt="" className="w-full h-full object-cover" />
-                </a>
+                ev.type === 'video' ? (
+                  <div key={i} className="relative rounded-[8px] overflow-hidden border border-[#e2e8f0] bg-black w-48 h-28 flex flex-col justify-center">
+                    <video src={ev.url} controls className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <a key={i} href={ev.url} target="_blank" rel="noopener noreferrer" className="w-16 h-16 rounded-[8px] overflow-hidden border border-[#e2e8f0]">
+                    <img src={ev.url} alt="" className="w-full h-full object-cover" />
+                  </a>
+                )
               ))}
+            </div>
+          )}
+
+          {/* Buyer Refund Account Details (shown to Supplier & Buyer) */}
+          {dispute.buyerRefundDetails && (dispute.buyerRefundDetails.accountNumber || dispute.buyerRefundDetails.upiId) && (
+            <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] p-3 mb-3 text-xs flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#1e40af] flex items-center gap-1.5">
+                  <CreditCard size={14} /> Buyer's Refund Account Details
+                </span>
+                {isSupplier && <span className="text-[10px] text-[#2563eb] font-semibold">Transfer refund to this account</span>}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-[11px] text-[#334155]">
+                {dispute.buyerRefundDetails.accountHolderName && (
+                  <p className="m-0">Holder: <strong>{dispute.buyerRefundDetails.accountHolderName}</strong></p>
+                )}
+                {dispute.buyerRefundDetails.bankName && (
+                  <p className="m-0">Bank: <strong>{dispute.buyerRefundDetails.bankName}</strong></p>
+                )}
+                {dispute.buyerRefundDetails.accountNumber && (
+                  <p className="m-0 flex items-center gap-1">
+                    Account: <strong className="font-mono">{dispute.buyerRefundDetails.accountNumber}</strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(dispute.buyerRefundDetails.accountNumber);
+                        setCopiedField('acc');
+                        setTimeout(() => setCopiedField(null), 2000);
+                        toast.success('Account number copied!');
+                      }}
+                      className="text-[#2563eb] hover:underline bg-transparent border-none p-0 cursor-pointer text-[10px]"
+                    >
+                      {copiedField === 'acc' ? <Check size={11} className="text-green-600 inline" /> : <Copy size={11} className="inline" />}
+                    </button>
+                  </p>
+                )}
+                {dispute.buyerRefundDetails.ifscCode && (
+                  <p className="m-0 flex items-center gap-1">
+                    IFSC: <strong className="font-mono">{dispute.buyerRefundDetails.ifscCode}</strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(dispute.buyerRefundDetails.ifscCode);
+                        setCopiedField('ifsc');
+                        setTimeout(() => setCopiedField(null), 2000);
+                        toast.success('IFSC code copied!');
+                      }}
+                      className="text-[#2563eb] hover:underline bg-transparent border-none p-0 cursor-pointer text-[10px]"
+                    >
+                      {copiedField === 'ifsc' ? <Check size={11} className="text-green-600 inline" /> : <Copy size={11} className="inline" />}
+                    </button>
+                  </p>
+                )}
+                {dispute.buyerRefundDetails.upiId && (
+                  <p className="m-0 sm:col-span-2 flex items-center gap-1">
+                    UPI ID: <strong className="font-mono text-[#0284c7]">{dispute.buyerRefundDetails.upiId}</strong>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(dispute.buyerRefundDetails.upiId);
+                        setCopiedField('upi');
+                        setTimeout(() => setCopiedField(null), 2000);
+                        toast.success('UPI ID copied!');
+                      }}
+                      className="text-[#2563eb] hover:underline bg-transparent border-none p-0 cursor-pointer text-[10px]"
+                    >
+                      {copiedField === 'upi' ? <Check size={11} className="text-green-600 inline" /> : <Copy size={11} className="inline" />}
+                    </button>
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -590,6 +834,16 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                 <p className="text-sm text-[#166534] m-0 font-semibold">Transaction ID (UTR): <span className="font-mono">{dispute.refundTransactionId}</span></p>
               )}
               {dispute.resolutionNote && <p className="text-sm text-[#166534] m-0">{dispute.resolutionNote}</p>}
+              {dispute.buyerConfirmedAt && (
+                <div className="mt-2.5 pt-2 border-t border-[#bbf7d0] flex items-center justify-between text-xs text-[#15803d]">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <CheckCircle size={14} className="text-[#16a34a]" /> Buyer confirmed receipt of refund
+                  </span>
+                  <span className="text-[11px] text-[#166534]">
+                    {new Date(dispute.buyerConfirmedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -663,12 +917,30 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           )}
 
           {isSupplier && dispute.status === 'open' && <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> Awaiting AMJSTAR review before you act.</p>}
-          {isSupplier && dispute.status === 'supplier_resolved' && <p className="text-xs text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={13} /> Awaiting buyer confirmation (72h window).</p>}
+          {isSupplier && dispute.status === 'supplier_resolved' && (
+            dispute.buyerConfirmedAt ? (
+              <div className="p-3 bg-[#f0f9ff] border border-[#bae6fd] rounded-[8px] flex items-start gap-2.5 text-xs text-[#0369a1]">
+                <CheckCircle size={16} className="text-[#0284c7] shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-[#0c4a6e] m-0 text-sm">Buyer Confirmed Refund Receipt</p>
+                  <p className="text-[#0369a1] m-0 mt-0.5">The buyer has confirmed receiving the refund. AMJSTAR admin is verifying the transaction (UTR: <strong className="font-mono">{dispute.refundTransactionId}</strong>) to unfreeze and release your commission.</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={13} /> Awaiting buyer confirmation (72h window).</p>
+            )
+          )}
 
           {/* BUYER confirm / reopen panel (refund/partial/other) */}
           {!isSupplier && dispute.status === 'open' && <p className="text-xs text-[#a16207] m-0 flex items-center gap-1.5"><Clock size={13} /> Our team is reviewing your ticket.</p>}
           {!isSupplier && ['validated', 'reopened'].includes(dispute.status) && <p className="text-xs text-[#0284c7] m-0 flex items-center gap-1.5"><Clock size={13} /> Verified — the supplier is resolving it. Coordinate via call / mail above.</p>}
-          {!isSupplier && dispute.status === 'supplier_resolved' && (
+          {!isSupplier && dispute.status === 'supplier_resolved' && dispute.resolutionMethod === 'refund' && dispute.buyerConfirmedAt && (
+            <div className="border-t border-[#f1f5f9] pt-4">
+              <p className="text-xs text-[#059669] m-0 flex items-center gap-1.5"><Clock size={13} /> You confirmed the refund. Our team will verify it and close the ticket shortly.</p>
+            </div>
+          )}
+
+          {!isSupplier && dispute.status === 'supplier_resolved' && !(dispute.resolutionMethod === 'refund' && dispute.buyerConfirmedAt) && (
             <div className="border-t border-[#f1f5f9] pt-4">
               <p className="text-sm font-bold text-[#0f172a] m-0 mb-3">Did this resolve your issue?</p>
               {!showReopen ? (
@@ -812,6 +1084,22 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                   <p className="text-xs text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={13} /> Replacement dispatched — waiting for the buyer to confirm (auto-completes in 7 days).</p>
                 )
               )}
+            </div>
+          )}
+
+          {dispute.status === 'resolved' && (
+            <div className="border-t border-[#f1f5f9] pt-3">
+              <div className="p-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px] flex items-start gap-2 text-xs text-[#15803d]">
+                <CheckCircle size={15} className="text-[#16a34a] shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-[#14532d] m-0">Dispute Resolved and Closed</p>
+                  <p className="text-[#166534] m-0 mt-0.5">
+                    {dispute.adminRefundVerified
+                      ? 'Admin verified the refund payment. Platform commission has been unfrozen and returned to your wallet.'
+                      : 'The issue has been verified, settled, and this dispute is closed.'}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1022,8 +1310,12 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                 <textarea value={issueDesc} onChange={e => setIssueDesc(e.target.value)} rows={3} placeholder="Describe the issue in detail…" className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary resize-none" />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-[#0f172a]">Photo Evidence <span className="text-[#dc2626]">*</span> <span className="text-[#94a3b8] font-normal">(up to 5)</span></label>
-                <div className="flex flex-wrap gap-2">
+                <label className="text-xs font-bold text-[#0f172a]">
+                  Evidence <span className="text-[#dc2626]">*</span> <span className="text-[#94a3b8] font-normal">(Photos up to 5, and optional video up to 40MB)</span>
+                </label>
+                
+                <div className="flex flex-wrap gap-2.5 items-start">
+                  {/* Photos */}
                   {evidenceUrls.map((url, i) => (
                     <div key={i} className="relative w-16 h-16 rounded-[8px] overflow-hidden border border-[#e2e8f0]">
                       <img src={url} alt="" className="w-full h-full object-cover" />
@@ -1032,15 +1324,105 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                   ))}
                   {evidenceUrls.length < 5 && (
                     <label className="w-16 h-16 rounded-[8px] border-2 border-dashed border-[#cbd5e1] flex flex-col items-center justify-center gap-0.5 cursor-pointer hover:border-primary text-[#94a3b8] hover:text-primary">
-                      {uploading ? <div className="w-4 h-4 border-2 border-[#e2e8f0] border-t-primary rounded-full animate-spin" /> : <><Upload size={16} /><span className="text-[9px] font-bold">Add</span></>}
+                      {uploading ? <div className="w-4 h-4 border-2 border-[#e2e8f0] border-t-primary rounded-full animate-spin" /> : <><Upload size={16} /><span className="text-[9px] font-bold">Photo</span></>}
                       <input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={e => { handleEvidenceUpload(e.target.files); e.target.value = ''; }} />
+                    </label>
+                  )}
+
+                  {/* Video Uploader */}
+                  {videoUrl ? (
+                    <div className="relative w-28 h-16 rounded-[8px] overflow-hidden border border-[#e2e8f0] bg-black flex items-center justify-center">
+                      <video src={videoUrl} className="w-full h-full object-cover" />
+                      <button onClick={() => setVideoUrl(null)} className="absolute top-0.5 right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black/70 text-white border-none cursor-pointer hover:bg-black"><X size={10} /></button>
+                      <span className="absolute bottom-1 left-1 px-1 py-0.5 text-[9px] font-bold bg-black/70 text-white rounded">Video</span>
+                    </div>
+                  ) : (
+                    <label className="h-16 px-3 rounded-[8px] border-2 border-dashed border-[#cbd5e1] flex flex-col items-center justify-center gap-0.5 cursor-pointer hover:border-primary text-[#94a3b8] hover:text-primary">
+                      {videoUploading ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="w-4 h-4 border-2 border-[#e2e8f0] border-t-primary rounded-full animate-spin" />
+                          <span className="text-[9px] font-bold">{videoProgress != null ? `${videoProgress}%` : 'Uploading…'}</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Video size={16} />
+                          <span className="text-[9px] font-bold">Add Video (≤40MB)</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/mov,video/webm,video/*"
+                        className="hidden"
+                        disabled={videoUploading}
+                        onChange={e => { handleVideoUpload(e.target.files); e.target.value = ''; }}
+                      />
                     </label>
                   )}
                 </div>
               </div>
+
+              {/* Bank / UPI Details for Refund */}
+              <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#0f172a] flex items-center gap-1.5">
+                    <CreditCard size={14} className="text-[#0284c7]" /> Refund Bank / UPI Details
+                  </span>
+                  <span className="text-[10px] text-[#64748b]">(Optional)</span>
+                </div>
+                <p className="text-[11px] text-[#64748b] m-0 leading-relaxed">
+                  Provide your account details so the supplier can issue a direct refund to you if approved.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <input
+                    type="text"
+                    placeholder="Account Holder Name"
+                    value={refundBankDetails.accountHolderName}
+                    onChange={e => setRefundBankDetails(p => ({ ...p, accountHolderName: e.target.value }))}
+                    className="border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Bank Name"
+                    value={refundBankDetails.bankName}
+                    onChange={e => setRefundBankDetails(p => ({ ...p, bankName: e.target.value }))}
+                    className="border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Account Number"
+                    value={refundBankDetails.accountNumber}
+                    onChange={e => setRefundBankDetails(p => ({ ...p, accountNumber: e.target.value }))}
+                    className="border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="IFSC Code"
+                    value={refundBankDetails.ifscCode}
+                    onChange={e => setRefundBankDetails(p => ({ ...p, ifscCode: e.target.value.toUpperCase() }))}
+                    className="border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white uppercase"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-[#64748b] uppercase">Or UPI ID:</span>
+                  <input
+                    type="text"
+                    placeholder="e.g. mobile@upi or username@bank"
+                    value={refundBankDetails.upiId}
+                    onChange={e => setRefundBankDetails(p => ({ ...p, upiId: e.target.value }))}
+                    className="flex-1 border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-3">
                 <button onClick={() => setConfirmMode('idle')} className="flex-1 py-2.5 text-sm font-bold text-[#64748b] bg-[#f1f5f9] rounded-[8px] border-none cursor-pointer">Back</button>
-                <button onClick={handleRaiseTicket} disabled={busy || !issueType || !issueDesc.trim() || evidenceUrls.length === 0 || uploading} className="flex-1 py-2.5 text-sm font-bold text-white bg-[#dc2626] rounded-[8px] border-none cursor-pointer disabled:opacity-50">{busy ? 'Submitting…' : 'Raise Ticket'}</button>
+                <button
+                  onClick={handleRaiseTicket}
+                  disabled={busy || !issueType || !issueDesc.trim() || (evidenceUrls.length === 0 && !videoUrl) || uploading || videoUploading}
+                  className="flex-1 py-2.5 text-sm font-bold text-white bg-[#dc2626] rounded-[8px] border-none cursor-pointer disabled:opacity-50"
+                >
+                  {busy ? 'Submitting…' : 'Raise Ticket'}
+                </button>
               </div>
             </div>
           )}

@@ -110,6 +110,7 @@ body {
   margin: 0;
   padding: 0;
   width: 100%;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -143,6 +144,7 @@ button {
 #root {
   width: 100%;
   max-width: 100%;
+  overflow-x: hidden;
   margin: 0 auto;
   min-height: 100vh;
   display: flex;

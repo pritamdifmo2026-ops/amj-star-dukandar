@@ -27,12 +27,14 @@ const txTypeLabel: Record<string, string> = {
   topup: 'Top-up',
   freeze: 'Commission Frozen',
   release_to_amj: 'Commission Released',
+  unfreeze: 'Commission Unfrozen',
   withdrawal_request: 'Withdrawal Requested',
   withdrawal_complete: 'Withdrawal Processed',
 };
 
 const txIcon: Record<string, React.ReactNode> = {
   topup: <ArrowUpCircle size={18} className="text-[#059669]" />,
+  unfreeze: <ArrowUpCircle size={18} className="text-[#059669]" />,
   freeze: <Clock size={18} className="text-[#d97706]" />,
   release_to_amj: <CheckCircle size={18} className="text-[#dc2626]" />,
   withdrawal_request: <ArrowDownCircle size={18} className="text-[#7c3aed]" />,

@@ -18,7 +18,7 @@ const OrderDetailPage: React.FC = () => {
     if (!id) return;
     setLoading(true);
     orderApi.detail(id)
-      .then((data: any) => { setOrder(data.order ?? data); setError(null); })
+      .then((data: any) => { setOrder(data?.data ?? data?.order ?? data); setError(null); })
       .catch(() => setError('Order not found or you do not have permission to view it.'))
       .finally(() => setLoading(false));
   };

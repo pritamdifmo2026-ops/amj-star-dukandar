@@ -247,6 +247,11 @@ const adminService = {
     return response.data;
   },
 
+  verifyRefundAndUnfreeze: async (id: string, reason?: string) => {
+    const response = await api.patch(`/admin/disputes/${id}/verify-refund`, { reason });
+    return response.data;
+  },
+
   setAutoLiveProducts: async (supplierId: string, autoLiveProducts: boolean) => {
     const response = await api.patch(`/admin/suppliers/${supplierId}/auto-live`, { autoLiveProducts });
     return response.data.supplier;

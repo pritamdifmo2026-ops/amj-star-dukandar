@@ -76,11 +76,13 @@ export const CartContent: React.FC = () => {
     pending: {} as Record<number, number>,
   });
 
+  // Round each rate's GST before summing (per-rate rounding), matching the backend
+  // order/PO calculation so the cart total never drifts by a paisa from the invoice.
   const totalGst = [
     ...Object.values(gstSummary.cgstSgst),
     ...Object.values(gstSummary.igst),
     ...Object.values(gstSummary.pending),
-  ].reduce((s, v) => s + v, 0);
+  ].reduce((s, v) => s + Math.round(v * 100) / 100, 0);
 
   // Shipping: one charge per unique supplier, determined by zone
 
@@ -101,9 +103,6 @@ export const CartContent: React.FC = () => {
 
   const uniqueSupplierCount = new Set(cartItems.map(i => i.supplierId)).size;
   const isMultiSupplier = uniqueSupplierCount > 1;
-
-  const uniqueGstRates = new Set(cartItems.map(i => i.gstRate ?? 18)).size;
-  const isMultiGst = uniqueGstRates > 1;
 
   const handleCheckout = () => {
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/profile?tab=cart`); return; }
@@ -298,14 +297,8 @@ export const CartContent: React.FC = () => {
               <span>Your cart has items from <strong>multiple suppliers</strong>. Please checkout one supplier at a time — remove items from other suppliers first.</span>
             </div>
           )}
-          {isMultiGst && !isMultiSupplier && (
-            <div className="mt-4 flex items-start gap-2 p-3 bg-[#fffbeb] border border-[#fcd34d] rounded-[8px] text-xs text-[#92400e]">
-              <span className="shrink-0 mt-0.5">⚠️</span>
-              <span>Your cart has items with <strong>different GST rates</strong>. Please checkout items with the same GST rate together — remove items with different rates.</span>
-            </div>
-          )}
           <button
-            disabled={isMultiSupplier || isMultiGst}
+            disabled={isMultiSupplier}
             className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-white font-bold text-sm rounded-[10px] border-none cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={handleCheckout}
           >

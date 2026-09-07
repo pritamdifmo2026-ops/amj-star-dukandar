@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle, CheckCircle, XCircle, Package, ShieldCheck, Clock, X,
+  Building2, Video, Wallet, Play
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminService from '../services/admin.service';
@@ -35,12 +36,20 @@ const AdminDisputes: React.FC = () => {
   const [filter, setFilter] = useState('open');
   const [rejecting, setRejecting] = useState<{ id: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [verifyingRefund, setVerifyingRefund] = useState<{
+    id: string;
+    orderNumber?: string;
+    amount?: number;
+    commissionAmount?: number;
+  } | null>(null);
+  const [verifiedDisputeIds, setVerifiedDisputeIds] = useState<Record<string, boolean>>({});
+  const [verifyReason, setVerifyReason] = useState('');
   const [acting, setActing] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
 
   const { socket } = useSocket();
 
-  const { data: disputes = [], isLoading } = useQuery({
+  const { data: disputes = [], isLoading, refetch } = useQuery({
     queryKey: ['admin', 'disputes', filter],
     queryFn: () => adminService.getDisputes(filter === 'all' ? undefined : filter === 'validated' ? undefined : filter),
   });
@@ -64,7 +73,8 @@ const AdminDisputes: React.FC = () => {
     try {
       await adminService.validateDispute(id);
       toast.success('Dispute validated. Supplier notified.');
-      qc.invalidateQueries({ queryKey: ['admin', 'disputes'] });
+      await qc.invalidateQueries({ queryKey: ['admin', 'disputes'] });
+      await refetch();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to validate');
     } finally {
@@ -74,15 +84,57 @@ const AdminDisputes: React.FC = () => {
 
   const handleReject = async () => {
     if (!rejecting) return;
-    setActing(rejecting.id);
+    const rejectId = rejecting.id;
+    setActing(rejectId);
     try {
-      await adminService.rejectDispute(rejecting.id, rejectReason.trim());
+      await adminService.rejectDispute(rejectId, rejectReason.trim());
       toast.success('Dispute rejected.');
       setRejecting(null);
       setRejectReason('');
-      qc.invalidateQueries({ queryKey: ['admin', 'disputes'] });
+      await qc.invalidateQueries({ queryKey: ['admin', 'disputes'] });
+      await refetch();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to reject');
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const handleVerifyRefund = async () => {
+    if (!verifyingRefund) return;
+    const targetId = verifyingRefund.id;
+    setActing(targetId);
+    try {
+      const res = await adminService.verifyRefundAndUnfreeze(targetId, verifyReason.trim());
+
+      // 1. Instantly mark as verified in local component state so button immediately switches to verified banner
+      setVerifiedDisputeIds(prev => ({ ...prev, [targetId]: true }));
+
+      // 2. Instantly update TanStack Query cache across all dispute lists
+      qc.setQueriesData({ queryKey: ['admin', 'disputes'] }, (oldData: any) => {
+        if (!Array.isArray(oldData)) return oldData;
+        return oldData.map((d: any) =>
+          d._id === targetId
+            ? {
+                ...d,
+                adminRefundVerified: true,
+                adminRefundVerifiedAt: new Date().toISOString(),
+                status: 'resolved',
+                resolvedAt: new Date().toISOString(),
+              }
+            : d
+        );
+      });
+
+      toast.success(res?.message || 'Refund verified! Supplier wallet commission unfrozen and credited to available balance.');
+      setVerifyingRefund(null);
+      setVerifyReason('');
+
+      // 3. Re-sync with server in background
+      await qc.invalidateQueries({ queryKey: ['admin', 'disputes'] });
+      await refetch();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to verify refund');
     } finally {
       setActing(null);
     }
@@ -144,12 +196,24 @@ const AdminDisputes: React.FC = () => {
                       <span className="text-[#64748b]">Buyer: <strong className="text-[#0f172a]">{d.buyerId?.name || 'Unknown'}</strong></span>
                       <span className="text-[#64748b]">Supplier: <strong className="text-[#0f172a]">{d.supplierBusinessName}</strong></span>
                     </div>
-                    {order?.totalAmount != null && (
-                      <div className="text-right">
-                        <p className="text-[10px] text-[#94a3b8] uppercase tracking-wide m-0">Order Value</p>
-                        <p className="text-base font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-3 text-right">
+                      {d.commissionAmount != null && Number(d.commissionAmount) > 0 && (
+                        <div className="text-right bg-[#f0f9ff] border border-[#bae6fd] px-3 py-1 rounded-[8px]">
+                          <p className="text-[10px] text-[#0284c7] font-bold uppercase tracking-wider m-0 flex items-center justify-end gap-1">
+                            <Wallet size={11} /> Commission Frozen
+                          </p>
+                          <p className="text-sm sm:text-base font-extrabold text-[#0369a1] m-0">
+                            ₹{Number(d.commissionAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      )}
+                      {order?.totalAmount != null && (
+                        <div className="text-right">
+                          <p className="text-[10px] text-[#94a3b8] uppercase tracking-wide m-0">Order Value</p>
+                          <p className="text-base font-extrabold text-[#0f172a] m-0">₹{order.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Item */}
@@ -165,31 +229,152 @@ const AdminDisputes: React.FC = () => {
                     <p className="text-sm text-[#7f1d1d] m-0 whitespace-pre-wrap leading-relaxed">{d.description}</p>
                   </div>
 
-                  {/* Evidence */}
+                  {/* Evidence (Images & Videos) */}
                   {d.evidence?.length > 0 && (
                     <div>
                       <p className="text-xs font-bold text-[#0f172a] m-0 mb-2">Evidence ({d.evidence.length})</p>
                       <div className="flex flex-wrap gap-2">
-                        {d.evidence.map((ev: any, i: number) => (
-                          <button key={i} onClick={() => setLightbox(ev.url)} className="w-20 h-20 rounded-[8px] overflow-hidden border border-[#e2e8f0] cursor-pointer hover:border-[#0284c7] p-0 bg-transparent">
-                            <img src={ev.url} alt={`evidence ${i + 1}`} className="w-full h-full object-cover" />
-                          </button>
-                        ))}
+                        {d.evidence.map((ev: any, i: number) => {
+                          const isVid = ev.type === 'video' || ev.url?.match(/\.(mp4|webm|mov|ogg)($|\?)/i) || ev.url?.includes('/video/upload/');
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => setLightbox({ url: ev.url, type: isVid ? 'video' : 'image' })}
+                              className="relative w-20 h-20 rounded-[8px] overflow-hidden border border-[#e2e8f0] cursor-pointer hover:border-[#0284c7] p-0 bg-black flex items-center justify-center group"
+                            >
+                              {isVid ? (
+                                <>
+                                  <video src={ev.url} className="w-full h-full object-cover opacity-80" muted playsInline />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20">
+                                    <div className="w-7 h-7 rounded-full bg-white/90 text-[#0f172a] flex items-center justify-center shadow">
+                                      <Play size={13} className="ml-0.5 fill-current" />
+                                    </div>
+                                  </div>
+                                  <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1 rounded flex items-center gap-0.5">
+                                    <Video size={9} /> Video
+                                  </span>
+                                </>
+                              ) : (
+                                <img src={ev.url} alt={`evidence ${i + 1}`} className="w-full h-full object-cover" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Buyer's Refund Account Details (if provided) */}
+                  {d.buyerRefundDetails && (d.buyerRefundDetails.accountNumber || d.buyerRefundDetails.upiId) && (
+                    <div className="bg-[#f0fdfa] border border-[#99f6e4] rounded-[8px] px-4 py-3">
+                      <p className="text-xs font-bold text-[#0f766e] m-0 mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                        <Building2 size={14} /> Buyer's Refund Account Details
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#134e4a]">
+                        {d.buyerRefundDetails.accountHolderName && (
+                          <p className="m-0"><span className="text-[#64748b]">A/C Holder:</span> <strong>{d.buyerRefundDetails.accountHolderName}</strong></p>
+                        )}
+                        {d.buyerRefundDetails.bankName && (
+                          <p className="m-0"><span className="text-[#64748b]">Bank:</span> <strong>{d.buyerRefundDetails.bankName}</strong></p>
+                        )}
+                        {d.buyerRefundDetails.accountNumber && (
+                          <p className="m-0"><span className="text-[#64748b]">A/C Number:</span> <strong className="font-mono">{d.buyerRefundDetails.accountNumber}</strong></p>
+                        )}
+                        {d.buyerRefundDetails.ifscCode && (
+                          <p className="m-0"><span className="text-[#64748b]">IFSC:</span> <strong className="font-mono">{d.buyerRefundDetails.ifscCode}</strong></p>
+                        )}
+                        {d.buyerRefundDetails.upiId && (
+                          <p className="m-0"><span className="text-[#64748b]">UPI ID:</span> <strong className="font-mono">{d.buyerRefundDetails.upiId}</strong></p>
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* Resolution (refund/partial/other — exchange has its own block) */}
                   {d.status !== 'exchange' && (d.resolutionMethod || d.resolutionNote) && (
-                    <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px] px-4 py-3">
-                      <p className="text-xs font-bold text-[#15803d] m-0 mb-1 uppercase tracking-wide">Supplier's Resolution</p>
-                      {d.resolutionMethod && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#15803d] bg-white border border-[#bbf7d0] px-2 py-0.5 rounded-full mb-1.5">
-                          {{ refund: '💰 Refund', replacement: '📦 Replacement', partial: '⚖️ Partial Settlement', other: '🤝 Other' }[d.resolutionMethod as string] || d.resolutionMethod}
-                        </span>
-                      )}
-                      {d.refundTransactionId && <p className="text-sm text-[#166534] m-0 font-semibold">UTR: <span className="font-mono">{d.refundTransactionId}</span></p>}
-                      {d.resolutionNote && <p className="text-sm text-[#166534] m-0">{d.resolutionNote}</p>}
+                    <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px] px-4 py-3 flex flex-col gap-2.5">
+                      <div>
+                        <p className="text-xs font-bold text-[#15803d] m-0 mb-1 uppercase tracking-wide">Supplier's Resolution</p>
+                        {d.resolutionMethod && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#15803d] bg-white border border-[#bbf7d0] px-2 py-0.5 rounded-full mb-1.5">
+                            {{ refund: '💰 Refund', replacement: '📦 Replacement', partial: '⚖️ Partial Settlement', other: '🤝 Other' }[d.resolutionMethod as string] || d.resolutionMethod}
+                          </span>
+                        )}
+                        {d.refundTransactionId && <p className="text-sm text-[#166534] m-0 font-semibold">UTR: <span className="font-mono">{d.refundTransactionId}</span></p>}
+                        {d.resolutionNote && <p className="text-sm text-[#166534] m-0">{d.resolutionNote}</p>}
+                      </div>
+
+                      {/* Refund Verification Badge / Action Button for Admin */}
+                      {d.resolutionMethod === 'refund' && (() => {
+                        const isRefundVerified = d.adminRefundVerified || d.status === 'resolved' || !!verifiedDisputeIds[d._id];
+                        // The admin can only verify & unfreeze once the buyer has confirmed
+                        // the refund ("all good"), or the 72-hour confirmation window has passed.
+                        const buyerConfirmed = !!d.buyerConfirmedAt;
+                        const resolvedAtMs = d.supplierResolvedAt ? new Date(d.supplierResolvedAt).getTime() : null;
+                        const windowMs = 72 * 60 * 60 * 1000;
+                        const windowElapsed = resolvedAtMs != null && (Date.now() - resolvedAtMs) >= windowMs;
+                        const canVerify = buyerConfirmed || windowElapsed;
+                        const hoursLeft = resolvedAtMs != null
+                          ? Math.max(0, Math.ceil((resolvedAtMs + windowMs - Date.now()) / (60 * 60 * 1000)))
+                          : null;
+                        return (
+                          <div className="pt-2 border-t border-[#bbf7d0]">
+                            {isRefundVerified ? (
+                              <div className="flex items-center justify-between flex-wrap gap-2 text-xs font-bold text-[#15803d] bg-[#dcfce7] border border-[#86efac] px-3 py-2.5 rounded-[8px]">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle size={15} className="flex-shrink-0 text-[#15803d]" />
+                                  <span>Refund verified by Admin. Supplier's frozen platform commission has been returned to their wallet balance.</span>
+                                </div>
+                                {d.commissionAmount != null && Number(d.commissionAmount) > 0 && (
+                                  <span className="bg-white text-[#15803d] px-2.5 py-0.5 rounded-full border border-[#86efac] font-extrabold text-xs shadow-xs">
+                                    +₹{Number(d.commissionAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Unfrozen
+                                  </span>
+                                )}
+                              </div>
+                            ) : canVerify ? (
+                              <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[8px] p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-xs font-bold text-[#92400e] m-0 flex items-center gap-1.5">
+                                    <Wallet size={14} /> Refund Pending Admin Verification
+                                  </p>
+                                  <p className="text-[11px] text-[#b45309] m-0 mt-0.5">
+                                    {buyerConfirmed
+                                      ? 'Buyer confirmed receiving the refund. '
+                                      : 'Buyer did not respond within 72 hours. '}
+                                    Supplier submitted refund with UTR <strong className="font-mono">{d.refundTransactionId || 'N/A'}</strong>. Verify to resolve ticket and credit frozen commission{d.commissionAmount != null && Number(d.commissionAmount) > 0 ? (
+                                      <strong className="text-[#0369a1] font-bold"> (₹{Number(d.commissionAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</strong>
+                                    ) : ''} back to supplier wallet.
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setVerifyingRefund({
+                                      id: d._id,
+                                      orderNumber: order?.orderNumber,
+                                      amount: order?.totalAmount,
+                                      commissionAmount: d.commissionAmount,
+                                    });
+                                    setVerifyReason('');
+                                  }}
+                                  disabled={acting === d._id}
+                                  className="px-3.5 py-2 text-xs font-bold text-white bg-[#0284c7] hover:bg-[#0369a1] rounded-[8px] border-none cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-sm disabled:opacity-50 transition-colors"
+                                >
+                                  <ShieldCheck size={14} /> Verify & Unfreeze Wallet
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3">
+                                <p className="text-xs font-bold text-[#475569] m-0 flex items-center gap-1.5">
+                                  <Clock size={14} /> Waiting for Buyer Confirmation
+                                </p>
+                                <p className="text-[11px] text-[#64748b] m-0 mt-0.5">
+                                  Supplier submitted a refund (UTR <strong className="font-mono">{d.refundTransactionId || 'N/A'}</strong>). You can verify &amp; unfreeze the supplier's commission once the buyer confirms receipt{hoursLeft != null ? `, or after the 72-hour window ends (~${hoursLeft}h left)` : ' or the 72-hour window ends'}.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
 
@@ -218,7 +403,11 @@ const AdminDisputes: React.FC = () => {
                     <p className="text-xs text-[#0284c7] m-0 flex items-center gap-1.5"><Clock size={13} /> Supplier notified — awaiting their resolution.</p>
                   )}
                   {d.status === 'supplier_resolved' && (
-                    <p className="text-xs text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={13} /> Supplier marked resolved — buyer's 72h confirmation window running.</p>
+                    d.buyerConfirmedAt ? (
+                      <p className="text-xs text-[#059669] m-0 flex items-center gap-1.5"><CheckCircle size={13} /> Buyer confirmed the refund — awaiting your verification.</p>
+                    ) : (
+                      <p className="text-xs text-[#9333ea] m-0 flex items-center gap-1.5"><Clock size={13} /> Supplier marked resolved — buyer's 72h confirmation window running.</p>
+                    )
                   )}
                   {d.status === 'exchange' && (
                     <div className="bg-[#ecfeff] border border-[#a5f3fc] rounded-[8px] px-4 py-3">
@@ -269,11 +458,62 @@ const AdminDisputes: React.FC = () => {
         </div>
       )}
 
-      {/* Evidence lightbox */}
+      {/* Verify Refund & Unfreeze Modal */}
+      {verifyingRefund && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-[2px] p-4" onClick={e => { if (e.target === e.currentTarget && !acting) setVerifyingRefund(null); }}>
+          <div className="w-full max-w-md bg-white rounded-[16px] shadow-2xl overflow-hidden">
+            <div className="px-6 py-5">
+              <div className="w-12 h-12 rounded-full bg-[#ecfeff] flex items-center justify-center mb-4"><Wallet size={22} className="text-[#0284c7]" /></div>
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-1">Verify Refund & Unfreeze Commission?</h3>
+              <p className="text-sm text-[#64748b] m-0 mb-3">
+                Confirming this refund will mark order {verifyingRefund.orderNumber ? `(#${verifyingRefund.orderNumber})` : ''} as resolved. The supplier's frozen commission will be automatically unfrozen and deposited into their available wallet balance.
+              </p>
+
+              {verifyingRefund.commissionAmount != null && Number(verifyingRefund.commissionAmount) > 0 && (
+                <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-[10px] p-3 mb-4 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] text-[#0369a1] uppercase font-bold tracking-wide block">Commission to Unfreeze</span>
+                    <span className="text-xs text-[#64748b]">Credited to supplier available balance</span>
+                  </div>
+                  <span className="text-base font-extrabold text-[#0284c7]">
+                    ₹{Number(verifyingRefund.commissionAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+              <label className="text-xs font-bold text-[#475569] block mb-1.5">Verification Note / Reason (Optional)</label>
+              <textarea
+                value={verifyReason}
+                onChange={e => setVerifyReason(e.target.value)}
+                placeholder="e.g. UTR verified with buyer's bank statement. Full refund confirmed."
+                rows={3}
+                className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-[#0284c7] resize-none"
+              />
+              <div className="flex gap-3 mt-5">
+                <button onClick={() => setVerifyingRefund(null)} disabled={!!acting} className="flex-1 py-2.5 text-sm font-bold text-[#64748b] bg-[#f1f5f9] rounded-[8px] border-none cursor-pointer disabled:opacity-50">Cancel</button>
+                <button onClick={handleVerifyRefund} disabled={!!acting} className="flex-1 py-2.5 text-sm font-bold text-white bg-[#0284c7] rounded-[8px] border-none cursor-pointer hover:bg-[#0369a1] disabled:opacity-50 flex items-center justify-center gap-1.5">
+                  <ShieldCheck size={16} /> {acting ? 'Verifying…' : 'Verify & Unfreeze'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Evidence lightbox (Images & Videos) */}
       {lightbox && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" onClick={() => setLightbox(null)}>
           <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white border-none cursor-pointer hover:bg-white/20"><X size={20} /></button>
-          <img src={lightbox} alt="evidence" className="max-w-full max-h-[90vh] object-contain rounded-[8px]" onClick={e => e.stopPropagation()} />
+          {lightbox.type === 'video' ? (
+            <video
+              src={lightbox.url}
+              controls
+              autoPlay
+              className="max-w-full max-h-[85vh] rounded-[8px] shadow-2xl bg-black"
+              onClick={e => e.stopPropagation()}
+            />
+          ) : (
+            <img src={lightbox.url} alt="evidence" className="max-w-full max-h-[90vh] object-contain rounded-[8px]" onClick={e => e.stopPropagation()} />
+          )}
         </div>
       )}
     </div>

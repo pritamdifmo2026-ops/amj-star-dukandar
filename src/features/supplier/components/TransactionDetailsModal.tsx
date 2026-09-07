@@ -91,6 +91,7 @@ const TransactionDetailsModal: React.FC<Props> = ({ tx, withdrawal, withdrawals,
 
   // ── Opened from the Transaction History list ──────────────────────────────
   const isTopup = tx.type === 'topup';
+  const isCredit = tx.type === 'topup' || tx.type === 'unfreeze';
   const isWithdrawal = tx.type === 'withdrawal_request' || tx.type === 'withdrawal_complete';
   const isOrderCommission = ['freeze', 'release_to_amj', 'unfreeze'].includes(tx.type);
 
@@ -107,8 +108,8 @@ const TransactionDetailsModal: React.FC<Props> = ({ tx, withdrawal, withdrawals,
     <Modal isOpen onClose={onClose} title={txTypeLabel[tx.type] ?? 'Transaction Details'}>
       <div className="flex flex-col">
         <Row label="Amount">
-          <span className={isTopup ? 'text-[#059669]' : 'text-[#dc2626]'}>
-            {isTopup ? '+' : '-'}₹{Number(tx.amount).toFixed(2)}
+          <span className={isCredit ? 'text-[#059669] font-bold' : 'text-[#dc2626] font-bold'}>
+            {isCredit ? '+' : '-'}₹{Number(tx.amount).toFixed(2)}
           </span>
         </Row>
 
