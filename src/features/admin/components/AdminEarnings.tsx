@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { IndianRupee, TrendingUp, Lock, Edit2, Check, X, Unlock, AlertTriangle, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminService from '../services/admin.service';
+import { useAppSelector } from '@/store/hooks';
 
 const fmt = (n: number) =>
   n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -29,6 +30,8 @@ const SummaryCard: React.FC<{
 
 const AdminEarnings: React.FC = () => {
   const qc = useQueryClient();
+  const { user } = useAppSelector(state => state.auth);
+  const isSuperAdmin = user?.role === 'superadmin';
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState('');
   const [saving, setSaving] = useState(false);
@@ -60,6 +63,10 @@ const AdminEarnings: React.FC = () => {
 
   const doUnfreeze = async () => {
     if (!confirmUnfreeze) return;
+    if (!isSuperAdmin) {
+      toast.error('Access Denied: Only Main Website Admin can unfreeze funds');
+      return;
+    }
     setUnfreezing(true);
     try {
       await adminService.unfreezeCommission(confirmUnfreeze.orderId, unfreezeReason.trim() || 'Manual release by admin');
@@ -351,12 +358,22 @@ const AdminEarnings: React.FC = () => {
                       <div className="text-right shrink-0">
                         <p className="text-[10px] text-[#94a3b8] uppercase tracking-wide m-0">Frozen</p>
                         <p className="text-base font-extrabold text-[#d97706] m-0">₹{fmt(order.frozenAmount)}</p>
-                        <button
-                          onClick={() => { setConfirmUnfreeze({ orderId: order.orderId, amount: order.frozenAmount }); setUnfreezeReason(''); }}
-                          className="mt-1.5 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-[#059669] rounded-[6px] hover:bg-[#047857] border-none cursor-pointer"
-                        >
-                          <Unlock size={12} /> Release
-                        </button>
+                        {isSuperAdmin ? (
+                          <button
+                            onClick={() => { setConfirmUnfreeze({ orderId: order.orderId, amount: order.frozenAmount }); setUnfreezeReason(''); }}
+                            className="mt-1.5 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-[#059669] rounded-[6px] hover:bg-[#047857] border-none cursor-pointer"
+                          >
+                            <Unlock size={12} /> Release
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            title="Locked: Only Main Website Admin (SuperAdmin) can unfreeze funds"
+                            className="mt-1.5 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#94a3b8] bg-[#f1f5f9] border border-[#e2e8f0] rounded-[6px] cursor-not-allowed opacity-80"
+                          >
+                            <Lock size={12} /> Unfreeze Locked
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

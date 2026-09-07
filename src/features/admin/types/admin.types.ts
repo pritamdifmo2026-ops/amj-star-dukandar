@@ -157,9 +157,11 @@ export interface AdminUser {
 export interface SubAdmin {
   _id: string;
   email: string;
+  phone?: string;
   name?: string;
   adminRoleLabel?: string;
   permissions: string[];
+  assignedSuppliers?: Array<{ _id: string; businessName: string; storeSlug?: string } | string>;
   isActive: boolean;
   createdAt: string;
 }
@@ -219,3 +221,25 @@ export type MessageModalState = {
   message: string;
   type: 'success' | 'error' | 'info';
 };
+
+export interface AssignedSellerDetail extends AdminSupplier {
+  stats: {
+    products: {
+      total: number;
+      pending: number;
+      approved: number;
+      rejected: number;
+    };
+    disputes: {
+      total: number;
+      open: number;
+      resolved: number;
+    };
+    orders: {
+      total: number;
+      completed: number;
+      revenue: number;
+    };
+  };
+}
+

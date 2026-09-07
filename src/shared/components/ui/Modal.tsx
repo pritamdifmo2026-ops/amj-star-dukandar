@@ -21,10 +21,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer,
       onClick={onClose}
     >
       <div
-        className={`bg-[oklch(0.99_0.01_80)] rounded-[6px] shadow-xl overflow-hidden animate-slide-up ${widthClass || 'w-[90%] max-w-[450px]'}`}
+        className={`bg-[oklch(0.99_0.01_80)] rounded-[6px] shadow-xl overflow-hidden animate-slide-up max-h-[90vh] flex flex-col my-auto ${widthClass || 'w-[90%] max-w-[450px]'}`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100">
+        <div className="px-6 py-5 flex items-center justify-between border-b border-slate-100 shrink-0">
           <h2 className="text-lg font-semibold text-slate-900 m-0">{title}</h2>
           <button
             className="border-none bg-none text-slate-400 cursor-pointer p-1 rounded-full transition-all duration-200 hover:bg-slate-100 hover:text-slate-600"
@@ -33,11 +33,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer,
             <X size={20} />
           </button>
         </div>
-        <div className="p-6 text-slate-600 text-[15px] leading-relaxed">
+        <div className="p-6 text-slate-600 text-[15px] leading-relaxed flex-1 overflow-y-auto min-h-0">
           {children}
         </div>
         {footer && (
-          <div className="px-6 py-4 bg-slate-50 flex justify-end gap-3">
+          <div className="px-6 py-4 bg-slate-50 flex justify-end gap-3 shrink-0 border-t border-slate-100">
             {footer}
           </div>
         )}

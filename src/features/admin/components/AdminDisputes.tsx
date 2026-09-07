@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle, CheckCircle, XCircle, Package, ShieldCheck, Clock, X,
-  Building2, Video, Wallet, Play
+  Building2, Video, Wallet, Play, Lock
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminService from '../services/admin.service';
 import { useSocket } from '@/shared/contexts/SocketContext';
+import { useAppSelector } from '@/store/hooks';
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
   open:              { label: 'Awaiting Review',  color: '#a16207', bg: '#fefce8', border: '#fde047' },
@@ -33,6 +34,8 @@ const FILTERS = [
 
 const AdminDisputes: React.FC = () => {
   const qc = useQueryClient();
+  const { user } = useAppSelector(state => state.auth);
+  const isSuperAdmin = user?.role === 'superadmin';
   const [filter, setFilter] = useState('open');
   const [rejecting, setRejecting] = useState<{ id: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -102,6 +105,10 @@ const AdminDisputes: React.FC = () => {
 
   const handleVerifyRefund = async () => {
     if (!verifyingRefund) return;
+    if (!isSuperAdmin) {
+      toast.error('Access Denied: Only Main Website Admin can verify refunds and unfreeze wallet funds');
+      return;
+    }
     const targetId = verifyingRefund.id;
     setActing(targetId);
     try {
@@ -346,21 +353,31 @@ const AdminDisputes: React.FC = () => {
                                     ) : ''} back to supplier wallet.
                                   </p>
                                 </div>
-                                <button
-                                  onClick={() => {
-                                    setVerifyingRefund({
-                                      id: d._id,
-                                      orderNumber: order?.orderNumber,
-                                      amount: order?.totalAmount,
-                                      commissionAmount: d.commissionAmount,
-                                    });
-                                    setVerifyReason('');
-                                  }}
-                                  disabled={acting === d._id}
-                                  className="px-3.5 py-2 text-xs font-bold text-white bg-[#0284c7] hover:bg-[#0369a1] rounded-[8px] border-none cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-sm disabled:opacity-50 transition-colors"
-                                >
-                                  <ShieldCheck size={14} /> Verify & Unfreeze Wallet
-                                </button>
+                                {isSuperAdmin ? (
+                                  <button
+                                    onClick={() => {
+                                      setVerifyingRefund({
+                                        id: d._id,
+                                        orderNumber: order?.orderNumber,
+                                        amount: order?.totalAmount,
+                                        commissionAmount: d.commissionAmount,
+                                      });
+                                      setVerifyReason('');
+                                    }}
+                                    disabled={acting === d._id}
+                                    className="px-3.5 py-2 text-xs font-bold text-white bg-[#0284c7] hover:bg-[#0369a1] rounded-[8px] border-none cursor-pointer flex items-center gap-1.5 whitespace-nowrap shadow-sm disabled:opacity-50 transition-colors"
+                                  >
+                                    <ShieldCheck size={14} /> Verify & Unfreeze Wallet
+                                  </button>
+                                ) : (
+                                  <button
+                                    disabled
+                                    title="Locked: Only Main Website Admin (SuperAdmin) can verify refund and unfreeze wallet funds"
+                                    className="px-3.5 py-2 text-xs font-bold text-[#94a3b8] bg-[#f1f5f9] border border-[#e2e8f0] rounded-[8px] cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap opacity-80"
+                                  >
+                                    <Lock size={14} /> Unfreeze Locked (Main Admin Only)
+                                  </button>
+                                )}
                               </div>
                             ) : (
                               <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3">

@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut, Megaphone, Briefcase } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut, Megaphone, Briefcase, Store } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
@@ -14,6 +14,7 @@ import PendingUpgradeAlert from '../components/PendingUpgradeAlert';
 
 import DashboardOverview from '../components/DashboardOverview';
 import SupplierVerification from '../components/SupplierVerification';
+import AssignedSellersHub from '../components/AssignedSellersHub';
 import UserManagement from '../components/UserManagement';
 import ProductQueue from '../components/ProductQueue';
 import CategoryManagement from '../components/CategoryManagement';
@@ -41,6 +42,7 @@ import { Navigate } from 'react-router-dom';
 
 const tabLabel: Record<string, string> = {
   stats: '',
+  'assigned-sellers': 'Assigned Sellers',
   suppliers: 'Supplier Verifications',
   'supplier-detail': 'Supplier Profile',
   'supplier-products': 'Supplier Products',
@@ -148,10 +150,16 @@ const AdminDashboard: React.FC = () => {
     return user?.permissions?.includes(perm) || false;
   };
 
+  const isScopedAdmin = user?.role === 'admin' && Array.isArray(user?.assignedSuppliers) && user.assignedSuppliers.length > 0;
+
   const filteredMenu = adminMenu.filter(item => {
     if (user?.role === 'superadmin') return true;
     if (item.id === 'stats') return true;
-    if (item.id === 'suppliers') return hasPermission('supplier_verify');
+    if (item.id === 'suppliers') {
+      // Scoped sub-admins manage their assigned sellers via the dedicated Assigned Sellers hub
+      if (isScopedAdmin) return false;
+      return hasPermission('supplier_verify');
+    }
     if (item.id === 'resellers') return hasPermission('reseller_verify');
     if (item.id === 'users') return hasPermission('user_management');
     if (item.id === 'products') return hasPermission('product_queue');
@@ -174,6 +182,21 @@ const AdminDashboard: React.FC = () => {
     return false;
   });
 
+  if (isScopedAdmin) {
+    const statsIndex = filteredMenu.findIndex(m => m.id === 'stats');
+    const assignedItem: MenuItem = {
+      id: 'assigned-sellers',
+      label: 'Assigned Sellers',
+      icon: Store,
+      badge: user?.assignedSuppliers && user.assignedSuppliers.length > 1 ? user.assignedSuppliers.length : undefined,
+    };
+    if (statsIndex !== -1) {
+      filteredMenu.splice(statsIndex + 1, 0, assignedItem);
+    } else {
+      filteredMenu.unshift(assignedItem);
+    }
+  }
+
   if (user?.role === 'superadmin') {
     filteredMenu.push({ id: 'control-authority', label: 'Control Authority', icon: ShieldCheck });
   }
@@ -191,8 +214,12 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     if (activeTab === 'reseller-detail') setSearchParams({ tab: 'resellers' });
-    else if (activeTab === 'supplier-detail' || activeTab === 'supplier-products') setSearchParams({ tab: 'suppliers' });
-  }, []);
+    else if (isScopedAdmin && (activeTab === 'suppliers' || activeTab === 'supplier-detail' || activeTab === 'supplier-products')) {
+      setSearchParams({ tab: 'assigned-sellers' });
+    } else if (activeTab === 'supplier-detail' || activeTab === 'supplier-products') {
+      setSearchParams({ tab: 'suppliers' });
+    }
+  }, [isScopedAdmin, activeTab]);
 
   // useAdminDashboard hook was moved up
 
@@ -287,6 +314,7 @@ const AdminDashboard: React.FC = () => {
         ) : (
           <div>
             {activeTab === 'stats' && stats && <DashboardOverview stats={stats} />}
+            {activeTab === 'assigned-sellers' && <AssignedSellersHub />}
             {['suppliers', 'supplier-detail', 'supplier-products'].includes(activeTab) && (
               <SupplierVerification suppliers={allSuppliers} onVerify={handleVerifySupplier} onVerifyProduct={handleVerifyProduct} />
             )}

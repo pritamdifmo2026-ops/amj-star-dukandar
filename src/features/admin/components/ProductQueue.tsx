@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Package, CheckCircle, XCircle, ArrowLeft, Eye,
-  FileText, Tag, Info, BoxSelect, BarChart2
+  FileText, Tag, Info, BoxSelect, BarChart2, Store
 } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import Pagination from '@/shared/components/ui/Pagination';
 import type { AdminProduct } from '../types/admin.types';
+import { useAppSelector } from '@/store/hooks';
 
 interface ProductQueueProps {
   pendingProducts: AdminProduct[];
@@ -347,10 +348,40 @@ const ProductDetailView: React.FC<{
 // ── Main Component ────────────────────────────────────────────────────────────
 
 const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedProducts, onVerify }) => {
+  const { user } = useAppSelector(state => state.auth);
+  const isScopedAdmin = user?.role === 'admin' && Array.isArray(user?.assignedSuppliers) && user.assignedSuppliers.length > 0;
+
   const [selectedProduct, setSelectedProduct] = useState<AdminProduct | null>(null);
   const [pendingPage, setPendingPage] = useState(1);
   const [approvedPage, setApprovedPage] = useState(1);
+  const [selectedSupplierFilter, setSelectedSupplierFilter] = useState<string>('ALL');
   const ITEMS_PER_PAGE = 5;
+
+  const uniqueSuppliers = useMemo(() => {
+    const map = new Map<string, string>();
+    [...pendingProducts, ...approvedProducts].forEach(p => {
+      const sId = typeof p.supplierId === 'object' ? (p.supplierId as any)?._id : p.supplierId;
+      const sName = typeof p.supplierId === 'object' ? (p.supplierId as any)?.businessName : null;
+      if (sId && sName) map.set(sId, sName);
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [pendingProducts, approvedProducts]);
+
+  const displayedPending = useMemo(() => {
+    if (selectedSupplierFilter === 'ALL') return pendingProducts;
+    return pendingProducts.filter(p => {
+      const sId = typeof p.supplierId === 'object' ? (p.supplierId as any)?._id : p.supplierId;
+      return sId === selectedSupplierFilter;
+    });
+  }, [pendingProducts, selectedSupplierFilter]);
+
+  const displayedApproved = useMemo(() => {
+    if (selectedSupplierFilter === 'ALL') return approvedProducts;
+    return approvedProducts.filter(p => {
+      const sId = typeof p.supplierId === 'object' ? (p.supplierId as any)?._id : p.supplierId;
+      return sId === selectedSupplierFilter;
+    });
+  }, [approvedProducts, selectedSupplierFilter]);
 
   if (selectedProduct) {
     return (
@@ -450,22 +481,60 @@ const ProductQueue: React.FC<ProductQueueProps> = ({ pendingProducts, approvedPr
 
   return (
     <div className="flex flex-col gap-8">
+      {isScopedAdmin && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-[14px] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-700 flex items-center justify-center shrink-0">
+              <Store size={18} />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-amber-900">
+                Scoped Product Queue
+              </div>
+              <div className="text-[11px] text-amber-800/80">
+                Only displaying products from your assigned seller accounts ({user?.assignedSuppliers?.length || 0} assigned).
+              </div>
+            </div>
+          </div>
+
+          {uniqueSuppliers.length > 1 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-amber-900 shrink-0">Filter Seller:</span>
+              <select
+                value={selectedSupplierFilter}
+                onChange={e => {
+                  setSelectedSupplierFilter(e.target.value);
+                  setPendingPage(1);
+                  setApprovedPage(1);
+                }}
+                className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 outline-none focus:border-primary cursor-pointer"
+              >
+                <option value="ALL">All Assigned Sellers ({uniqueSuppliers.length})</option>
+                {uniqueSuppliers.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-extrabold text-[#0f172a] m-0">Pending Products</h3>
-          <span className="text-xs bg-[#fff7ed] text-[#c2410c] border border-[#fed7aa] px-2.5 py-1 rounded-full font-bold">{pendingProducts.length} items</span>
+          <span className="text-xs bg-[#fff7ed] text-[#c2410c] border border-[#fed7aa] px-2.5 py-1 rounded-full font-bold">{displayedPending.length} items</span>
         </div>
-        {renderTable(pendingProducts, true, pendingPage)}
-        <Pagination totalItems={pendingProducts.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={pendingPage} onPageChange={setPendingPage} />
+        {renderTable(displayedPending, true, pendingPage)}
+        <Pagination totalItems={displayedPending.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={pendingPage} onPageChange={setPendingPage} />
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-extrabold text-[#0f172a] m-0">Approved Products</h3>
-          <span className="text-xs bg-[#ecfdf5] text-[#059669] border border-[#6ee7b7] px-2.5 py-1 rounded-full font-bold">{approvedProducts.length} items</span>
+          <span className="text-xs bg-[#ecfdf5] text-[#059669] border border-[#6ee7b7] px-2.5 py-1 rounded-full font-bold">{displayedApproved.length} items</span>
         </div>
-        {renderTable(approvedProducts, false, approvedPage)}
-        <Pagination totalItems={approvedProducts.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={approvedPage} onPageChange={setApprovedPage} />
+        {renderTable(displayedApproved, false, approvedPage)}
+        <Pagination totalItems={displayedApproved.length} itemsPerPage={ITEMS_PER_PAGE} currentPage={approvedPage} onPageChange={setApprovedPage} />
       </div>
     </div>
   );

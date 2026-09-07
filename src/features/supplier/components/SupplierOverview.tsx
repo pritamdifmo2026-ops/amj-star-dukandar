@@ -3,6 +3,7 @@ import { ShieldCheck, Zap, Plus, AlertTriangle, Wallet, Receipt, IndianRupee, Sh
 import Button from '@/shared/components/ui/Button';
 import { getGreeting } from '@/shared/utils/greeting';
 import SupplierStats from './SupplierStats';
+import AssignedManagerCard from './AssignedManagerCard';
 import { useQuery } from '@tanstack/react-query';
 import walletApi from '../services/wallet.api';
 import toast from 'react-hot-toast';
@@ -173,6 +174,9 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
           <span className="text-xs font-bold text-[#d97706] group-hover:underline whitespace-nowrap">Go to Settings →</span>
         </button>
       )}
+
+      {/* Dedicated Support & Assigned Account Manager Card */}
+      <AssignedManagerCard profile={profile} />
 
       <SupplierStats products={products} />
 

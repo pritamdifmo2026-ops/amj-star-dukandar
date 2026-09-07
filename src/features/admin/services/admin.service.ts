@@ -1,13 +1,18 @@
 import api from '@/api/client';
 import type {
   AdminStats, AdminSupplier, AdminReseller,
-  AdminProduct, AdminUser, Banner, Enquiry, SubAdmin
+  AdminProduct, AdminUser, Banner, Enquiry, SubAdmin, AssignedSellerDetail
 } from '../types/admin.types';
 
 const adminService = {
   getStats: async (): Promise<AdminStats> => {
     const response = await api.get('/admin/stats');
     return response.data.stats;
+  },
+
+  getMyAssignedSellers: async (): Promise<AssignedSellerDetail[]> => {
+    const response = await api.get('/admin/assigned-sellers/overview');
+    return response.data.sellers;
   },
 
   getPendingSuppliers: async (): Promise<AdminSupplier[]> => {
@@ -306,12 +311,26 @@ const adminService = {
     return response.data.subAdmins;
   },
 
-  inviteSubAdmin: async (data: { email: string; adminRoleLabel: string; permissions: string[] }): Promise<SubAdmin> => {
+  inviteSubAdmin: async (data: {
+    name?: string;
+    email: string;
+    adminRoleLabel: string;
+    permissions: string[];
+    assignedSuppliers?: string[];
+    phone?: string;
+  }): Promise<{ subAdmin: SubAdmin; tempPassword?: string; email?: string }> => {
     const response = await api.post('/admin/sub-admins', data);
-    return response.data.subAdmin;
+    return response.data;
   },
 
-  updateSubAdmin: async (id: string, data: { adminRoleLabel?: string; permissions?: string[]; isActive?: boolean }): Promise<SubAdmin> => {
+  updateSubAdmin: async (id: string, data: {
+    name?: string;
+    adminRoleLabel?: string;
+    permissions?: string[];
+    isActive?: boolean;
+    assignedSuppliers?: string[];
+    phone?: string;
+  }): Promise<SubAdmin> => {
     const response = await api.patch(`/admin/sub-admins/${id}`, data);
     return response.data.subAdmin;
   },

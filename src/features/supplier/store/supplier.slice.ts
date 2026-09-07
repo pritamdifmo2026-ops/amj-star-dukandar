@@ -112,6 +112,10 @@ interface SupplierProfile {
   businessDetails?: BusinessDetails;
   user?: SupplierUser;
   assignedAdminContact?: string;
+  accountManagerName?: string;
+  accountManagerRole?: string;
+  accountManagerEmail?: string;
+  accountManagerPhone?: string;
 }
 
 interface SupplierState {

@@ -11,6 +11,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import { removeWhiteBackground } from '@/shared/utils/removeBackground';
 import { useAppDispatch } from '@/store/hooks';
 import { setSupplierProfile } from '@/features/supplier/store/supplier.slice';
+import AssignedManagerCard from './AssignedManagerCard';
 
 interface SupplierSettingsProps { profile: any; }
 
@@ -74,10 +75,15 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
   });
   const { data: walletData } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.getWallet });
   const { data: banksData } = useQuery({ queryKey: ['supplier', 'banks'], queryFn: supplierService.getBanks });
-  const adminContact = profile?.assignedAdminContact;
-  const fallbackPhone: string = (walletData as any)?.contactPhone || '9034440673';
-  const contactPhone = adminContact || (fallbackPhone.length === 10 ? `+91 ${fallbackPhone.slice(0, 5)} ${fallbackPhone.slice(5)}` : fallbackPhone);
-  const contactHref = adminContact ? `tel:${adminContact.replace(/\s/g, '')}` : (fallbackPhone.length === 10 ? `tel:+91${fallbackPhone}` : `tel:${fallbackPhone}`);
+  const managerPhone = profile?.accountManagerPhone && !profile.accountManagerPhone.startsWith('admin_')
+    ? profile.accountManagerPhone
+    : null;
+  const rawContactPhone = managerPhone || profile?.assignedAdminContact || (walletData as any)?.contactPhone || '9034440673';
+  const cleanPhoneDigits = String(rawContactPhone).replace(/[^\d+]/g, '');
+  const contactHref = `tel:${cleanPhoneDigits.startsWith('+') ? cleanPhoneDigits : `+91${cleanPhoneDigits}`}`;
+  const contactPhone = cleanPhoneDigits.length === 10
+    ? `+91 ${cleanPhoneDigits.slice(0, 5)} ${cleanPhoneDigits.slice(5)}`
+    : rawContactPhone;
 
   // Email update flow
   const [editingEmail, setEditingEmail] = useState(false);
@@ -477,7 +483,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
 
           <div className="flex items-start gap-2 bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] px-4 py-3 text-[#c2410c] text-sm mb-5">
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
-            <p className="m-0">Legal, Tier, and Commission details are managed by AMJSTAR Team. To request changes, call us directly.</p>
+            <p className="m-0">Legal, Tier, and Commission details are managed by AMJSTAR Team. To request changes, connect with your assigned manager or see the support desk below.</p>
           </div>
           {contactHref ? (
             <a
@@ -485,7 +491,9 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               className="inline-flex items-center gap-3 px-5 py-3 bg-[#e65c00] text-white rounded-[10px] font-bold text-sm no-underline hover:bg-[#c94f00] transition-colors shadow-[0_4px_12px_rgba(230,92,0,0.25)]"
             >
               <PhoneCall size={18} />
-              Call AMJSTAR — {contactPhone}
+              {profile?.accountManagerName
+                ? `Call Manager (${profile.accountManagerName}) — ${contactPhone}`
+                : `Call AMJSTAR — ${contactPhone}`}
             </a>
           ) : (
             <Button variant="outline" className="flex items-center gap-2 !text-[#94a3b8] !border-[#e2e8f0]" disabled>
@@ -493,6 +501,11 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Dedicated Support & Assigned Account Manager */}
+      <div className="mt-6">
+        <AssignedManagerCard profile={profile} />
       </div>
 
       {/* Bank Accounts */}
