@@ -11,7 +11,6 @@ import {
   Copy,
   Check,
   Building2,
-  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
