@@ -9,6 +9,9 @@ export interface Product {
   minOrderQty: number;
   stock: number;
   category: string;
+  categoryId?: string;
+  subcategoryId?: string;
+  subcategory?: string;
   imageUrl?: string;
   images: string[];
   supplierId: string;

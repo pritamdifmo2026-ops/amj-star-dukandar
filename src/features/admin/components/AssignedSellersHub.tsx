@@ -2,14 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Store, Package, AlertTriangle, CheckCircle, XCircle, Phone, Mail,
-  MessageCircle, ExternalLink, ShieldCheck, MapPin, Eye, Building2,
-  Calendar, Award, DollarSign, Search, ChevronRight, UserCheck, Clock,
-  Filter, Sparkles
+  MessageCircle, ShieldCheck, MapPin, Eye, Building2,
+  DollarSign, Search, UserCheck
 } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import adminService from '../services/admin.service';
-import type { AssignedSellerDetail, AdminProduct } from '../types/admin.types';
+import type { AssignedSellerDetail, AdminProduct, AdminDispute } from '../types/admin.types';
 import { useAppSelector } from '@/store/hooks';
 import toast from 'react-hot-toast';
 
@@ -31,6 +30,11 @@ export const AssignedSellersHub: React.FC = () => {
   }>({ isOpen: false, product: null, action: 'APPROVED' });
   const [rejectionReason, setRejectionReason] = useState('');
 
+  const hasPermission = (perm: string) => {
+    if (user?.role === 'superadmin') return true;
+    return user?.permissions?.includes(perm) || false;
+  };
+
   // Fetch all assigned sellers enriched with stats
   const { data: sellers = [], isLoading: sellersLoading } = useQuery<AssignedSellerDetail[]>({
     queryKey: ['admin', 'my-assigned-sellers'],
@@ -51,29 +55,37 @@ export const AssignedSellersHub: React.FC = () => {
   const { data: sellerProducts = [], isLoading: productsLoading } = useQuery<AdminProduct[]>({
     queryKey: ['admin', 'supplier-products', currentSeller?._id],
     queryFn: () => adminService.getSupplierProducts(currentSeller!._id),
-    enabled: !!currentSeller?._id,
+    enabled: !!currentSeller?._id && (hasPermission('product_queue') || hasPermission('supplier_verify')),
   });
 
   // Fetch disputes
-  const { data: allDisputes = [], isLoading: disputesLoading } = useQuery({
+  const { data: allDisputes = [], isLoading: disputesLoading } = useQuery<AdminDispute[]>({
     queryKey: ['admin', 'disputes'],
     queryFn: () => adminService.getDisputes(),
-    enabled: !!currentSeller,
+    enabled: !!currentSeller && hasPermission('disputes'),
   });
 
   // Filter disputes belonging to current seller
   const sellerDisputes = useMemo(() => {
     if (!currentSeller) return [];
-    const supUserId = currentSeller.userId?._id || (currentSeller.userId as any);
-    return allDisputes.filter((d: any) => {
-      const dSupplierId = d.supplierId?._id || d.supplierId;
-      return dSupplierId === supUserId || d.orderId?.supplierId === supUserId;
+    const supUserId = typeof currentSeller.userId === 'object' ? currentSeller.userId?._id : currentSeller.userId;
+    return allDisputes.filter((d: AdminDispute) => {
+      const dSupplierId = typeof d.supplierId === 'object' ? d.supplierId?._id : d.supplierId;
+      const orderSupplierId = typeof d.orderId === 'object' ? d.orderId?.supplierId : undefined;
+      return (
+        Boolean(supUserId && (dSupplierId === supUserId || orderSupplierId === supUserId)) ||
+        Boolean(currentSeller.businessName && d.supplierBusinessName === currentSeller.businessName)
+      );
     });
   }, [allDisputes, currentSeller]);
 
+  const openDisputesCount = useMemo(() => {
+    return sellerDisputes.filter(d => ['open', 'validated', 'reopened'].includes(d.status)).length;
+  }, [sellerDisputes]);
+
   // Product verification mutation
   const verifyProductMutation = useMutation({
-    mutationFn: ({ id, status, reason }: { id: string; status: string; reason?: string }) =>
+    mutationFn: ({ id, status, reason }: { id: string; status: 'APPROVED' | 'REJECTED'; reason?: string }) =>
       adminService.verifyProduct(id, status, reason),
     onSuccess: () => {
       toast.success('Product status updated');
@@ -83,15 +95,11 @@ export const AssignedSellersHub: React.FC = () => {
       setProductActionModal({ isOpen: false, product: null, action: 'APPROVED' });
       setRejectionReason('');
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Failed to update product');
+    onError: (err: unknown) => {
+      const e = err as { response?: { data?: { message?: string } } };
+      toast.error(e?.response?.data?.message || 'Failed to update product');
     },
   });
-
-  const hasPermission = (perm: string) => {
-    if (user?.role === 'superadmin') return true;
-    return user?.permissions?.includes(perm) || false;
-  };
 
   const filteredSellers = useMemo(() => {
     if (!sellerSearch.trim()) return sellers;
@@ -99,6 +107,8 @@ export const AssignedSellersHub: React.FC = () => {
     return sellers.filter(s =>
       s.businessName?.toLowerCase().includes(q) ||
       s.businessDetails?.ownerName?.toLowerCase().includes(q) ||
+      s.businessDetails?.email?.toLowerCase().includes(q) ||
+      s.userId?.email?.toLowerCase().includes(q) ||
       s.phone?.includes(q)
     );
   }, [sellers, sellerSearch]);
@@ -187,48 +197,54 @@ export const AssignedSellersHub: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2.5 overflow-x-auto pb-1.5 scrollbar-thin">
-            {filteredSellers.map(seller => {
-              const isSelected = currentSeller?._id === seller._id;
-              const pendingCount = seller.stats?.products?.pending || 0;
-              const disputeCount = seller.stats?.disputes?.open || 0;
+            {filteredSellers.length === 0 ? (
+              <p className="text-xs text-[#94a3b8] py-2 px-1 m-0 italic">
+                No assigned sellers found matching "{sellerSearch}".
+              </p>
+            ) : (
+              filteredSellers.map(seller => {
+                const isSelected = currentSeller?._id === seller._id;
+                const pendingCount = seller.stats?.products?.pending || 0;
+                const disputeCount = seller.stats?.disputes?.open || 0;
 
-              return (
-                <button
-                  key={seller._id}
-                  onClick={() => {
-                    setSelectedSellerId(seller._id);
-                    setActiveSubTab('profile');
-                  }}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border text-left cursor-pointer transition-all shrink-0 ${
-                    isSelected
-                      ? 'bg-primary/5 border-primary shadow-sm text-primary font-bold'
-                      : 'bg-[#fafbfc] border-[#e2e8f0] hover:bg-slate-50 text-[#334155]'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
-                    isSelected ? 'bg-primary text-white' : 'bg-slate-200 text-slate-700'
-                  }`}>
-                    {seller.businessName?.charAt(0).toUpperCase() || 'S'}
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold truncate max-w-[150px]">{seller.businessName}</div>
-                    <div className="text-[10px] text-[#64748b] flex items-center gap-1.5">
-                      <span>{seller.tier || 'VERIFIED'}</span>
-                      {pendingCount > 0 && (
-                        <span className="bg-amber-100 text-amber-800 font-bold px-1.5 rounded-full">
-                          {pendingCount} pending
-                        </span>
-                      )}
-                      {disputeCount > 0 && (
-                        <span className="bg-red-100 text-red-700 font-bold px-1.5 rounded-full">
-                          {disputeCount} dispute
-                        </span>
-                      )}
+                return (
+                  <button
+                    key={seller._id}
+                    onClick={() => {
+                      setSelectedSellerId(seller._id);
+                      setActiveSubTab('profile');
+                    }}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border text-left cursor-pointer transition-all shrink-0 ${
+                      isSelected
+                        ? 'bg-primary/5 border-primary shadow-sm text-primary font-bold'
+                        : 'bg-[#fafbfc] border-[#e2e8f0] hover:bg-slate-50 text-[#334155]'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${
+                      isSelected ? 'bg-primary text-white' : 'bg-slate-200 text-slate-700'
+                    }`}>
+                      {seller.businessName?.charAt(0).toUpperCase() || 'S'}
                     </div>
-                  </div>
-                </button>
-              );
-            })}
+                    <div>
+                      <div className="text-xs font-bold truncate max-w-[150px]">{seller.businessName}</div>
+                      <div className="text-[10px] text-[#64748b] flex items-center gap-1.5">
+                        <span>{seller.tier || 'VERIFIED'}</span>
+                        {pendingCount > 0 && (
+                          <span className="bg-amber-100 text-amber-800 font-bold px-1.5 rounded-full">
+                            {pendingCount} pending
+                          </span>
+                        )}
+                        {disputeCount > 0 && (
+                          <span className="bg-red-100 text-red-700 font-bold px-1.5 rounded-full">
+                            {disputeCount} dispute
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -287,16 +303,20 @@ export const AssignedSellersHub: React.FC = () => {
                     <Phone size={14} className="text-[#059669]" /> Call Phone
                   </a>
                 )}
-                {currentSeller.phone && (
-                  <a
-                    href={`https://wa.me/91${currentSeller.phone.replace(/\D/g, '')}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] border border-[#25D366]/30 no-underline transition-all"
-                  >
-                    <MessageCircle size={14} /> WhatsApp
-                  </a>
-                )}
+                {currentSeller.phone && (() => {
+                  const cleanPhone = currentSeller.phone.replace(/\D/g, '');
+                  const waPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+                  return (
+                    <a
+                      href={`https://wa.me/${waPhone}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C7E] border border-[#25D366]/30 no-underline transition-all"
+                    >
+                      <MessageCircle size={14} /> WhatsApp
+                    </a>
+                  );
+                })()}
                 {(currentSeller.businessDetails?.email || currentSeller.userId?.email) && (
                   <a
                     href={`mailto:${currentSeller.businessDetails?.email || currentSeller.userId?.email}`}
@@ -399,7 +419,7 @@ export const AssignedSellersHub: React.FC = () => {
               >
                 <Package size={15} /> Products Queue
                 {(currentSeller.stats?.products?.pending || 0) > 0 && (
-                  <span className="bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                  <span className="bg-amber-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
                     {currentSeller.stats.products.pending}
                   </span>
                 )}
@@ -416,9 +436,9 @@ export const AssignedSellersHub: React.FC = () => {
                 }`}
               >
                 <AlertTriangle size={15} /> Disputes
-                {sellerDisputes.filter((d: any) => ['open', 'validated'].includes(d.status)).length > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
-                    {sellerDisputes.filter((d: any) => ['open', 'validated'].includes(d.status)).length}
+                {openDisputesCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                    {openDisputesCount}
                   </span>
                 )}
               </button>
@@ -474,7 +494,12 @@ export const AssignedSellersHub: React.FC = () => {
                   <div className="flex justify-between py-1.5">
                     <span className="text-[#64748b]">Complete Address</span>
                     <span className="font-semibold text-[#0f172a] text-right max-w-xs">
-                      {currentSeller.businessDetails?.address || '—'}, {currentSeller.businessDetails?.city || ''} {currentSeller.businessDetails?.state || ''} {currentSeller.businessDetails?.pinCode || ''}
+                      {[
+                        currentSeller.businessDetails?.address,
+                        currentSeller.businessDetails?.city,
+                        currentSeller.businessDetails?.state,
+                        currentSeller.businessDetails?.pinCode,
+                      ].filter(Boolean).join(', ') || '—'}
                     </span>
                   </div>
                 </div>
@@ -504,7 +529,9 @@ export const AssignedSellersHub: React.FC = () => {
                     <div className="flex justify-between py-1.5 border-b border-slate-50">
                       <span className="text-[#64748b]">Plan Expiry Date</span>
                       <span className="font-semibold text-[#0f172a]">
-                        {new Date(currentSeller.subscription.expiryDate).toLocaleDateString('en-IN')}
+                        {!isNaN(new Date(currentSeller.subscription.expiryDate).getTime())
+                          ? new Date(currentSeller.subscription.expiryDate).toLocaleDateString('en-IN')
+                          : '—'}
                       </span>
                     </div>
                   )}
@@ -659,35 +686,52 @@ export const AssignedSellersHub: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {sellerDisputes.map((dispute: any) => (
-                    <div key={dispute._id} className="bg-white rounded-xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-xs font-bold text-[#0f172a]">
-                            Order #{dispute.orderId?.orderNumber || dispute.orderId?._id?.slice(-8) || 'N/A'}
-                          </span>
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 uppercase">
-                            {dispute.status}
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#475569] m-0">
-                          <strong>Issue:</strong> {dispute.issueType || 'Quality/Damage issue'} • <strong>Reason:</strong> {dispute.reason || 'Customer raised complaint'}
-                        </p>
-                        <div className="text-[11px] text-[#94a3b8] mt-1">
-                          Buyer: {dispute.buyerId?.name || 'Customer'} ({dispute.buyerId?.phone || 'No phone'})
-                        </div>
-                      </div>
+                  {sellerDisputes.map((dispute: AdminDispute) => {
+                    const orderNumber = typeof dispute.orderId === 'object'
+                      ? (dispute.orderId?.orderNumber || dispute.orderId?._id?.slice(-8) || 'N/A')
+                      : (typeof dispute.orderId === 'string' ? dispute.orderId.slice(-8) : 'N/A');
+                    const orderAmount = typeof dispute.orderId === 'object' ? (dispute.orderId?.totalAmount || 0) : 0;
+                    const statusClass =
+                      ['resolved', 'supplier_resolved'].includes(dispute.status)
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : dispute.status === 'rejected'
+                        ? 'bg-slate-100 text-slate-700 border-slate-200'
+                        : dispute.status === 'reopened'
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : dispute.status === 'validated'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200';
 
-                      <div className="text-right">
-                        <div className="text-xs font-bold text-[#0f172a]">
-                          Amount: ₹{(dispute.orderId?.totalAmount || 0).toLocaleString('en-IN')}
+                    return (
+                      <div key={dispute._id} className="bg-white rounded-xl border border-[#e2e8f0] p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs font-bold text-[#0f172a]">
+                              Order #{orderNumber}
+                            </span>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full border uppercase ${statusClass}`}>
+                              {dispute.status.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#475569] m-0">
+                            <strong>Issue:</strong> {dispute.issueType || 'Quality/Damage issue'} • <strong>Details:</strong> {dispute.description || dispute.reason || 'Customer raised complaint'}
+                          </p>
+                          <div className="text-[11px] text-[#94a3b8] mt-1">
+                            Buyer: {dispute.buyerId?.name || 'Customer'} ({dispute.buyerId?.phone || 'No phone'})
+                          </div>
                         </div>
-                        <div className="text-[11px] text-[#64748b] mt-1">
-                          Raised: {new Date(dispute.createdAt).toLocaleDateString('en-IN')}
+
+                        <div className="text-right shrink-0">
+                          <div className="text-xs font-bold text-[#0f172a]">
+                            Amount: ₹{orderAmount.toLocaleString('en-IN')}
+                          </div>
+                          <div className="text-[11px] text-[#64748b] mt-1">
+                            Raised: {dispute.createdAt && !isNaN(new Date(dispute.createdAt).getTime()) ? new Date(dispute.createdAt).toLocaleDateString('en-IN') : 'N/A'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -741,13 +785,15 @@ export const AssignedSellersHub: React.FC = () => {
             </Button>
             <Button
               variant={productActionModal.action === 'APPROVED' ? 'primary' : 'danger'}
+              loading={verifyProductMutation.isPending}
+              disabled={verifyProductMutation.isPending}
               onClick={() => {
                 if (productActionModal.action === 'REJECTED' && !rejectionReason.trim()) {
                   toast.error('Please enter a rejection reason');
                   return;
                 }
                 verifyProductMutation.mutate({
-                  id: productActionModal.product?.id || productActionModal.product?._id || '',
+                  id: productActionModal.product?._id || productActionModal.product?.id || '',
                   status: productActionModal.action,
                   reason: rejectionReason,
                 });
@@ -807,7 +853,7 @@ export const AssignedSellersHub: React.FC = () => {
               </div>
               <div>
                 <span className="text-xs text-[#64748b] block font-semibold">Base Price</span>
-                <span className="font-bold text-primary">₹{selectedProduct.basePrice}</span>
+                <span className="font-bold text-primary">₹{(selectedProduct.basePrice ?? 0).toLocaleString('en-IN')}</span>
               </div>
               <div className="col-span-2">
                 <span className="text-xs text-[#64748b] block font-semibold">Description</span>

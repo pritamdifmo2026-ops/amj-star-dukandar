@@ -27,7 +27,7 @@ export interface AdminSupplier {
   verifiedByAdmin: boolean;
   rejectionReason?: string;
   tier?: string;
-  userId?: { name: string; email: string; phone: string };
+  userId?: { _id?: string; name: string; email: string; phone: string; avatar?: string };
   autoLiveProducts?: boolean;
   subscription?: {
     status?: 'NONE' | 'ACTIVE' | 'EXPIRED';
@@ -241,5 +241,35 @@ export interface AssignedSellerDetail extends AdminSupplier {
       revenue: number;
     };
   };
+}
+
+export interface AdminDispute {
+  _id: string;
+  orderId?: {
+    _id?: string;
+    orderNumber?: string;
+    totalAmount?: number;
+    items?: Array<{ name: string; quantity: number; price: number }>;
+    status?: string;
+    platformFee?: number;
+    supplierId?: string;
+  } | string;
+  buyerId?: {
+    _id?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+  supplierId?: {
+    _id?: string;
+  } | string;
+  supplierBusinessName?: string;
+  issueType: string;
+  description?: string;
+  reason?: string;
+  status: 'open' | 'validated' | 'reopened' | 'supplier_resolved' | 'exchange' | 'resolved' | 'rejected' | string;
+  evidence?: Array<{ url: string; type: 'image' | 'video' }>;
+  commissionAmount?: number;
+  createdAt: string;
 }
 

@@ -1,8 +1,8 @@
 import apiClient from '@/api/client';
 
 export const categoryService = {
-  getAll: async () => {
-    const response = await apiClient.get('/categories', { timeout: 30000 });
+  getAll: async (params?: { hasProducts?: boolean; onlyActive?: boolean }) => {
+    const response = await apiClient.get('/categories', { params, timeout: 30000 });
     return response.data;
   },
 

@@ -1,7 +1,7 @@
 import api from '@/api/client';
 import type {
   AdminStats, AdminSupplier, AdminReseller,
-  AdminProduct, AdminUser, Banner, Enquiry, SubAdmin, AssignedSellerDetail
+  AdminProduct, AdminUser, Banner, Enquiry, SubAdmin, AssignedSellerDetail, AdminDispute
 } from '../types/admin.types';
 
 const adminService = {
@@ -237,9 +237,9 @@ const adminService = {
   },
 
   // ── Disputes ──
-  getDisputes: async (status?: string) => {
+  getDisputes: async (status?: string): Promise<AdminDispute[]> => {
     const response = await api.get('/admin/disputes', { params: status ? { status } : {} });
-    return response.data.disputes as any[];
+    return response.data.disputes;
   },
 
   validateDispute: async (id: string) => {

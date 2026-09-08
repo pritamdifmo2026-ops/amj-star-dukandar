@@ -113,15 +113,15 @@ const Hero: React.FC = () => {
 
           <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-6 flex-wrap w-full">
             <div className="flex flex-col items-center sm:items-start">
-              <span className="font-display text-xl sm:text-2xl text-heading leading-none">50k+</span>
+              <span className="font-display text-xl sm:text-2xl text-heading leading-none">100%</span>
               <span className="text-xs text-muted">Verified Suppliers</span>
             </div>
             <div className="w-px h-6 bg-border hidden sm:block" />
-            <div className="flex flex-col items-center sm:items-start">
+            {/* <div className="flex flex-col items-center sm:items-start">
               <span className="font-display text-xl sm:text-2xl text-heading leading-none">2M+</span>
               <span className="text-xs text-muted">Bulk Products</span>
             </div>
-            <div className="w-px h-6 bg-border hidden sm:block" />
+            <div className="w-px h-6 bg-border hidden sm:block" /> */}
             <div className="flex flex-col items-center sm:items-start">
               <span className="font-display text-xl sm:text-2xl text-heading leading-none">B2B</span>
               <span className="text-xs text-muted">First Platform</span>
@@ -138,7 +138,7 @@ const Hero: React.FC = () => {
             />
             <div className="absolute bottom-3 left-3 sm:-left-5 sm:bottom-5 bg-cream p-3 sm:p-4 rounded-[6px] shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex flex-col z-[2] border border-border">
               <span className="font-display text-xl sm:text-2xl text-heading leading-none mb-1">+38%</span>
-              <span className="text-xs sm:text-[13px] text-body whitespace-nowrap">avg. reseller margin uplift</span>
+              <span className="text-xs sm:text-[13px] text-body whitespace-nowrap">avg. seller margin uplift</span>
             </div>
           </div>
         </div>
