@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ShoppingCart, ChevronDown, ChevronRight, Menu, X, User, LogOut,
+  ShoppingCart, ChevronDown, Menu, X, User, LogOut,
   Store, ShoppingBag, Truck, List, LayoutDashboard, Search,
   Info, Factory, RefreshCw, ShieldCheck
 } from 'lucide-react';
@@ -25,6 +25,7 @@ const Navbar: React.FC = () => {
   const [showSoonModal, setShowSoonModal] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [expandedMoreCategory, setExpandedMoreCategory] = useState<string | null>(null);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const helpRef = useRef<HTMLDivElement>(null);
@@ -341,7 +342,7 @@ const Navbar: React.FC = () => {
         </nav>
 
         {/* Category bar — desktop only */}
-        <div className="hidden lg:block bg-surface border-b border-border w-full overflow-x-clip">
+        <div className="hidden lg:block bg-surface border-b border-border w-full">
           <div className="max-w-[var(--width-container)] mx-auto px-4 lg:px-8 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 xl:gap-5 flex-1 min-w-0">
               {categories.slice(0, 6).map((cat, index) => {
@@ -392,7 +393,7 @@ const Navbar: React.FC = () => {
                     <span>More Categories</span>
                     <ChevronDown size={12} className="shrink-0 transition-transform group-hover/more:rotate-180" />
                   </button>
-                  <div className="absolute top-full left-0 min-w-[230px] max-h-[400px] overflow-y-auto bg-white border border-border rounded-[10px] shadow-[0_12px_28px_rgba(0,0,0,0.12)] p-2 z-[120] opacity-0 invisible translate-y-2 transition-all group-hover/more:opacity-100 group-hover/more:visible group-hover/more:translate-y-0">
+                  <div className="absolute top-full right-0 min-w-[260px] bg-white border border-border rounded-[10px] shadow-[0_12px_28px_rgba(0,0,0,0.12)] p-2.5 z-[120] opacity-0 invisible translate-y-2 transition-all group-hover/more:opacity-100 group-hover/more:visible group-hover/more:translate-y-0">
                     {categories.slice(4).map((cat, sliceIdx) => {
                       const actualIdx = sliceIdx + 4;
                       const hasSubs = cat.subcategories?.length > 0;
@@ -404,23 +405,51 @@ const Navbar: React.FC = () => {
                         actualIdx === 5 ? 'block 2xl:hidden' :
                         'block';
 
+                      const isExpanded = expandedMoreCategory === cat._id || (!expandedMoreCategory && sliceIdx === 0);
+
                       return (
-                        <div key={cat._id} className={`relative group/moreitem py-0.5 ${itemVisCls}`}>
-                          <Link
-                            to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
-                            className="flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-heading no-underline rounded-[6px] hover:bg-slate-50 hover:text-primary transition-colors"
-                            title={cat.name}
+                        <div key={cat._id} className={`py-1 ${itemVisCls}`}>
+                          <div
+                            className="flex items-center justify-between px-3 py-1.5 text-xs font-semibold text-heading rounded-[6px] hover:bg-slate-50 hover:text-primary transition-colors cursor-pointer"
+                            onMouseEnter={() => setExpandedMoreCategory(cat._id)}
                           >
-                            <span className="truncate max-w-[170px]">{cat.name}</span>
-                            {hasSubs && <ChevronRight size={12} className="text-muted shrink-0 ml-2" />}
-                          </Link>
-                          {hasSubs && (
-                            <div className="absolute right-full top-0 mr-1 min-w-[200px] max-h-[300px] overflow-y-auto bg-white border border-border rounded-[8px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] p-2 z-[130] opacity-0 invisible -translate-x-1 transition-all group-hover/moreitem:opacity-100 group-hover/moreitem:visible group-hover/moreitem:translate-x-0">
+                            <Link
+                              to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                              className="text-heading hover:text-primary font-semibold no-underline flex-1 truncate"
+                              title={cat.name}
+                            >
+                              {cat.name}
+                            </Link>
+                            {hasSubs && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setExpandedMoreCategory(isExpanded ? null : cat._id);
+                                }}
+                                className="border-none bg-transparent p-0 text-muted hover:text-primary cursor-pointer flex items-center ml-2"
+                              >
+                                <ChevronDown
+                                  size={13}
+                                  className={`transition-transform duration-200 ${isExpanded ? 'rotate-180 text-primary' : ''}`}
+                                />
+                              </button>
+                            )}
+                          </div>
+
+                          {hasSubs && isExpanded && (
+                            <div className="pl-3 pr-1 py-1.5 flex flex-col gap-0.5 max-h-[260px] overflow-y-auto bg-slate-50/70 rounded-[8px] my-1 border border-slate-100">
+                              <Link
+                                to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}`}
+                                className="block px-2.5 py-1 text-primary text-[11px] font-bold rounded no-underline hover:underline"
+                              >
+                                View All {cat.name} &rarr;
+                              </Link>
                               {cat.subcategories.map((sub: any) => (
                                 <Link
                                   key={sub._id}
                                   to={`${ROUTES.PRODUCT_LIST}?category=${encodeURIComponent(cat.name)}&subcategory=${encodeURIComponent(sub.name)}`}
-                                  className="block px-3 py-1.5 text-heading no-underline text-xs rounded-[6px] transition-all hover:bg-slate-50 hover:text-primary hover:pl-4"
+                                  className="block px-2.5 py-1 text-slate-700 hover:text-primary hover:bg-white text-[11px] font-medium rounded-[4px] transition-all no-underline"
                                 >
                                   {sub.name}
                                 </Link>

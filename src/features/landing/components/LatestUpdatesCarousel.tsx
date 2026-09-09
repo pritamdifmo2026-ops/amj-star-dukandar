@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/client';
-import { Briefcase, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 
 interface ILatestUpdate {
@@ -47,7 +47,7 @@ const LatestUpdatesCarousel: React.FC = () => {
   // Auto-scroll effect (Continuous)
   useEffect(() => {
     if (!updates || updates.length === 0) return;
-    
+
     const container = scrollContainerRef.current;
     if (!container) return;
 
@@ -57,7 +57,7 @@ const LatestUpdatesCarousel: React.FC = () => {
     const scroll = () => {
       if (!isPaused) {
         container.scrollLeft += 1; // scroll speed
-        
+
         // Loop back to start if we hit the end
         if (container.scrollLeft >= container.scrollWidth - container.clientWidth - 1) {
           container.scrollLeft = 0;
@@ -147,20 +147,17 @@ const LatestUpdatesCarousel: React.FC = () => {
                     {update.description}
                   </p>
 
-                  {/* Card Footer */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-auto">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded bg-primary/10 flex items-center justify-center">
-                        <Briefcase size={12} className="text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-slate-500 font-medium">Hiring Team</p>
-                        <p className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                          Verified <CheckCircle2 size={10} className="text-green-500" />
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Dynamic Action Link (if provided in backend) */}
+                  {/* {update.link && (
+                    <a
+                      href={update.link}
+                      target={update.link.startsWith('http') ? '_blank' : undefined}
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-primary hover:text-primary-dark inline-flex items-center gap-1 mt-auto pt-3 border-t border-slate-100 no-underline"
+                    >
+                      {update.buttonText || 'Learn More'} &rarr;
+                    </a>
+                  )} */}
                 </div>
               </div>
             ))}

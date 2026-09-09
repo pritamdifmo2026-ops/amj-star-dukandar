@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Send, CheckCircle2, X, FileText, Users, Handshake } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import toast from 'react-hot-toast';
 import api from '@/api/client';
+import categoryService from '@/features/product/services/category.service';
 
 const INDIA_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -23,9 +24,9 @@ const SUBCATEGORIES = [
 ];
 
 const CATEGORIES = [
-  'Agriculture', 'Electronics', 'Food & Beverages', 'Furniture',
-  'Home Furnishing', 'Machinery', 'Textiles', 'Chemicals',
-  'Construction', 'Automotive', 'Healthcare', 'Not Listed Here',
+  'Automobile Accessories', 'Electronics & Household Appliances', 'Home Furnishing',
+  'Industrial Machinery & Equipments', 'Mobile Phone & Accessories', 'Office Products & Devices',
+  'Not Listed Here',
 ];
 
 const inputCls = "w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-4 py-3 text-sm text-[#0f172a] outline-none focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all";
@@ -35,6 +36,15 @@ const PostRequirementSection: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    categoryService.getAll().then(res => {
+      if (res.categories && res.categories.length > 0) {
+        setDbCategories(res.categories);
+      }
+    }).catch(() => {});
+  }, []);
 
   // Quick bar state
   const [quickProduct, setQuickProduct] = useState('');
@@ -60,6 +70,25 @@ const PostRequirementSection: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const categoryNames: string[] = useMemo(() => {
+    if (dbCategories.length > 0) {
+      const names = dbCategories.map((c: any) => c.name).filter(Boolean);
+      return [...names, 'Not Listed Here'];
+    }
+    return CATEGORIES;
+  }, [dbCategories]);
+
+  const subcategoryNames: string[] = useMemo(() => {
+    if (formData.category && dbCategories.length > 0) {
+      const selectedCat = dbCategories.find((c: any) => c.name === formData.category);
+      if (selectedCat && selectedCat.subcategories && selectedCat.subcategories.length > 0) {
+        const subNames = selectedCat.subcategories.map((s: any) => typeof s === 'string' ? s : s.name).filter(Boolean);
+        return [...subNames, 'Not Listed Here'];
+      }
+    }
+    return SUBCATEGORIES;
+  }, [formData.category, dbCategories]);
 
   const openModal = () => {
     const phone = String(user?.phone || quickPhone || '').replace(/\D/g, '');
@@ -233,14 +262,14 @@ const PostRequirementSection: React.FC = () => {
                         <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Category <span className="text-[#94a3b8] font-normal">(optional)</span></label>
                         <select name="category" value={formData.category} onChange={handleChange} className={inputCls}>
                           <option value="">Select Category</option>
-                          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          {categoryNames.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-[#64748b] mb-1.5">Subcategory <span className="text-[#94a3b8] font-normal">(optional)</span></label>
                         <select name="subcategory" value={formData.subcategory} onChange={handleChange} className={inputCls}>
                           <option value="">Select Subcategory</option>
-                          {SUBCATEGORIES.map(s => <option key={s} value={s}>{s}</option>)}
+                          {subcategoryNames.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                       </div>
                       <div>
