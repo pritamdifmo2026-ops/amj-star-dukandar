@@ -130,7 +130,7 @@ const Navbar: React.FC = () => {
   return (
     <>
       <header
-        className="sticky top-0 left-0 right-0 w-full z-[1000] bg-surface border-b border-border shadow-xs"
+        className="sticky top-0 left-0 right-0 w-full z-[1000] bg-white border-b border-border shadow-sm transition-shadow"
         style={{
           position: 'sticky',
           top: 0,
