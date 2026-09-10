@@ -38,14 +38,19 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
     if (currentProductId) dispatch(toggleWishlistItem(product));
   };
 
+  const isOutOfStock = (product.stock !== undefined && product.stock <= 0) ||
+    (product.stock !== undefined && product.minOrderQty !== undefined && product.stock < product.minOrderQty);
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (isOutOfStock) return;
     if (isNonBuyer) { setShowNonBuyerModal(true); return; }
     if (isInCart) { navigate(ROUTES.CART); return; }
     if (!user) { navigate(`${ROUTES.LOGIN}`); return; }
     dispatch(addToCartAsync({
       productId: currentProductId, name: product.name, price: product.price,
       quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: product.imageUrl, moq: product.minOrderQty,
+      stock: product.stock,
       gstRate: product.gstRate, gstIncluded: product.gstIncluded,
     }));
   };
@@ -57,11 +62,15 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
       className="flex flex-col bg-white rounded-[var(--radius-lg)] border border-border overflow-hidden no-underline transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] h-full hover:-translate-y-2 hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.1)] hover:border-primary group"
     >
       <div className="relative aspect-square bg-[#f8f8f8] overflow-hidden">
-        {product.isFeatured && (
+        {isOutOfStock ? (
+          <span className="absolute top-2 left-2 z-10 flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider text-white bg-red-600 px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.15)]">
+            Out of Stock
+          </span>
+        ) : product.isFeatured ? (
           <span className="absolute top-2 left-2 z-10 flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider text-white bg-primary px-2 py-0.5 rounded-full shadow-[0_2px_6px_rgba(0,0,0,0.15)]" title="Featured Supplier">
             <Sparkles size={10} /> Featured
           </span>
-        )}
+        ) : null}
         <button
           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-surface border-none flex items-center justify-center cursor-pointer z-10 shadow-[0_4px_10px_rgba(0,0,0,0.1)] transition-transform hover:scale-110"
           onClick={handleToggleWishlist}
@@ -70,7 +79,7 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
           <Heart size={14} fill={isWishlisted ? '#e65c00' : 'none'} color={isWishlisted ? '#e65c00' : '#94a3b8'} />
         </button>
         {product.imageUrl ? (
-          <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <img src={product.imageUrl} alt={product.name} className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${isOutOfStock ? 'opacity-60 grayscale-[40%]' : ''}`} />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-[#f1f5f9] text-[#94a3b8] text-sm">No Image</div>
         )}
@@ -101,8 +110,14 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
       </div>
       {!hidePrice && showAddToCart && variant !== 'wishlist' && (
         <div className="px-2 pb-2">
-          <Button variant="secondary" size="sm" onClick={handleAddToCart} className="w-full rounded-full text-[11px] font-semibold">
-            {isInCart ? 'Go to Cart' : 'Add to Cart'}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock}
+            className={`w-full rounded-full text-[11px] font-semibold ${isOutOfStock ? 'opacity-50 cursor-not-allowed bg-slate-200 text-slate-500' : ''}`}
+          >
+            {isOutOfStock ? 'Out of Stock' : (isInCart ? 'Go to Cart' : 'Add to Cart')}
           </Button>
         </div>
       )}

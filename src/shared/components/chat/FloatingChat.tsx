@@ -71,66 +71,66 @@ const QuotePreviewCard = ({
     : form.price * form.quantity;
 
   return (
-  <div className="bg-white border border-gray-100 rounded-[10px] overflow-hidden">
-    <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-100">
-      <span className="text-[12px] font-extrabold text-slate-800">Quotation</span>
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700">Awaiting Response</span>
-    </div>
-    <div className="px-3 py-2 flex flex-col gap-1 text-xs">
-      {form.cartItems && form.cartItems.length > 0 ? (
-        form.cartItems.map((it: any, idx: number) => (
-          <div key={idx} className="flex flex-col border-b border-gray-100 pb-1.5 mb-1 last:border-0 last:pb-0 last:mb-0">
-            <span className="text-gray-700 font-medium">{it.name}{it.hsnCode ? ` (HSN: ${it.hsnCode})` : ''}</span>
-            <div className="flex justify-between text-gray-500 mt-0.5">
-              <span>₹{(Number(it.price) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × {it.quantity}</span>
-              <span>₹{((Number(it.price) || 0) * (Number(it.quantity) || 1)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-          </div>
-        ))
-      ) : (
-        <div className="flex justify-between">
-          <span>{form.itemName} × {form.quantity}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
-          <span className="font-semibold">₹{form.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-        </div>
-      )}
-      <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-100">
-        <span>Price</span>
-        <span className="font-semibold">₹{computedTotalBeforeGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+    <div className="bg-white border border-gray-100 rounded-[10px] overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-100">
+        <span className="text-[12px] font-extrabold text-slate-800">Quotation</span>
+        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-yellow-50 text-yellow-700">Awaiting Response</span>
       </div>
-      {form.gstType !== 'exempt' ? (
-        form.gstType === 'IGST' ? (
-          <div className="flex justify-between text-blue-600">
-            <span>IGST @ {form.gstRate}%</span>
-            <span className="font-semibold">₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
+      <div className="px-3 py-2 flex flex-col gap-1 text-xs">
+        {form.cartItems && form.cartItems.length > 0 ? (
+          form.cartItems.map((it: any, idx: number) => (
+            <div key={idx} className="flex flex-col border-b border-gray-100 pb-1.5 mb-1 last:border-0 last:pb-0 last:mb-0">
+              <span className="text-gray-700 font-medium">{it.name}{it.hsnCode ? ` (HSN: ${it.hsnCode})` : ''}</span>
+              <div className="flex justify-between text-gray-500 mt-0.5">
+                <span>₹{(Number(it.price) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × {it.quantity}</span>
+                <span>₹{((Number(it.price) || 0) * (Number(it.quantity) || 1)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+          ))
         ) : (
-          <>
+          <div className="flex justify-between">
+            <span>{form.itemName} × {form.quantity}{form.hsnCode ? ` (HSN: ${form.hsnCode})` : ''}</span>
+            <span className="font-semibold">₹{form.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-100">
+          <span>Price</span>
+          <span className="font-semibold">₹{computedTotalBeforeGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        </div>
+        {form.gstType !== 'exempt' ? (
+          form.gstType === 'IGST' ? (
             <div className="flex justify-between text-blue-600">
-              <span>CGST @ {form.gstRate / 2}%</span>
-              <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>IGST @ {form.gstRate}%</span>
+              <span className="font-semibold">₹{gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
-            <div className="flex justify-between text-blue-600">
-              <span>SGST @ {form.gstRate / 2}%</span>
-              <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-          </>
-        )
-      ) : (
-        <div className="flex justify-between text-gray-400"><span>GST</span><span>Exempt / Nil</span></div>
-      )}
-      {form.shipping > 0 && (
-        <div className="flex justify-between text-gray-400"><span>Shipping</span><span>₹{form.shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
-      )}
-      <div className="flex justify-between font-extrabold text-[13px] border-t border-gray-100 pt-1.5 mt-0.5">
-        <span>Grand Total</span>
-        <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          ) : (
+            <>
+              <div className="flex justify-between text-blue-600">
+                <span>CGST @ {form.gstRate / 2}%</span>
+                <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-blue-600">
+                <span>SGST @ {form.gstRate / 2}%</span>
+                <span className="font-semibold">₹{(gstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            </>
+          )
+        ) : (
+          <div className="flex justify-between text-gray-400"><span>GST</span><span>Exempt / Nil</span></div>
+        )}
+        {form.shipping > 0 && (
+          <div className="flex justify-between text-gray-400"><span>Shipping</span><span>₹{form.shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+        )}
+        <div className="flex justify-between font-extrabold text-[13px] border-t border-gray-100 pt-1.5 mt-0.5">
+          <span>Grand Total</span>
+          <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        </div>
+        {form.deliveryTimeline && (
+          <p className="text-[10px] text-gray-400 m-0">Delivery: {form.deliveryTimeline}</p>
+        )}
+        {form.terms && <p className="text-[10px] text-gray-400 m-0">Terms: {form.terms}</p>}
       </div>
-      {form.deliveryTimeline && (
-        <p className="text-[10px] text-gray-400 m-0">Delivery: {form.deliveryTimeline}</p>
-      )}
-      {form.terms && <p className="text-[10px] text-gray-400 m-0">Terms: {form.terms}</p>}
     </div>
-  </div>
   );
 };
 
@@ -394,7 +394,7 @@ export const FloatingChat: React.FC = () => {
     };
 
     const effectivePriceTag = quote.priceTag || (msg as any)?.metadata?.priceTag || '';
-    const isFinalPrice = effectivePriceTag === 'Best Price' || effectivePriceTag === 'Last Price';
+    const isFinalPrice = effectivePriceTag === 'Last Price';
 
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm text-gray-700 overflow-hidden my-1">
@@ -403,11 +403,10 @@ export const FloatingChat: React.FC = () => {
           <span className="text-[12px] font-extrabold text-slate-800">Quotation</span>
           <div className="flex items-center gap-1.5">
             {effectivePriceTag && (
-              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider border flex items-center gap-1 shadow-xs ${
-                effectivePriceTag === 'Best Price'
+              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider border flex items-center gap-1 shadow-xs ${effectivePriceTag === 'Best Price'
                   ? 'bg-amber-500 text-white border-amber-600'
                   : 'bg-indigo-600 text-white border-indigo-700'
-              }`}>
+                }`}>
                 {effectivePriceTag === 'Best Price' ? '⚡ Best Price' : '🏷️ Last Price'}
               </span>
             )}
@@ -512,16 +511,25 @@ export const FloatingChat: React.FC = () => {
           );
         })()}
 
-        {/* Final Offer Banner */}
-        {isFinalPrice && (
+        {/* Price Highlight / Final Offer Banner */}
+        {effectivePriceTag === 'Last Price' && (
           <div className="mx-3 mb-2 p-2 rounded-[6px] bg-amber-50 border border-amber-200 flex items-start gap-1.5">
             <span className="text-xs shrink-0 mt-0.5">🔒</span>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-amber-900 m-0">
-                {effectivePriceTag === 'Best Price' ? '⚡ Best Price Offered' : '🏷️ Last Price Offered'}
-              </p>
+              <p className="text-[10px] font-bold text-amber-900 m-0">🏷️ Last Price Offered</p>
               <p className="text-[9px] text-amber-700 m-0 mt-0.5 leading-snug">
                 This is the supplier's final price. Negotiation is closed—you can only accept or decline this offer.
+              </p>
+            </div>
+          </div>
+        )}
+        {effectivePriceTag === 'Best Price' && (
+          <div className="mx-3 mb-2 p-2 rounded-[6px] bg-amber-50/60 border border-amber-200/70 flex items-start gap-1.5">
+            <span className="text-xs shrink-0 mt-0.5">⚡</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-amber-900 m-0"> Best Price Offered</p>
+              <p className="text-[9px] text-amber-700 m-0 mt-0.5 leading-snug">
+                The supplier has highlighted this as their best price. You can accept this offer or counter.
               </p>
             </div>
           </div>
@@ -702,501 +710,506 @@ export const FloatingChat: React.FC = () => {
   };
 
   if (!isAuthenticated) return null;
-    const otherUser = getOtherUser(activeConv);
+  const otherUser = getOtherUser(activeConv);
 
-    return (
-      <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 font-sans max-sm:bottom-3 max-sm:right-3 max-sm:left-3 max-sm:gap-2">
+  return (
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col items-end gap-3 font-sans max-sm:bottom-3 max-sm:right-3 max-sm:left-3 max-sm:gap-2">
 
-        {/* ACTIVE: full chat window */}
-        {uiState === 'ACTIVE' && (
-          <div className={`w-[360px] max-sm:w-full bg-cream rounded-[10px] shadow-[0_12px_48px_rgba(0,0,0,0.18)] flex flex-col overflow-hidden animate-slide-up border border-black/5`} style={{ height: panel === 'list' ? 460 : 520, maxHeight: 'calc(100dvh - 112px)' }}>
-            {/* Header */}
-            <div className="px-4 py-3.5 bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2.5">
-                {panel === 'chat' && activeConv ? (
-                  <>
-                    <div className="w-[34px] h-[34px] rounded-full bg-white/30 flex items-center justify-center font-bold text-white text-[13px] shrink-0">
-                      {otherUser?.name?.[0]?.toUpperCase() || '?'}
-                    </div>
-                    <div>
-                      <h3 className="m-0 text-sm font-semibold text-white leading-tight">{otherUser?.name || 'Supplier'}</h3>
-                      {isTyping
-                        ? <p className="m-0 text-[11px] text-white/85">Typing…</p>
-                        : activeConv.productId?.name
-                          ? <p className="m-0 text-[11px] text-white/85">Re: {activeConv.productId.name}</p>
-                          : null}
-                    </div>
-                  </>
-                ) : (
-                  <h3 className="m-0 text-sm font-semibold text-white">Messages</h3>
-                )}
-              </div>
-              <div className="flex gap-1">
-                {panel === 'chat' && user?.role === 'supplier' && (
-                  <button
-                    className="bg-white/20 border border-white/40 text-white px-2 py-1 rounded-[6px] text-[11px] font-semibold flex items-center gap-1 cursor-pointer hover:bg-white/30 transition-colors"
-                    onClick={() => {
-                      setQuoteForm(p => ({
-                        ...p,
-                        itemName: activeConv?.productId?.name || '',
-                        hsnCode: activeConv?.productId?.hsnCode || '',
-                      }));
-                      setIsQuoteModalOpen(true);
-                    }}
-                  >
-                    <FileText size={14} /> Quote
-                  </button>
-                )}
-                {panel === 'chat' && (
-                  <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={() => setPanel('list')}><ArrowLeft size={16} /></button>
-                )}
-                <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={handleMinimize}><ChevronDown size={16} /></button>
-                <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={handleClose}><X size={16} /></button>
-              </div>
+      {/* ACTIVE: full chat window */}
+      {uiState === 'ACTIVE' && (
+        <div className={`w-[360px] max-sm:w-full bg-cream rounded-[10px] shadow-[0_12px_48px_rgba(0,0,0,0.18)] flex flex-col overflow-hidden animate-slide-up border border-black/5`} style={{ height: panel === 'list' ? 460 : 520, maxHeight: 'calc(100dvh - 112px)' }}>
+          {/* Header */}
+          <div className="px-4 py-3.5 bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              {panel === 'chat' && activeConv ? (
+                <>
+                  <div className="w-[34px] h-[34px] rounded-full bg-white/30 flex items-center justify-center font-bold text-white text-[13px] shrink-0">
+                    {otherUser?.name?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  <div>
+                    <h3 className="m-0 text-sm font-semibold text-white leading-tight">{otherUser?.name || 'Supplier'}</h3>
+                    {isTyping
+                      ? <p className="m-0 text-[11px] text-white/85">Typing…</p>
+                      : activeConv.productId?.name
+                        ? <p className="m-0 text-[11px] text-white/85">Re: {activeConv.productId.name}</p>
+                        : null}
+                  </div>
+                </>
+              ) : (
+                <h3 className="m-0 text-sm font-semibold text-white">Messages</h3>
+              )}
             </div>
+            <div className="flex gap-1">
+              {panel === 'chat' && user?.role === 'supplier' && (
+                <button
+                  className="bg-white/20 border border-white/40 text-white px-2 py-1 rounded-[6px] text-[11px] font-semibold flex items-center gap-1 cursor-pointer hover:bg-white/30 transition-colors"
+                  onClick={() => {
+                    setQuoteForm(p => ({
+                      ...p,
+                      itemName: activeConv?.productId?.name || '',
+                      hsnCode: activeConv?.productId?.hsnCode || '',
+                    }));
+                    setIsQuoteModalOpen(true);
+                  }}
+                >
+                  <FileText size={14} /> Quote
+                </button>
+              )}
+              {panel === 'chat' && (
+                <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={() => setPanel('list')}><ArrowLeft size={16} /></button>
+              )}
+              <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={handleMinimize}><ChevronDown size={16} /></button>
+              <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={handleClose}><X size={16} /></button>
+            </div>
+          </div>
 
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto px-3.5 py-3.5 flex flex-col gap-2.5 bg-gray-50 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-sm">
-              {panel === 'list' ? (
-                <div className="flex flex-col">
-                  {conversations.length === 0 ? (
-                    <div className="py-12 text-center text-[#aaa] text-[13px]">No conversations yet.</div>
-                  ) : conversations.map(conv => {
-                    const other = getOtherUser(conv);
-                    const unread = conv.unreadCount?.[user?.id] || 0;
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto px-3.5 py-3.5 flex flex-col gap-2.5 bg-gray-50 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-sm">
+            {panel === 'list' ? (
+              <div className="flex flex-col">
+                {conversations.length === 0 ? (
+                  <div className="py-12 text-center text-[#aaa] text-[13px]">No conversations yet.</div>
+                ) : conversations.map(conv => {
+                  const other = getOtherUser(conv);
+                  const unread = conv.unreadCount?.[user?.id] || 0;
+                  return (
+                    <div key={conv._id} onClick={() => openConversation(conv)}
+                      className="p-3 flex items-center gap-2.5 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-center font-bold text-white text-[13px] shrink-0">
+                        {other?.name?.[0]?.toUpperCase() || '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-semibold text-[13px] text-slate-900 block truncate">{other?.name || 'User'}</span>
+                        <span className="text-[11.5px] text-[#888] truncate block">
+                          {conv.productId ? `[${conv.productId.name}] ` : ''}{conv.lastMessage || 'Start a conversation'}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <span className="text-[10px] text-[#bbb]">
+                          {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {unread > 0 && (
+                          <span className="bg-[#ff4d4d] text-white text-[10px] min-w-4 h-4 rounded-full flex items-center justify-center px-1">{unread}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <>
+                {messages.map((msg, idx) => {
+                  const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
+                  if (msg.messageType === 'system') {
                     return (
-                      <div key={conv._id} onClick={() => openConversation(conv)}
-                        className="p-3 flex items-center gap-2.5 cursor-pointer border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-center font-bold text-white text-[13px] shrink-0">
-                          {other?.name?.[0]?.toUpperCase() || '?'}
+                      <div key={msg._id || idx} className="w-full self-center flex items-center gap-1.5 py-0.5">
+                        <div className="flex-1 h-px bg-gray-200" />
+                        <div className="bg-gray-50 border border-gray-100 rounded-[8px] px-3 py-2 text-center max-w-[260px]">
+                          {msg.text.split('\n').map((line: string, i: number) => (
+                            <p key={i} className={`m-0 ${i === 0 ? 'text-[11px] font-extrabold text-slate-800' : 'text-[10px] text-gray-500 mt-0.5'}`}>{line}</p>
+                          ))}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-[13px] text-slate-900 block truncate">{other?.name || 'User'}</span>
-                          <span className="text-[11.5px] text-[#888] truncate block">
-                            {conv.productId ? `[${conv.productId.name}] ` : ''}{conv.lastMessage || 'Start a conversation'}
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="text-[10px] text-[#bbb]">
-                            {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          {unread > 0 && (
-                            <span className="bg-[#ff4d4d] text-white text-[10px] min-w-4 h-4 rounded-full flex items-center justify-center px-1">{unread}</span>
-                          )}
+                        <div className="flex-1 h-px bg-gray-200" />
+                      </div>
+                    );
+                  }
+                  if (msg.messageType === 'quotation') {
+                    return (
+                      <div key={msg._id || idx} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                        <QuotationCard msg={msg} onActiveChange={setIsNegotiating} />
+                      </div>
+                    );
+                  }
+                  if (msg.messageType === 'po_supplier_approval_request') {
+                    return (
+                      <div key={msg._id || idx} className="w-full flex justify-center py-1">
+                        <div className="w-[90%] bg-orange-50 border border-orange-200 rounded-[10px] p-3 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                          <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wide m-0 mb-1">Final Approval Required</p>
+                          <p className="text-xs text-orange-950 m-0 mb-2">{msg.text}</p>
+                          {user?.role === 'supplier' && (() => {
+                            const isLatest = messages.filter(m => m.messageType === 'po_supplier_approval_request').pop()?._id === msg._id;
+                            const msgIdx = messages.findIndex(m => m._id === msg._id);
+                            const hasPO = messages.slice(msgIdx + 1).some(m => m.text?.includes('Purchase Order Generated'));
+                            if (isLatest && !hasPO) {
+                              return (
+                                <button
+                                  onClick={async (e) => {
+                                    const btn = e.currentTarget;
+                                    btn.disabled = true;
+                                    btn.innerText = 'Approving...';
+                                    try {
+                                      await quotationApi.supplierApprove(msg.quotationId!);
+                                      await loadConversations();
+                                    } catch (err: any) {
+                                      btn.disabled = false;
+                                      btn.innerText = '✓ Approve PO';
+                                      alert(err.response?.data?.message || 'Failed to approve');
+                                    }
+                                  }}
+                                  className="w-full py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold rounded-[6px] cursor-pointer border-none transition-colors disabled:opacity-50"
+                                >
+                                  ✓ Approve PO
+                                </button>
+                              );
+                            }
+                            return <p className="text-[10px] font-bold text-orange-600 m-0 italic">Approved</p>;
+                          })()}
                         </div>
                       </div>
                     );
-                  })}
+                  }
+                  return (
+                    <div key={msg._id || idx} className={`whitespace-pre-wrap leading-snug max-w-[80%] px-3 py-2 rounded-[8px] text-[0.9rem] relative ${isMine ? 'self-end bg-primary text-white rounded-br-[2px]' : 'self-start bg-cream text-gray-800 rounded-bl-[4px] shadow-sm'}`}>
+                      <div className="mb-0.5">{msg.text}</div>
+                      {isMine && (
+                        <div className="flex justify-end text-[10px] opacity-70">
+                          {msg.isRead ? <CheckCheck size={12} className="text-sky-300" /> : <Check size={12} className="text-white/60" />}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
+
+          {/* Quick replies — available in all chats */}
+          {panel === 'chat' && (
+            <div className="px-3 py-2 border-t border-gray-100 bg-white shrink-0">
+              {isNegotiating ? (
+                <div className="p-3 text-center text-[11px] font-semibold text-orange-600 bg-orange-50 rounded-[8px] border border-orange-200">
+                  Chat is disabled during active negotiation. Please use the quotation buttons above.
+                </div>
+              ) : customMsgOpen ? (
+                <div className="flex flex-col gap-1.5">
+                  <textarea
+                    autoFocus
+                    rows={2}
+                    value={customMsgText}
+                    onChange={e => setCustomMsgText(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        const t = customMsgText.trim();
+                        if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
+                      }
+                    }}
+                    placeholder={user?.role === 'supplier' ? 'Type your reply…' : 'Type your question…'}
+                    className="w-full border border-gray-200 rounded-[8px] px-2.5 py-2 text-[12px] text-slate-800 outline-none focus:border-orange-400 resize-none"
+                  />
+                  <div className="flex gap-1.5 justify-end">
+                    <button
+                      onClick={() => { setCustomMsgOpen(false); setCustomMsgText(''); }}
+                      className="px-2.5 py-1 text-[11px] font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-[6px] cursor-pointer">
+                      Cancel
+                    </button>
+                    <button
+                      disabled={!customMsgText.trim()}
+                      onClick={() => {
+                        const t = customMsgText.trim();
+                        if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
+                      }}
+                      className="px-3 py-1 text-[11px] font-bold text-white bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] rounded-[6px] border-none cursor-pointer disabled:opacity-40">
+                      Send
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
-                  {messages.map((msg, idx) => {
-                    const isMine = (msg.senderId?._id || msg.senderId)?.toString() === (user?._id || user?.id)?.toString();
-                    if (msg.messageType === 'system') {
-                      return (
-                        <div key={msg._id || idx} className="w-full self-center flex items-center gap-1.5 py-0.5">
-                          <div className="flex-1 h-px bg-gray-200" />
-                          <div className="bg-gray-50 border border-gray-100 rounded-[8px] px-3 py-2 text-center max-w-[260px]">
-                            {msg.text.split('\n').map((line: string, i: number) => (
-                              <p key={i} className={`m-0 ${i === 0 ? 'text-[11px] font-extrabold text-slate-800' : 'text-[10px] text-gray-500 mt-0.5'}`}>{line}</p>
-                            ))}
-                          </div>
-                          <div className="flex-1 h-px bg-gray-200" />
-                        </div>
-                      );
-                    }
-                    if (msg.messageType === 'quotation') {
-                      return (
-                        <div key={msg._id || idx} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-                          <QuotationCard msg={msg} onActiveChange={setIsNegotiating} />
-                        </div>
-                      );
-                    }
-                    if (msg.messageType === 'po_supplier_approval_request') {
-                      return (
-                        <div key={msg._id || idx} className="w-full flex justify-center py-1">
-                          <div className="w-[90%] bg-orange-50 border border-orange-200 rounded-[10px] p-3 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
-                            <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wide m-0 mb-1">Final Approval Required</p>
-                            <p className="text-xs text-orange-950 m-0 mb-2">{msg.text}</p>
-                            {user?.role === 'supplier' && (() => {
-                              const isLatest = messages.filter(m => m.messageType === 'po_supplier_approval_request').pop()?._id === msg._id;
-                              const msgIdx = messages.findIndex(m => m._id === msg._id);
-                              const hasPO = messages.slice(msgIdx + 1).some(m => m.text?.includes('Purchase Order Generated'));
-                              if (isLatest && !hasPO) {
-                                return (
-                                  <button
-                                    onClick={async (e) => {
-                                      const btn = e.currentTarget;
-                                      btn.disabled = true;
-                                      btn.innerText = 'Approving...';
-                                      try {
-                                        await quotationApi.supplierApprove(msg.quotationId!);
-                                        await loadConversations();
-                                      } catch (err: any) {
-                                        btn.disabled = false;
-                                        btn.innerText = '✓ Approve PO';
-                                        alert(err.response?.data?.message || 'Failed to approve');
-                                      }
-                                    }}
-                                    className="w-full py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold rounded-[6px] cursor-pointer border-none transition-colors disabled:opacity-50"
-                                  >
-                                    ✓ Approve PO
-                                  </button>
-                                );
-                              }
-                              return <p className="text-[10px] font-bold text-orange-600 m-0 italic">Approved</p>;
-                            })()}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return (
-                      <div key={msg._id || idx} className={`whitespace-pre-wrap leading-snug max-w-[80%] px-3 py-2 rounded-[8px] text-[0.9rem] relative ${isMine ? 'self-end bg-primary text-white rounded-br-[2px]' : 'self-start bg-cream text-gray-800 rounded-bl-[4px] shadow-sm'}`}>
-                        <div className="mb-0.5">{msg.text}</div>
-                        {isMine && (
-                          <div className="flex justify-end text-[10px] opacity-70">
-                            {msg.isRead ? <CheckCheck size={12} className="text-sky-300" /> : <Check size={12} className="text-white/60" />}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider m-0 mb-1.5">Quick Replies</p>
+                  <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {(user?.role === 'supplier'
+                      ? [
+                        { label: '⏳ Processing', text: 'Your order is currently being processed. We will update you soon.' },
+                        { label: '🚚 Shipped', text: 'Your order has been shipped and is on the way.' },
+                        { label: '📬 Confirm delivery', text: 'Could you please confirm if you have received the order?' },
+                        { label: '🕐 24 hrs update', text: 'We will update you on your order status within 24 hours.' },
+                      ]
+                      : [
+                        { label: '📦 Order status?', text: 'Hi, could you please share the current status of my order?' },
+                        { label: '⏳ No update yet', text: "I haven't received any update on my order yet." },
+                        { label: '✅ Order received', text: 'I have received my order. Thank you!' },
+                        { label: '❓ Have a question', text: '' },
+                      ]
+                    ).map(qr => (
+                      <button
+                        key={qr.label}
+                        onClick={() => {
+                          if (qr.label.startsWith('❓')) { setCustomMsgOpen(true); }
+                          else { handleQuickReply(qr.text); }
+                        }}
+                        className="shrink-0 px-2.5 py-1 text-[10px] font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-full cursor-pointer hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-colors whitespace-nowrap"
+                      >
+                        {qr.label}
+                      </button>
+                    ))}
+                    {user?.role === 'supplier' && (
+                      <button
+                        onClick={() => setCustomMsgOpen(true)}
+                        className="shrink-0 px-2.5 py-1 text-[10px] font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full cursor-pointer hover:bg-orange-100 transition-colors whitespace-nowrap">
+                        ✏️ Write your reply
+                      </button>
+                    )}
+                  </div>
                 </>
               )}
             </div>
-
-            {/* Quick replies — available in all chats */}
-            {panel === 'chat' && (
-              <div className="px-3 py-2 border-t border-gray-100 bg-white shrink-0">
-                {isNegotiating ? (
-                  <div className="p-3 text-center text-[11px] font-semibold text-orange-600 bg-orange-50 rounded-[8px] border border-orange-200">
-                    Chat is disabled during active negotiation. Please use the quotation buttons above.
-                  </div>
-                ) : customMsgOpen ? (
-                  <div className="flex flex-col gap-1.5">
-                    <textarea
-                      autoFocus
-                      rows={2}
-                      value={customMsgText}
-                      onChange={e => setCustomMsgText(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          const t = customMsgText.trim();
-                          if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
-                        }
-                      }}
-                      placeholder={user?.role === 'supplier' ? 'Type your reply…' : 'Type your question…'}
-                      className="w-full border border-gray-200 rounded-[8px] px-2.5 py-2 text-[12px] text-slate-800 outline-none focus:border-orange-400 resize-none"
-                    />
-                    <div className="flex gap-1.5 justify-end">
-                      <button
-                        onClick={() => { setCustomMsgOpen(false); setCustomMsgText(''); }}
-                        className="px-2.5 py-1 text-[11px] font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-[6px] cursor-pointer">
-                        Cancel
-                      </button>
-                      <button
-                        disabled={!customMsgText.trim()}
-                        onClick={() => {
-                          const t = customMsgText.trim();
-                          if (t) { handleQuickReply(t); setCustomMsgText(''); setCustomMsgOpen(false); }
-                        }}
-                        className="px-3 py-1 text-[11px] font-bold text-white bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] rounded-[6px] border-none cursor-pointer disabled:opacity-40">
-                        Send
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider m-0 mb-1.5">Quick Replies</p>
-                    <div className="flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      {(user?.role === 'supplier'
-                        ? [
-                          { label: '⏳ Processing', text: 'Your order is currently being processed. We will update you soon.' },
-                          { label: '🚚 Shipped', text: 'Your order has been shipped and is on the way.' },
-                          { label: '📬 Confirm delivery', text: 'Could you please confirm if you have received the order?' },
-                          { label: '🕐 24 hrs update', text: 'We will update you on your order status within 24 hours.' },
-                        ]
-                        : [
-                          { label: '📦 Order status?', text: 'Hi, could you please share the current status of my order?' },
-                          { label: '⏳ No update yet', text: "I haven't received any update on my order yet." },
-                          { label: '✅ Order received', text: 'I have received my order. Thank you!' },
-                          { label: '❓ Have a question', text: '' },
-                        ]
-                      ).map(qr => (
-                        <button
-                          key={qr.label}
-                          onClick={() => {
-                            if (qr.label.startsWith('❓')) { setCustomMsgOpen(true); }
-                            else { handleQuickReply(qr.text); }
-                          }}
-                          className="shrink-0 px-2.5 py-1 text-[10px] font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-full cursor-pointer hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-colors whitespace-nowrap"
-                        >
-                          {qr.label}
-                        </button>
-                      ))}
-                      {user?.role === 'supplier' && (
-                        <button
-                          onClick={() => setCustomMsgOpen(true)}
-                          className="shrink-0 px-2.5 py-1 text-[10px] font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full cursor-pointer hover:bg-orange-100 transition-colors whitespace-nowrap">
-                          ✏️ Write your reply
-                        </button>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* MINIMIZED: pill bar */}
-        {uiState === 'MINIMIZED' && activeConv && (
-          <div
-            onClick={() => { setUiState('ACTIVE'); setPanel('chat'); }}
-            className="w-[280px] max-sm:w-full bg-cream rounded-[8px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-black/[0.06] px-3.5 py-2.5 flex items-center gap-2.5 cursor-pointer animate-slide-up hover:shadow-[0_6px_24px_rgba(0,0,0,0.16)] transition-shadow"
-          >
-            <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-center font-bold text-white text-[13px] shrink-0">
-              {otherUser?.name?.[0]?.toUpperCase() || '?'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[13px] font-semibold text-slate-900 block truncate">{otherUser?.name || 'User'}</span>
-              <span className="text-[11px] text-[#888] block truncate">{activeConv.lastMessage || 'Tap to continue…'}</span>
-            </div>
-            <div onClick={e => e.stopPropagation()}>
-              <button onClick={handleClose} className="bg-transparent border-none text-[#888] cursor-pointer p-1">
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Bubble */}
-        <div
-          onClick={handleBubbleClick}
-          className="w-14 h-14 rounded-full bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] shadow-[0_6px_20px_rgba(255,77,77,0.4)] flex items-center justify-center text-white cursor-pointer relative shrink-0 transition-[transform,box-shadow] duration-[250ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.12] hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(255,77,77,0.5)] active:scale-[0.96]"
-        >
-          {uiState === 'ACTIVE' ? <ChevronDown size={26} /> : (
-            <>
-              <MessageCircle size={26} />
-              {totalUnread > 0 && (
-                <div className="absolute -top-[3px] -right-[3px] bg-[#e53935] text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-[9px] flex items-center justify-center border-2 border-white px-1">
-                  {totalUnread > 99 ? '99+' : totalUnread}
-                </div>
-              )}
-            </>
           )}
         </div>
+      )}
 
-        {/* Quotation Form Modal */}
-        {isQuoteModalOpen && !showPreview && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]" onClick={() => setIsQuoteModalOpen(false)}>
-            <div className="bg-white rounded-2xl w-full max-w-[440px] max-h-[90vh] overflow-y-auto p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)]" onClick={e => e.stopPropagation()}>
-              <h2 className="m-0 mb-4 text-base font-bold text-slate-900">Send Quotation</h2>
+      {/* MINIMIZED: pill bar */}
+      {uiState === 'MINIMIZED' && activeConv && (
+        <div
+          onClick={() => { setUiState('ACTIVE'); setPanel('chat'); }}
+          className="w-[280px] max-sm:w-full bg-cream rounded-[8px] shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-black/[0.06] px-3.5 py-2.5 flex items-center gap-2.5 cursor-pointer animate-slide-up hover:shadow-[0_6px_24px_rgba(0,0,0,0.16)] transition-shadow"
+        >
+          <div className="w-[34px] h-[34px] rounded-full bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] flex items-center justify-center font-bold text-white text-[13px] shrink-0">
+            {otherUser?.name?.[0]?.toUpperCase() || '?'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-[13px] font-semibold text-slate-900 block truncate">{otherUser?.name || 'User'}</span>
+            <span className="text-[11px] text-[#888] block truncate">{activeConv.lastMessage || 'Tap to continue…'}</span>
+          </div>
+          <div onClick={e => e.stopPropagation()}>
+            <button onClick={handleClose} className="bg-transparent border-none text-[#888] cursor-pointer p-1">
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
-              <div className="flex flex-col gap-3">
-                {/* Item Name */}
-                <div>
-                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Item Name</label>
-                  <input type="text" value={quoteForm.itemName}
-                    onChange={e => setQuoteForm(p => ({ ...p, itemName: e.target.value }))}
+      {/* Bubble */}
+      <div
+        onClick={handleBubbleClick}
+        className="w-14 h-14 rounded-full bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] shadow-[0_6px_20px_rgba(255,77,77,0.4)] flex items-center justify-center text-white cursor-pointer relative shrink-0 transition-[transform,box-shadow] duration-[250ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-[1.12] hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(255,77,77,0.5)] active:scale-[0.96]"
+      >
+        {uiState === 'ACTIVE' ? <ChevronDown size={26} /> : (
+          <>
+            <MessageCircle size={26} />
+            {totalUnread > 0 && (
+              <div className="absolute -top-[3px] -right-[3px] bg-[#e53935] text-white text-[10px] font-bold min-w-[18px] h-[18px] rounded-[9px] flex items-center justify-center border-2 border-white px-1">
+                {totalUnread > 99 ? '99+' : totalUnread}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Quotation Form Modal */}
+      {isQuoteModalOpen && !showPreview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]" onClick={() => setIsQuoteModalOpen(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[440px] max-h-[90vh] overflow-y-auto p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)]" onClick={e => e.stopPropagation()}>
+            <h2 className="m-0 mb-4 text-base font-bold text-slate-900">Send Quotation</h2>
+
+            <div className="flex flex-col gap-3">
+              {/* Item Name */}
+              <div>
+                <label className="block text-[11px] text-[#666] mb-1 font-semibold">Item Name</label>
+                <input type="text" value={quoteForm.itemName}
+                  onChange={e => setQuoteForm(p => ({ ...p, itemName: e.target.value }))}
+                  className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
+              </div>
+
+              {/* HSN + Quantity */}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">HSN Code</label>
+                  <input type="text" value={quoteForm.hsnCode} placeholder="Optional"
+                    onChange={e => setQuoteForm(p => ({ ...p, hsnCode: e.target.value }))}
                     className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
                 </div>
-
-                {/* HSN + Quantity */}
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="block text-[11px] text-[#666] mb-1 font-semibold">HSN Code</label>
-                    <input type="text" value={quoteForm.hsnCode} placeholder="Optional"
-                      onChange={e => setQuoteForm(p => ({ ...p, hsnCode: e.target.value }))}
-                      className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-[11px] text-[#666] mb-1 font-semibold">Quantity</label>
-                    <input type="number" min="1" value={quoteForm.quantity}
-                      onChange={e => setQuoteForm(p => ({ ...p, quantity: Number(e.target.value) }))}
-                      onWheel={e => e.currentTarget.blur()}
-                      className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
-                  </div>
-                </div>
-
-                {/* Taxable Amount */}
-                <div>
-                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Amount ₹ (before GST)</label>
-                  <input type="number" min="0" value={quoteForm.price}
-                    onChange={e => setQuoteForm(p => ({ ...p, price: Number(e.target.value) }))}
+                <div className="flex-1">
+                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Quantity</label>
+                  <input type="number" min="1" value={quoteForm.quantity}
+                    onChange={e => setQuoteForm(p => ({ ...p, quantity: Number(e.target.value) }))}
                     onWheel={e => e.currentTarget.blur()}
                     className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
                 </div>
+              </div>
 
-                {/* GST Type */}
+              {/* Taxable Amount */}
+              <div>
+                <label className="block text-[11px] text-[#666] mb-1 font-semibold">Amount ₹ (before GST)</label>
+                <input type="number" min="0" value={quoteForm.price}
+                  onChange={e => setQuoteForm(p => ({ ...p, price: Number(e.target.value) }))}
+                  onWheel={e => e.currentTarget.blur()}
+                  className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
+              </div>
+
+              {/* GST Type */}
+              <div>
+                <label className="block text-[11px] text-[#666] mb-1.5 font-semibold">GST Type</label>
+                <div className="flex gap-2">
+                  {(['CGST_SGST', 'IGST', 'exempt'] as const).map(t => (
+                    <button key={t} type="button"
+                      className={`flex-1 py-1.5 text-[11px] font-bold rounded-[6px] border cursor-pointer transition-colors ${quoteForm.gstType === t ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-500 border-gray-200 hover:border-orange-400'}`}
+                      onClick={() => setQuoteForm(p => ({ ...p, gstType: t }))}>
+                      {t === 'CGST_SGST' ? 'CGST+SGST' : t === 'IGST' ? 'IGST' : 'Exempt'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* GST Rate */}
+              {quoteForm.gstType !== 'exempt' && (
                 <div>
-                  <label className="block text-[11px] text-[#666] mb-1.5 font-semibold">GST Type</label>
+                  <label className="block text-[11px] text-[#666] mb-1.5 font-semibold">GST Rate</label>
                   <div className="flex gap-2">
-                    {(['CGST_SGST', 'IGST', 'exempt'] as const).map(t => (
-                      <button key={t} type="button"
-                        className={`flex-1 py-1.5 text-[11px] font-bold rounded-[6px] border cursor-pointer transition-colors ${quoteForm.gstType === t ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-500 border-gray-200 hover:border-orange-400'}`}
-                        onClick={() => setQuoteForm(p => ({ ...p, gstType: t }))}>
-                        {t === 'CGST_SGST' ? 'CGST+SGST' : t === 'IGST' ? 'IGST' : 'Exempt'}
+                    {[5, 12, 18, 28].map(r => (
+                      <button key={r} type="button"
+                        className={`flex-1 py-1.5 text-[11px] font-bold rounded-[6px] border cursor-pointer transition-colors ${quoteForm.gstRate === r ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-500 border-gray-200 hover:border-orange-400'}`}
+                        onClick={() => setQuoteForm(p => ({ ...p, gstRate: r }))}>
+                        {r}%
                       </button>
                     ))}
                   </div>
                 </div>
+              )}
 
-                {/* GST Rate */}
-                {quoteForm.gstType !== 'exempt' && (
-                  <div>
-                    <label className="block text-[11px] text-[#666] mb-1.5 font-semibold">GST Rate</label>
-                    <div className="flex gap-2">
-                      {[5, 12, 18, 28].map(r => (
-                        <button key={r} type="button"
-                          className={`flex-1 py-1.5 text-[11px] font-bold rounded-[6px] border cursor-pointer transition-colors ${quoteForm.gstRate === r ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-500 border-gray-200 hover:border-orange-400'}`}
-                          onClick={() => setQuoteForm(p => ({ ...p, gstRate: r }))}>
-                          {r}%
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Shipping + Delivery */}
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="block text-[11px] text-[#666] mb-1 font-semibold">Shipping ₹</label>
-                    <input type="number" min="0" value={quoteForm.shipping}
-                      onChange={e => setQuoteForm(p => ({ ...p, shipping: Number(e.target.value) }))}
-                      onWheel={e => e.currentTarget.blur()}
-                      className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-[11px] text-[#666] mb-1 font-semibold">Delivery Timeline</label>
-                    <input type="text" value={quoteForm.deliveryTimeline} placeholder="e.g. 7–10 days"
-                      onChange={e => setQuoteForm(p => ({ ...p, deliveryTimeline: e.target.value }))}
-                      className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
-                  </div>
-                </div>
-
-                {/* Shipping Notes */}
-                <div>
-                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Shipping Notes</label>
-                  <input type="text" value={quoteForm.shippingNotes} placeholder="e.g. Ex-factory, door delivery included"
-                    onChange={e => setQuoteForm(p => ({ ...p, shippingNotes: e.target.value }))}
+              {/* Shipping + Delivery */}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Shipping ₹</label>
+                  <input type="number" min="0" value={quoteForm.shipping}
+                    onChange={e => setQuoteForm(p => ({ ...p, shipping: Number(e.target.value) }))}
+                    onWheel={e => e.currentTarget.blur()}
                     className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
                 </div>
-
-                {/* Terms */}
-                <div>
-                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Terms & Conditions</label>
-                  <textarea rows={2} value={quoteForm.terms}
-                    onChange={e => setQuoteForm(p => ({ ...p, terms: e.target.value }))}
-                    className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none resize-none" />
+                <div className="flex-1">
+                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Delivery Timeline</label>
+                  <input type="text" value={quoteForm.deliveryTimeline} placeholder="e.g. 7–10 days"
+                    onChange={e => setQuoteForm(p => ({ ...p, deliveryTimeline: e.target.value }))}
+                    className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
                 </div>
+              </div>
 
-                {/* Price Highlight (Optional) */}
-                <div>
-                  <label className="block text-[11px] text-[#666] mb-1 font-semibold">Price Highlight (Optional)</label>
-                  <div className="flex gap-2">
-                    {(['', 'Best Price', 'Last Price'] as const).map(t => (
-                      <button
-                        key={t || 'none'}
-                        type="button"
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${
-                          quoteForm.priceTag === t
-                            ? 'bg-orange-500 text-white border-orange-500'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-orange-400'
+              {/* Shipping Notes */}
+              <div>
+                <label className="block text-[11px] text-[#666] mb-1 font-semibold">Shipping Notes</label>
+                <input type="text" value={quoteForm.shippingNotes} placeholder="e.g. Ex-factory, door delivery included"
+                  onChange={e => setQuoteForm(p => ({ ...p, shippingNotes: e.target.value }))}
+                  className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none" />
+              </div>
+
+              {/* Terms */}
+              <div>
+                <label className="block text-[11px] text-[#666] mb-1 font-semibold">Terms & Conditions</label>
+                <textarea rows={2} value={quoteForm.terms}
+                  onChange={e => setQuoteForm(p => ({ ...p, terms: e.target.value }))}
+                  className="w-full px-2.5 py-2 border border-gray-200 rounded-[8px] text-[13px] outline-none resize-none" />
+              </div>
+
+              {/* Price Highlight (Optional) */}
+              <div>
+                <label className="block text-[11px] text-[#666] mb-1 font-semibold">Price Highlight (Optional)</label>
+                <div className="flex gap-2">
+                  {(['', 'Best Price', 'Last Price'] as const).map(t => (
+                    <button
+                      key={t || 'none'}
+                      type="button"
+                      className={`flex-1 py-1.5 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${quoteForm.priceTag === t
+                          ? 'bg-orange-500 text-white border-orange-500'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-orange-400'
                         }`}
-                        onClick={() => setQuoteForm(p => ({ ...p, priceTag: t }))}
-                      >
-                        {t || 'None'}
-                      </button>
-                    ))}
-                  </div>
-                  {quoteForm.priceTag && (
-                    <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-[6px] p-2 mt-1.5 m-0 flex items-start gap-1">
-                      <span>🔒</span>
-                      <span><strong>Final Offer:</strong> Choosing <strong>{quoteForm.priceTag}</strong> disables further negotiations for the buyer.</span>
-                    </p>
-                  )}
+                      onClick={() => setQuoteForm(p => ({ ...p, priceTag: t }))}
+                    >
+                      {t || 'None'}
+                    </button>
+                  ))}
                 </div>
+                {quoteForm.priceTag === 'Last Price' && (
+                  <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-[6px] p-2 mt-1.5 m-0 flex items-start gap-1">
+                    <span>🔒</span>
+                    <span><strong>Final Offer:</strong> Choosing <strong>Last Price</strong> disables further negotiations for the buyer.</span>
+                  </p>
+                )}
+                {quoteForm.priceTag === 'Best Price' && (
+                  <p className="text-[10px] text-amber-800 bg-amber-50/60 border border-amber-200/70 rounded-[6px] p-2 mt-1.5 m-0 flex items-start gap-1">
+                    <span>⚡</span>
+                    <span><strong>Highlight:</strong> Displays a <strong>Best Price</strong> badge to the buyer while keeping negotiations open.</span>
+                  </p>
+                )}
+              </div>
 
-                {/* Live Breakdown */}
-                <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-3 py-2.5 flex flex-col gap-1 text-[12px]">
-                  <div className="flex justify-between text-gray-500">
-                    <span>Amount</span>
-                    <span className="font-semibold">₹{quoteForm.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
-                  {quoteForm.gstType !== 'exempt' ? (
-                    quoteForm.gstType === 'IGST' ? (
-                      <div className="flex justify-between text-blue-600">
-                        <span>IGST @ {quoteForm.gstRate}%</span>
-                        <span className="font-semibold">₹{computedGstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex justify-between text-blue-600">
-                          <span>CGST @ {quoteForm.gstRate / 2}%</span>
-                          <span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
-                        <div className="flex justify-between text-blue-600">
-                          <span>SGST @ {quoteForm.gstRate / 2}%</span>
-                          <span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
-                      </>
-                    )
-                  ) : (
-                    <div className="flex justify-between text-gray-400"><span>GST</span><span>Exempt / Nil</span></div>
-                  )}
-                  {quoteForm.shipping > 0 && (
-                    <div className="flex justify-between text-gray-500">
-                      <span>Shipping</span>
-                      <span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              {/* Live Breakdown */}
+              <div className="bg-gray-50 border border-gray-200 rounded-[8px] px-3 py-2.5 flex flex-col gap-1 text-[12px]">
+                <div className="flex justify-between text-gray-500">
+                  <span>Amount</span>
+                  <span className="font-semibold">₹{quoteForm.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                {quoteForm.gstType !== 'exempt' ? (
+                  quoteForm.gstType === 'IGST' ? (
+                    <div className="flex justify-between text-blue-600">
+                      <span>IGST @ {quoteForm.gstRate}%</span>
+                      <span className="font-semibold">₹{computedGstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between font-bold text-[13px] border-t border-gray-200 pt-1.5 mt-0.5 text-slate-900">
-                    <span>Grand Total</span>
-                    <span>₹{computedGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  ) : (
+                    <>
+                      <div className="flex justify-between text-blue-600">
+                        <span>CGST @ {quoteForm.gstRate / 2}%</span>
+                        <span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-blue-600">
+                        <span>SGST @ {quoteForm.gstRate / 2}%</span>
+                        <span className="font-semibold">₹{(computedGstAmount / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </>
+                  )
+                ) : (
+                  <div className="flex justify-between text-gray-400"><span>GST</span><span>Exempt / Nil</span></div>
+                )}
+                {quoteForm.shipping > 0 && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>Shipping</span>
+                    <span className="font-semibold">₹{quoteForm.shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
+                )}
+                <div className="flex justify-between font-bold text-[13px] border-t border-gray-200 pt-1.5 mt-0.5 text-slate-900">
+                  <span>Grand Total</span>
+                  <span>₹{computedGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
+            </div>
 
-              <div className="flex gap-2.5 mt-4">
-                <button onClick={() => setIsQuoteModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-[8px] border-none text-[13px] font-semibold bg-gray-100 text-[#666] cursor-pointer">Cancel</button>
-                <button onClick={() => setShowPreview(true)}
-                  className="flex-1 py-2.5 rounded-[8px] border-none text-[13px] font-semibold bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] text-white cursor-pointer">Preview & Send →</button>
-              </div>
+            <div className="flex gap-2.5 mt-4">
+              <button onClick={() => setIsQuoteModalOpen(false)}
+                className="flex-1 py-2.5 rounded-[8px] border-none text-[13px] font-semibold bg-gray-100 text-[#666] cursor-pointer">Cancel</button>
+              <button onClick={() => setShowPreview(true)}
+                className="flex-1 py-2.5 rounded-[8px] border-none text-[13px] font-semibold bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] text-white cursor-pointer">Preview & Send →</button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Quotation Preview / Confirm Modal */}
-        {isQuoteModalOpen && showPreview && (
-          <div className="fixed inset-0 bg-black/65 flex items-center justify-center p-4 z-[100]" onClick={() => setShowPreview(false)}>
-            <div className="bg-white rounded-[16px] w-full max-w-[380px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.22)]" onClick={e => e.stopPropagation()}>
-              <div className="px-4 py-3.5 bg-gray-50 border-b border-gray-100">
-                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest m-0 mb-0.5">How the buyer will see this</p>
-                <h3 className="text-sm font-extrabold text-slate-900 m-0">Confirm & Send Quotation</h3>
-              </div>
-              <div className="p-3.5">
-                <QuotePreviewCard form={quoteForm} gstAmount={computedGstAmount} grandTotal={computedGrandTotal} />
-              </div>
-              <div className="px-4 pb-4 pt-1 flex gap-2.5">
-                <button
-                  className="flex-1 py-2.5 text-[13px] font-semibold text-[#475569] bg-gray-50 border border-gray-200 rounded-[10px] cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => setShowPreview(false)}>
-                  ← Edit
-                </button>
-                <button
-                  className="flex-1 py-2.5 text-[13px] font-bold text-white bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] rounded-[10px] border-none cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={handleCreateQuotation}>
-                  ✓ Confirm & Send
-                </button>
-              </div>
+      {/* Quotation Preview / Confirm Modal */}
+      {isQuoteModalOpen && showPreview && (
+        <div className="fixed inset-0 bg-black/65 flex items-center justify-center p-4 z-[100]" onClick={() => setShowPreview(false)}>
+          <div className="bg-white rounded-[16px] w-full max-w-[380px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.22)]" onClick={e => e.stopPropagation()}>
+            <div className="px-4 py-3.5 bg-gray-50 border-b border-gray-100">
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest m-0 mb-0.5">How the buyer will see this</p>
+              <h3 className="text-sm font-extrabold text-slate-900 m-0">Confirm & Send Quotation</h3>
+            </div>
+            <div className="p-3.5">
+              <QuotePreviewCard form={quoteForm} gstAmount={computedGstAmount} grandTotal={computedGrandTotal} />
+            </div>
+            <div className="px-4 pb-4 pt-1 flex gap-2.5">
+              <button
+                className="flex-1 py-2.5 text-[13px] font-semibold text-[#475569] bg-gray-50 border border-gray-200 rounded-[10px] cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => setShowPreview(false)}>
+                ← Edit
+              </button>
+              <button
+                className="flex-1 py-2.5 text-[13px] font-bold text-white bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] rounded-[10px] border-none cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={handleCreateQuotation}>
+                ✓ Confirm & Send
+              </button>
             </div>
           </div>
-        )}
-      </div>
-    );
+        </div>
+      )}
+    </div>
+  );
 };

@@ -9,7 +9,7 @@ import ErrorState from '@/shared/components/feedback/ErrorState';
 import EmptyState from '@/shared/components/feedback/EmptyState';
 import Navbar from '@/features/landing/components/Navbar';
 import Footer from '@/features/landing/components/Footer';
-import type { ProductFilters } from '../types';
+import type { ProductFilters, Product } from '../types';
 
 const LEAD_TIME_OPTIONS = ['Any', '1-3 days', '1 week', '2 weeks', '1 month', '2+ months'];
 const CERT_OPTIONS = ['ISO', 'FSSAI', 'BIS', 'MSME', 'GMP', 'CE', 'Organic'];
@@ -58,10 +58,9 @@ const ProductList: React.FC = () => {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<FilterState>(DEFAULT_FILTERS);
 
-  // Handle auto-opening filter drawer via URL param
+  // Clean up auto-open filter drawer URL param
   useEffect(() => {
-    if (searchParams.get('showFilters') === 'true') {
-      setShowFilters(true);
+    if (searchParams.has('showFilters')) {
       setSearchParams(prev => {
         const next = new URLSearchParams(prev);
         next.delete('showFilters');
@@ -227,11 +226,10 @@ const ProductList: React.FC = () => {
             <button
               key={cert}
               onClick={() => toggleCert(cert)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-all ${
-                filters.certifications.includes(cert)
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-white text-body border-border hover:border-primary hover:text-primary'
-              }`}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer transition-all ${filters.certifications.includes(cert)
+                ? 'bg-primary text-white border-primary'
+                : 'bg-white text-body border-border hover:border-primary hover:text-primary'
+                }`}
             >
               {cert}
             </button>
@@ -329,22 +327,20 @@ const ProductList: React.FC = () => {
           </div>
 
           {/* Sliding Filter Drawer */}
-          <div 
-            className={`fixed inset-0 z-[2100] transition-all duration-300 ${
-              showFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-            }`}
+          <div
+            className={`fixed inset-0 z-[2100] transition-all duration-300 ${showFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
           >
             {/* Backdrop */}
-            <div 
+            <div
               className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
               onClick={() => setShowFilters(false)}
             />
-            
+
             {/* Drawer panel */}
-            <div 
-              className={`absolute top-0 right-0 h-full w-[360px] max-w-full bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
-                showFilters ? 'translate-x-0' : 'translate-x-full'
-              }`}
+            <div
+              className={`absolute top-0 right-0 h-full w-[360px] max-w-full bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${showFilters ? 'translate-x-0' : 'translate-x-full'
+                }`}
             >
               {/* Drawer Header */}
               <div className="flex items-center justify-between p-5 border-b border-border">
@@ -357,7 +353,7 @@ const ProductList: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <button 
+                <button
                   onClick={() => setShowFilters(false)}
                   className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors text-slate-700 hover:text-heading cursor-pointer border-none"
                   aria-label="Close filters"
@@ -468,13 +464,15 @@ const ProductList: React.FC = () => {
 
                       <p className="text-xs text-muted mt-6">Helpline available Mon–Sat, 9am–6pm</p>
                     </div>
-                  ) : (
+                  ) : activeFilterCount > 0 ? (
                     <EmptyState title="No products match your filters." />
+                  ) : (
+                    <EmptyState title="No products added in this section" />
                   )
                 ) : (
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6 max-sm:grid-cols-2 max-sm:gap-3">
-                    {products.map((product: any) => (
-                      <ProductCard key={product._id || product.id} product={product} showAddToCart={false} hidePrice={!!searchQuery} />
+                    {products.map((product: Product) => (
+                      <ProductCard key={product.id} product={product} showAddToCart={false} hidePrice={!!searchQuery} />
                     ))}
                   </div>
                 )}

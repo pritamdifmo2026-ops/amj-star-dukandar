@@ -56,6 +56,10 @@ export const publicRoutes: RouteObject[] = [
     element: <Contact />,
   },
   {
+    path: '/post-requirement',
+    element: <Navigate to="/#post-requirement-section" replace />,
+  },
+  {
     path: '/terms',
     element: <Terms />,
   },

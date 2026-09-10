@@ -30,6 +30,7 @@ interface CheckoutItem {
   supplierId: string;
   imageUrl?: string;
   moq: number;
+  stock?: number;
   hsnCode?: string;
   gstRate?: number;
   gstIncluded?: boolean;
@@ -62,6 +63,32 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
     return buyNowItem ? [buyNowItem] : (cartItems as CheckoutItem[]);
   }, [buyNowItem, cartItems]);
   const isBuyNow = !!buyNowItem;
+
+  // Stock issue validation on checkout
+  const checkoutStockIssues = useMemo(() => {
+    return items.map(item => {
+      const availableStock = item.stock ?? 0;
+      if (item.stock !== undefined && availableStock <= 0) {
+        return {
+          name: item.name,
+          availableStock: 0,
+          requestedQty: item.quantity,
+          type: 'OUT_OF_STOCK' as const,
+        };
+      }
+      if (item.stock !== undefined && item.quantity > availableStock) {
+        return {
+          name: item.name,
+          availableStock,
+          requestedQty: item.quantity,
+          type: 'INSUFFICIENT_STOCK' as const,
+        };
+      }
+      return null;
+    }).filter((issue): issue is NonNullable<typeof issue> => issue !== null);
+  }, [items]);
+
+  const hasCheckoutStockIssues = checkoutStockIssues.length > 0;
 
   const [supplierProfile, setSupplierProfile] = useState<any>(null);
   const [selectedTransportation, setSelectedTransportation] = useState<string>('');
@@ -937,6 +964,30 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
 
 
+            {/* Stock Issue Message */}
+            {hasCheckoutStockIssues && (
+              <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-[8px] flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-red-700">
+                  <AlertCircle size={15} className="text-red-600 shrink-0" />
+                  <span>Stock Issue Detected</span>
+                </div>
+                <ul className="m-0 pl-4 space-y-1 text-xs text-red-600">
+                  {checkoutStockIssues.map((issue, idx) => (
+                    <li key={idx}>
+                      {issue.type === 'OUT_OF_STOCK' ? (
+                        <span><strong>{issue.name}</strong> is currently out of stock.</span>
+                      ) : (
+                        <span><strong>{issue.name}</strong>: Only {issue.availableStock} in stock, but you requested {issue.requestedQty}.</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <span className="text-[11px] text-red-500 italic">
+                  Please return to your cart to update or remove these items before completing your order.
+                </span>
+              </div>
+            )}
+
             {/* Error Message */}
             {error && (
               <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-[8px] flex items-start gap-2">
@@ -948,7 +999,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
             <div className="flex flex-col gap-3 w-full">
               <button
                 onClick={handleNegotiateClick}
-                disabled={!selectedAddress || placing}
+                disabled={!selectedAddress || placing || hasCheckoutStockIssues}
                 className="flex-1 flex items-center justify-center gap-2 p-4 bg-white border-2 border-[#3b82f6] hover:bg-[#eff6ff] rounded-[10px] text-[#2563eb] font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <MessageSquare size={18} />
@@ -956,7 +1007,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               </button>
               <button
                 onClick={handleOpenDealPanel}
-                disabled={!selectedAddress || placing}
+                disabled={!selectedAddress || placing || hasCheckoutStockIssues}
                 className="flex-[1.2] flex items-center gap-3 p-4 bg-[#f0fdf4] border-2 border-[#86efac] rounded-[10px] text-left cursor-pointer hover:border-[#22c55e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 <div className="w-10 h-10 rounded-[8px] bg-white border border-[#86efac] flex items-center justify-center shrink-0 group-hover:border-[#22c55e]">

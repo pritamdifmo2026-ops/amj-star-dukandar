@@ -124,7 +124,7 @@ const QuotePreviewCard = ({
   grandTotal: number;
 }) => {
   const courierGst = (form.transportationTerms === 'Third-Party Courier' && form.shipping > 0) ? (Math.round((form.shipping * 0.18) * 100) / 100) : 0;
-  
+
   const totalPriceBeforeGst = form.cartItems && form.cartItems.length > 0
     ? form.cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0)
     : form.price * form.quantity;
@@ -411,7 +411,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   const quoteGstLines = gstDisplayLines(quote.gstType, quoteGstBreakdown, gstRate, gstAmt);
 
   const effectivePriceTag = quote?.priceTag || msg.metadata?.priceTag || '';
-  const isFinalPrice = effectivePriceTag === 'Best Price' || effectivePriceTag === 'Last Price';
+  const isFinalPrice = effectivePriceTag === 'Last Price';
 
   const isSingleItem = displayItems.length === 1;
   const totalQty = displayItems.reduce((acc: number, item: any) => acc + Number(item.quantity), 0) || 1;
@@ -524,11 +524,10 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
         <span className="text-xs font-extrabold text-[#0f172a]">Quotation</span>
         <div className="flex items-center gap-1.5">
           {effectivePriceTag && (
-            <span className={`text-[9px] font-black px-2 py-0.5 rounded-[4px] uppercase tracking-wider border flex items-center gap-1 shadow-xs ${
-              effectivePriceTag === 'Best Price'
+            <span className={`text-[9px] font-black px-2 py-0.5 rounded-[4px] uppercase tracking-wider border flex items-center gap-1 shadow-xs ${effectivePriceTag === 'Best Price'
                 ? 'bg-amber-500 text-white border-amber-600'
                 : 'bg-indigo-600 text-white border-indigo-700'
-            }`}>
+              }`}>
               {effectivePriceTag === 'Best Price' ? '⚡ Best Price' : '🏷️ Last Price'}
             </span>
           )}
@@ -686,8 +685,8 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             {quote.items?.length > 1 ? (
               <div className="flex flex-col gap-1 my-1.5 border-y border-[#bfdbfe] py-1.5">
                 {quote.items.map((it: any, idx: number) => {
-                  const counterIt = quote.counterOffer?.itemPrices?.find((cip: any) => 
-                    cip.productId?.toString() === it._id?.toString() || 
+                  const counterIt = quote.counterOffer?.itemPrices?.find((cip: any) =>
+                    cip.productId?.toString() === it._id?.toString() ||
                     cip.productId?.toString() === it.productId?.toString()
                   );
                   const unitPrice = counterIt?.price ?? it.price;
@@ -730,16 +729,25 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
         );
       })()}
 
-      {/* Final Offer Banner */}
-      {isFinalPrice && (
+      {/* Price Highlight / Final Offer Banner */}
+      {effectivePriceTag === 'Last Price' && (
         <div className="mx-4 mb-3 p-2.5 rounded-[8px] bg-amber-50/90 border border-amber-200 flex items-start gap-2 shadow-xs">
           <span className="text-sm shrink-0 leading-none mt-0.5">🔒</span>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-bold text-amber-900 m-0">
-              {effectivePriceTag === 'Best Price' ? '⚡ Best Price Offered' : '🏷️ Last Price Offered'}
-            </p>
+            <p className="text-[11px] font-bold text-amber-900 m-0">🏷️ Last Price Offered</p>
             <p className="text-[10px] text-amber-700 m-0 mt-0.5 leading-snug">
               This is the supplier's final price. Negotiation is closed—you can only accept or decline this offer.
+            </p>
+          </div>
+        </div>
+      )}
+      {effectivePriceTag === 'Best Price' && (
+        <div className="mx-4 mb-3 p-2.5 rounded-[8px] bg-amber-50/60 border border-amber-200/80 flex items-start gap-2 shadow-xs">
+          <span className="text-sm shrink-0 leading-none mt-0.5">⚡</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] font-bold text-amber-900 m-0">Best Price Offered</p>
+            <p className="text-[10px] text-amber-700 m-0 mt-0.5 leading-snug">
+              The supplier has highlighted this as their best price. You can accept this offer or propose a counter-offer.
             </p>
           </div>
         </div>
@@ -899,11 +907,11 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
               <>
                 <label className="text-[10px] text-[#64748b] font-semibold">Your Counter Price per {unit}</label>
                 <div className="flex items-center gap-3">
-                  <input 
-                    type="range" 
-                    min={Math.ceil((actualRetailTotal / totalQty) * 0.5)} 
-                    max={actualRetailTotal / totalQty} 
-                    value={counterPrice || (Math.round(((actualRetailTotal / totalQty) * 0.9) * 100) / 100)} 
+                  <input
+                    type="range"
+                    min={Math.ceil((actualRetailTotal / totalQty) * 0.5)}
+                    max={actualRetailTotal / totalQty}
+                    value={counterPrice || (Math.round(((actualRetailTotal / totalQty) * 0.9) * 100) / 100)}
                     onChange={e => setCounterPrice(e.target.value)}
                     className="flex-1 accent-[#2563eb] cursor-pointer h-1.5 bg-[#e2e8f0] rounded-lg appearance-none"
                   />
@@ -939,10 +947,10 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                       </div>
                       <label className="text-[10px] text-[#64748b] font-semibold">Counter Price per {item.unit || 'pcs'}</label>
                       <div className="flex items-center gap-3">
-                        <input 
-                          type="range" 
-                          min={minPrice} 
-                          max={maxPrice} 
+                        <input
+                          type="range"
+                          min={minPrice}
+                          max={maxPrice}
                           value={currentVal}
                           onChange={e => {
                             setCounterItemPrices(prev => ({ ...prev, [item._id]: Number(e.target.value) }));
@@ -980,7 +988,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             {(() => {
               const cpNum = Number(counterPrice) || 0;
               const cpTotal = isSingleItem ? cpNum * totalQty : cpNum;
-              
+
               if (!cpNum || cpNum <= 0) return null;
 
               const counterGstInputs = (quote.items || []).map((it: any) => {
@@ -1162,15 +1170,26 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
                   <button
                     key={t || 'none'}
                     type="button"
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${
-                      counterPriceTag === t ? 'bg-primary text-white border-primary' : 'bg-white text-[#475569] border-[#e2e8f0] hover:border-primary'
-                    }`}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${counterPriceTag === t ? 'bg-primary text-white border-primary' : 'bg-white text-[#475569] border-[#e2e8f0] hover:border-primary'
+                      }`}
                     onClick={() => setCounterPriceTag(t)}
                   >
                     {t || 'None'}
                   </button>
                 ))}
               </div>
+              {counterPriceTag === 'Last Price' && (
+                <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-[5px] p-1.5 mt-1 m-0 flex items-start gap-1">
+                  <span>🔒</span>
+                  <span><strong>Final Offer:</strong> Selecting <strong>Last Price</strong> closes further negotiations. Buyer can only accept or decline.</span>
+                </p>
+              )}
+              {counterPriceTag === 'Best Price' && (
+                <p className="text-[10px] text-amber-800 bg-amber-50/60 border border-amber-200/70 rounded-[5px] p-1.5 mt-1 m-0 flex items-start gap-1">
+                  <span>⚡</span>
+                  <span><strong>Highlight:</strong> Displays a <strong>Best Price</strong> badge to the buyer while keeping negotiations open.</span>
+                </p>
+              )}
             </div>
           )}
 
@@ -1396,7 +1415,7 @@ const QuotationRevisionCard: React.FC<QuotationRevisionCardProps> = ({
     : (typeof msg.quotationId === 'object' ? msg.quotationId : null);
 
   const effectivePriceTag = quote?.priceTag || msg.metadata?.priceTag || '';
-  const isFinalPrice = effectivePriceTag === 'Best Price' || effectivePriceTag === 'Last Price';
+  const isFinalPrice = effectivePriceTag === 'Last Price';
 
   // 2. Determine author
   const counteredBy = msg.metadata?.counteredBy || (isMine ? (isSupplier ? 'supplier' : 'buyer') : (isSupplier ? 'buyer' : 'supplier'));
@@ -1765,7 +1784,7 @@ const QuotationRevisionCard: React.FC<QuotationRevisionCardProps> = ({
           {isFinalPrice && (
             <div className="p-1.5 rounded-[6px] bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold flex items-center gap-1">
               <span>🔒</span>
-              <span>{effectivePriceTag === 'Best Price' ? '⚡ Best Price' : '🏷️ Last Price'} offered. Further negotiation is closed.</span>
+              <span>🏷️ Last Price offered. Further negotiation is closed.</span>
             </div>
           )}
           <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Your Action</span>
@@ -1918,9 +1937,9 @@ const ChatInbox: React.FC = () => {
     const effMsg = targetMsg?.metadata?.items
       ? targetMsg
       : messages.slice().reverse().find(m =>
-          (m.messageType === 'quotation_revision' || m.messageType === 'buyer_counter_offer') &&
-          ((typeof m.quotationId === 'object' ? (m.quotationId as any)?._id?.toString() : m.quotationId?.toString()) === targetQuoteId)
-        ) || targetMsg;
+        (m.messageType === 'quotation_revision' || m.messageType === 'buyer_counter_offer') &&
+        ((typeof m.quotationId === 'object' ? (m.quotationId as any)?._id?.toString() : m.quotationId?.toString()) === targetQuoteId)
+      ) || targetMsg;
 
     const effQuote = (quote && typeof quote === 'object' && quote._id)
       ? quote
@@ -1968,8 +1987,8 @@ const ChatInbox: React.FC = () => {
           const singleTotal = effMsg?.metadata?.price !== undefined
             ? effMsg.metadata.price
             : (effMsg?.metadata?.taxableAmount !== undefined
-                ? effMsg.metadata.taxableAmount
-                : effQuote?.counterOffer?.price);
+              ? effMsg.metadata.taxableAmount
+              : effQuote?.counterOffer?.price);
           if (singleTotal !== undefined && singleTotal !== null) {
             const q = Number(it.quantity) || Number(effMsg?.metadata?.items?.[0]?.quantity) || Number(effQuote?.items?.[0]?.quantity) || 1;
             return Number(singleTotal) / q;
@@ -2005,8 +2024,8 @@ const ChatInbox: React.FC = () => {
       const unitPrice = singleCounterPrice !== undefined
         ? singleCounterPrice
         : (firstItem.price !== undefined
-            ? Number(firstItem.price)
-            : (effQuote?.proposedPrice ? Number(effQuote.proposedPrice) / quantity : prev.price));
+          ? Number(firstItem.price)
+          : (effQuote?.proposedPrice ? Number(effQuote.proposedPrice) / quantity : prev.price));
 
       const deliveryTimeline = effMsg?.metadata?.deliveryTimeline ||
         effQuote?.counterOffer?.deliveryTimeline ||
@@ -2124,9 +2143,9 @@ const ChatInbox: React.FC = () => {
     };
     socket.on('new_notification', handleNotification);
     socket.on('order_update', handleOrderUpdate);
-    return () => { 
-      socket.off('new_notification', handleNotification); 
-      socket.off('order_update', handleOrderUpdate); 
+    return () => {
+      socket.off('new_notification', handleNotification);
+      socket.off('order_update', handleOrderUpdate);
     };
   }, [socket, activeConv]);
 
@@ -2542,7 +2561,7 @@ const ChatInbox: React.FC = () => {
                           {msg.text.split('\n').map((line: string, i: number) => (
                             <p key={i} className={`m-0 ${i === 0 ? 'text-xs font-extrabold text-[#0f172a] text-center pb-1' : 'text-[11.5px] text-[#334155] mt-0.5 text-left'}`}>{line || '\u00A0'}</p>
                           ))}
-                          
+
                         </div>
                         <div className="flex-1 h-px bg-[#e2e8f0]" />
                       </div>
@@ -2718,9 +2737,9 @@ const ChatInbox: React.FC = () => {
                           // Support new format (₹2,500 x 20 = ₹50,000) and old format (₹50,000 total)
                           const newFormatMatch = msg.text.match(/Target budget: ₹([0-9,.]+)\s*x/);
                           const oldFormatMatch = msg.text.match(/Target budget: ₹([0-9,.]+)\s*total/);
-                          
+
                           let parsedUnitPrice: number | null = null;
-                          
+
                           if (newFormatMatch) {
                             parsedUnitPrice = Number(newFormatMatch[1].replace(/,/g, ''));
                           } else if (oldFormatMatch) {
@@ -2729,7 +2748,7 @@ const ChatInbox: React.FC = () => {
                             const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
                             parsedUnitPrice = total / qty;
                           }
-                          
+
                           // For showing the accept button, we just need to know if there's a target budget
                           const hasTargetBudget = !!parsedUnitPrice;
                           const hasNegotiationItems = Array.isArray(msg.metadata?.negotiationItems) && msg.metadata.negotiationItems.length > 0;
@@ -2775,10 +2794,10 @@ const ChatInbox: React.FC = () => {
                                       } else if (hasTargetBudget && parsedUnitPrice) {
                                         const qtyMatch = msg.text.match(/Quantity: (\d+)/);
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                        setQuoteForm(prev => ({ 
-                                          ...prev, 
-                                          price: parsedUnitPrice!, 
-                                          quantity: qty, 
+                                        setQuoteForm(prev => ({
+                                          ...prev,
+                                          price: parsedUnitPrice!,
+                                          quantity: qty,
                                           deliveryTimeline: rawDeliveryTimeline || prev.deliveryTimeline,
                                           paymentTerms: parsedPay.paymentTerms,
                                           paymentType: parsedPay.paymentType,
@@ -2789,14 +2808,14 @@ const ChatInbox: React.FC = () => {
                                       } else {
                                         const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                        
+
                                         const priceMatch = msg.text.match(/@\s*₹?([0-9,]+)/);
                                         const unitPrice = priceMatch ? Number(priceMatch[1].replace(/,/g, '')) : (activeConv?.productId?.basePrice || 0);
 
-                                        setQuoteForm(prev => ({ 
-                                          ...prev, 
-                                          price: unitPrice, 
-                                          quantity: qty, 
+                                        setQuoteForm(prev => ({
+                                          ...prev,
+                                          price: unitPrice,
+                                          quantity: qty,
                                           priceTag: '' as any,
                                           deliveryTimeline: rawDeliveryTimeline || prev.deliveryTimeline,
                                           paymentTerms: parsedPay.paymentTerms,
@@ -2839,13 +2858,13 @@ const ChatInbox: React.FC = () => {
                                       } else {
                                         const qtyMatch = msg.text.match(/(?:Quantity|\bQty):\s*(\d+)/);
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
-                                        
+
                                         const unitPrice = parsedUnitPrice || (activeConv?.productId?.basePrice || 0);
-                                        
-                                        setQuoteForm(prev => ({ 
-                                          ...prev, 
-                                          quantity: qty, 
-                                          price: unitPrice, 
+
+                                        setQuoteForm(prev => ({
+                                          ...prev,
+                                          quantity: qty,
+                                          price: unitPrice,
                                           priceTag: '' as any,
                                           deliveryTimeline: rawDeliveryTimeline || prev.deliveryTimeline,
                                           paymentTerms: parsedPay.paymentTerms,
@@ -2890,21 +2909,21 @@ const ChatInbox: React.FC = () => {
                   </div>
                 );
               })}
-              
+
               {(() => {
                 if (user?.role !== 'supplier') return null;
                 const poMsg = messages.slice().reverse().find(m => m.text?.includes('Purchase Order Generated'));
                 if (!poMsg) return null;
-                
+
                 const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
                 const orderObj: any = (poMsg.quotationId as any)?.orderId || anyQuoteWithOrder?.quotationId?.orderId;
                 if (!orderObj || orderObj.paymentStatus === 'completed') return null;
-                
+
                 const paymentTerms = (poMsg.quotationId as any)?.paymentTerms || orderObj?.paymentTerms || activeConv?.initialEnquiry?.paymentTerms || '';
                 const isCOD = paymentTerms.includes('COD');
                 const isCredit = paymentTerms.includes('Credit');
                 const isAdvance = paymentTerms.includes('Advance') || (!isCOD && !isCredit);
-                
+
                 const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
                 const orderId = orderObj?._id || fallbackOrderId;
 
@@ -2930,8 +2949,8 @@ const ChatInbox: React.FC = () => {
                 let actionUi = null;
 
                 if (isAdvance && !advancePaid) {
-                  const advanceLabel = advancePercent > 0 && advancePercent < 100 
-                    ? `${advancePercent}% • ₹${advanceAmount.toLocaleString('en-IN')}` 
+                  const advanceLabel = advancePercent > 0 && advancePercent < 100
+                    ? `${advancePercent}% • ₹${advanceAmount.toLocaleString('en-IN')}`
                     : `₹${advanceAmount.toLocaleString('en-IN')}`;
                   actionUi = (
                     <button
@@ -3028,8 +3047,8 @@ const ChatInbox: React.FC = () => {
                     );
                   }
                 } else if (isAdvance && advancePaid && !paymentCompleted) {
-                  const remainingLabel = remainingPercent > 0 
-                    ? `${remainingPercent}% • ₹${remainingAmount.toLocaleString('en-IN')}` 
+                  const remainingLabel = remainingPercent > 0
+                    ? `${remainingPercent}% • ₹${remainingAmount.toLocaleString('en-IN')}`
                     : `₹${remainingAmount.toLocaleString('en-IN')}`;
                   if (!isDelivered) {
                     actionUi = (
@@ -3204,7 +3223,7 @@ const ChatInbox: React.FC = () => {
                           <label className="text-xs font-semibold text-body/70 m-0">Per Unit Price ₹ <span className="text-red-500">*</span></label>
                           <span className="text-[10px] text-[#64748b] font-medium bg-[#f1f5f9] px-2 py-0.5 rounded">
                             Original: ₹{
-                              activeConv?.initialEnquiry?.cartItems?.find((c: any) => 
+                              activeConv?.initialEnquiry?.cartItems?.find((c: any) =>
                                 (c.productId?._id || c.productId) === (item as any).productId
                               )?.price || activeConv?.productId?.basePrice || 0
                             }
@@ -3456,10 +3475,16 @@ const ChatInbox: React.FC = () => {
                     </button>
                   ))}
                 </div>
-                {quoteForm.priceTag && (
+                {quoteForm.priceTag === 'Last Price' && (
                   <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-[6px] p-2 mt-2 m-0 flex items-start gap-1.5">
                     <span>🔒</span>
-                    <span><strong>Final Offer:</strong> Selecting <strong>{quoteForm.priceTag}</strong> marks this as your final price. The buyer will not be able to negotiate further—only accept or decline.</span>
+                    <span><strong>Final Offer:</strong> Selecting <strong>Last Price</strong> marks this as your final price. The buyer will not be able to negotiate further—only accept or decline.</span>
+                  </p>
+                )}
+                {quoteForm.priceTag === 'Best Price' && (
+                  <p className="text-[11px] text-amber-800 bg-amber-50/60 border border-amber-200/70 rounded-[6px] p-2 mt-2 m-0 flex items-start gap-1.5">
+                    <span>⚡</span>
+                    <span><strong>Highlight:</strong> Selecting <strong>Best Price</strong> displays a prominent badge to the buyer while allowing further negotiations.</span>
                   </p>
                 )}
               </div>
@@ -3492,7 +3517,7 @@ const ChatInbox: React.FC = () => {
                 className="px-5 py-2 text-sm font-bold text-white bg-primary rounded-[8px] border-none cursor-pointer hover:opacity-90"
                 onClick={() => {
                   const errors: { price?: string; deliveryTimeline?: string; cartItems?: string } = {};
-                  
+
                   if (quoteForm.cartItems.length > 0) {
                     if (quoteForm.cartItems.some(it => !it.price || it.price <= 0)) {
                       errors.cartItems = 'Per unit price is required for all items';
@@ -3534,124 +3559,124 @@ const ChatInbox: React.FC = () => {
 
                 {/* Right Column: Payment Ack + Signature (sticky on desktop) */}
                 <div className="flex-1 flex flex-col gap-4 min-w-0 w-full md:sticky md:top-0">
-                {/* Payment Method Info for Supplier */}
-                <label className="flex items-start gap-2 bg-[#f0fdf4] border border-[#059669] rounded-[8px] p-3 cursor-pointer hover:bg-[#e6fcf0] transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={supplierPaymentAck}
-                    onChange={e => setSupplierPaymentAck(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 accent-[#059669] shrink-0 cursor-pointer"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-[#0f172a]">Direct Payment to Supplier</span>
+                  {/* Payment Method Info for Supplier */}
+                  <label className="flex items-start gap-2 bg-[#f0fdf4] border border-[#059669] rounded-[8px] p-3 cursor-pointer hover:bg-[#e6fcf0] transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={supplierPaymentAck}
+                      onChange={e => setSupplierPaymentAck(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-[#059669] shrink-0 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-[#0f172a]">Direct Payment to Supplier</span>
+                      </div>
+                      <p className="text-[10px] text-[#047857] m-0 leading-relaxed">
+                        I acknowledge that the buyer will pay me directly (UPI / bank / cash), and phone numbers will unlock so we can coordinate.
+                      </p>
                     </div>
-                    <p className="text-[10px] text-[#047857] m-0 leading-relaxed">
-                      I acknowledge that the buyer will pay me directly (UPI / bank / cash), and phone numbers will unlock so we can coordinate.
-                    </p>
-                  </div>
-                </label>
+                  </label>
 
-                {/* Signature Pad */}
-                <div>
-                  {(supplierProfileData?.savedSignature || user?.savedSignature) ? (
-                    <div className="flex flex-col gap-2">
-                      <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Authorized Signature</p>
-                      <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full h-[80px]">
-                        <img src={supplierProfileData?.savedSignature || user?.savedSignature} alt="Your Signature" className="max-w-full max-h-full object-contain" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Authorized Signature <span className="text-red-500">*</span></label>
-                        <div className="flex items-center gap-2 text-xs">
-                          <label className="flex items-center gap-1 cursor-pointer">
-                            <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
-                            Draw
-                          </label>
-                          <label className="flex items-center gap-1 cursor-pointer">
-                            <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
-                            Upload
-                          </label>
+                  {/* Signature Pad */}
+                  <div>
+                    {(supplierProfileData?.savedSignature || user?.savedSignature) ? (
+                      <div className="flex flex-col gap-2">
+                        <p className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wide m-0">Authorized Signature</p>
+                        <div className="border border-[#e2e8f0] rounded-[8px] p-4 flex justify-center bg-white w-full h-[80px]">
+                          <img src={supplierProfileData?.savedSignature || user?.savedSignature} alt="Your Signature" className="max-w-full max-h-full object-contain" />
                         </div>
                       </div>
-                      {signatureMode === 'draw' ? (
-                        <div className="border border-[#e2e8f0] rounded-[8px] bg-white relative">
-                          <SignatureCanvas
-                            ref={supplierSigCanvas}
-                            penColor="#0f172a"
-                            backgroundColor="white"
-                            canvasProps={{ className: 'w-full h-[80px] rounded-[8px]', style: { cursor: 'crosshair' } }}
-                            onEnd={() => setHasDrawnSignature(true)}
-                          />
-                          <button className="absolute top-2 right-2 p-1.5 bg-[#f1f5f9] text-[#64748b] rounded-[6px] hover:bg-[#e2e8f0]" onClick={() => { supplierSigCanvas.current?.clear(); setHasDrawnSignature(false); }}>
-                            <Eraser size={14} />
-                          </button>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold text-[#475569] uppercase tracking-wide m-0">Authorized Signature <span className="text-red-500">*</span></label>
+                          <div className="flex items-center gap-2 text-xs">
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input type="radio" checked={signatureMode === 'draw'} onChange={() => setSignatureMode('draw')} />
+                              Draw
+                            </label>
+                            <label className="flex items-center gap-1 cursor-pointer">
+                              <input type="radio" checked={signatureMode === 'upload'} onChange={() => setSignatureMode('upload')} />
+                              Upload
+                            </label>
+                          </div>
                         </div>
-                      ) : (
-                        <div className="border-2 border-dashed border-[#cbd5e1] rounded-[8px] p-4 flex flex-col items-center justify-center bg-[#f8fafc] relative min-h-[80px]">
-                          {supplierSignature ? (
-                            <>
-                              <img src={supplierSignature} alt="Uploaded" className="max-w-full max-h-[70px] object-contain" />
-                              <button className="absolute top-2 right-2 p-1 text-red-500 bg-white rounded-full shadow-sm hover:bg-red-50" onClick={() => setSupplierSignature(null)}>
-                                <X size={14} />
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <Upload size={24} className="text-[#94a3b8] mb-2" />
-                              <span className="text-xs font-semibold text-[#475569]">Click to upload signature</span>
-                              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  try {
-                                    const reader = new FileReader();
-                                    reader.onload = async (ev) => {
-                                      const result = ev.target?.result as string;
-                                      try {
-                                        const processed = await removeWhiteBackground(result);
-                                        setSupplierSignature(processed);
-                                      } catch {
-                                        setSupplierSignature(result);
-                                      }
-                                    };
-                                    reader.readAsDataURL(file);
-                                  } catch (e) {
-                                    console.error(e);
+                        {signatureMode === 'draw' ? (
+                          <div className="border border-[#e2e8f0] rounded-[8px] bg-white relative">
+                            <SignatureCanvas
+                              ref={supplierSigCanvas}
+                              penColor="#0f172a"
+                              backgroundColor="white"
+                              canvasProps={{ className: 'w-full h-[80px] rounded-[8px]', style: { cursor: 'crosshair' } }}
+                              onEnd={() => setHasDrawnSignature(true)}
+                            />
+                            <button className="absolute top-2 right-2 p-1.5 bg-[#f1f5f9] text-[#64748b] rounded-[6px] hover:bg-[#e2e8f0]" onClick={() => { supplierSigCanvas.current?.clear(); setHasDrawnSignature(false); }}>
+                              <Eraser size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="border-2 border-dashed border-[#cbd5e1] rounded-[8px] p-4 flex flex-col items-center justify-center bg-[#f8fafc] relative min-h-[80px]">
+                            {supplierSignature ? (
+                              <>
+                                <img src={supplierSignature} alt="Uploaded" className="max-w-full max-h-[70px] object-contain" />
+                                <button className="absolute top-2 right-2 p-1 text-red-500 bg-white rounded-full shadow-sm hover:bg-red-50" onClick={() => setSupplierSignature(null)}>
+                                  <X size={14} />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <Upload size={24} className="text-[#94a3b8] mb-2" />
+                                <span className="text-xs font-semibold text-[#475569]">Click to upload signature</span>
+                                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    try {
+                                      const reader = new FileReader();
+                                      reader.onload = async (ev) => {
+                                        const result = ev.target?.result as string;
+                                        try {
+                                          const processed = await removeWhiteBackground(result);
+                                          setSupplierSignature(processed);
+                                        } catch {
+                                          setSupplierSignature(result);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
+                                    } catch (e) {
+                                      console.error(e);
+                                    }
                                   }
-                                }
-                              }} />
-                            </>
-                          )}
-                        </div>
-                      )}
-                      <p className="text-[10px] text-primary m-0 italic">This signature will be saved to your profile for all future quotations.</p>
-                    </div>
-                  )}
+                                }} />
+                              </>
+                            )}
+                          </div>
+                        )}
+                        <p className="text-[10px] text-primary m-0 italic">This signature will be saved to your profile for all future quotations.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Action strip */}
-          <div className="px-5 py-3.5 bg-[#f8fafc] border-t border-[#f1f5f9] flex gap-3 justify-end shrink-0">
-            <button
-              className="px-6 py-2.5 text-sm font-semibold text-[#475569] bg-white border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f1f5f9] transition-colors"
-              onClick={() => { setShowPreview(false); setSupplierSignature(null); setHasDrawnSignature(false); setSupplierPaymentAck(false); }}>
-              Cancel Edit
-            </button>
-            <button
-              className="px-6 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleCreateQuotation}
-              disabled={isSendingQuote || !supplierPaymentAck || (!(supplierProfileData?.savedSignature || user?.savedSignature) && !hasDrawnSignature && !supplierSignature)}
-            >
-              {isSendingQuote ? 'Sending...' : '✓ Confirm & Send'}
-            </button>
+            {/* Action strip */}
+            <div className="px-5 py-3.5 bg-[#f8fafc] border-t border-[#f1f5f9] flex gap-3 justify-end shrink-0">
+              <button
+                className="px-6 py-2.5 text-sm font-semibold text-[#475569] bg-white border border-[#e2e8f0] rounded-[8px] cursor-pointer hover:bg-[#f1f5f9] transition-colors"
+                onClick={() => { setShowPreview(false); setSupplierSignature(null); setHasDrawnSignature(false); setSupplierPaymentAck(false); }}>
+                Cancel Edit
+              </button>
+              <button
+                className="px-6 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleCreateQuotation}
+                disabled={isSendingQuote || !supplierPaymentAck || (!(supplierProfileData?.savedSignature || user?.savedSignature) && !hasDrawnSignature && !supplierSignature)}
+              >
+                {isSendingQuote ? 'Sending...' : '✓ Confirm & Send'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* Payment Proof Modal */}
       {showPaymentProofModal && (

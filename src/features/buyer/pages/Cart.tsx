@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { Trash2, Plus, Minus, ShoppingBag, ShoppingCart, ArrowRight, Bookmark, MapPin, Truck } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ShoppingCart, ArrowRight, Bookmark, MapPin, Truck, AlertTriangle } from 'lucide-react';
 import {
   removeFromCartAsync,
   updateQuantityAsync,
@@ -104,7 +104,36 @@ export const CartContent: React.FC = () => {
   const uniqueSupplierCount = new Set(cartItems.map(i => i.supplierId)).size;
   const isMultiSupplier = uniqueSupplierCount > 1;
 
+  // Stock issue validation: checks for zero stock or requested quantity exceeding available stock
+  const stockIssues = cartItems.map(item => {
+    const availableStock = item.stock ?? 0;
+    if (availableStock <= 0) {
+      return {
+        productId: item.productId,
+        name: item.name,
+        availableStock: 0,
+        requestedQty: item.quantity,
+        type: 'OUT_OF_STOCK' as const,
+        message: `"${item.name}" is out of stock. Please remove it to proceed.`,
+      };
+    }
+    if (item.quantity > availableStock) {
+      return {
+        productId: item.productId,
+        name: item.name,
+        availableStock,
+        requestedQty: item.quantity,
+        type: 'INSUFFICIENT_STOCK' as const,
+        message: `"${item.name}": Only ${availableStock} ${item.unit || 'pcs'} in stock, but you need ${item.quantity}. Please reduce quantity.`,
+      };
+    }
+    return null;
+  }).filter((issue): issue is NonNullable<typeof issue> => issue !== null);
+
+  const hasStockIssues = stockIssues.length > 0;
+
   const handleCheckout = () => {
+    if (hasStockIssues || isMultiSupplier) return;
     if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/profile?tab=cart`); return; }
     navigate('/profile?tab=checkout');
   };
@@ -133,75 +162,115 @@ export const CartContent: React.FC = () => {
       {/* Items */}
       <div className="flex-1 flex flex-col gap-3">
         {cartItems.map(item => {
-          return (
-            <div key={item.productId} className="bg-white border border-[#eef2f6] rounded-[14px] p-4 flex gap-4">
-              <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)} className="shrink-0">
-                <img
-                  src={item.imageUrl || ''}
-                  alt={item.name}
-                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  className="w-20 h-20 object-cover rounded-[10px] border border-[#f1f5f9]"
-                />
-              </Link>
+          const availableStock = item.stock ?? 0;
+          const isItemOutOfStock = availableStock <= 0;
+          const isItemInsufficient = !isItemOutOfStock && item.quantity > availableStock;
 
-              <div className="flex-1 min-w-0 flex flex-col gap-1">
-                <Link
-                  to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)}
-                  className="text-sm font-bold text-[#0f172a] no-underline hover:text-primary leading-snug line-clamp-2"
-                >
-                  {item.name}
-                </Link>
-                <p className="text-xs text-[#94a3b8] m-0">MOQ: {item.moq} {item.unit}</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-base font-extrabold text-[#0f172a]">₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  <span className="text-xs text-[#94a3b8]">/ {item.unit || 'pcs'}</span>
-                  {item.gstRate !== undefined && item.gstRate > 0 && (
-                    <span className="text-[10px] font-semibold text-[#64748b] bg-[#f1f5f9] px-1.5 py-0.5 rounded-[4px]">
-                      {item.gstIncluded ? `incl. ${item.gstRate}% GST` : `+${item.gstRate}% GST`}
+          return (
+            <div
+              key={item.productId}
+              className={`bg-white border rounded-[14px] p-4 flex flex-col gap-3 transition-colors ${
+                isItemOutOfStock
+                  ? 'border-red-300 bg-red-50/20'
+                  : isItemInsufficient
+                  ? 'border-amber-300 bg-amber-50/20'
+                  : 'border-[#eef2f6]'
+              }`}
+            >
+              <div className="flex gap-4">
+                <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)} className="shrink-0 relative">
+                  <img
+                    src={item.imageUrl || ''}
+                    alt={item.name}
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    className={`w-20 h-20 object-cover rounded-[10px] border border-[#f1f5f9] ${isItemOutOfStock ? 'grayscale opacity-60' : ''}`}
+                  />
+                  {isItemOutOfStock && (
+                    <span className="absolute -top-1.5 -left-1.5 bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs">
+                      Out of Stock
                     </span>
                   )}
+                </Link>
+
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <Link
+                    to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)}
+                    className="text-sm font-bold text-[#0f172a] no-underline hover:text-primary leading-snug line-clamp-2"
+                  >
+                    {item.name}
+                  </Link>
+                  <div className="flex items-center gap-2 flex-wrap text-xs text-[#94a3b8]">
+                    <span>MOQ: {item.moq} {item.unit}</span>
+                    <span>•</span>
+                    <span className={isItemOutOfStock ? 'text-red-600 font-bold' : isItemInsufficient ? 'text-amber-600 font-bold' : 'text-slate-500'}>
+                      Stock: {availableStock} {item.unit || 'pcs'}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-base font-extrabold text-[#0f172a]">₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-xs text-[#94a3b8]">/ {item.unit || 'pcs'}</span>
+                    {item.gstRate !== undefined && item.gstRate > 0 && (
+                      <span className="text-[10px] font-semibold text-[#64748b] bg-[#f1f5f9] px-1.5 py-0.5 rounded-[4px]">
+                        {item.gstIncluded ? `incl. ${item.gstRate}% GST` : `+${item.gstRate}% GST`}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end justify-between gap-3 shrink-0">
+                  <div className="flex items-center border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white">
+                    <button
+                      className={`w-8 h-8 flex items-center justify-center border-none bg-white transition-colors
+                        ${item.quantity <= (item.moq || 1) ? 'text-[#cbd5e1] cursor-not-allowed' : 'text-[#475569] hover:bg-[#f8fafc] cursor-pointer'}`}
+                      onClick={() => handleQty(item.productId, item.quantity - 1, item.moq)}
+                      disabled={item.quantity <= (item.moq || 1)}
+                    >
+                      <Minus size={13} />
+                    </button>
+                    <span className={`w-10 text-center text-sm font-bold border-x border-[#e2e8f0] select-none ${isItemInsufficient ? 'text-red-600' : 'text-[#0f172a]'}`}>
+                      {item.quantity}
+                    </span>
+                    <button
+                      className={`w-8 h-8 flex items-center justify-center border-none bg-white transition-colors
+                        ${item.stock !== undefined && item.quantity >= item.stock ? 'text-[#cbd5e1] cursor-not-allowed' : 'text-[#475569] hover:bg-[#f8fafc] cursor-pointer'}`}
+                      onClick={() => handleQty(item.productId, item.quantity + 1, item.moq, item.stock)}
+                      disabled={item.stock !== undefined && item.quantity >= item.stock}
+                    >
+                      <Plus size={13} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="flex items-center gap-1.5 px-3 h-8 rounded-[7px] bg-[#f1f5f9] text-[#475569] border-none cursor-pointer hover:bg-[#e2e8f0] transition-colors text-[11px] font-semibold whitespace-nowrap"
+                      onClick={() => handleSaveForLater(item)}
+                      title="Save for Later"
+                    >
+                      <Bookmark size={13} /> Save for Later
+                    </button>
+                    <button
+                      className="w-8 h-8 flex items-center justify-center rounded-[7px] bg-[#fef2f2] text-[#dc2626] border-none cursor-pointer hover:bg-[#fee2e2] transition-colors"
+                      onClick={() => handleRemove(item.productId)}
+                      aria-label="Remove"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col items-end justify-between gap-3 shrink-0">
-                <div className="flex items-center border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white">
-                  <button
-                    className={`w-8 h-8 flex items-center justify-center border-none bg-white transition-colors
-                      ${item.quantity <= (item.moq || 1) ? 'text-[#cbd5e1] cursor-not-allowed' : 'text-[#475569] hover:bg-[#f8fafc] cursor-pointer'}`}
-                    onClick={() => handleQty(item.productId, item.quantity - 1, item.moq)}
-                    disabled={item.quantity <= (item.moq || 1)}
-                  >
-                    <Minus size={13} />
-                  </button>
-                  <span className="w-10 text-center text-sm font-bold text-[#0f172a] border-x border-[#e2e8f0] select-none">
-                    {item.quantity}
-                  </span>
-                  <button
-                    className={`w-8 h-8 flex items-center justify-center border-none bg-white transition-colors
-                      ${item.stock !== undefined && item.quantity >= item.stock ? 'text-[#cbd5e1] cursor-not-allowed' : 'text-[#475569] hover:bg-[#f8fafc] cursor-pointer'}`}
-                    onClick={() => handleQty(item.productId, item.quantity + 1, item.moq, item.stock)}
-                    disabled={item.stock !== undefined && item.quantity >= item.stock}
-                  >
-                    <Plus size={13} />
-                  </button>
+              {/* Per-item stock alert banner */}
+              {isItemOutOfStock && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-red-100/70 border border-red-200 rounded-[8px] text-xs text-red-700 font-medium">
+                  <AlertTriangle size={14} className="shrink-0 text-red-600" />
+                  <span>This product is currently <strong>out of stock</strong>. Please remove it from your cart to proceed with checkout.</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="flex items-center gap-1.5 px-3 h-8 rounded-[7px] bg-[#f1f5f9] text-[#475569] border-none cursor-pointer hover:bg-[#e2e8f0] transition-colors text-[11px] font-semibold whitespace-nowrap"
-                    onClick={() => handleSaveForLater(item)}
-                    title="Save for Later"
-                  >
-                    <Bookmark size={13} /> Save for Later
-                  </button>
-                  <button
-                    className="w-8 h-8 flex items-center justify-center rounded-[7px] bg-[#fef2f2] text-[#dc2626] border-none cursor-pointer hover:bg-[#fee2e2] transition-colors"
-                    onClick={() => handleRemove(item.productId)}
-                    aria-label="Remove"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+              )}
+              {isItemInsufficient && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-amber-100/70 border border-amber-200 rounded-[8px] text-xs text-amber-800 font-medium">
+                  <AlertTriangle size={14} className="shrink-0 text-amber-600" />
+                  <span>Only <strong>{availableStock} {item.unit || 'pcs'}</strong> available in stock, but you requested <strong>{item.quantity}</strong>. Please reduce quantity or remove item.</span>
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
@@ -297,8 +366,36 @@ export const CartContent: React.FC = () => {
               <span>Your cart has items from <strong>multiple suppliers</strong>. Please checkout one supplier at a time — remove items from other suppliers first.</span>
             </div>
           )}
+
+          {/* Stock issue warning box */}
+          {hasStockIssues && (
+            <div className="mt-4 flex flex-col gap-1.5 p-3 bg-red-50 border border-red-200 rounded-[8px] text-xs text-red-700">
+              <div className="flex items-center gap-1.5 font-bold text-red-800">
+                <AlertTriangle size={15} className="shrink-0 text-red-600" />
+                <span>Cannot Proceed to Checkout</span>
+              </div>
+              <p className="m-0 text-[11px] text-red-600">
+                Some items in your cart are out of stock or exceed available inventory:
+              </p>
+              <ul className="m-0 pl-4 space-y-1 text-[11px] text-red-700">
+                {stockIssues.map((issue, idx) => (
+                  <li key={idx}>
+                    {issue.type === 'OUT_OF_STOCK' ? (
+                      <span><strong>{issue.name}</strong> is out of stock.</span>
+                    ) : (
+                      <span><strong>{issue.name}</strong>: In stock {issue.availableStock}, but you requested {issue.requestedQty}.</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <span className="text-[10.5px] text-red-600 italic mt-0.5">
+                Please adjust quantities or remove unavailable products to proceed.
+              </span>
+            </div>
+          )}
+
           <button
-            disabled={isMultiSupplier}
+            disabled={isMultiSupplier || hasStockIssues}
             className="mt-4 w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary text-white font-bold text-sm rounded-[10px] border-none cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={handleCheckout}
           >
