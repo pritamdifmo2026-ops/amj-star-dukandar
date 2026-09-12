@@ -15,9 +15,67 @@ import apiClient from '@/api/client';
 import SignatureCanvas from 'react-signature-canvas';
 import uploadService from '@/features/product/services/upload.service';
 import { buildGstBreakdown } from '@/shared/utils/calculateGST';
+import { pincodeToState, normaliseState } from '@/shared/utils/pincodeToState';
 
 type Filter = 'all' | 'unread';
 type GstType = 'CGST_SGST' | 'IGST' | 'exempt';
+
+export interface AutoGstResult {
+  gstType: GstType;
+  reason: string;
+  badge: string;
+  buyerState?: string;
+  supplierState?: string;
+  isIntra?: boolean;
+}
+
+export function detectQuotationGstType(
+  buyerAddr?: { pincode?: string; state?: string } | null,
+  supplierStateRaw?: string,
+  gstRate?: number
+): AutoGstResult {
+  if (gstRate === 0) {
+    return {
+      gstType: 'exempt',
+      reason: 'Product GST slab is 0% (Tax-exempt)',
+      badge: 'Tax-Exempt (0%)',
+    };
+  }
+
+  const suppState = supplierStateRaw ? normaliseState(supplierStateRaw) : null;
+
+  let bState: string | null = null;
+  if (buyerAddr?.pincode) {
+    bState = pincodeToState(buyerAddr.pincode);
+  }
+  if (!bState && buyerAddr?.state) {
+    bState = normaliseState(buyerAddr.state);
+  }
+
+  if (!suppState || !bState) {
+    return {
+      gstType: 'CGST_SGST',
+      reason: !bState ? 'Buyer state unknown — defaulting to CGST + SGST' : 'Supplier state not configured',
+      badge: bState ? `Buyer: ${bState}` : '',
+      buyerState: bState || undefined,
+      supplierState: suppState || undefined,
+    };
+  }
+
+  const isIntra = bState.toLowerCase() === suppState.toLowerCase();
+  return {
+    gstType: isIntra ? 'CGST_SGST' : 'IGST',
+    isIntra,
+    buyerState: bState,
+    supplierState: suppState,
+    reason: isIntra
+      ? `Intra-state: Buyer & Supplier both in ${suppState}`
+      : `Inter-state: ${suppState} → ${bState}`,
+    badge: isIntra
+      ? `Intra-State (${suppState}) • CGST+SGST`
+      : `Inter-State (${suppState} → ${bState}) • IGST`,
+  };
+}
 
 const inputCls = "w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-primary transition-colors";
 const labelCls = "text-xs font-bold uppercase text-[#94a3b8] tracking-wider block mb-1.5";
@@ -1895,11 +1953,30 @@ const ChatInbox: React.FC = () => {
     cartItems: [] as Array<{ productId: string, name: string, quantity: number, price: number, unit?: string, hsnCode?: string, gstRate?: number }>,
   });
 
+  const getAutoGst = (customRate?: number): AutoGstResult => {
+    const buyerAddr = activeConv?.buyerAddress || activeConv?.initialEnquiry?.deliveryAddress || activeConv?.buyerId?.address;
+    const suppState = supplierProfileData?.businessDetails?.state || (user as any)?.address?.state;
+    const slab = customRate !== undefined ? customRate : (quoteForm.gstRate ?? activeConv?.productId?.gstRate);
+    return detectQuotationGstType(buyerAddr, suppState, slab);
+  };
+
   useEffect(() => {
     if (activeConv?.productId?.gstRate !== undefined) {
       setQuoteForm(prev => ({ ...prev, gstRate: activeConv.productId.gstRate }));
     }
   }, [activeConv?.productId?.gstRate]);
+
+  // Auto-detect and preselect GST type when active conversation or supplier profile loads
+  useEffect(() => {
+    if (!editingQuoteId && !isQuoteModalOpen && activeConv) {
+      const detected = getAutoGst();
+      setQuoteForm(prev => ({
+        ...prev,
+        gstType: detected.gstType,
+        gstRate: activeConv?.productId?.gstRate !== undefined ? activeConv.productId.gstRate : prev.gstRate,
+      }));
+    }
+  }, [activeConv?._id, supplierProfileData?.businessDetails?.state]);
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -2043,6 +2120,8 @@ const ChatInbox: React.FC = () => {
         : (effQuote?.shippingCost !== undefined ? Number(effQuote.shippingCost) : prev.shipping);
 
       const priceTag = effQuote?.priceTag || effMsg?.metadata?.priceTag || (prev.priceTag as any) || '';
+      const detectedGst = getAutoGst(effQuote?.gstRate ?? activeConv?.productId?.gstRate);
+      const resolvedGstType = effQuote?.gstType || effMsg?.metadata?.gstType || detectedGst.gstType;
 
       return {
         ...prev,
@@ -2058,7 +2137,8 @@ const ChatInbox: React.FC = () => {
         creditDays: parsedPay.creditDays,
         transportationTerms,
         shipping,
-        priceTag
+        priceTag,
+        gstType: resolvedGstType,
       };
     });
     setIsAcceptingBuyerPrice(isAccept);
@@ -2472,16 +2552,23 @@ const ChatInbox: React.FC = () => {
                     disabled={isNegotiationDead}
                     className={`flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary bg-[#fff7ed] border border-[#fed7aa] rounded-[8px] ${isNegotiationDead ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-[#ffedd5]'}`}
                     onClick={() => {
+                      const detected = getAutoGst();
                       if (activeConv?.initialEnquiry) {
                         const parsedPay = parsePaymentTerms(activeConv.initialEnquiry.paymentTerms);
                         setQuoteForm(prev => ({
                           ...prev,
+                          gstType: detected.gstType,
                           deliveryTimeline: activeConv.initialEnquiry.deliveryTimeline || prev.deliveryTimeline,
                           paymentTerms: parsedPay.paymentTerms,
                           paymentType: parsedPay.paymentType,
                           advancePercent: parsedPay.advancePercent,
                           creditDays: parsedPay.creditDays,
                           transportationTerms: activeConv.initialEnquiry.transportationTerms || prev.transportationTerms,
+                        }));
+                      } else {
+                        setQuoteForm(prev => ({
+                          ...prev,
+                          gstType: detected.gstType,
                         }));
                       }
                       setIsQuoteModalOpen(true);
@@ -2796,6 +2883,7 @@ const ChatInbox: React.FC = () => {
                                         const qty = qtyMatch ? Number(qtyMatch[1]) : 1;
                                         setQuoteForm(prev => ({
                                           ...prev,
+                                          gstType: getAutoGst().gstType,
                                           price: parsedUnitPrice!,
                                           quantity: qty,
                                           deliveryTimeline: rawDeliveryTimeline || prev.deliveryTimeline,
@@ -2814,6 +2902,7 @@ const ChatInbox: React.FC = () => {
 
                                         setQuoteForm(prev => ({
                                           ...prev,
+                                          gstType: getAutoGst().gstType,
                                           price: unitPrice,
                                           quantity: qty,
                                           priceTag: '' as any,
@@ -2839,6 +2928,7 @@ const ChatInbox: React.FC = () => {
                                       if (hasNegotiationItems) {
                                         setQuoteForm(prev => ({
                                           ...prev,
+                                          gstType: getAutoGst().gstType,
                                           cartItems: msg.metadata.negotiationItems.map((it: any) => ({
                                             productId: it.productId,
                                             name: it.name,
@@ -2863,6 +2953,7 @@ const ChatInbox: React.FC = () => {
 
                                         setQuoteForm(prev => ({
                                           ...prev,
+                                          gstType: getAutoGst().gstType,
                                           quantity: qty,
                                           price: unitPrice,
                                           priceTag: '' as any,
@@ -3303,7 +3394,17 @@ const ChatInbox: React.FC = () => {
                 </>
               )}
               <div>
-                <label className={labelCls}>GST Type</label>
+                <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                  <label className={labelCls + " !mb-0"}>GST Type</label>
+                  {(() => {
+                    const autoInfo = getAutoGst();
+                    return autoInfo.badge ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#eff6ff] text-[#1d4ed8] border border-[#bfdbfe]">
+                        ⚡ {autoInfo.badge}
+                      </span>
+                    ) : null;
+                  })()}
+                </div>
                 <div className="flex gap-2">
                   {(['CGST_SGST', 'IGST', 'exempt'] as const).map(t => (
                     <button key={t} type="button"
@@ -3313,6 +3414,14 @@ const ChatInbox: React.FC = () => {
                     </button>
                   ))}
                 </div>
+                {(() => {
+                  const autoInfo = getAutoGst();
+                  return autoInfo.reason ? (
+                    <p className="text-[11px] text-[#64748b] mt-1 m-0">
+                      {autoInfo.reason}
+                    </p>
+                  ) : null;
+                })()}
               </div>
               {quoteForm.gstType !== 'exempt' && quoteForm.cartItems.length === 0 && (
                 <div>
