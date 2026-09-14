@@ -538,7 +538,7 @@ const EnquiryModal: React.FC<EnquiryModalProps> = ({
                     ) : (
                       <>
                         <option value="FOR">FOR (Free on Road)</option>
-                        <option value="Ex-Works">Ex-Works</option>
+                        <option value="Ex-Factory">Ex-Factory</option>
                         <option value="Third-Party Courier">Third-Party Courier</option>
                       </>
                     )}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Inbox, ArrowLeft, Check, CheckCheck, FileText, MoreVertical, Trash2, Phone, Clock, X, Eraser, Upload, FileImage, Package } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { chatApi } from '@/features/chat/services/chat.api';
@@ -584,8 +584,8 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
         <div className="flex items-center gap-1.5">
           {effectivePriceTag && (
             <span className={`text-[9px] font-black px-2 py-0.5 rounded-[4px] uppercase tracking-wider border flex items-center gap-1 shadow-xs ${effectivePriceTag === 'Best Price'
-                ? 'bg-amber-500 text-white border-amber-600'
-                : 'bg-indigo-600 text-white border-indigo-700'
+              ? 'bg-amber-500 text-white border-amber-600'
+              : 'bg-indigo-600 text-white border-indigo-700'
               }`}>
               {effectivePriceTag === 'Best Price' ? '⚡ Best Price' : '🏷️ Last Price'}
             </span>
@@ -1941,13 +1941,21 @@ const QuotationRevisionCard: React.FC<QuotationRevisionCardProps> = ({
           )}
         </div>
       )}
+      {msg.createdAt && (
+        <div className="flex items-center gap-1 mt-1.5 justify-end">
+          <span className="text-[10px] text-[#94a3b8]">
+            {new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+      )}
     </div>
   );
 };
 
 const ChatInbox: React.FC = () => {
   const { user } = useSelector((state: any) => state.auth);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const targetConvId = searchParams.get('conversationId') || searchParams.get('convId');
 
   const [conversations, setConversations] = useState<any[]>([]);
@@ -2255,7 +2263,17 @@ const ChatInbox: React.FC = () => {
     try {
       await chatApi.deleteConversation(convId);
       setConversations(prev => prev.filter(c => c._id !== convId));
-      if (activeConv?._id === convId) setActiveConv(null);
+      if (activeConv?._id === convId) {
+        setActiveConv(null);
+        userSelectedConvIdRef.current = null;
+        appliedTargetConvIdRef.current = null;
+        setSearchParams(prev => {
+          const next = new URLSearchParams(prev);
+          next.delete('conversationId');
+          next.delete('convId');
+          return next;
+        }, { replace: true });
+      }
       toast.success('Enquiry deleted');
     } catch {
       toast.error('Failed to delete enquiry');
@@ -2321,17 +2339,42 @@ const ChatInbox: React.FC = () => {
     );
   });
 
+  const appliedTargetConvIdRef = useRef<string | null>(null);
+  const userSelectedConvIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (targetConvId && conversations.length > 0) {
-      const match = conversations.find(c => c._id === targetConvId);
-      if (match && activeConv?._id !== match._id) {
-        handleSelectConv(match);
+    if (!targetConvId || conversations.length === 0) return;
+
+    // If the user manually selected a conversation, wait until the URL updates to match it
+    if (userSelectedConvIdRef.current) {
+      if (userSelectedConvIdRef.current === targetConvId) {
+        userSelectedConvIdRef.current = null;
       }
+      return;
+    }
+
+    // If this URL targetConvId has already been applied, don't re-select
+    if (appliedTargetConvIdRef.current === targetConvId) return;
+
+    const match = conversations.find(c => c._id === targetConvId);
+    if (match) {
+      appliedTargetConvIdRef.current = targetConvId;
+      handleSelectConv(match, false);
     }
   }, [targetConvId, conversations]);
 
-  const handleSelectConv = (conv: any) => {
+  const handleSelectConv = (conv: any, updateUrl = true) => {
+    userSelectedConvIdRef.current = conv._id;
+    appliedTargetConvIdRef.current = conv._id;
     setActiveConv(conv);
+    if (updateUrl) {
+      setSearchParams(prev => {
+        const next = new URLSearchParams(prev);
+        next.set('conversationId', conv._id);
+        next.delete('convId');
+        return next;
+      }, { replace: true });
+    }
     // Clear the unread dot/badge for this conversation immediately
     const uid = user?._id || user?.id;
     setConversations(prev => prev.map(c =>
@@ -2595,7 +2638,20 @@ const ChatInbox: React.FC = () => {
         ) : (
           <>
             <div className="flex items-center gap-3 px-6 pt-10 pb-5 border-b border-[#f1f5f9] bg-white">
-              <button className="lg:hidden w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f1f5f9] text-[#475569] border-none cursor-pointer bg-transparent" onClick={() => setActiveConv(null)}>
+              <button
+                className="lg:hidden w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f1f5f9] text-[#475569] border-none cursor-pointer bg-transparent"
+                onClick={() => {
+                  setActiveConv(null);
+                  userSelectedConvIdRef.current = null;
+                  appliedTargetConvIdRef.current = null;
+                  setSearchParams(prev => {
+                    const next = new URLSearchParams(prev);
+                    next.delete('conversationId');
+                    next.delete('convId');
+                    return next;
+                  }, { replace: true });
+                }}
+              >
                 <ArrowLeft size={18} />
               </button>
               <div className="w-9 h-9 rounded-full bg-primary text-white flex items-center justify-center text-sm font-extrabold shrink-0">
@@ -2708,16 +2764,71 @@ const ChatInbox: React.FC = () => {
                         </div>
                       </div>
                     ) : msg.messageType === 'system' ? (
-                      <div className="w-full flex items-center gap-2 py-1">
-                        <div className="flex-1 h-px bg-[#e2e8f0]" />
-                        <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] px-4 py-3 max-w-[360px]">
-                          {msg.text.split('\n').map((line: string, i: number) => (
-                            <p key={i} className={`m-0 ${i === 0 ? 'text-xs font-extrabold text-[#0f172a] text-center pb-1' : 'text-[11.5px] text-[#334155] mt-0.5 text-left'}`}>{line || '\u00A0'}</p>
-                          ))}
+                      (() => {
+                        const rawText = msg.text || '';
+                        const lines = rawText.split('\n');
+                        const isDisputeMilestone = /⚠️|🛡️|🚚|📦|💰|🎉|✅|❌|Dispute|Resolution|Replacement|Refund/i.test(rawText);
+                        const isWarning = /⚠️|Rejected|Reopened|Issue/i.test(rawText);
+                        const isSuccess = /🎉|Completed|Verified|Approved/i.test(rawText);
+                        const isInfo = /🛡️|🚚|📦|💰|Pickup|Dispatched|Handed Over/i.test(rawText);
 
-                        </div>
-                        <div className="flex-1 h-px bg-[#e2e8f0]" />
-                      </div>
+                        const cardBg = isWarning ? 'bg-[#fffbeb] border-[#fde68a]' : isSuccess ? 'bg-[#f0fdf4] border-[#bbf7d0]' : isInfo ? 'bg-[#eff6ff] border-[#bfdbfe]' : 'bg-[#f8fafc] border-[#e2e8f0]';
+                        const titleColor = isWarning ? 'text-[#b45309]' : isSuccess ? 'text-[#15803d]' : isInfo ? 'text-[#1d4ed8]' : 'text-[#0f172a]';
+                        const leftAccent = isWarning ? 'bg-[#f59e0b]' : isSuccess ? 'bg-[#22c55e]' : isInfo ? 'bg-[#3b82f6]' : '';
+
+                        return (
+                          <div className="w-full flex items-center gap-2 py-1.5 justify-center">
+                            <div className="flex-1 h-px bg-[#e2e8f0]" />
+                            <div className={`${cardBg} border rounded-[12px] px-4 py-3 max-w-[420px] w-[92%] shadow-sm relative overflow-hidden`}>
+                              {leftAccent && <div className={`absolute top-0 left-0 w-1.5 h-full ${leftAccent}`} />}
+                              {lines.map((line: string, i: number) => (
+                                <p
+                                  key={i}
+                                  className={`m-0 ${
+                                    i === 0
+                                      ? `text-xs font-extrabold ${titleColor} text-left pb-1 border-b border-black/5`
+                                      : 'text-[11.5px] text-[#334155] mt-1 text-left whitespace-pre-wrap leading-relaxed'
+                                  }`}
+                                >
+                                  {line || '\u00A0'}
+                                </p>
+                              ))}
+
+                              {/* Action link if related to an order */}
+                              {isDisputeMilestone && (
+                                <div className="mt-2.5 pt-2 border-t border-black/5 flex items-center justify-between gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const orderManageLink = user?.role === 'supplier'
+                                        ? '/supplier/dashboard?tab=orders'
+                                        : '/profile?tab=orders';
+                                      navigate(orderManageLink);
+                                    }}
+                                    className="text-[11px] font-bold text-primary hover:underline cursor-pointer border-none bg-transparent p-0 flex items-center gap-1"
+                                  >
+                                    View Order Details →
+                                  </button>
+                                  {msg.createdAt && (
+                                    <span className="text-[10px] text-[#94a3b8] font-medium">
+                                      {new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              {!isDisputeMilestone && msg.createdAt && (
+                                <div className="mt-2 pt-1.5 border-t border-[#e2e8f0]/60 flex items-center justify-center gap-1">
+                                  <span className="text-[10px] text-[#94a3b8] font-medium">
+                                    {new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 h-px bg-[#e2e8f0]" />
+                          </div>
+                        );
+                      })()
                     ) : msg.messageType === 'payment_request' ? (
                       (() => {
                         const isCOD = msg.metadata?.requestType === 'cod' || msg.text?.includes('COD');
@@ -2764,6 +2875,13 @@ const ChatInbox: React.FC = () => {
                                 }
                                 return <p className={`text-xs font-bold ${textColor} m-0 italic`}>Proof Uploaded</p>;
                               })()}
+                              {msg.createdAt && (
+                                <div className="flex justify-end mt-2 pt-1.5 border-t border-black/5">
+                                  <span className="text-[10px] text-[#64748b]">
+                                    {new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -2818,22 +2936,59 @@ const ChatInbox: React.FC = () => {
                             }
                             return <p className="text-xs font-bold text-[#166534] m-0 italic">Payment Confirmed</p>;
                           })()}
+                          {msg.createdAt && (
+                            <div className="flex justify-end mt-2 pt-1.5 border-t border-[#bbf7d0]">
+                              <span className="text-[10px] text-[#166534]/70">
+                                {new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : msg.messageType === 'payment_verified' ? (
                       (() => {
                         const isCOD = msg.text?.includes('COD');
                         const isCredit = msg.text?.includes('Credit');
-                        const title = isCOD ? 'COD Payment Confirmed' : isCredit ? 'Credit Payment Confirmed' : 'Payment Confirmed';
+                        const isBalance = msg.text?.includes('Balance Payment') || msg.text?.includes('fully settled');
+                        const isFullySettled = isBalance || isCOD || isCredit || msg.metadata?.paymentStatus === 'completed';
+                        const title = isCOD ? 'COD Payment Confirmed' : isCredit ? 'Credit Payment Confirmed' : isBalance ? 'Balance Payment Confirmed' : 'Payment Confirmed';
                         const badgeColor = isCOD ? 'bg-blue-500' : isCredit ? 'bg-indigo-500' : 'bg-[#10b981]';
                         const textColor = isCOD ? 'text-blue-700' : isCredit ? 'text-indigo-700' : 'text-[#047857]';
                         const bgColor = isCOD ? 'bg-blue-50 border-blue-200' : isCredit ? 'bg-indigo-50 border-indigo-200' : 'bg-[#ecfdf5] border-[#a7f3d0]';
+
+                        // Only show "Proceed to Pack & Dispatch" when partial/advance payment is done and product is not yet packed/dispatched
+                        const hasPackedOrDispatched = messages.some(m =>
+                          new Date(m.createdAt) > new Date(msg.createdAt) &&
+                          m.messageType === 'system' &&
+                          (m.text?.includes('packed') || m.text?.includes('dispatched') || m.text?.includes('pickup'))
+                        );
+
                         return (
                           <div className="w-full flex justify-center py-2">
                             <div className={`w-[85%] ${bgColor} border rounded-[12px] p-4 shadow-sm relative overflow-hidden`}>
                               <div className={`absolute top-0 left-0 w-1 h-full ${badgeColor}`}></div>
                               <p className={`text-[11px] font-bold ${textColor} uppercase tracking-wide m-0 mb-1`}>{title}</p>
                               <p className="text-sm text-[#334155] m-0 whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                              {user?.role === 'supplier' && !isFullySettled && !hasPackedOrDispatched && (
+                                <button
+                                  onClick={() => {
+                                    const anyQuoteWithOrder = messages.slice().reverse().find(m => (m.messageType === 'quotation' || m.messageType === 'buyer_counter_offer') && (m.quotationId as any)?.orderId);
+                                    const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                                    const targetOrderId = msg.metadata?.orderId || fallbackOrderId;
+                                    navigate(targetOrderId ? `/supplier/dashboard?tab=orders&orderId=${targetOrderId}` : '/supplier/dashboard?tab=orders');
+                                  }}
+                                  className="mt-3 inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-[6px] border-none cursor-pointer transition-colors shadow-sm"
+                                >
+                                  Go to Order → Proceed to Pack &amp; Dispatch &rarr;
+                                </button>
+                              )}
+                              {msg.createdAt && (
+                                <div className="flex justify-end mt-2 pt-1.5 border-t border-black/5">
+                                  <span className="text-[10px] text-[#047857]/70">
+                                    {new Date(msg.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -3068,13 +3223,11 @@ const ChatInbox: React.FC = () => {
               {(() => {
                 if (user?.role !== 'supplier') return null;
                 const poMsg = messages.slice().reverse().find(m => m.text?.includes('Purchase Order Generated'));
-                if (!poMsg) return null;
-
-                const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
-                const orderObj: any = (poMsg.quotationId as any)?.orderId || anyQuoteWithOrder?.quotationId?.orderId;
+                const anyQuoteWithOrder = messages.slice().reverse().find(m => (m.messageType === 'quotation' || m.messageType === 'buyer_counter_offer') && (m.quotationId as any)?.orderId);
+                const orderObj: any = (poMsg?.quotationId as any)?.orderId || anyQuoteWithOrder?.quotationId?.orderId;
                 if (!orderObj || orderObj.paymentStatus === 'completed') return null;
 
-                const paymentTerms = (poMsg.quotationId as any)?.paymentTerms || orderObj?.paymentTerms || activeConv?.initialEnquiry?.paymentTerms || '';
+                const paymentTerms = (poMsg?.quotationId as any)?.paymentTerms || orderObj?.paymentTerms || activeConv?.initialEnquiry?.paymentTerms || '';
                 const isCOD = paymentTerms.includes('COD');
                 const isCredit = paymentTerms.includes('Credit');
                 const isAdvance = paymentTerms.includes('Advance') || (!isCOD && !isCredit);
@@ -3082,7 +3235,7 @@ const ChatInbox: React.FC = () => {
                 const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
                 const orderId = orderObj?._id || fallbackOrderId;
 
-                const totalAmount = Number(orderObj?.totalAmount || (poMsg.quotationId as any)?.grandTotal || 0);
+                const totalAmount = Number(orderObj?.totalAmount || (poMsg?.quotationId as any)?.grandTotal || 0);
                 const termsMatch = paymentTerms.match(/(\d+)%/);
                 const advancePercent = termsMatch ? parseInt(termsMatch[1]) : (totalAmount > 0 && orderObj?.advanceAmountRequired ? Math.round((orderObj.advanceAmountRequired / totalAmount) * 100) : 100);
                 const remainingPercent = Math.max(0, 100 - advancePercent);
@@ -3172,7 +3325,7 @@ const ChatInbox: React.FC = () => {
                   if (!isCreditDue) {
                     actionUi = (
                       <div className="p-2.5 bg-indigo-50 border border-indigo-200 rounded-[8px] text-[11px] text-indigo-700 font-medium text-center shadow-sm">
-                        ⏳ <strong>Credit Order Confirmed ({creditDays} Days • {creditLabel}).</strong> You will be notified when the credit period completes to request payment.
+                        ⏳ <strong>Credit Period Active ({creditDays} Days • {creditLabel}).</strong> You will be notified when the credit period completes to request payment.
                       </div>
                     );
                   } else {
@@ -4099,11 +4252,10 @@ const ChatInbox: React.FC = () => {
                       key={preset}
                       type="button"
                       onClick={() => setEnquiryRejectReason(preset)}
-                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
-                        enquiryRejectReason === preset
-                          ? 'bg-red-50 border-red-300 text-red-700 font-semibold'
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                      }`}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${enquiryRejectReason === preset
+                        ? 'bg-red-50 border-red-300 text-red-700 font-semibold'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
                     >
                       {preset}
                     </button>

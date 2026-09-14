@@ -50,6 +50,7 @@ export const ENDPOINTS = {
     EXCHANGE_PICKUP_TRACKING: (id: string | number) => `/orders/disputes/${id}/pickup-tracking`,
     EXCHANGE_CONFIRM_HANDOVER: (id: string | number) => `/orders/disputes/${id}/confirm-handover`,
     EXCHANGE_RETURN_RECEIVED: (id: string | number) => `/orders/disputes/${id}/return-received`,
+    DISPUTE_SUBMIT_REFUND: (id: string | number) => `/orders/disputes/${id}/submit-refund`,
     EXCHANGE_DISPATCH_REPLACEMENT: (id: string | number) => `/orders/disputes/${id}/dispatch-replacement`,
     EXCHANGE_CONFIRM: (id: string | number) => `/orders/disputes/${id}/confirm-exchange`,
     EXCHANGE_REPORT: (id: string | number) => `/orders/disputes/${id}/report-replacement`,

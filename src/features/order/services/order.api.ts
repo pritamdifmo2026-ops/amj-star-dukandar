@@ -36,7 +36,14 @@ export const orderApi = {
 
   dispatch: async (
     id: string,
-    payload?: { courierName?: string; trackingNumber?: string; trackingURL?: string }
+    payload?: {
+      courierName?: string;
+      trackingNumber?: string;
+      trackingURL?: string;
+      driverPhone?: string;
+      vehicleNumber?: string;
+      dispatchNote?: string;
+    }
   ): Promise<{ trackingId: string; dispatchedAt: string; courierName: string; isOwnShipping: boolean }> => {
     const res = await apiClient.patch(ENDPOINTS.ORDERS.DISPATCH(id), payload || {});
     return res.data.data;
@@ -83,6 +90,8 @@ export const orderApi = {
       issueType: string;
       description: string;
       evidence: { url: string; type: 'image' | 'video' }[];
+      requestedResolution?: 'refund' | 'replacement' | 'partial_replacement';
+      affectedQuantity?: number;
       buyerRefundDetails?: {
         accountHolderName?: string;
         bankName?: string;
@@ -112,11 +121,50 @@ export const orderApi = {
   },
 
   // ── Replacement exchange sub-flow ──
-  submitReturnShipment: async (disputeId: string, courier: string, tracking: string): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_RETURN_SHIPMENT(disputeId), { courier, tracking });
+  submitReturnShipment: async (
+    disputeIdOrPayload:
+      | string
+      | {
+          disputeId: string;
+          courier?: string;
+          tracking?: string;
+          shipmentType?: 'courier' | 'own_truck';
+          vehicleNumber?: string;
+          driverPhone?: string;
+          trackingURL?: string;
+        },
+    legacyCourier?: string,
+    legacyTracking?: string
+  ): Promise<void> => {
+    if (typeof disputeIdOrPayload === 'string') {
+      await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_RETURN_SHIPMENT(disputeIdOrPayload), {
+        courier: legacyCourier,
+        tracking: legacyTracking,
+      });
+    } else {
+      const { disputeId, ...body } = disputeIdOrPayload;
+      await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_RETURN_SHIPMENT(disputeId), body);
+    }
   },
-  setPickupTracking: async (disputeId: string, courier: string, tracking: string): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_PICKUP_TRACKING(disputeId), { courier, tracking });
+  setPickupTracking: async (
+    disputeIdOrPayload: string | {
+      disputeId: string;
+      shipmentType?: 'courier' | 'own_truck';
+      courier?: string;
+      tracking?: string;
+      vehicleNumber?: string;
+      driverPhone?: string;
+      trackingURL?: string;
+    },
+    maybeCourier?: string,
+    maybeTracking?: string
+  ): Promise<void> => {
+    if (typeof disputeIdOrPayload === 'string') {
+      await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_PICKUP_TRACKING(disputeIdOrPayload), { courier: maybeCourier, tracking: maybeTracking });
+    } else {
+      const { disputeId, ...body } = disputeIdOrPayload;
+      await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_PICKUP_TRACKING(disputeId), body);
+    }
   },
   confirmHandover: async (disputeId: string): Promise<void> => {
     await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_CONFIRM_HANDOVER(disputeId));
@@ -124,8 +172,28 @@ export const orderApi = {
   markReturnReceived: async (disputeId: string): Promise<void> => {
     await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_RETURN_RECEIVED(disputeId));
   },
-  dispatchReplacement: async (disputeId: string, courier: string, tracking: string): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_DISPATCH_REPLACEMENT(disputeId), { courier, tracking });
+  submitRefundAfterReturn: async (disputeId: string, refundTransactionId: string, resolutionNote?: string): Promise<void> => {
+    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUBMIT_REFUND(disputeId), { refundTransactionId, resolutionNote });
+  },
+  dispatchReplacement: async (
+    disputeIdOrPayload: string | {
+      disputeId: string;
+      shipmentType?: 'courier' | 'own_truck';
+      courier?: string;
+      tracking?: string;
+      vehicleNumber?: string;
+      driverPhone?: string;
+      trackingURL?: string;
+    },
+    maybeCourier?: string,
+    maybeTracking?: string
+  ): Promise<void> => {
+    if (typeof disputeIdOrPayload === 'string') {
+      await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_DISPATCH_REPLACEMENT(disputeIdOrPayload), { courier: maybeCourier, tracking: maybeTracking });
+    } else {
+      const { disputeId, ...body } = disputeIdOrPayload;
+      await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_DISPATCH_REPLACEMENT(disputeId), body);
+    }
   },
   confirmExchangeDone: async (disputeId: string): Promise<void> => {
     await apiClient.patch(ENDPOINTS.ORDERS.EXCHANGE_CONFIRM(disputeId));

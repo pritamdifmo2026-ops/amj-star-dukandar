@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { orderApi } from '@/features/order/services/order.api';
 import {
   ShoppingBag, Package, Truck, CheckCircle, Clock, XCircle,
@@ -49,6 +50,8 @@ const needsAttention = (o: any, isSupplier: boolean) => {
 };
 
 const OrderList: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const targetOrderId = searchParams.get('orderId');
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -59,6 +62,13 @@ const OrderList: React.FC = () => {
   const profile = useSelector((state: any) => state.supplier?.profile);
   const { socket } = useSocket();
   const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
+
+  useEffect(() => {
+    if (targetOrderId && orders.length > 0 && !manageOrder) {
+      const match = orders.find(o => o._id === targetOrderId);
+      if (match) setManageOrder(match);
+    }
+  }, [targetOrderId, orders, manageOrder]);
 
   const isSupplier = user?.role === 'supplier';
   // V1: AMJ provides no logistics — every supplier ships with their own courier.

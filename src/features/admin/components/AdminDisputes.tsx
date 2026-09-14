@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle, CheckCircle, XCircle, Package, ShieldCheck, Clock, X,
-  Building2, Video, Wallet, Play, Lock
+  Building2, Video, Wallet, Play, Lock, Truck, RotateCcw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminService from '../services/admin.service';
@@ -189,6 +189,31 @@ const AdminDisputes: React.FC = () => {
                     <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#fef2f2] text-[#dc2626] border border-[#fca5a5] capitalize">
                       {d.issueType}
                     </span>
+                    {/* Buyer's Desired Action Pill */}
+                    {(d.requestedResolution || d.buyerRefundDetails?.accountNumber || d.buyerRefundDetails?.upiId) && (
+                      <span
+                        className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                          (d.requestedResolution === 'refund' || (!d.requestedResolution && (d.buyerRefundDetails?.accountNumber || d.buyerRefundDetails?.upiId)))
+                            ? 'bg-[#eff6ff] text-[#1d4ed8] border-[#93c5fd]'
+                            : 'bg-[#faf5ff] text-[#7e22ce] border-[#d8b4fe]'
+                        }`}
+                      >
+                        {(d.requestedResolution === 'refund' || (!d.requestedResolution && (d.buyerRefundDetails?.accountNumber || d.buyerRefundDetails?.upiId))) ? (
+                          <RotateCcw size={10} className="shrink-0" />
+                        ) : (
+                          <Package size={10} className="shrink-0" />
+                        )}
+                        <span>
+                          Wants:{' '}
+                          {(d.requestedResolution === 'refund' || (!d.requestedResolution && (d.buyerRefundDetails?.accountNumber || d.buyerRefundDetails?.upiId)))
+                            ? 'Refund'
+                            : d.requestedResolution === 'partial_replacement'
+                            ? 'Partial Replacement'
+                            : 'Full Replacement'}
+                          {d.affectedQuantity ? ` (${d.affectedQuantity} pcs)` : ''}
+                        </span>
+                      </span>
+                    )}
                     {d.reopenCount > 0 && (
                       <span className="text-[10px] font-bold text-[#dc2626]">Reopened ×{d.reopenCount}</span>
                     )}
@@ -230,11 +255,53 @@ const AdminDisputes: React.FC = () => {
                     </p>
                   )}
 
-                  {/* Description */}
+                  {/* Description + Buyer Desired Resolution */}
                   <div className="bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-4 py-3">
-                    <p className="text-xs font-bold text-[#b91c1c] m-0 mb-1 uppercase tracking-wide">Buyer's Complaint</p>
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+                      <p className="text-xs font-bold text-[#b91c1c] m-0 uppercase tracking-wide">
+                        Buyer's Complaint ({d.issueType} Issue)
+                      </p>
+                      {(d.requestedResolution || d.buyerRefundDetails?.accountNumber || d.buyerRefundDetails?.upiId) && (
+                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-white text-[#991b1b] border border-[#fca5a5] shadow-2xs flex items-center gap-1">
+                          <span>Requested:</span>
+                          <strong className="underline decoration-[#dc2626] decoration-2">
+                            {(d.requestedResolution === 'refund' || (!d.requestedResolution && (d.buyerRefundDetails?.accountNumber || d.buyerRefundDetails?.upiId)))
+                              ? '💰 Refund'
+                              : d.requestedResolution === 'partial_replacement'
+                              ? '📦 Partial Replacement'
+                              : '📦 Full Replacement'}
+                          </strong>
+                          {d.affectedQuantity ? (
+                            <span className="text-[#7f1d1d]">({d.affectedQuantity} affected units)</span>
+                          ) : null}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-[#7f1d1d] m-0 whitespace-pre-wrap leading-relaxed">{d.description}</p>
                   </div>
+
+                  {/* Transportation Policy Context for Admin */}
+                  {(d.requestedResolution === 'refund' || (!d.requestedResolution && (d.buyerRefundDetails?.accountNumber || d.buyerRefundDetails?.upiId))) ? (
+                    <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[8px] p-2.5 text-xs text-[#92400e] flex items-start gap-2">
+                      <Truck size={15} className="shrink-0 mt-0.5 text-[#d97706]" />
+                      <div>
+                        <p className="m-0 font-bold">Transportation Policy (Refund):</p>
+                        <p className="m-0 mt-0.5 text-[11px] leading-relaxed">
+                          Return freight charges will be borne by the <strong>Buyer</strong>. Goods must be dispatched from buyer factory to supplier. Supplier inspects material quality &amp; quantity upon arrival before issuing refund. Deal closes once buyer confirms payment receipt.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (d.requestedResolution === 'replacement' || d.requestedResolution === 'partial_replacement') ? (
+                    <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] p-2.5 text-xs text-[#1e40af] flex items-start gap-2">
+                      <Truck size={15} className="shrink-0 mt-0.5 text-[#2563eb]" />
+                      <div>
+                        <p className="m-0 font-bold">Transportation Policy (Replacement):</p>
+                        <p className="m-0 mt-0.5 text-[11px] leading-relaxed">
+                          Return and replacement freight charges will be borne by the <strong>Supplier</strong>. Buyer dispatches defective material back → Supplier validates quality &amp; quantity upon receipt → Supplier dispatches replacement → Buyer confirms receipt to close deal.
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
 
                   {/* Evidence (Images & Videos) */}
                   {d.evidence?.length > 0 && (
@@ -430,8 +497,43 @@ const AdminDisputes: React.FC = () => {
                     <div className="bg-[#ecfeff] border border-[#a5f3fc] rounded-[8px] px-4 py-3">
                       <p className="text-xs font-bold text-[#0891b2] m-0 mb-1 uppercase tracking-wide">📦 Exchange in progress {d.requiresReturn ? '(return required)' : '(no return)'}</p>
                       <p className="text-sm text-[#155e75] m-0">{EXCHANGE_STAGE_LABEL[d.exchangeStage] || d.exchangeStage}</p>
-                      {d.returnTracking && <p className="text-xs text-[#155e75] m-0 mt-1">Return: {d.returnCourier} · {d.returnTracking}</p>}
-                      {d.replacementTracking && <p className="text-xs text-[#155e75] m-0">Replacement: {d.replacementCourier} · {d.replacementTracking}</p>}
+                      {d.returnTracking && (
+                        d.returnShipmentType === 'own_truck' || d.returnVehicleNumber ? (
+                          <p className="text-xs text-[#155e75] m-0 mt-1">
+                            🚚 Return (Own Truck): <strong>{d.returnVehicleNumber || d.returnTracking}</strong>
+                            {d.returnDriverPhone ? ` · Driver: ${d.returnDriverPhone}` : ''}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-[#155e75] m-0 mt-1">
+                            📦 Return (Courier): <strong>{d.returnCourier}</strong> · Docket: <strong>{d.returnTracking}</strong>
+                            {d.returnTrackingURL ? (
+                              <>
+                                {' · '}
+                                <a
+                                  href={d.returnTrackingURL.startsWith('http') ? d.returnTrackingURL : `https://${d.returnTrackingURL}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline font-bold text-[#0284c7]"
+                                >
+                                  Track
+                                </a>
+                              </>
+                            ) : null}
+                          </p>
+                        )
+                      )}
+                      {d.replacementTracking && (
+                        d.replacementShipmentType === 'own_truck' || d.replacementVehicleNumber ? (
+                          <p className="text-xs text-[#155e75] m-0 mt-1">
+                            🚚 Replacement (Own Truck): <strong>{d.replacementVehicleNumber || d.replacementTracking}</strong>
+                            {d.replacementDriverPhone ? ` · Driver: ${d.replacementDriverPhone}` : ''}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-[#155e75] m-0 mt-1">
+                            📦 Replacement (Courier): <strong>{d.replacementCourier}</strong> · Docket: <strong>{d.replacementTracking}</strong>
+                          </p>
+                        )
+                      )}
                       {d.escalatedAt && <p className="text-xs font-bold text-[#dc2626] m-0 mt-1.5 flex items-center gap-1"><AlertTriangle size={12} /> Stalled 7+ days — needs your attention.</p>}
                     </div>
                   )}
