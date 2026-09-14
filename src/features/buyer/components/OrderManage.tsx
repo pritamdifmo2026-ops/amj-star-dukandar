@@ -171,6 +171,10 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const [reportIssue, setReportIssue] = useState(false);
   const [reportReason, setReportReason] = useState('');
 
+  // ── Reject direct order modal ──
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [orderRejectReason, setOrderRejectReason] = useState('');
+
   // ── Buyer: confirm / rating / ticket ──
   const [confirmMode, setConfirmMode] = useState<'idle' | 'rating' | 'ticket'>('idle');
   const [rating, setRating] = useState(0);
@@ -213,11 +217,16 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   };
 
   const handleRejectOrder = async () => {
-    if (!window.confirm('Are you sure you want to reject this order?')) return;
+    if (!orderRejectReason.trim()) {
+      toast.error('Rejection reason is required');
+      return;
+    }
     setBusy(true);
     try {
-      await apiClient.put(`/orders/${order._id}/reject`);
+      await apiClient.put(`/orders/${order._id}/reject`, { reason: orderRejectReason.trim() });
       sync({ status: 'cancelled' });
+      setShowRejectModal(false);
+      setOrderRejectReason('');
       toast.success('Order rejected.');
     } catch (e: any) { toast.error(e?.response?.data?.message || 'Failed to reject order'); }
     finally { setBusy(false); }
@@ -1116,7 +1125,16 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                 <p className="text-[10px] text-[#ea580c] m-0 mt-1">Please review the details and approve to generate the Purchase Order. Commission is currently frozen.</p>
               </div>
               <div className="flex gap-3">
-                <button onClick={handleRejectOrder} disabled={busy} className="flex-1 py-2.5 text-sm font-bold text-[#64748b] bg-[#f1f5f9] rounded-[8px] border-none cursor-pointer hover:bg-[#e2e8f0] disabled:opacity-50">Reject</button>
+                <button
+                  onClick={() => {
+                    setOrderRejectReason('');
+                    setShowRejectModal(true);
+                  }}
+                  disabled={busy}
+                  className="flex-1 py-2.5 text-sm font-bold text-[#64748b] bg-[#f1f5f9] rounded-[8px] border-none cursor-pointer hover:bg-[#e2e8f0] disabled:opacity-50"
+                >
+                  Reject
+                </button>
                 <button onClick={handleApproveOrder} disabled={busy} className="flex-2 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50 flex items-center justify-center gap-2">
                   <CheckCircle size={15}/> Approve Order
                 </button>
@@ -1462,6 +1480,91 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             className="py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer disabled:opacity-50">
             {busy ? 'Submitting…' : 'Submit Rating'}
           </button>
+        </div>
+      )}
+
+      {/* Custom Reject Direct Order Modal (replaces browser window.prompt) */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4" onClick={() => setShowRejectModal(false)}>
+          <div className="bg-white rounded-[16px] shadow-2xl p-6 w-full max-w-[440px] border border-slate-100" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-600 font-bold">
+                  <X size={16} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 m-0">Reject Direct Order</h3>
+                  <p className="text-xs text-slate-500 m-0">State why you are unable to fulfill this order</p>
+                </div>
+              </div>
+              <button onClick={() => setShowRejectModal(false)} className="text-slate-400 hover:text-slate-600 p-1 border-none bg-transparent cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Quick Presets</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Out of stock',
+                    'Cannot fulfill quantity requested',
+                    'Unable to ship to buyer location',
+                    'Price / cost discrepancy'
+                  ].map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setOrderRejectReason(preset)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
+                        orderRejectReason === preset
+                          ? 'bg-red-50 border-red-300 text-red-700 font-semibold'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Rejection Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  autoFocus
+                  rows={3}
+                  value={orderRejectReason}
+                  onChange={e => setOrderRejectReason(e.target.value)}
+                  placeholder="Type rejection reason here (required)..."
+                  className="w-full border border-slate-200 rounded-[8px] p-2.5 text-xs outline-none focus:border-red-500 resize-none bg-white text-slate-800"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 mt-5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setOrderRejectReason('');
+                }}
+                disabled={busy}
+                className="flex-1 py-2.5 bg-white border border-slate-200 rounded-[8px] text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRejectOrder}
+                disabled={busy || !orderRejectReason.trim()}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-[8px] text-xs font-bold transition-colors border-none cursor-pointer disabled:opacity-50"
+              >
+                {busy ? 'Rejecting...' : 'Confirm Reject'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

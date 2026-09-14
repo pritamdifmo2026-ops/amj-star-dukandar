@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut, Megaphone, Briefcase, Store } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut, Megaphone, Briefcase, Store, HeartCrack } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
@@ -35,6 +35,7 @@ import AdminPages from '../components/AdminPages';
 import AdminSupplierPlans from '../components/AdminSupplierPlans';
 import AdminMeetingRequests from '../components/AdminMeetingRequests';
 import AdminJobs from '../components/AdminJobs';
+import UnmatchedDeals from '../components/UnmatchedDeals';
 
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
@@ -66,6 +67,7 @@ const tabLabel: Record<string, string> = {
   'latest-update': 'Latest Update',
   'supplier-plans': 'Supplier Memberships',
   'meeting-requests': 'Meeting Requests',
+  'unmatched-deals': 'Unmarried Deals',
 };
 
 const AdminDashboard: React.FC = () => {
@@ -107,6 +109,12 @@ const AdminDashboard: React.FC = () => {
     refetchInterval: 60_000,
   });
 
+  const { data: unmatchedCounts } = useQuery<{ total: number }>({
+    queryKey: ['admin', 'unmatched-deals', 'counts'],
+    queryFn: () => adminService.getUnmatchedDealsCounts(),
+    refetchInterval: 60_000,
+  });
+
   const {
     stats, allSuppliers, allResellers, allUsers,
     pendingProducts, approvedProducts, loading,
@@ -134,6 +142,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
     { id: 'help-requests', label: 'Help Requests', icon: MessageSquare, badge: newHelpRequestsCount || undefined },
     { id: 'requirement-management', label: 'Requirements', icon: FileText },
+    { id: 'unmatched-deals', label: 'Unmarried Deals', icon: HeartCrack, badge: unmatchedCounts?.total || undefined },
     { id: 'earnings', label: 'AMJ Earnings', icon: TrendingUp },
     { id: 'performance', label: 'Performance', icon: BarChart3 },
     { id: 'disputes', label: 'Disputes', icon: AlertTriangle },
@@ -170,6 +179,7 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'enquiry') return hasPermission('enquiry_management');
     if (item.id === 'help-requests') return hasPermission('enquiry_management');
     if (item.id === 'requirement-management') return hasPermission('requirement_management');
+    if (item.id === 'unmatched-deals') return hasPermission('unmatched_deals') || hasPermission('requirement_management');
     if (item.id === 'earnings') return hasPermission('earnings');
     if (item.id === 'performance') return hasPermission('performance');
     if (item.id === 'disputes') return hasPermission('disputes');
@@ -344,6 +354,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'jobs' && <AdminJobs />}
             {activeTab === 'help-requests' && <AdminHelpRequests />}
             {activeTab === 'requirement-management' && <RequirementManagement />}
+            {activeTab === 'unmatched-deals' && <UnmatchedDeals />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}
             {activeTab === 'withdrawals' && <AdminWithdrawals />}
             {activeTab === 'supplier-plans' && (

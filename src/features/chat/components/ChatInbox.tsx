@@ -321,8 +321,8 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
     }
   };
 
-  const handleRejectQuote = async (quoteId: string) => {
-    try { await quotationApi.rejectQuotation(quoteId); loadMessages(); }
+  const handleRejectQuote = async (quoteId: string, reason?: string) => {
+    try { await quotationApi.rejectQuotation(quoteId, reason); loadMessages(); }
     catch (err) { console.error('Failed to reject quote', err); }
   };
 
@@ -348,6 +348,7 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
   const [contactPhone, setContactPhone] = useState<string | null>(null);
   const hasFetchedContact = useRef(false);
   const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
+  const [declineReason, setDeclineReason] = useState('');
   const [payMethod, setPayMethod] = useState<'direct' | 'amjstar'>('direct');
   const [directAck, setDirectAck] = useState(false);
   const [showCancelInput, setShowCancelInput] = useState(false);
@@ -847,18 +848,32 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
           {confirmAction === 'decline' && (
             <div className="mx-4 mb-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5">
               <p className="text-xs font-extrabold text-[#dc2626] m-0 mb-1">Decline this quote?</p>
-              <p className="text-[11px] text-[#475569] m-0 mb-2.5">
-                The supplier will be notified. You can request a new quotation anytime.
+              <p className="text-[11px] text-[#475569] m-0 mb-2">
+                The supplier will be notified. Please provide a reason for declining:
               </p>
+              <textarea
+                autoFocus
+                rows={2}
+                value={declineReason}
+                onChange={e => setDeclineReason(e.target.value)}
+                placeholder="Reason for declining (required, e.g. Price too high, Delivery timeline too long)"
+                className="w-full border border-[#fecaca] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-[#dc2626] resize-none mb-2 bg-white"
+              />
               <div className="flex gap-2">
                 <button
-                  onClick={() => setConfirmAction(null)}
+                  onClick={() => { setConfirmAction(null); setDeclineReason(''); }}
                   className="flex-1 py-1.5 text-xs font-semibold text-[#64748b] bg-white border border-[#e2e8f0] rounded-[6px] cursor-pointer hover:bg-[#f1f5f9]">
                   Cancel
                 </button>
                 <button
-                  onClick={() => { setConfirmAction(null); handleRejectQuote(quote._id); }}
-                  className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#dc2626] hover:bg-[#b91c1c]">
+                  disabled={!declineReason.trim()}
+                  onClick={() => {
+                    const r = declineReason.trim();
+                    setConfirmAction(null);
+                    setDeclineReason('');
+                    handleRejectQuote(quote._id, r);
+                  }}
+                  className="flex-1 py-1.5 text-xs font-bold text-white rounded-[6px] border-none cursor-pointer bg-[#dc2626] hover:bg-[#b91c1c] disabled:opacity-50 disabled:cursor-not-allowed">
                   Yes, Decline
                 </button>
               </div>
@@ -1459,6 +1474,9 @@ const QuotationRevisionCard: React.FC<QuotationRevisionCardProps> = ({
   loadMessages,
 }) => {
   const isSupplier = user?.role === 'supplier';
+  const [showRejectInput, setShowRejectInput] = useState(false);
+  const [rejectInputReason, setRejectInputReason] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
 
   // 1. Resolve quote
   const targetQuoteId = typeof msg.quotationId === 'object'
@@ -1861,23 +1879,66 @@ const QuotationRevisionCard: React.FC<QuotationRevisionCardProps> = ({
                 <FileText size={13} /> Negotiate
               </button>
             )}
-            <button
-              className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border border-[#fecaca] cursor-pointer hover:bg-[#fee2e2] transition-colors"
-              onClick={async () => {
-                const qId = quote?._id || targetQuoteId;
-                if (!qId) return;
-                try {
-                  await quotationApi.rejectQuotation(qId);
-                  toast.success('Quotation rejected');
-                  loadMessages();
-                } catch (err) {
-                  toast.error('Failed to reject quotation');
-                }
-              }}
-            >
-              <X size={13} /> Reject
-            </button>
+            {!showRejectInput ? (
+              <button
+                className="flex-1 flex items-center justify-center gap-1 py-1.5 text-xs font-bold text-[#dc2626] bg-[#fef2f2] rounded-[6px] border border-[#fecaca] cursor-pointer hover:bg-[#fee2e2] transition-colors"
+                onClick={() => setShowRejectInput(true)}
+              >
+                <X size={13} /> Reject
+              </button>
+            ) : null}
           </div>
+
+          {showRejectInput && (
+            <div className="mt-2 p-2.5 bg-red-50/80 border border-red-200 rounded-[8px] flex flex-col gap-2 text-left">
+              <label className="text-[11px] font-bold text-red-700">
+                Reason for rejecting this offer <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                autoFocus
+                rows={2}
+                value={rejectInputReason}
+                onChange={e => setRejectInputReason(e.target.value)}
+                placeholder="e.g. Price not viable, Terms unacceptable..."
+                className="w-full border border-red-200 rounded-[6px] p-2 text-xs outline-none focus:border-red-500 resize-none bg-white text-slate-800"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRejectInput(false);
+                    setRejectInputReason('');
+                  }}
+                  className="flex-1 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-[6px] cursor-pointer hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!rejectInputReason.trim() || isRejecting}
+                  onClick={async () => {
+                    const qId = quote?._id || targetQuoteId;
+                    if (!qId) return;
+                    setIsRejecting(true);
+                    try {
+                      await quotationApi.rejectQuotation(qId, rejectInputReason.trim());
+                      toast.success('Quotation rejected');
+                      setShowRejectInput(false);
+                      setRejectInputReason('');
+                      loadMessages();
+                    } catch (err: any) {
+                      toast.error(err?.response?.data?.message || 'Failed to reject quotation');
+                    } finally {
+                      setIsRejecting(false);
+                    }
+                  }}
+                  className="flex-1 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-[6px] border-none cursor-pointer disabled:opacity-50"
+                >
+                  {isRejecting ? 'Rejecting...' : 'Confirm Reject'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1993,7 +2054,12 @@ const ChatInbox: React.FC = () => {
 
   const [showSupplierRejectModal, setShowSupplierRejectModal] = useState(false);
   const [supplierRejectReason, setSupplierRejectReason] = useState('');
+  const [supplierRejectOtherReason, setSupplierRejectOtherReason] = useState('');
   const [supplierRejectTargetMsg, setSupplierRejectTargetMsg] = useState<any>(null);
+
+  const [showEnquiryRejectModal, setShowEnquiryRejectModal] = useState(false);
+  const [enquiryRejectReason, setEnquiryRejectReason] = useState('');
+  const [enquiryRejectSubmitting, setEnquiryRejectSubmitting] = useState(false);
 
   const [showTransportReasonModal, setShowTransportReasonModal] = useState(false);
   const [pendingTransportValue, setPendingTransportValue] = useState('');
@@ -2977,10 +3043,8 @@ const ChatInbox: React.FC = () => {
                                 className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-red-600 bg-red-50 border border-red-100 rounded-[8px] cursor-pointer hover:bg-red-100 transition-colors"
                                 onClick={() => {
                                   if (!activeConv?._id) return;
-                                  chatApi.cancelEnquiry(activeConv._id, 'Supplier rejected the enquiry terms.').then(() => {
-                                    handleQuickReply("Thank you for your enquiry. Unfortunately, we are unable to fulfill this request at the specified terms.");
-                                    loadMessages();
-                                  });
+                                  setEnquiryRejectReason('');
+                                  setShowEnquiryRejectModal(true);
                                 }}>
                                 <X size={14} /> Reject Enquiry
                               </button>
@@ -3946,25 +4010,45 @@ const ChatInbox: React.FC = () => {
                   <option value="Pricing issue">Pricing issue</option>
                   <option value="Other">Other</option>
                 </select>
+                {supplierRejectReason === 'Other' && (
+                  <div className="mt-2.5">
+                    <input
+                      type="text"
+                      placeholder="Please specify rejection reason (required)..."
+                      value={supplierRejectOtherReason}
+                      onChange={e => setSupplierRejectOtherReason(e.target.value)}
+                      className={inputCls}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3 mt-6">
               <button
-                onClick={() => setShowSupplierRejectModal(false)}
+                onClick={() => {
+                  setShowSupplierRejectModal(false);
+                  setSupplierRejectReason('');
+                  setSupplierRejectOtherReason('');
+                }}
                 className="flex-1 py-2.5 bg-white border border-[#e2e8f0] rounded-[8px] text-sm font-bold text-[#475569] hover:bg-[#f8fafc] cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                disabled={!supplierRejectReason}
+                disabled={!supplierRejectReason || (supplierRejectReason === 'Other' && !supplierRejectOtherReason.trim())}
                 onClick={async (e) => {
                   const btn = e.currentTarget;
                   btn.disabled = true;
                   btn.innerText = 'Rejecting...';
                   try {
                     const qId = typeof supplierRejectTargetMsg?.quotationId === 'object' ? (supplierRejectTargetMsg.quotationId as any)._id : supplierRejectTargetMsg?.quotationId;
-                    await quotationApi.rejectQuotation(qId, supplierRejectReason);
+                    const finalReason = supplierRejectReason === 'Other' && supplierRejectOtherReason.trim()
+                      ? supplierRejectOtherReason.trim()
+                      : supplierRejectReason;
+                    await quotationApi.rejectQuotation(qId, finalReason);
                     setShowSupplierRejectModal(false);
+                    setSupplierRejectReason('');
+                    setSupplierRejectOtherReason('');
                     loadMessages();
                   } catch (err: any) {
                     btn.disabled = false;
@@ -3972,9 +4056,111 @@ const ChatInbox: React.FC = () => {
                     toast.error(err.response?.data?.message || 'Failed to reject PO');
                   }
                 }}
-                className={`flex-1 py-2.5 rounded-[8px] text-sm font-bold text-white transition-colors border-none ${!supplierRejectReason ? 'bg-red-500/50 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 cursor-pointer'}`}
+                className={`flex-1 py-2.5 rounded-[8px] text-sm font-bold text-white transition-colors border-none ${(!supplierRejectReason || (supplierRejectReason === 'Other' && !supplierRejectOtherReason.trim())) ? 'bg-red-500/50 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 cursor-pointer'}`}
               >
                 Reject PO
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supplier Reject Enquiry Modal (Custom Rejection Modal replacing window.prompt) */}
+      {showEnquiryRejectModal && (
+        <div className="fixed inset-0 bg-[rgba(0,0,0,0.5)] z-[9999] flex items-center justify-center px-4" onClick={() => setShowEnquiryRejectModal(false)}>
+          <div className="bg-white rounded-[16px] shadow-2xl p-6 w-full max-w-[460px] border border-slate-100" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-600 font-bold">
+                  <X size={16} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 m-0">Reject Enquiry</h3>
+                  <p className="text-xs text-slate-500 m-0">Reason will be shared with the buyer and logged</p>
+                </div>
+              </div>
+              <button onClick={() => setShowEnquiryRejectModal(false)} className="text-slate-400 hover:text-slate-600 p-1 bg-transparent border-none cursor-pointer">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Quick Presets</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Out of stock',
+                    'MOQ cannot be met',
+                    'Target price too low',
+                    'Delivery timeline not possible',
+                    'Unable to ship to location'
+                  ].map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setEnquiryRejectReason(preset)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer ${
+                        enquiryRejectReason === preset
+                          ? 'bg-red-50 border-red-300 text-red-700 font-semibold'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Rejection Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  autoFocus
+                  rows={3}
+                  value={enquiryRejectReason}
+                  onChange={e => setEnquiryRejectReason(e.target.value)}
+                  placeholder="Type custom reason or select a preset above..."
+                  className="w-full border border-slate-200 rounded-[8px] p-2.5 text-xs outline-none focus:border-red-500 resize-none bg-white text-slate-800"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 mt-5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEnquiryRejectModal(false);
+                  setEnquiryRejectReason('');
+                }}
+                disabled={enquiryRejectSubmitting}
+                className="flex-1 py-2.5 bg-white border border-slate-200 rounded-[8px] text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!enquiryRejectReason.trim() || enquiryRejectSubmitting}
+                onClick={async () => {
+                  if (!activeConv?._id) return;
+                  const finalReason = enquiryRejectReason.trim();
+                  setEnquiryRejectSubmitting(true);
+                  try {
+                    await chatApi.cancelEnquiry(activeConv._id, finalReason);
+                    handleQuickReply(`Thank you for your enquiry. We are unable to fulfill this request. Reason: ${finalReason}`);
+                    loadMessages();
+                    setShowEnquiryRejectModal(false);
+                    setEnquiryRejectReason('');
+                    toast.success('Enquiry rejected');
+                  } catch (err: any) {
+                    toast.error(err?.response?.data?.message || 'Failed to reject enquiry');
+                  } finally {
+                    setEnquiryRejectSubmitting(false);
+                  }
+                }}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-[8px] text-xs font-bold transition-colors border-none cursor-pointer disabled:opacity-50"
+              >
+                {enquiryRejectSubmitting ? 'Rejecting...' : 'Confirm Reject'}
               </button>
             </div>
           </div>

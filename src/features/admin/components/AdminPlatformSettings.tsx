@@ -144,7 +144,7 @@ const AdminPlatformSettings: React.FC = () => {
           </div>
 
           <div>
-            <label className={labelCls}>Auto-Cancel Unpaid Orders (Hours)</label>
+            <label className={labelCls}>Deal &amp; Unpaid Order Timeout (Hours)</label>
             <input
               type="number"
               min={1}
@@ -152,7 +152,9 @@ const AdminPlatformSettings: React.FC = () => {
               onChange={e => setForm(p => ({ ...p, autoCancelHours: e.target.value }))}
               className={inputCls}
             />
-            <p className="text-xs text-[#94a3b8] mt-1.5">Unpaid orders will automatically cancel after this many hours (default: 48).</p>
+            <p className="text-xs text-[#94a3b8] mt-1.5">
+              Unpaid orders and unresponsive enquiries/deals will be automatically cancelled or flagged in Unmarried Deals after this many hours (default: 48).
+            </p>
           </div>
 
           <div>

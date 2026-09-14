@@ -3,14 +3,16 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import {
   MessageCircle, X, ChevronDown, ArrowLeft,
-  Check, CheckCheck, FileText, Phone
+  Check, CheckCheck, FileText, Phone, Maximize2
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useSocket } from '../../contexts/SocketContext';
 import { useChat } from '../../hooks/useChat';
 import { chatApi } from '@/features/chat/services/chat.api';
 import { quotationApi } from '@/features/supplier/services/quotation.api';
 import apiClient from '@/api/client';
+import uploadService from '@/features/product/services/upload.service';
 
 type UIState = 'CLOSED' | 'MINIMIZED' | 'ACTIVE';
 type ActivePanel = 'list' | 'chat';
@@ -135,6 +137,7 @@ const QuotePreviewCard = ({
 };
 
 export const FloatingChat: React.FC = () => {
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useSelector((state: any) => state.auth);
   const { socket, isConnected, activeChatId } = useSocket();
 
@@ -151,6 +154,11 @@ export const FloatingChat: React.FC = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [customMsgOpen, setCustomMsgOpen] = useState(false);
   const [customMsgText, setCustomMsgText] = useState('');
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
+  const [showPaymentProofModal, setShowPaymentProofModal] = useState(false);
+  const [paymentUtr, setPaymentUtr] = useState('');
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [paymentMsgContext, setPaymentMsgContext] = useState<any>(null);
   const [quoteForm, setQuoteForm] = useState({
     itemName: '',
     hsnCode: '',
@@ -165,10 +173,13 @@ export const FloatingChat: React.FC = () => {
     priceTag: '' as '' | 'Best Price' | 'Last Price',
   });
   const [isNegotiating, setIsNegotiating] = useState(false);
+  const [poRejectTargetMsgId, setPoRejectTargetMsgId] = useState<string | null>(null);
+  const [poRejectReason, setPoRejectReason] = useState('');
+  const [isPoSubmitting, setIsPoSubmitting] = useState(false);
   const apiBase = import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, '');
   const computedGstAmount = quoteForm.gstType === 'exempt'
     ? 0
-    : (Math.round((quoteForm.price * quoteForm.gstRate) * 100) / 100) / 100;
+    : Math.round((quoteForm.price * quoteForm.gstRate / 100) * 100) / 100;
   const computedGrandTotal = quoteForm.price + computedGstAmount + quoteForm.shipping;
 
   const getOtherUser = (conv: any) => {
@@ -255,9 +266,10 @@ export const FloatingChat: React.FC = () => {
           price: quoteForm.quantity > 0 ? quoteForm.price / quoteForm.quantity : quoteForm.price,
           hsnCode: quoteForm.hsnCode || undefined,
           image: activeConv?.productId?.images?.[0] || undefined,
+          gstRate: quoteForm.gstType === 'exempt' ? 0 : quoteForm.gstRate,
         }],
         taxableAmount: quoteForm.price,
-        totalAmount: quoteForm.price,
+        totalAmount: computedGrandTotal,
         gstType: quoteForm.gstType,
         gstRate: quoteForm.gstType === 'exempt' ? 0 : quoteForm.gstRate,
         gstAmount: computedGstAmount,
@@ -270,8 +282,11 @@ export const FloatingChat: React.FC = () => {
       setIsQuoteModalOpen(false);
       setShowPreview(false);
       loadMessages();
+      loadConversations();
       toast.success('Quotation sent!');
-    } catch { toast.error('Failed to send quotation'); }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to send quotation');
+    }
   };
 
   const handleAcceptQuote = async (quoteId: string, paymentMethod: 'direct' | 'amjstar' = 'direct') => {
@@ -279,15 +294,23 @@ export const FloatingChat: React.FC = () => {
     try {
       await quotationApi.acceptQuotation(quoteId, paymentMethod);
       loadMessages();
+      loadConversations();
       toast.success('Deal Confirmed!', { id: t });
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to confirm deal', { id: t });
     }
   };
 
-  const handleRejectQuote = async (quoteId: string) => {
-    try { await quotationApi.rejectQuotation(quoteId); loadMessages(); }
-    catch { console.error('Failed to reject quote'); }
+  const handleRejectQuote = async (quoteId: string, reason?: string) => {
+    const t = toast.loading('Declining quote...');
+    try {
+      await quotationApi.rejectQuotation(quoteId, reason);
+      loadMessages();
+      loadConversations();
+      toast.success('Quote declined', { id: t });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to decline quote', { id: t });
+    }
   };
 
   const QuotationCard = ({ msg, onActiveChange }: { msg: any; onActiveChange?: (isActive: boolean) => void }) => {
@@ -300,6 +323,7 @@ export const FloatingChat: React.FC = () => {
     const [counterSubmitting, setCounterSubmitting] = useState(false);
     const [contactPhone, setContactPhone] = useState<string | null>(null);
     const [confirmAction, setConfirmAction] = useState<'accept' | 'decline' | null>(null);
+    const [declineReason, setDeclineReason] = useState('');
     const [payMethod, setPayMethod] = useState<'direct' | 'amjstar'>('direct');
     const [directAck, setDirectAck] = useState(false);
     const hasFetchedContact = useRef(false);
@@ -321,30 +345,44 @@ export const FloatingChat: React.FC = () => {
 
     // Fetch contact phone once deal is confirmed
     useEffect(() => {
-      if (quote?.status === 'QUOTATION_ACCEPTED' && quote.orderId?._id && !hasFetchedContact.current) {
+      const qStatus = (quote?.status || '').toLowerCase();
+      const orderObjId = typeof quote?.orderId === 'object' ? quote?.orderId?._id : quote?.orderId;
+      if (qStatus === 'quotation_accepted' && orderObjId && !hasFetchedContact.current) {
         hasFetchedContact.current = true;
-        apiClient.get(`/orders/${quote.orderId._id}`).then(res => {
+        apiClient.get(`/orders/${orderObjId}`).then(res => {
           const snap = res.data.data?.snapshot || {};
           const phone = isSupplier ? snap.buyerPhone : snap.supplierPhone;
           if (phone) setContactPhone(phone);
         }).catch(() => { });
       }
-    }, [quote?.status, quote?.orderId?._id]);
+    }, [quote?.status, quote?.orderId, isSupplier]);
 
     if (!quote) return <div className="text-[0.9rem] text-gray-400 italic">Loading quotation…</div>;
 
-    const isActive = quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT';
+    const normalizedStatus = (quote.status || '').toLowerCase();
+    const isActive = normalizedStatus === 'negotiation_pending' || normalizedStatus === 'counter_offer_sent';
     useEffect(() => {
       if (onActiveChange) onActiveChange(isActive);
     }, [isActive, onActiveChange]);
 
     const statusMeta: Record<string, { label: string; cls: string }> = {
+      negotiation_pending: { label: 'Awaiting Response', cls: 'bg-yellow-50 text-yellow-700' },
+      counter_offer_sent: { label: 'Counter Offered', cls: 'bg-blue-50 text-blue-700' },
+      supplier_accepted: { label: 'Supplier Agreed', cls: 'bg-green-50 text-green-700' },
+      buyer_accepted: { label: 'Buyer Agreed', cls: 'bg-green-50 text-green-700' },
+      quotation_accepted: { label: 'Deal Confirmed ✅', cls: 'bg-green-50 text-green-700' },
+      cancelled: { label: 'Declined / Cancelled', cls: 'bg-red-50 text-red-600' },
+      held: { label: 'Held (Insufficient Balance)', cls: 'bg-amber-50 text-amber-700' },
+      // uppercase aliases for backwards compatibility
       NEGOTIATION_PENDING: { label: 'Awaiting Response', cls: 'bg-yellow-50 text-yellow-700' },
       COUNTER_OFFER_SENT: { label: 'Counter Offered', cls: 'bg-blue-50 text-blue-700' },
+      SUPPLIER_ACCEPTED: { label: 'Supplier Agreed', cls: 'bg-green-50 text-green-700' },
+      BUYER_ACCEPTED: { label: 'Buyer Agreed', cls: 'bg-green-50 text-green-700' },
       QUOTATION_ACCEPTED: { label: 'Deal Confirmed ✅', cls: 'bg-green-50 text-green-700' },
-      CANCELLED: { label: 'Declined / Cancelled', cls: 'bg-red-50 text-red-600' }
+      CANCELLED: { label: 'Declined / Cancelled', cls: 'bg-red-50 text-red-600' },
+      HELD: { label: 'Held (Insufficient Balance)', cls: 'bg-amber-50 text-amber-700' },
     };
-    const meta = statusMeta[quote.status] || { label: quote.status, cls: 'bg-gray-100 text-gray-500' };
+    const meta = statusMeta[normalizedStatus] || statusMeta[quote.status] || { label: quote.status, cls: 'bg-gray-100 text-gray-500' };
 
     const displayItems = ((msg as any)?.metadata?.items && Array.isArray((msg as any).metadata.items) && (msg as any).metadata.items.length > 0)
       ? (msg as any).metadata.items
@@ -466,7 +504,7 @@ export const FloatingChat: React.FC = () => {
         </div>
 
         {/* Counter offer details */}
-        {quote.status !== 'CANCELLED' && quote.status !== 'cancelled' && quote.counterOffer && (quote.counterOffer.price || quote.counterOffer.note || quote.counterOffer.deliveryTimeline) && (() => {
+        {normalizedStatus !== 'cancelled' && quote.counterOffer && (quote.counterOffer.price || quote.counterOffer.note || quote.counterOffer.deliveryTimeline) && (() => {
           const counterAuthor = quote.counterOffer.counteredBy
             ? (quote.counterOffer.counteredBy === 'buyer' ? 'Buyer' : 'Supplier')
             : (quote.currentTurn === 'supplier' ? 'Buyer' : (quote.currentTurn === 'buyer' ? 'Supplier' : (quote.initiatedBy === 'buyer' ? 'Buyer' : 'Supplier')));
@@ -535,8 +573,33 @@ export const FloatingChat: React.FC = () => {
           </div>
         )}
 
+        {/* Cancelled / Declined info banner */}
+        {normalizedStatus === 'cancelled' && (() => {
+          let label = 'Declined / Cancelled';
+          if (quote.cancellationReason === 'Superseded by new quotation') {
+            label = 'Superseded by new quotation';
+          } else if (quote.cancellationReason && /counter|sugg/i.test(quote.cancellationReason)) {
+            label = `Superseded due to ${quote.cancellationReason}`;
+          } else if (quote.cancelledBy === 'system') {
+            label = 'Superseded by new quotation';
+          } else if (quote.cancelledBy) {
+            label = `Cancelled by ${quote.cancelledBy === 'supplier' ? 'Supplier' : 'Buyer'}`;
+          }
+
+          return (
+            <div className="mx-3 mb-2.5 bg-red-50 border border-red-100 rounded-[6px] p-2">
+              <p className="text-[11px] font-bold text-red-600 m-0">{label}</p>
+              {quote.cancellationReason && quote.cancellationReason !== 'Superseded by new quotation' && !label.includes(quote.cancellationReason) && (
+                <p className="text-[10px] text-red-700 m-0 mt-0.5 leading-relaxed">
+                  Reason: {quote.cancellationReason}
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Waiting for other party */}
-        {quote.currentTurn !== (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT') && (
+        {quote.currentTurn !== (isSupplier ? 'supplier' : 'buyer') && isActive && (
           <div className="px-3 pb-2">
             <p className="text-[10px] text-blue-600 font-semibold text-center m-0 bg-blue-50 border border-blue-100 rounded-[5px] py-1.5">
               Awaiting {isSupplier ? "buyer's" : "supplier's"} response.
@@ -545,7 +608,7 @@ export const FloatingChat: React.FC = () => {
         )}
 
         {/* Actions: only when it's user's turn */}
-        {quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT') && !showCounter && (
+        {quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && isActive && !showCounter && (
           <>
             <div className="flex gap-1.5 px-3 pb-3">
               <button onClick={() => setConfirmAction('accept')}
@@ -611,24 +674,45 @@ export const FloatingChat: React.FC = () => {
                 ) : (
                   <>
                     <p className="text-[11px] font-extrabold text-red-600 m-0 mb-1">Decline this quote?</p>
-                    <p className="text-[10px] text-gray-500 m-0 mb-2">
-                      The supplier will be notified. You can request a new quote anytime.
+                    <p className="text-[10px] text-gray-500 m-0 mb-1.5">
+                      The other party will be notified. Please provide a reason:
                     </p>
+                    <div className="flex flex-wrap gap-1 mb-1.5">
+                      {['Price is too high', 'Delivery timeline too long', 'Found alternative supplier', 'Specifications do not match'].map(preset => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setDeclineReason(preset)}
+                          className={`text-[9px] px-2 py-0.5 rounded-full border cursor-pointer transition-colors ${declineReason === preset ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'}`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      rows={2}
+                      value={declineReason}
+                      onChange={e => setDeclineReason(e.target.value)}
+                      placeholder="Reason for declining (required)..."
+                      className="w-full border border-red-200 rounded-[5px] p-1.5 text-[10px] outline-none focus:border-red-500 resize-none mb-1.5 bg-white"
+                    />
                   </>
                 )}
                 <div className="flex gap-1.5">
-                  <button onClick={() => { setConfirmAction(null); setDirectAck(false); }}
+                  <button onClick={() => { setConfirmAction(null); setDirectAck(false); setDeclineReason(''); }}
                     className="flex-1 py-1.5 text-[10px] font-semibold text-gray-500 bg-white border border-gray-200 rounded-[5px] cursor-pointer">
                     Cancel
                   </button>
                   <button
-                    disabled={confirmAction === 'accept' && payMethod === 'direct' && !directAck}
+                    disabled={(confirmAction === 'accept' && payMethod === 'direct' && !directAck) || (confirmAction === 'decline' && !declineReason.trim())}
                     onClick={() => {
                       const action = confirmAction;
+                      const r = declineReason.trim();
                       setConfirmAction(null);
                       setDirectAck(false);
+                      setDeclineReason('');
                       if (action === 'accept') handleAcceptQuote(quote._id, payMethod);
-                      else handleRejectQuote(quote._id);
+                      else handleRejectQuote(quote._id, r);
                     }}
                     className={`flex-1 py-1.5 text-[10px] font-bold text-white rounded-[5px] border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${confirmAction === 'accept' ? 'bg-[#059669] hover:bg-[#047857]' : 'bg-red-500 hover:bg-red-600'}`}>
                     {confirmAction === 'accept' ? 'Confirm & Generate' : 'Yes, Decline'}
@@ -640,7 +724,7 @@ export const FloatingChat: React.FC = () => {
         )}
 
         {/* Counter form — only when it's user's turn */}
-        {quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && (quote.status === 'NEGOTIATION_PENDING' || quote.status === 'COUNTER_OFFER_SENT') && showCounter && !(!isSupplier && isFinalPrice) && (
+        {quote.currentTurn === (isSupplier ? 'supplier' : 'buyer') && isActive && showCounter && !(!isSupplier && isFinalPrice) && (
           <div className="px-3 pb-3 flex flex-col gap-1.5">
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center border border-gray-200 rounded-[6px] focus-within:border-blue-400">
@@ -676,7 +760,7 @@ export const FloatingChat: React.FC = () => {
         )}
 
         {/* Deal Confirmed */}
-        {quote.status === 'QUOTATION_ACCEPTED' && (
+        {(normalizedStatus === 'quotation_accepted' || quote.status === 'QUOTATION_ACCEPTED') && (
           <div className="mx-3 mb-3 bg-green-50 border border-green-100 rounded-[6px] p-2 text-center">
             <p className="text-[11px] font-extrabold text-green-700 m-0">🎉 Deal Confirmed!</p>
             <p className="text-[10px] text-green-600 m-0 mt-0.5">Proceed as per agreed terms.</p>
@@ -688,21 +772,26 @@ export const FloatingChat: React.FC = () => {
                 />
               </div>
             )}
-            {quote.orderId?._id ? (
-              <a
-                href={`${apiBase}/api/orders/${quote.orderId._id}/po-download`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 bg-green-500 text-white text-[10px] font-bold rounded-[5px] no-underline hover:bg-green-600"
-              >
-                <FileText size={10} /> View/Download PO {quote.orderId.poNumber ? `(${quote.orderId.poNumber})` : ''}
-              </a>
-            ) : (
-              <p className="text-[10px] text-green-400 m-0 mt-0.5">Order being processed…</p>
-            )}
+            {(() => {
+              const orderObjId = typeof quote.orderId === 'object' ? quote.orderId?._id : quote.orderId;
+              const poNum = typeof quote.orderId === 'object' ? quote.orderId?.poNumber : undefined;
+              if (orderObjId) {
+                return (
+                  <a
+                    href={`${apiBase}/api/orders/${orderObjId}/po-download`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 bg-green-500 text-white text-[10px] font-bold rounded-[5px] no-underline hover:bg-green-600"
+                  >
+                    <FileText size={10} /> View/Download PO {poNum ? `(${poNum})` : ''}
+                  </a>
+                );
+              }
+              return <p className="text-[10px] text-green-400 m-0 mt-0.5">Order being processed…</p>;
+            })()}
           </div>
         )}
-        {quote.status === 'QUOTATION_ACCEPTED' && quote.orderId && (
+        {(normalizedStatus === 'quotation_accepted' || quote.status === 'QUOTATION_ACCEPTED') && quote.orderId && (
           <div className="mx-3 mb-3 text-[11px] font-bold text-green-700 text-center">Order Created ✅</div>
         )}
       </div>
@@ -727,7 +816,7 @@ export const FloatingChat: React.FC = () => {
                     {otherUser?.name?.[0]?.toUpperCase() || '?'}
                   </div>
                   <div>
-                    <h3 className="m-0 text-sm font-semibold text-white leading-tight">{otherUser?.name || 'Supplier'}</h3>
+                    <h3 className="m-0 text-sm font-semibold text-white leading-tight">{otherUser?.name || (user?.role === 'supplier' ? 'Buyer' : 'Supplier')}</h3>
                     {isTyping
                       ? <p className="m-0 text-[11px] text-white/85">Typing…</p>
                       : activeConv.productId?.name
@@ -758,6 +847,20 @@ export const FloatingChat: React.FC = () => {
               {panel === 'chat' && (
                 <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={() => setPanel('list')}><ArrowLeft size={16} /></button>
               )}
+              <button
+                className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors"
+                title="Open full chat"
+                onClick={() => {
+                  handleClose();
+                  if (user?.role === 'supplier') {
+                    navigate('/supplier/dashboard?tab=chat');
+                  } else {
+                    navigate('/profile?tab=messages');
+                  }
+                }}
+              >
+                <Maximize2 size={13} />
+              </button>
               <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={handleMinimize}><ChevronDown size={16} /></button>
               <button className="bg-white/15 border-none text-white w-7 h-7 rounded-[8px] flex items-center justify-center cursor-pointer hover:bg-white/28 transition-colors" onClick={handleClose}><X size={16} /></button>
             </div>
@@ -813,7 +916,7 @@ export const FloatingChat: React.FC = () => {
                       </div>
                     );
                   }
-                  if (msg.messageType === 'quotation') {
+                  if (msg.messageType === 'quotation' || msg.messageType === 'buyer_counter_offer') {
                     return (
                       <div key={msg._id || idx} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                         <QuotationCard msg={msg} onActiveChange={setIsNegotiating} />
@@ -821,6 +924,11 @@ export const FloatingChat: React.FC = () => {
                     );
                   }
                   if (msg.messageType === 'po_supplier_approval_request') {
+                    const isLatest = messages.filter(m => m.messageType === 'po_supplier_approval_request').pop()?._id === msg._id;
+                    const msgIdx = messages.findIndex(m => m._id === msg._id);
+                    const hasPO = messages.slice(msgIdx + 1).some(m => m.text?.includes('Purchase Order Generated') || m.messageType === 'po_generated');
+                    const isPoRejecting = poRejectTargetMsgId === msg._id;
+
                     return (
                       <div key={msg._id || idx} className="w-full flex justify-center py-1">
                         <div className="w-[90%] bg-orange-50 border border-orange-200 rounded-[10px] p-3 shadow-sm relative overflow-hidden">
@@ -828,33 +936,225 @@ export const FloatingChat: React.FC = () => {
                           <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wide m-0 mb-1">Final Approval Required</p>
                           <p className="text-xs text-orange-950 m-0 mb-2">{msg.text}</p>
                           {user?.role === 'supplier' && (() => {
-                            const isLatest = messages.filter(m => m.messageType === 'po_supplier_approval_request').pop()?._id === msg._id;
-                            const msgIdx = messages.findIndex(m => m._id === msg._id);
-                            const hasPO = messages.slice(msgIdx + 1).some(m => m.text?.includes('Purchase Order Generated'));
                             if (isLatest && !hasPO) {
+                              if (isPoRejecting) {
+                                return (
+                                  <div className="mt-2 bg-white border border-red-200 rounded-[8px] p-2 flex flex-col gap-1.5">
+                                    <p className="text-[11px] font-bold text-red-600 m-0">Reject PO Request</p>
+                                    <div className="flex flex-wrap gap-1">
+                                      {['Out of stock', 'Delivery timeline impossible', 'Pricing disagreement', 'Other'].map(r => (
+                                        <button
+                                          key={r}
+                                          type="button"
+                                          onClick={() => setPoRejectReason(r)}
+                                          className={`text-[9px] px-1.5 py-0.5 rounded-full border cursor-pointer ${poRejectReason === r ? 'bg-red-600 text-white border-red-600' : 'bg-gray-50 text-gray-600 border-gray-200'}`}
+                                        >
+                                          {r}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    <textarea
+                                      rows={2}
+                                      value={poRejectReason}
+                                      onChange={e => setPoRejectReason(e.target.value)}
+                                      placeholder="Reason for rejecting PO (required)..."
+                                      className="w-full border border-gray-200 rounded-[5px] p-1.5 text-[10px] outline-none focus:border-red-400 resize-none bg-gray-50"
+                                    />
+                                    <div className="flex gap-1.5 justify-end">
+                                      <button
+                                        type="button"
+                                        onClick={() => { setPoRejectTargetMsgId(null); setPoRejectReason(''); }}
+                                        className="px-2 py-1 text-[10px] font-medium text-gray-500 bg-gray-100 rounded-[5px] border-none cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={!poRejectReason.trim() || isPoSubmitting}
+                                        onClick={async () => {
+                                          setIsPoSubmitting(true);
+                                          try {
+                                            const qId = typeof msg.quotationId === 'object' ? (msg.quotationId as any)._id : msg.quotationId;
+                                            await quotationApi.rejectQuotation(qId, poRejectReason.trim());
+                                            toast.success('PO rejected');
+                                            setPoRejectTargetMsgId(null);
+                                            setPoRejectReason('');
+                                            await loadMessages();
+                                            await loadConversations();
+                                          } catch (err: any) {
+                                            toast.error(err.response?.data?.message || 'Failed to reject PO');
+                                          } finally {
+                                            setIsPoSubmitting(false);
+                                          }
+                                        }}
+                                        className="px-2.5 py-1 text-[10px] font-bold text-white bg-red-600 rounded-[5px] border-none cursor-pointer disabled:opacity-50"
+                                      >
+                                        {isPoSubmitting ? 'Rejecting…' : 'Confirm Reject'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div className="flex gap-1.5 mt-2">
+                                  <button
+                                    onClick={() => {
+                                      setPoRejectTargetMsgId(msg._id);
+                                      setPoRejectReason('');
+                                    }}
+                                    className="flex-1 py-1.5 bg-white border border-orange-300 text-orange-700 hover:bg-orange-50 text-[10px] font-bold rounded-[6px] cursor-pointer transition-colors"
+                                  >
+                                    ✕ Reject PO
+                                  </button>
+                                  <button
+                                    disabled={isPoSubmitting}
+                                    onClick={async (e) => {
+                                      const btn = e.currentTarget;
+                                      const origText = btn.innerText;
+                                      btn.disabled = true;
+                                      btn.innerText = 'Approving...';
+                                      try {
+                                        const qId = typeof msg.quotationId === 'object' ? (msg.quotationId as any)._id : msg.quotationId;
+                                        await quotationApi.supplierApprove(qId);
+                                        toast.success('PO Approved!');
+                                        await loadMessages();
+                                        await loadConversations();
+                                      } catch (err: any) {
+                                        btn.disabled = false;
+                                        btn.innerText = origText;
+                                        toast.error(err.response?.data?.message || 'Failed to approve PO');
+                                      }
+                                    }}
+                                    className="flex-1 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold rounded-[6px] cursor-pointer border-none transition-colors disabled:opacity-50"
+                                  >
+                                    ✓ Approve PO
+                                  </button>
+                                </div>
+                              );
+                            }
+                            return <p className="text-[10px] font-bold text-orange-600 m-0 italic">Approved</p>;
+                          })()}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (msg.messageType === 'payment_request') {
+                    const isCOD = msg.metadata?.requestType === 'cod' || msg.text?.includes('COD');
+                    const isCredit = msg.metadata?.requestType === 'credit' || msg.text?.includes('Credit');
+                    const isBalance = msg.metadata?.requestType === 'balance' || msg.text?.includes('Balance');
+                    const title = isCOD ? 'COD Payment Required' : isCredit ? 'Credit Payment Required' : isBalance ? 'Balance Payment Required' : 'Advance Payment Required';
+                    const badgeColor = isCOD ? 'bg-blue-500' : isCredit ? 'bg-indigo-500' : isBalance ? 'bg-amber-500' : 'bg-[#eab308]';
+                    const textColor = isCOD ? 'text-blue-700' : isCredit ? 'text-indigo-700' : isBalance ? 'text-amber-700' : 'text-[#ca8a04]';
+                    const bgColor = isCOD ? 'bg-blue-50 border-blue-200' : isCredit ? 'bg-indigo-50 border-indigo-200' : isBalance ? 'bg-amber-50 border-amber-200' : 'bg-[#fefce8] border-[#fef08a]';
+                    const btnBg = isCOD ? 'bg-blue-600 hover:bg-blue-700' : isCredit ? 'bg-indigo-600 hover:bg-indigo-700' : isBalance ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#eab308] hover:bg-[#ca8a04]';
+
+                    return (
+                      <div key={msg._id || idx} className="w-full flex justify-center py-1">
+                        <div className={`w-[90%] ${bgColor} border rounded-[10px] p-3 shadow-sm relative overflow-hidden`}>
+                          <div className={`absolute top-0 left-0 w-1 h-full ${badgeColor}`}></div>
+                          <p className={`text-[10px] font-bold ${textColor} uppercase tracking-wide m-0 mb-1`}>{title}</p>
+                          <p className="text-xs text-[#334155] m-0 mb-2 whitespace-pre-wrap leading-relaxed">{msg.text}</p>
+                          {user?.role === 'buyer' && (() => {
+                            const isLatest = messages.filter(m => m.messageType === 'payment_request').pop()?._id === msg._id;
+                            const hasProof = messages.some(m => m.messageType === 'payment_proof' && new Date(m.createdAt) > new Date(msg.createdAt));
+                            if (isLatest && !hasProof) {
+                              return (
+                                <button
+                                  onClick={() => {
+                                    const input = document.createElement('input');
+                                    input.type = 'file';
+                                    input.accept = 'image/*,application/pdf';
+                                    input.onchange = async (e: any) => {
+                                      const file = e.target.files[0];
+                                      if (!file) return;
+                                      setPaymentProofFile(file);
+                                      setPaymentMsgContext(msg);
+                                      setShowPaymentProofModal(true);
+                                      setPaymentUtr('');
+                                    };
+                                    input.click();
+                                  }}
+                                  className={`w-full py-1.5 ${btnBg} text-white text-[11px] font-bold rounded-[6px] cursor-pointer border-none transition-colors`}
+                                >
+                                  Upload Payment Proof
+                                </button>
+                              );
+                            }
+                            return <p className={`text-[10px] font-bold ${textColor} m-0 italic`}>Proof Uploaded</p>;
+                          })()}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (msg.messageType === 'payment_proof') {
+                    return (
+                      <div key={msg._id || idx} className="w-full flex justify-center py-1">
+                        <div className="w-[90%] bg-[#f0fdf4] border border-[#bbf7d0] rounded-[10px] p-3 shadow-sm relative overflow-hidden">
+                          <div className="absolute top-0 left-0 w-1 h-full bg-[#22c55e]"></div>
+                          <p className="text-[10px] font-bold text-[#166534] uppercase tracking-wide m-0 mb-1">Payment Proof Uploaded</p>
+                          {msg.metadata?.paymentUtrNumber && (
+                            <p className="text-xs font-semibold text-[#14532d] m-0 mb-1.5">
+                              UTR: <span className="font-mono bg-[#dcfce7] px-1.5 py-0.5 rounded text-[#166534] border border-[#bbf7d0]">{msg.metadata.paymentUtrNumber}</span>
+                            </p>
+                          )}
+                          {msg.metadata?.paymentProofUrl && (
+                            <div className="mb-2 rounded-[6px] overflow-hidden border border-[#bbf7d0]">
+                              <a href={msg.metadata.paymentProofUrl} target="_blank" rel="noreferrer" className="block text-center py-1.5 bg-[#dcfce7] text-[#166534] text-[10px] font-bold hover:bg-[#bbf7d0] transition-colors no-underline">
+                                📄 View Payment Proof
+                              </a>
+                            </div>
+                          )}
+                          {user?.role === 'supplier' && (() => {
+                            const isLatest = messages.filter(m => m.messageType === 'payment_proof').pop()?._id === msg._id;
+                            const isVerified = messages.some(m => m.messageType === 'payment_verified' && new Date(m.createdAt) > new Date(msg.createdAt));
+                            if (isLatest && !isVerified) {
                               return (
                                 <button
                                   onClick={async (e) => {
                                     const btn = e.currentTarget;
                                     btn.disabled = true;
-                                    btn.innerText = 'Approving...';
+                                    btn.innerText = 'Confirming...';
                                     try {
-                                      await quotationApi.supplierApprove(msg.quotationId!);
-                                      await loadConversations();
+                                      const anyQuoteWithOrder = messages.slice().reverse().find(m => (m.messageType === 'quotation' || m.messageType === 'buyer_counter_offer') && (m.quotationId as any)?.orderId);
+                                      const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                                      const orderId = msg.metadata?.orderId || (msg.quotationId as any)?.orderId?._id || (msg.quotationId as any)?.orderId || fallbackOrderId;
+                                      if (!orderId) throw new Error('Order ID not found in Chat');
+
+                                      await apiClient.post(`/orders/${orderId}/payment-verify`);
+                                      toast.success('Payment confirmed successfully');
+                                      loadMessages();
                                     } catch (err: any) {
                                       btn.disabled = false;
-                                      btn.innerText = '✓ Approve PO';
-                                      alert(err.response?.data?.message || 'Failed to approve');
+                                      btn.innerText = 'Confirm Payment Received';
+                                      toast.error(err.response?.data?.message || 'Failed to confirm payment');
                                     }
                                   }}
-                                  className="w-full py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold rounded-[6px] cursor-pointer border-none transition-colors disabled:opacity-50"
+                                  className="w-full py-1.5 bg-[#22c55e] hover:bg-[#16a34a] text-white text-[11px] font-bold rounded-[6px] cursor-pointer border-none transition-colors disabled:opacity-50"
                                 >
-                                  ✓ Approve PO
+                                  Confirm Payment Received
                                 </button>
                               );
                             }
-                            return <p className="text-[10px] font-bold text-orange-600 m-0 italic">Approved</p>;
+                            return <p className="text-[10px] font-bold text-[#166534] m-0 italic">Payment Confirmed</p>;
                           })()}
+                        </div>
+                      </div>
+                    );
+                  }
+                  if (msg.messageType === 'payment_verified') {
+                    const isCOD = msg.text?.includes('COD');
+                    const isCredit = msg.text?.includes('Credit');
+                    const title = isCOD ? 'COD Payment Confirmed' : isCredit ? 'Credit Payment Confirmed' : 'Payment Confirmed';
+                    const badgeColor = isCOD ? 'bg-blue-500' : isCredit ? 'bg-indigo-500' : 'bg-[#10b981]';
+                    const textColor = isCOD ? 'text-blue-700' : isCredit ? 'text-indigo-700' : 'text-[#047857]';
+                    const bgColor = isCOD ? 'bg-blue-50 border-blue-200' : isCredit ? 'bg-indigo-50 border-indigo-200' : 'bg-[#ecfdf5] border-[#a7f3d0]';
+                    return (
+                      <div key={msg._id || idx} className="w-full flex justify-center py-1">
+                        <div className={`w-[90%] ${bgColor} border rounded-[10px] p-3 shadow-sm relative overflow-hidden`}>
+                          <div className={`absolute top-0 left-0 w-1 h-full ${badgeColor}`}></div>
+                          <p className={`text-[10px] font-bold ${textColor} uppercase tracking-wide m-0 mb-1`}>{title}</p>
+                          <p className="text-xs text-[#334155] m-0 whitespace-pre-wrap leading-relaxed">{msg.text}</p>
                         </div>
                       </div>
                     );
@@ -970,7 +1270,7 @@ export const FloatingChat: React.FC = () => {
             {otherUser?.name?.[0]?.toUpperCase() || '?'}
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-[13px] font-semibold text-slate-900 block truncate">{otherUser?.name || 'User'}</span>
+            <span className="text-[13px] font-semibold text-slate-900 block truncate">{otherUser?.name || (user?.role === 'supplier' ? 'Buyer' : 'Supplier')}</span>
             <span className="text-[11px] text-[#888] block truncate">{activeConv.lastMessage || 'Tap to continue…'}</span>
           </div>
           <div onClick={e => e.stopPropagation()}>
@@ -1177,8 +1477,10 @@ export const FloatingChat: React.FC = () => {
             <div className="flex gap-2.5 mt-4">
               <button onClick={() => setIsQuoteModalOpen(false)}
                 className="flex-1 py-2.5 rounded-[8px] border-none text-[13px] font-semibold bg-gray-100 text-[#666] cursor-pointer">Cancel</button>
-              <button onClick={() => setShowPreview(true)}
-                className="flex-1 py-2.5 rounded-[8px] border-none text-[13px] font-semibold bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] text-white cursor-pointer">Preview & Send →</button>
+              <button
+                disabled={!quoteForm.itemName.trim() || quoteForm.price <= 0 || quoteForm.quantity <= 0}
+                onClick={() => setShowPreview(true)}
+                className="flex-1 py-2.5 rounded-[8px] border-none text-[13px] font-semibold bg-gradient-to-br from-[#ff4d4d] to-[#f9a825] text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">Preview & Send →</button>
             </div>
           </div>
         </div>
@@ -1206,6 +1508,77 @@ export const FloatingChat: React.FC = () => {
                 onClick={handleCreateQuotation}>
                 ✓ Confirm & Send
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Proof Modal */}
+      {showPaymentProofModal && (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => !isUploadingProof && setShowPaymentProofModal(false)}>
+          <div className="bg-white rounded-[12px] p-4 max-w-xs w-full shadow-lg" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-slate-800 m-0 mb-1">Upload Payment Proof</h3>
+            <p className="text-[11px] text-gray-500 m-0 mb-3">Enter the UTR / transaction number for verification.</p>
+            <div className="flex flex-col gap-2">
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 block mb-1">UTR / Transaction ID *</label>
+                <input
+                  type="text"
+                  value={paymentUtr}
+                  onChange={e => setPaymentUtr(e.target.value)}
+                  placeholder="e.g. 123456789012"
+                  className="w-full border border-gray-200 rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-orange-400"
+                />
+              </div>
+              {paymentProofFile && (
+                <div className="text-[10px] text-gray-600 bg-gray-50 p-2 rounded border border-gray-200 truncate">
+                  📎 {paymentProofFile.name}
+                </div>
+              )}
+              <div className="flex gap-2 mt-2">
+                <button
+                  type="button"
+                  disabled={isUploadingProof}
+                  onClick={() => setShowPaymentProofModal(false)}
+                  className="flex-1 py-1.5 text-xs font-semibold text-gray-500 bg-gray-100 rounded-[6px] border-none cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!paymentUtr.trim() || isUploadingProof}
+                  onClick={async () => {
+                    if (!paymentProofFile || !paymentUtr.trim() || !paymentMsgContext) return;
+                    setIsUploadingProof(true);
+                    try {
+                      const res = await uploadService.uploadImage(paymentProofFile);
+                      const proofUrl = typeof res === 'object' && res.url ? res.url : res;
+
+                      const anyQuoteWithOrder = messages.slice().reverse().find(m => (m.messageType === 'quotation' || m.messageType === 'buyer_counter_offer') && (m.quotationId as any)?.orderId);
+                      const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
+                      const orderId = (paymentMsgContext.quotationId as any)?.orderId?._id || (paymentMsgContext.quotationId as any)?.orderId || fallbackOrderId;
+
+                      if (!orderId) throw new Error('Order ID not found in Chat');
+
+                      await apiClient.post(`/orders/${orderId}/payment-proof`, {
+                        paymentProofUrl: proofUrl,
+                        paymentUtrNumber: paymentUtr
+                      });
+
+                      toast.success('Payment proof uploaded');
+                      setShowPaymentProofModal(false);
+                      loadMessages();
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.message || 'Failed to upload proof');
+                    } finally {
+                      setIsUploadingProof(false);
+                    }
+                  }}
+                  className="flex-1 py-1.5 text-xs font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-[6px] border-none cursor-pointer disabled:opacity-50"
+                >
+                  {isUploadingProof ? 'Uploading…' : 'Submit'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

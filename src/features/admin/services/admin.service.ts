@@ -371,7 +371,45 @@ const adminService = {
   updateTicketStatus: async (id: string, status: string): Promise<any> => {
     const response = await api.patch(`/tickets/${id}/status`, { status });
     return response.data.ticket;
-  }
+  },
+
+  // ─── Unmatched Deals ───────────────────────────────────────────────────────
+  getUnmatchedDeals: async (params?: {
+    dealType?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    deals: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> => {
+    const response = await api.get('/admin/unmatched-deals', { params });
+    return response.data;
+  },
+
+  getUnmatchedDealsCounts: async (): Promise<{
+    supplier_no_response: number;
+    buyer_no_response: number;
+    supplier_cancelled: number;
+    buyer_cancelled: number;
+    total: number;
+  }> => {
+    const response = await api.get('/admin/unmatched-deals/counts');
+    return response.data.counts;
+  },
+
+  closeUnmatchedDeal: async (id: string): Promise<any> => {
+    const response = await api.patch(`/admin/unmatched-deals/${id}/close`);
+    return response.data.deal;
+  },
+
+  addUnmatchedDealNote: async (id: string, note: string): Promise<any> => {
+    const response = await api.patch(`/admin/unmatched-deals/${id}/note`, { note });
+    return response.data.deal;
+  },
 };
 
 export default adminService;
