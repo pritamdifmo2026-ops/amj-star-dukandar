@@ -360,28 +360,25 @@ export const UnmatchedDeals: React.FC = () => {
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
-              className={`relative p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer border flex flex-col justify-between ${
-                isActive
-                  ? `${config.activeBg} ${config.activeBorder} ${config.activeRing} shadow-sm`
-                  : 'bg-white border-slate-200/90 hover:border-slate-300 hover:shadow-xs'
-              }`}
+              className={`relative p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer border flex flex-col justify-between ${isActive
+                ? `${config.activeBg} ${config.activeBorder} ${config.activeRing} shadow-sm`
+                : 'bg-white border-slate-200/90 hover:border-slate-300 hover:shadow-xs'
+                }`}
             >
               {/* Card Header: Icon + Subtext Pill */}
               <div className="flex items-center justify-between gap-2 mb-3">
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                    isActive ? config.iconBg : 'bg-slate-100 text-slate-600'
-                  }`}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${isActive ? config.iconBg : 'bg-slate-100 text-slate-600'
+                    }`}
                 >
                   <Icon size={18} />
                 </div>
 
                 <span
-                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
-                    isActive
-                      ? config.badgeCls
-                      : 'bg-slate-50 text-slate-500 border-slate-200'
-                  }`}
+                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${isActive
+                    ? config.badgeCls
+                    : 'bg-slate-50 text-slate-500 border-slate-200'
+                    }`}
                 >
                   {config.subtext}
                 </span>
@@ -391,9 +388,8 @@ export const UnmatchedDeals: React.FC = () => {
               <div>
                 <div className="flex items-baseline gap-2">
                   <span
-                    className={`text-2xl sm:text-3xl font-black tracking-tight leading-none ${
-                      isActive ? 'text-slate-900' : 'text-slate-700'
-                    }`}
+                    className={`text-2xl sm:text-3xl font-black tracking-tight leading-none ${isActive ? 'text-slate-900' : 'text-slate-700'
+                      }`}
                   >
                     {count}
                   </span>
@@ -401,9 +397,8 @@ export const UnmatchedDeals: React.FC = () => {
                 </div>
 
                 <div
-                  className={`text-xs font-bold mt-1.5 truncate ${
-                    isActive ? 'text-slate-900' : 'text-slate-600'
-                  }`}
+                  className={`text-xs font-bold mt-1.5 truncate ${isActive ? 'text-slate-900' : 'text-slate-600'
+                    }`}
                 >
                   {config.label}
                 </div>
@@ -472,11 +467,10 @@ export const UnmatchedDeals: React.FC = () => {
                     setStatusFilter(st);
                     setPage(1);
                   }}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-white text-slate-900 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-all cursor-pointer ${isSelected
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                    }`}
                 >
                   {st}
                 </button>
@@ -517,8 +511,8 @@ export const UnmatchedDeals: React.FC = () => {
             {searchQuery
               ? `No deals match your search query "${searchQuery}". Try clearing the search.`
               : statusFilter === 'open'
-              ? `Great job! There are currently no open "${currentTabConfig.label}" deals needing admin action.`
-              : `No deals matching the selected status filter.`}
+                ? `Great job! There are currently no open "${currentTabConfig.label}" deals needing admin action.`
+                : `No deals matching the selected status filter.`}
           </p>
           {searchQuery && (
             <button
@@ -539,11 +533,10 @@ export const UnmatchedDeals: React.FC = () => {
             return (
               <div
                 key={deal._id}
-                className={`bg-white rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden ${
-                  isClosed
-                    ? 'border-slate-200/70 opacity-75'
-                    : 'border-slate-200/90 hover:border-slate-300'
-                }`}
+                className={`bg-white rounded-2xl border transition-all duration-200 shadow-xs hover:shadow-md overflow-hidden ${isClosed
+                  ? 'border-slate-200/70 opacity-75'
+                  : 'border-slate-200/90 hover:border-slate-300'
+                  }`}
               >
                 {/* Card Header: Category badge, status, stage, elapsed time, timestamp */}
                 <div className="px-5 py-3.5 bg-gradient-to-r from-slate-50/90 via-slate-50/40 to-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
@@ -558,13 +551,12 @@ export const UnmatchedDeals: React.FC = () => {
 
                     {/* Status Pill */}
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                        deal.status === 'open'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200/80'
-                          : deal.status === 'reassigned'
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${deal.status === 'open'
+                        ? 'bg-rose-50 text-rose-700 border-rose-200/80'
+                        : deal.status === 'reassigned'
                           ? 'bg-blue-50 text-blue-700 border-blue-200/80'
                           : 'bg-slate-100 text-slate-600 border-slate-200'
-                      }`}
+                        }`}
                     >
                       {deal.status === 'open' && (
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
@@ -591,11 +583,10 @@ export const UnmatchedDeals: React.FC = () => {
 
                     {/* Elapsed Time Pill */}
                     <span
-                      className={`text-xs flex items-center gap-1 px-2.5 py-0.5 rounded-md font-medium ${
-                        deal.hoursElapsed >= 48
-                          ? 'bg-rose-50 text-rose-700 border border-rose-200/80 font-bold'
-                          : 'text-slate-500 bg-slate-100/70'
-                      }`}
+                      className={`text-xs flex items-center gap-1 px-2.5 py-0.5 rounded-md font-medium ${deal.hoursElapsed >= 48
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200/80 font-bold'
+                        : 'text-slate-500 bg-slate-100/70'
+                        }`}
                     >
                       <Clock size={12} className={deal.hoursElapsed >= 48 ? 'text-rose-500' : 'text-slate-400'} />
                       <span>{formatElapsed(deal.hoursElapsed)}</span>
@@ -837,7 +828,7 @@ export const UnmatchedDeals: React.FC = () => {
                 {/* Action Bar */}
                 <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    {deal.conversationId && (
+                    {/* {deal.conversationId && (
                       <a
                         href={`/chat?id=${deal.conversationId}`}
                         target="_blank"
@@ -847,7 +838,7 @@ export const UnmatchedDeals: React.FC = () => {
                         <ExternalLink size={13} />
                         View Chat History
                       </a>
-                    )}
+                    )} */}
                   </div>
 
                   <div className="flex items-center gap-2">
