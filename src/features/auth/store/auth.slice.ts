@@ -21,6 +21,8 @@ interface AuthUser {
   adminRoleLabel?: string;
   assignedSuppliers?: string[];
   gstin?: string;
+  buyerRating?: number;
+  buyerRatingsCount?: number;
 }
 
 interface AuthState {

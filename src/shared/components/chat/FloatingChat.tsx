@@ -454,12 +454,25 @@ export const FloatingChat: React.FC = () => {
 
         {/* Items + Totals */}
         <div className="px-3 py-2 flex flex-col gap-1 text-xs">
-          {displayItems.map((item: any, i: number) => (
-            <div key={i} className="flex justify-between">
-              <span>{item.name} × {item.quantity} {item.unit}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
-              <span className="font-semibold">₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-          ))}
+          {displayItems.map((item: any, i: number) => {
+            const itemImg = item.image || item.imageUrl;
+            return (
+              <div key={i} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {itemImg && (
+                    <img
+                      src={itemImg}
+                      alt={item.name}
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      className="w-5 h-5 rounded object-cover shrink-0 border border-[#e2e8f0]"
+                    />
+                  )}
+                  <span className="truncate">{item.name} × {item.quantity} {item.unit}{item.hsnCode ? ` (HSN: ${item.hsnCode})` : ''}</span>
+                </div>
+                <span className="font-semibold shrink-0">₹{(Number(item.price) * Number(item.quantity)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            );
+          })}
 
           <div className="flex justify-between text-gray-500 pt-1 border-t border-gray-100">
             <span>Amount</span>
@@ -1159,8 +1172,32 @@ export const FloatingChat: React.FC = () => {
                       </div>
                     );
                   }
+                  const bubbleImages = (msg.metadata?.images && msg.metadata.images.length > 0)
+                    ? msg.metadata.images
+                    : (Array.isArray(msg.metadata?.negotiationItems)
+                      ? msg.metadata.negotiationItems.map((it: any) => it.imageUrl || it.image).filter(Boolean)
+                      : (msg.metadata?.imageUrl ? [msg.metadata.imageUrl] : []));
+
                   return (
                     <div key={msg._id || idx} className={`whitespace-pre-wrap leading-snug max-w-[80%] px-3 py-2 rounded-[8px] text-[0.9rem] relative ${isMine ? 'self-end bg-primary text-white rounded-br-[2px]' : 'self-start bg-cream text-gray-800 rounded-bl-[4px] shadow-sm'}`}>
+                      {bubbleImages.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-1.5">
+                          {bubbleImages.slice(0, 4).map((img: string, bIdx: number) => (
+                            <img
+                              key={bIdx}
+                              src={img}
+                              alt="Product"
+                              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              className="w-9 h-9 rounded object-cover border border-white/20"
+                            />
+                          ))}
+                          {bubbleImages.length > 4 && (
+                            <span className="w-9 h-9 rounded flex items-center justify-center text-[10px] font-bold bg-black/20 text-white">
+                              +{bubbleImages.length - 4}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <div className="mb-0.5">{msg.text}</div>
                       {isMine && (
                         <div className="flex justify-end text-[10px] opacity-70">

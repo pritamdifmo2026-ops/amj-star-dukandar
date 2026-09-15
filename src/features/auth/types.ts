@@ -50,5 +50,7 @@ export interface AuthUser {
   isPhoneVerified?: boolean;
   avatar?: string;
   gstin?: string;
+  buyerRating?: number;
+  buyerRatingsCount?: number;
 }
 

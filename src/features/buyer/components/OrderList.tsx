@@ -254,12 +254,20 @@ const OrderList: React.FC = () => {
               <div className="p-5 flex gap-5 items-start max-sm:flex-col">
                 <div className="flex-1 min-w-0 flex flex-col gap-4">
                   {order.items.map((item: any, idx: number) => {
-                    const itemImage = item.image || item.imageUrl || (idx === 0 ? productImage : '');
+                    const itemImage = item.image || item.imageUrl || (order.items?.length === 1 ? productImage : '');
                     return (
                       <div key={idx} className="flex gap-4 items-center">
                         <div className="w-[64px] h-[64px] rounded-[8px] overflow-hidden bg-[#f8fafc] border border-[#eef2f6] shrink-0 flex items-center justify-center shadow-inner">
                           {itemImage ? (
-                            <img src={itemImage} alt={item.name || 'Product'} className="w-full h-full object-cover" />
+                            <img
+                              src={itemImage}
+                              alt={item.name || 'Product'}
+                              onError={e => {
+                                (e.target as HTMLImageElement).onerror = null;
+                                (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Product';
+                              }}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <div className="flex flex-col items-center justify-center text-[#cbd5e1]">
                               <Package size={24} strokeWidth={1.5} />

@@ -379,6 +379,8 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 unit: it.unit,
                 hsnCode: it.hsnCode || (it as any).hsnCode,
                 gstRate: it.gstRate,
+                imageUrl: it.imageUrl || (it as any).image,
+                image: it.imageUrl || (it as any).image,
               }))
             }
           });
@@ -589,13 +591,20 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                 const lineTotal = item.price * item.quantity;
                 return (
                   <div key={item.productId || idx} className="px-5 py-4 flex gap-4 items-start">
-                    {item.imageUrl && (
+                    {(item.imageUrl || (item as any).image) ? (
                       <img
-                        src={item.imageUrl}
+                        src={item.imageUrl || (item as any).image}
                         alt={item.name}
-                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        onError={e => {
+                          (e.target as HTMLImageElement).onerror = null;
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Product';
+                        }}
                         className="w-14 h-14 object-cover rounded-[8px] border border-[#f1f5f9] shrink-0 max-sm:w-10 max-sm:h-10"
                       />
+                    ) : (
+                      <div className="w-14 h-14 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] flex items-center justify-center shrink-0 max-sm:w-10 max-sm:h-10">
+                        <Package size={20} className="text-[#94a3b8]" />
+                      </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-[#0f172a] m-0 leading-snug">{item.name}</p>
@@ -1061,8 +1070,16 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
                   {items.map((item, idx) => (
                     <div key={idx} className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155]">
                       <div className="flex items-center gap-3 mb-2 pb-2 border-b border-[#e2e8f0]">
-                        {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.name} className="w-10 h-10 object-cover rounded-[6px] border border-[#cbd5e1]" />
+                        {(item.imageUrl || (item as any).image) ? (
+                          <img
+                            src={item.imageUrl || (item as any).image}
+                            alt={item.name}
+                            onError={e => {
+                              (e.target as HTMLImageElement).onerror = null;
+                              (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Product';
+                            }}
+                            className="w-10 h-10 object-cover rounded-[6px] border border-[#cbd5e1]"
+                          />
                         ) : (
                           <div className="w-10 h-10 bg-[#e2e8f0] rounded-[6px] flex items-center justify-center shrink-0 border border-[#cbd5e1]">
                             <ImageIcon size={16} className="text-[#94a3b8]" />

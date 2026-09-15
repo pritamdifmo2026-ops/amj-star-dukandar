@@ -83,7 +83,6 @@ const Profile: React.FC = () => {
   const [orderCount, setOrderCount] = useState(0);
   const [totalOrderCount, setTotalOrderCount] = useState(0);
   const [pendingOrderCount, setPendingOrderCount] = useState(0);
-  const [reviewCount, setReviewCount] = useState(0);
   const [requirementsCount, setRequirementsCount] = useState(0);
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
@@ -174,7 +173,6 @@ const Profile: React.FC = () => {
       setTotalOrderCount(all.length);
       setOrderCount(all.filter((o: any) => !DONE.has(o.status)).length);
       setPendingOrderCount(all.filter((o: any) => PENDING_STATUSES.has(o.status)).length);
-      setReviewCount(all.filter((o: any) => o.hasReview).length);
     } catch (err) {
       console.error('Failed to fetch order count');
     }
@@ -592,6 +590,15 @@ const Profile: React.FC = () => {
                       <span>Buyer Account</span>
                       <span className="w-1 h-1 rounded-full bg-white/50" />
                       <span>Member since {memberSince}</span>
+                      {user?.buyerRating ? (
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-white/50" />
+                          <span className="flex items-center gap-1 bg-amber-400/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-300/30">
+                            <Star size={11} className="fill-amber-300 text-amber-300" />
+                            {Number(user.buyerRating).toFixed(1)} / 5 ({user.buyerRatingsCount || 0} {user.buyerRatingsCount === 1 ? 'rating' : 'ratings'})
+                          </span>
+                        </>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-5 max-sm:gap-3 flex-wrap">
                       <div className="flex items-center gap-2 text-xs text-white/70">
@@ -621,7 +628,11 @@ const Profile: React.FC = () => {
                   {[
                     { icon: <ShoppingBag size={20} />, value: totalOrderCount, label: 'Orders' },
                     { icon: <Heart size={20} />, value: wishlistItems.length, label: 'Wishlist' },
-                    { icon: <Star size={20} />, value: reviewCount, label: 'Reviews' },
+                    {
+                      icon: <Star size={20} className={user?.buyerRating ? 'text-amber-500 fill-amber-400' : ''} />,
+                      value: user?.buyerRating ? `${Number(user.buyerRating).toFixed(1)} ★` : '—',
+                      label: `Buyer Rating (${user?.buyerRatingsCount || 0})`,
+                    },
                     { icon: <Clock size={20} />, value: pendingOrderCount, label: 'Pending' },
                   ].map((stat) => (
                     <div key={stat.label} className="bg-white border border-[#eef2f6] rounded-[14px] p-4 shadow-[0_4px_16px_rgba(0,0,0,0.08)] flex items-center gap-3">

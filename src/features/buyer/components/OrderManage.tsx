@@ -92,6 +92,11 @@ const stepIndex = (status: string) => {
   return 0; // disputed/cancelled handled separately
 };
 
+// ─── Indian Banking Format Validation Regexes (Client-side, no external API) ───
+const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+const UPI_REGEX = /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/;
+const ACCOUNT_NUMBER_REGEX = /^\d{9,18}$/;
+
 // ─── Inline star rating row ───────────────────────────────────────────────────
 const StarRow: React.FC<{ label?: string; value: number; onChange: (v: number) => void; size?: number }> = ({ label, value, onChange, size = 22 }) => {
   const [hover, setHover] = useState(0);
@@ -202,13 +207,15 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const [exTracking, setExTracking] = useState('');
   const [reportIssue, setReportIssue] = useState(false);
   const [reportReason, setReportReason] = useState('');
+  // Per-SKU replacement quantities — keyed by index into dispute.affectedProducts
+  const [replacementItemQtys, setReplacementItemQtys] = useState<Record<number, string>>({});
 
   // ── Reject direct order modal ──
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [orderRejectReason, setOrderRejectReason] = useState('');
 
-  // ── Buyer: confirm / rating / ticket ──
-  const [confirmMode, setConfirmMode] = useState<'idle' | 'rating' | 'ticket'>('idle');
+  // ── Buyer / Supplier: confirm / rating / ticket ──
+  const [confirmMode, setConfirmMode] = useState<'idle' | 'rating' | 'ticket' | 'buyer_rating'>('idle');
   const [rating, setRating] = useState(0);
   const [dimQuality, setDimQuality] = useState(0);
   const [dimPackaging, setDimPackaging] = useState(0);
@@ -219,6 +226,8 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
   const [issueDesc, setIssueDesc] = useState('');
   const [requestedResolution, setRequestedResolution] = useState<'refund' | 'replacement' | 'partial_replacement' | ''>('');
   const [affectedQuantity, setAffectedQuantity] = useState<string>('');
+  const [selectedProductIndices, setSelectedProductIndices] = useState<number[]>([]);
+  const [productDefectiveQuantities, setProductDefectiveQuantities] = useState<Record<number, string>>({});
   const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -236,6 +245,21 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
 
   const [reopenReason, setReopenReason] = useState('');
   const [showReopen, setShowReopen] = useState(false);
+
+  // When supplier views a dispute, lock resolutionMethod to buyer's requestedResolution
+  useEffect(() => {
+    if (dispute?.requestedResolution) {
+      if (dispute.requestedResolution === 'refund') {
+        setResolveMethod('refund');
+        setRequiresReturn(true);
+        setReturnMode('buyer_ships');
+      } else if (dispute.requestedResolution === 'replacement' || dispute.requestedResolution === 'partial_replacement') {
+        setResolveMethod('replacement');
+        setRequiresReturn(true);
+        setReturnMode(null);
+      }
+    }
+  }, [dispute?.requestedResolution]);
 
   const sync = (patch: any) => { setOrder((o: any) => ({ ...o, ...patch })); onRefresh(); };
   const syncDispute = (patch: any) => { setOrder((o: any) => ({ ...o, _dispute: { ...o._dispute, ...patch } })); onRefresh(); };
@@ -347,7 +371,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
     if (resolveMethod === 'refund' && requiresReturn === false && !refundTxId.trim()) { toast.error('Enter the refund Transaction ID (UTR).'); return; }
     setBusy(true);
     try {
-      await orderApi.supplierResolveDispute(
+      const res = await orderApi.supplierResolveDispute(
         dispute._id,
         resolveMethod as any,
         resolveNote.trim(),
@@ -355,13 +379,20 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         resolveMethod === 'refund' && !requiresReturn ? refundTxId.trim() : undefined,
         requiresReturn ? (returnMode || 'buyer_ships') : undefined
       );
-      if (resolveMethod === 'replacement' || (resolveMethod === 'refund' && requiresReturn)) {
+      if (res?.dispute) {
+        syncDispute(res.dispute);
+        if (resolveMethod === 'replacement' || (resolveMethod === 'refund' && requiresReturn)) {
+          toast.success(resolveMethod === 'refund' ? 'Return & Refund started. Buyer notified to ship goods.' : 'Exchange started. Buyer notified.');
+        } else {
+          toast.success('Resolution submitted. Buyer has 72h to confirm.');
+        }
+      } else if (resolveMethod === 'replacement' || (resolveMethod === 'refund' && requiresReturn)) {
         syncDispute({
           status: 'exchange',
           resolutionMethod: resolveMethod,
           requiresReturn: !!requiresReturn,
-          returnMode: 'buyer_ships',
-          exchangeStage: 'awaiting_return'
+          returnMode: requiresReturn ? (returnMode || 'buyer_ships') : undefined,
+          exchangeStage: requiresReturn ? 'awaiting_return' : 'return_received'
         });
         toast.success(resolveMethod === 'refund' ? 'Return & Refund started. Buyer notified to ship goods.' : 'Exchange started. Buyer notified.');
       } else {
@@ -586,6 +617,26 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
       }
     }
 
+    // Build per-SKU replacement items from affectedProducts
+    const affectedProds: any[] = dispute?.affectedProducts || [];
+    const replacementItems = affectedProds.length > 0
+      ? affectedProds.map((ap: any, idx: number) => {
+          const orderedQty = ap.quantity || 1;
+          const affectedQty = ap.affectedQuantity || orderedQty;
+          const rawQty = replacementItemQtys[idx];
+          const replacementQty = rawQty !== undefined ? Math.min(Number(rawQty), orderedQty) : affectedQty;
+          return {
+            name: ap.name,
+            productId: ap.productId,
+            orderedQty,
+            affectedQty,
+            replacementQty: Math.max(1, replacementQty),
+            unit: ap.unit,
+            image: ap.image,
+          };
+        })
+      : undefined;
+
     setBusy(true);
     try {
       const courierVal = replacementShipmentType === 'own_truck'
@@ -603,6 +654,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         vehicleNumber: returnVehicleNumber.trim() || undefined,
         driverPhone: returnDriverPhone.trim() || undefined,
         trackingURL: returnTrackingURL.trim() || undefined,
+        replacementItems,
       });
 
       syncDispute({
@@ -614,6 +666,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         replacementDriverPhone: returnDriverPhone.trim() || undefined,
         replacementTrackingURL: returnTrackingURL.trim() || undefined,
         replacementShippedAt: new Date().toISOString(),
+        replacementItems,
       });
       exReset();
       toast.success('Replacement dispatched. Buyer notified.');
@@ -698,13 +751,111 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
     if (evidenceUrls.length === 0 && !videoUrl) { toast.error('Attach at least one photo or video evidence.'); return; }
     if (uploading || videoUploading) { toast.error('Please wait for media to finish uploading.'); return; }
 
+    const finalRequestedResolution = issueType === 'quantity' ? 'partial_replacement' : requestedResolution;
+
+    // Multi-product validation: only applies to partial replacement when order has multiple items
+    if (finalRequestedResolution === 'partial_replacement' && order.items && order.items.length > 1 && selectedProductIndices.length === 0) {
+      toast.error('Please select at least one affected product.');
+      return;
+    }
+
+    const qtyNum = affectedQuantity ? parseFloat(affectedQuantity) : undefined;
+
+    // Single product validation: ensure defective quantity is valid and <= ordered quantity
+    if ((finalRequestedResolution === 'partial_replacement' || issueType === 'quantity') && (!order.items || order.items.length <= 1)) {
+      const maxAllowed = order.items?.[0]?.quantity || 1;
+      const unit = order.items?.[0]?.unit || 'pcs';
+      if (!qtyNum || isNaN(qtyNum) || qtyNum < 1) {
+        toast.error(`Please enter a valid defective quantity (1 to ${maxAllowed} ${unit}).`);
+        return;
+      }
+      if (qtyNum > maxAllowed) {
+        toast.error(`Defective quantity cannot exceed total ordered quantity (${maxAllowed} ${unit}).`);
+        return;
+      }
+    }
+
+    const affectedProducts = finalRequestedResolution === 'partial_replacement' && order.items && order.items.length > 1
+      ? selectedProductIndices.map(idx => {
+          const it = order.items[idx];
+          const rawDefective = productDefectiveQuantities[idx];
+          const parsed = rawDefective ? parseFloat(rawDefective) : NaN;
+          const defQty = !isNaN(parsed) && parsed > 0 ? Math.min(parsed, it.quantity || parsed) : (it.quantity || 1);
+          return {
+            productId: it.productId,
+            name: it.name,
+            quantity: it.quantity,
+            affectedQuantity: defQty,
+            image: it.image || it.imageUrl || (order.items?.length === 1 ? productImage : undefined),
+          };
+        })
+      : finalRequestedResolution === 'partial_replacement' && order.items && order.items.length === 1
+        ? [{
+            productId: order.items[0].productId,
+            name: order.items[0].name,
+            quantity: order.items[0].quantity,
+            affectedQuantity: qtyNum && !isNaN(qtyNum) ? Math.min(Math.max(1, qtyNum), order.items[0].quantity || 1) : (order.items[0].quantity || 1),
+            image: order.items[0].image || order.items[0].imageUrl || productImage,
+          }]
+        : (order.items && order.items.length > 0)
+          ? order.items.map((it: any) => ({
+              productId: it.productId,
+              name: it.name,
+              quantity: it.quantity,
+              affectedQuantity: it.quantity,
+              image: it.image || it.imageUrl || (order.items?.length === 1 ? productImage : undefined),
+            }))
+          : undefined;
+
+    const totalCalculatedQty = affectedProducts && affectedProducts.length > 0
+      ? affectedProducts.reduce((sum: number, p: any) => sum + (p.affectedQuantity || 0), 0)
+      : (qtyNum && !isNaN(qtyNum) ? qtyNum : undefined);
+
     const combinedEvidence: { url: string; type: 'image' | 'video' }[] = [
       ...evidenceUrls.map(url => ({ url, type: 'image' as const })),
       ...(videoUrl ? [{ url: videoUrl, type: 'video' as const }] : []),
     ];
 
     const hasBank = refundBankDetails.accountNumber.trim() || refundBankDetails.upiId.trim();
-    const cleanRefund = hasBank ? {
+
+    // If buyer selected Refund, validating payment details is mandatory
+    if (finalRequestedResolution === 'refund') {
+      const holder = refundBankDetails.accountHolderName.trim();
+      const bName = refundBankDetails.bankName.trim();
+      const accNum = refundBankDetails.accountNumber.trim();
+      const ifsc = refundBankDetails.ifscCode.trim().toUpperCase();
+      const upi = refundBankDetails.upiId.trim();
+
+      const hasBankFields = !!(holder || bName || accNum || ifsc);
+      const hasUpi = !!upi;
+
+      if (!hasBankFields && !hasUpi) {
+        toast.error('Refund requires bank account details or a UPI ID.');
+        return;
+      }
+
+      if (hasUpi && !UPI_REGEX.test(upi)) {
+        toast.error('Please enter a valid UPI ID (e.g. username@bank or mobile@upi).');
+        return;
+      }
+
+      if (hasBankFields) {
+        if (!holder || holder.length < 2) {
+          toast.error('Please enter the Account Holder Name.');
+          return;
+        }
+        if (!accNum || !ACCOUNT_NUMBER_REGEX.test(accNum)) {
+          toast.error('Please enter a valid Bank Account Number (9 to 18 digits).');
+          return;
+        }
+        if (!ifsc || !IFSC_REGEX.test(ifsc)) {
+          toast.error('Please enter a valid 11-character IFSC Code (e.g. SBIN0001234).');
+          return;
+        }
+      }
+    }
+
+    const cleanRefund = (finalRequestedResolution === 'refund' && hasBank) ? {
       accountHolderName: refundBankDetails.accountHolderName.trim() || undefined,
       bankName: refundBankDetails.bankName.trim() || undefined,
       accountNumber: refundBankDetails.accountNumber.trim() || undefined,
@@ -714,14 +865,14 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
 
     setBusy(true);
     try {
-      const qtyNum = affectedQuantity ? parseFloat(affectedQuantity) : undefined;
       await orderApi.raiseDispute(order._id, {
         issueType,
         description: issueDesc.trim(),
         evidence: combinedEvidence,
-        requestedResolution: (requestedResolution || undefined) as any,
-        affectedQuantity: qtyNum && !isNaN(qtyNum) ? qtyNum : undefined,
+        requestedResolution: (finalRequestedResolution || undefined) as any,
+        affectedQuantity: totalCalculatedQty,
         buyerRefundDetails: cleanRefund,
+        affectedProducts,
       });
       sync({
         status: 'disputed',
@@ -730,13 +881,16 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           issueType,
           description: issueDesc.trim(),
           evidence: combinedEvidence,
-          requestedResolution: requestedResolution || undefined,
-          affectedQuantity: qtyNum && !isNaN(qtyNum) ? qtyNum : undefined,
+          requestedResolution: finalRequestedResolution || undefined,
+          affectedQuantity: totalCalculatedQty,
           buyerRefundDetails: cleanRefund,
+          affectedProducts,
         }
       });
       toast.success('Ticket raised. Our team will review it shortly.');
       setConfirmMode('idle');
+      setSelectedProductIndices([]);
+      setProductDefectiveQuantities({});
     } catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); }
     finally { setBusy(false); }
   };
@@ -901,12 +1055,20 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         <p className={sectionTitle}>Order Summary</p>
         <div className="flex flex-col gap-4 mb-4">
           {order.items?.map((it: any, i: number) => {
-            const itemImage = it.image || it.imageUrl || (i === 0 ? productImage : '');
+            const itemImage = it.image || it.imageUrl || (order.items?.length === 1 ? productImage : '');
             return (
               <div key={i} className="flex gap-4 items-start">
                 <div className="w-12 h-12 rounded-[8px] overflow-hidden bg-[#f8fafc] border border-[#eef2f6] shrink-0 flex items-center justify-center shadow-inner">
                   {itemImage ? (
-                    <img src={itemImage} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={itemImage}
+                      alt=""
+                      onError={e => {
+                        (e.target as HTMLImageElement).onerror = null;
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Product';
+                      }}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <Package size={20} className="text-[#cbd5e1]" />
                   )}
@@ -1096,6 +1258,40 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             <p className="text-sm text-[#7f1d1d] m-0 whitespace-pre-wrap">{dispute.description}</p>
           </div>
 
+          {/* Affected Products if specified */}
+          {dispute.affectedProducts && dispute.affectedProducts.length > 0 && (
+            <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 mb-3">
+              <span className="text-[11px] font-bold text-[#475569] uppercase tracking-wide block mb-2">
+                Affected Products ({dispute.affectedProducts.length}):
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {dispute.affectedProducts.map((p: any, idx: number) => (
+                  <div key={idx} className="flex items-center gap-2.5 bg-white p-2 rounded-[6px] border border-[#e2e8f0] text-xs">
+                    <div className="w-9 h-9 rounded bg-[#f1f5f9] border border-[#e2e8f0] overflow-hidden shrink-0 flex items-center justify-center">
+                      {p.image ? (
+                        <img src={p.image} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <Package size={16} className="text-[#94a3b8]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-[#0f172a] m-0 truncate">{p.name}</p>
+                      <p className="text-[11px] text-[#64748b] m-0">
+                        {p.affectedQuantity != null ? (
+                          <span className="text-[#dc2626] font-semibold">
+                            Defective: {p.affectedQuantity} {p.quantity ? `/ ${p.quantity} ordered` : 'units'}
+                          </span>
+                        ) : p.quantity != null ? (
+                          `Qty: ${p.quantity}`
+                        ) : null}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Transportation Policy Banner in Dispute Card */}
           {(dispute.resolutionMethod === 'refund' || dispute.requestedResolution === 'refund') ? (
             <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[8px] p-2.5 mb-3 text-xs text-[#92400e] flex items-start gap-2">
@@ -1235,23 +1431,49 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
               <p className="text-sm font-bold text-[#0f172a] m-0 mb-1">Resolve this dispute</p>
               <p className="text-xs text-[#64748b] m-0 mb-3">Coordinate with the buyer (call / mail above), then pick how you'll resolve it.</p>
 
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                {resolveOptions.map(m => (
-                  <button key={m} type="button" onClick={() => {
-                    setResolveMethod(m);
-                    if (m === 'replacement' || m === 'refund') {
-                      setRequiresReturn(true);
-                      setReturnMode(m === 'refund' ? 'buyer_ships' : null);
-                    } else {
-                      setRequiresReturn(null);
-                      setReturnMode(null);
-                    }
-                  }}
-                    className={`text-left p-3 rounded-[8px] border cursor-pointer transition-colors ${resolveMethod === m ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}>
-                    <span className="text-sm font-bold text-[#0f172a]">{METHOD_META[m].icon} {METHOD_META[m].label}</span>
-                  </button>
-                ))}
-              </div>
+              {dispute.requestedResolution ? (
+                <div className="mb-3 p-3.5 bg-[#f0fdf4] border border-[#86efac] rounded-[8px] flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#15803d] block">
+                      Buyer's Requested Resolution (Locked)
+                    </span>
+                    <p className="text-sm font-extrabold text-[#166534] m-0 mt-0.5 flex items-center gap-1.5">
+                      {dispute.requestedResolution === 'refund' ? (
+                        <>💰 Refund</>
+                      ) : dispute.requestedResolution === 'partial_replacement' ? (
+                        <>📦 Partial Replacement</>
+                      ) : (
+                        <>📦 Full Replacement</>
+                      )}
+                      {dispute.affectedQuantity ? ` (${dispute.affectedQuantity} pcs)` : ''}
+                    </p>
+                    <p className="text-xs text-[#166534] m-0 mt-1">
+                      The buyer requested {dispute.requestedResolution === 'refund' ? 'a Refund' : 'a Replacement'}. Resolution method cannot be changed. Please configure the logistics below to proceed.
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-bold text-[#15803d] bg-white border border-[#86efac] px-2.5 py-1 rounded-full shrink-0 shadow-2xs">
+                    Locked
+                  </span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {resolveOptions.map(m => (
+                    <button key={m} type="button" onClick={() => {
+                      setResolveMethod(m);
+                      if (m === 'replacement' || m === 'refund') {
+                        setRequiresReturn(true);
+                        setReturnMode(m === 'refund' ? 'buyer_ships' : null);
+                      } else {
+                        setRequiresReturn(null);
+                        setReturnMode(null);
+                      }
+                    }}
+                      className={`text-left p-3 rounded-[8px] border cursor-pointer transition-colors ${resolveMethod === m ? 'border-[#059669] bg-[#f0fdf4]' : 'border-[#e2e8f0] bg-white hover:border-[#cbd5e1]'}`}>
+                      <span className="text-sm font-bold text-[#0f172a]">{METHOD_META[m].icon} {METHOD_META[m].label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {/* Replacement → ask about return logistics */}
               {resolveMethod === 'replacement' && (
@@ -1893,7 +2115,50 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                       <p className="text-xs text-[#64748b] m-0 mt-0.5">Select how you are dispatching the replacement goods to the buyer:</p>
                     </div>
 
-                    {/* Replacement Logistics Mode Toggle */}
+                    {/* Per-SKU Replacement Quantity Table */}
+                    {dispute.affectedProducts && dispute.affectedProducts.length > 0 && (
+                      <div className="flex flex-col gap-2 p-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px]">
+                        <p className="text-xs font-bold text-[#14532d] m-0 flex items-center gap-1.5">
+                          <Boxes size={14} className="text-[#16a34a]" /> Replacement Quantities per SKU
+                        </p>
+                        <div className="flex flex-col gap-1.5">
+                          {dispute.affectedProducts.map((ap: any, idx: number) => {
+                            const orderedQty = ap.quantity || 1;
+                            const affectedQty = ap.affectedQuantity || orderedQty;
+                            const currentVal = replacementItemQtys[idx] ?? String(affectedQty);
+                            const itemImg = ap.image;
+                            return (
+                              <div key={idx} className="flex items-center gap-2.5 bg-white rounded-[6px] border border-[#d1fae5] px-2.5 py-2">
+                                <div className="w-8 h-8 rounded-[4px] bg-[#f1f5f9] border border-[#e2e8f0] overflow-hidden flex items-center justify-center shrink-0">
+                                  {itemImg ? (
+                                    <img src={itemImg} alt="" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <Package size={14} className="text-[#94a3b8]" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-semibold text-[#0f172a] m-0 truncate">{ap.name}</p>
+                                  <p className="text-[10px] text-[#64748b] m-0">Ordered: <strong>{orderedQty}</strong> · Affected: <strong>{affectedQty}</strong> {ap.unit || 'pcs'}</p>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <label className="text-[10px] font-bold text-[#15803d] whitespace-nowrap">Replace Qty:</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max={orderedQty}
+                                    value={currentVal}
+                                    onChange={e => setReplacementItemQtys(prev => ({ ...prev, [idx]: e.target.value }))}
+                                    className="w-16 border border-[#86efac] rounded-[5px] px-2 py-1 text-xs font-bold text-center outline-none focus:border-[#16a34a] bg-white"
+                                  />
+                                  <span className="text-[10px] text-[#64748b]">{ap.unit || 'pcs'}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-2 p-1 bg-[#f1f5f9] rounded-[8px]">
                       <button
                         type="button"
@@ -2004,6 +2269,18 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                   !reportIssue ? (
                     <div className="flex flex-col gap-2">
                       <p className="text-sm font-bold text-[#0f172a] m-0">Replacement on the way — confirm once it arrives & passes inspection.</p>
+                      {/* Per-SKU replacement summary for buyer */}
+                      {dispute.replacementItems && dispute.replacementItems.length > 0 && (
+                        <div className="flex flex-col gap-1.5 p-3 bg-[#f0fdf4] border border-[#bbf7d0] rounded-[8px]">
+                          <p className="text-xs font-bold text-[#14532d] m-0 flex items-center gap-1.5"><Boxes size={13} className="text-[#16a34a]" /> Replacement being sent:</p>
+                          {dispute.replacementItems.map((it: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between text-xs text-[#166534] bg-white rounded-[5px] border border-[#d1fae5] px-2.5 py-1.5">
+                              <span className="font-semibold truncate flex-1 mr-2">{it.name}</span>
+                              <span className="shrink-0"><strong>{it.replacementQty}</strong> {it.unit || 'pcs'} <span className="text-[#6b7280]">(of {it.orderedQty} ordered)</span></span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex gap-3">
                         <button onClick={() => setReportIssue(true)} disabled={busy} className="flex-1 py-2.5 text-sm font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fca5a5] rounded-[8px] cursor-pointer hover:bg-[#fee2e2] disabled:opacity-50">Issue with Replacement</button>
                         <button onClick={handleConfirmExchange} disabled={busy} className="flex-1 py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer hover:bg-[#047857] disabled:opacity-50">{busy ? 'Submitting…' : 'Confirm Exchange Done'}</button>
@@ -2317,9 +2594,21 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           {confirmMode === 'ticket' && (
             <div className="flex flex-col gap-4">
               <p className="text-xs text-[#64748b] m-0">Tell us what went wrong. Our team reviews every ticket before the supplier acts.</p>
+
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-[#0f172a]">Issue Type <span className="text-[#dc2626]">*</span></label>
-                <select value={issueType} onChange={e => setIssueType(e.target.value)} className="border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm outline-none focus:border-primary">
+                <select
+                  value={issueType}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setIssueType(val);
+                    if (val === 'quantity') {
+                      setRequestedResolution('partial_replacement');
+                    }
+                  }}
+                  className="border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm outline-none focus:border-primary"
+                >
                   <option value="">Select…</option>
                   <option value="quantity">Wrong Quantity</option>
                   <option value="quality">Quality Issue</option>
@@ -2331,25 +2620,215 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-[#0f172a]">Requested Resolution <span className="text-[#dc2626]">*</span></label>
-                <select value={requestedResolution} onChange={e => setRequestedResolution(e.target.value as any)} className="border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm outline-none focus:border-primary">
-                  <option value="">Select resolution preference…</option>
-                  <option value="refund">Refund (Return material &amp; get money refunded)</option>
-                  <option value="replacement">Full Replacement (Return defective lot &amp; receive replacement)</option>
-                  <option value="partial_replacement">Partial Replacement (Replace specific defective quantity)</option>
-                </select>
+                {issueType === 'quantity' ? (
+                  <div className="p-2.5 bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] text-xs text-[#1e40af] font-semibold flex items-center gap-2">
+                    <Package size={14} className="text-[#2563eb]" />
+                    <span>Partial Replacement (Replace specific defective / missing quantity)</span>
+                  </div>
+                ) : (
+                  <select
+                    value={requestedResolution}
+                    onChange={e => {
+                      const res = e.target.value as any;
+                      setRequestedResolution(res);
+                      if (res !== 'refund') {
+                        setRefundBankDetails({
+                          accountHolderName: '',
+                          bankName: '',
+                          accountNumber: '',
+                          ifscCode: '',
+                          upiId: '',
+                        });
+                      }
+                    }}
+                    className="border border-[#e2e8f0] rounded-[8px] px-3 py-2.5 text-sm outline-none focus:border-primary"
+                  >
+                    <option value="">Select resolution preference…</option>
+                    <option value="refund">Refund (Return material &amp; get money refunded)</option>
+                    <option value="replacement">Full Replacement (Return defective lot &amp; receive replacement)</option>
+                    <option value="partial_replacement">Partial Replacement (Replace specific defective quantity)</option>
+                  </select>
+                )}
               </div>
 
-              {(requestedResolution === 'partial_replacement' || issueType === 'quantity') && (
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-[#0f172a]">Defective / Return Quantity <span className="text-[#dc2626]">*</span></label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={affectedQuantity}
-                    onChange={e => setAffectedQuantity(e.target.value)}
-                    placeholder="Enter quantity of units to be replaced/returned"
-                    className="border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary"
-                  />
+              {/* Single product order defective quantity (for multi-product, each product has its own defective qty above) */}
+              {(!order.items || order.items.length <= 1) && (requestedResolution === 'partial_replacement' || issueType === 'quantity') && (() => {
+                const singleItem = order.items?.[0];
+                const maxQty = singleItem?.quantity || 1;
+                const unit = singleItem?.unit || 'pcs';
+                const isOverMax = Number(affectedQuantity) > maxQty;
+
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#0f172a]">
+                        Defective / Return Quantity <span className="text-[#dc2626]">*</span>
+                      </label>
+                      <span className="text-xs font-semibold text-[#64748b]">
+                        Total Ordered: <strong className="text-[#0f172a]">{maxQty}</strong> {unit}
+                      </span>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type="number"
+                        min="1"
+                        max={maxQty}
+                        value={affectedQuantity}
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            setAffectedQuantity('');
+                            return;
+                          }
+                          const parsed = parseFloat(val);
+                          if (!isNaN(parsed)) {
+                            if (parsed > maxQty) {
+                              setAffectedQuantity(String(maxQty));
+                              toast.error(`Quantity cannot exceed total ordered (${maxQty} ${unit})`);
+                            } else if (parsed < 0) {
+                              setAffectedQuantity('1');
+                            } else {
+                              setAffectedQuantity(val);
+                            }
+                          }
+                        }}
+                        placeholder={`Enter quantity (1 to ${maxQty})`}
+                        className={`w-full border rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary pr-14 ${
+                          isOverMax ? 'border-[#f87171] bg-[#fff5f5]' : 'border-[#e2e8f0]'
+                        }`}
+                      />
+                      <span className="absolute right-3 text-xs font-bold text-[#94a3b8] pointer-events-none uppercase">
+                        {unit}
+                      </span>
+                    </div>
+                    {isOverMax && (
+                      <p className="text-[11px] text-[#dc2626] m-0 font-medium">
+                        Cannot exceed total ordered quantity of {maxQty} {unit}.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Multi-product selection if order has more than 1 item */}
+              {requestedResolution === 'partial_replacement' && order.items && order.items.length > 1 && (
+                <div className="flex flex-col gap-2 p-3.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px]">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#0f172a] flex items-center gap-1.5">
+                      <Boxes size={14} className="text-primary" /> Select affected products <span className="text-[#dc2626]">*</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs text-[#475569] font-semibold cursor-pointer hover:text-primary">
+                      <input
+                        type="checkbox"
+                        checked={order.items.length > 0 && selectedProductIndices.length === order.items.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            const allIdx = order.items.map((_: any, idx: number) => idx);
+                            setSelectedProductIndices(allIdx);
+                            setProductDefectiveQuantities(prev => {
+                              const updated = { ...prev };
+                              order.items.forEach((it: any, idx: number) => {
+                                if (!updated[idx]) updated[idx] = String(it.quantity || 1);
+                              });
+                              return updated;
+                            });
+                          } else {
+                            setSelectedProductIndices([]);
+                          }
+                        }}
+                        className="rounded text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                      />
+                      <span>All products</span>
+                    </label>
+                  </div>
+
+                  <div className="flex flex-col gap-2 mt-1">
+                    {order.items.map((it: any, idx: number) => {
+                      const itemImage = it.image || it.imageUrl || (order.items?.length === 1 ? productImage : '');
+                      const isChecked = selectedProductIndices.includes(idx);
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-[8px] border transition-colors ${
+                            isChecked ? 'bg-white border-[#0284c7] shadow-2xs' : 'bg-white border-[#e2e8f0] hover:border-[#cbd5e1]'
+                          }`}
+                        >
+                          <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedProductIndices((prev) => {
+                                  const next = prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx];
+                                  if (!prev.includes(idx) && !productDefectiveQuantities[idx]) {
+                                    setProductDefectiveQuantities(pq => ({ ...pq, [idx]: String(it.quantity || 1) }));
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className="rounded text-primary focus:ring-primary h-4 w-4 cursor-pointer shrink-0"
+                            />
+                            <div className="w-9 h-9 rounded bg-[#f1f5f9] border border-[#e2e8f0] overflow-hidden shrink-0 flex items-center justify-center">
+                              {itemImage ? (
+                                <img
+                                  src={itemImage}
+                                  alt=""
+                                  onError={e => {
+                                    (e.target as HTMLImageElement).onerror = null;
+                                    (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Product';
+                                  }}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Package size={16} className="text-[#94a3b8]" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-[#0f172a] m-0 truncate">{it.name}</p>
+                              <p className="text-[11px] text-[#64748b] m-0">Ordered: <strong>{it.quantity}</strong> {it.unit || 'pcs'}</p>
+                            </div>
+                          </label>
+
+                          {/* Per-product Defective Quantity */}
+                          {isChecked && (
+                            <div className="flex items-center gap-1.5 pl-6 sm:pl-0 shrink-0">
+                              <label className="text-[11px] font-bold text-[#475569] whitespace-nowrap">
+                                Defective Qty:
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                max={it.quantity || undefined}
+                                value={productDefectiveQuantities[idx] ?? String(it.quantity || 1)}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  const maxQ = it.quantity || 1;
+                                  if (val === '') {
+                                    setProductDefectiveQuantities(prev => ({ ...prev, [idx]: '' }));
+                                    return;
+                                  }
+                                  const parsed = parseFloat(val);
+                                  if (!isNaN(parsed)) {
+                                    if (parsed > maxQ) {
+                                      setProductDefectiveQuantities(prev => ({ ...prev, [idx]: String(maxQ) }));
+                                      toast.error(`Cannot exceed ordered quantity (${maxQ} ${it.unit || 'pcs'})`);
+                                    } else if (parsed < 0) {
+                                      setProductDefectiveQuantities(prev => ({ ...prev, [idx]: '1' }));
+                                    } else {
+                                      setProductDefectiveQuantities(prev => ({ ...prev, [idx]: val }));
+                                    }
+                                  }
+                                }}
+                                className="w-20 border border-[#cbd5e1] rounded-[6px] px-2 py-1 text-xs outline-none focus:border-primary font-bold text-center"
+                                placeholder="Qty"
+                              />
+                              <span className="text-[10px] text-[#94a3b8]">{it.unit || 'pcs'}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -2434,58 +2913,154 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
                 </div>
               </div>
 
-              {/* Bank / UPI Details for Refund */}
-              <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-3.5 flex flex-col gap-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#0f172a] flex items-center gap-1.5">
-                    <CreditCard size={14} className="text-[#0284c7]" /> Refund Bank / UPI Details
-                  </span>
-                  <span className="text-[10px] text-[#64748b]">(Optional)</span>
+              {/* Bank / UPI Details for Refund - ONLY shown if buyer chooses Refund */}
+              {requestedResolution === 'refund' && (
+                <div className="bg-[#f8fafc] border-2 border-[#bae6fd] rounded-[12px] p-4 flex flex-col gap-3 shadow-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <span className="text-xs font-bold text-[#0f172a] flex items-center gap-1.5">
+                      <CreditCard size={15} className="text-[#0284c7]" /> Refund Payment Details
+                      <span className="text-[#dc2626] font-bold">*</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fca5a5] px-2 py-0.5 rounded-full">
+                      Required for Refund
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#475569] m-0 leading-relaxed">
+                    Please provide either your <strong>Bank Account Details</strong> (with valid IFSC) OR a valid <strong>UPI ID</strong> so the refund can be credited directly to you.
+                  </p>
+
+                  {/* Option 1: Bank Account Details */}
+                  <div className="bg-white border border-[#e2e8f0] rounded-[8px] p-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[#334155] uppercase tracking-wide">
+                        Option 1: Bank Account Transfer
+                      </span>
+                      {refundBankDetails.accountNumber && refundBankDetails.ifscCode && ACCOUNT_NUMBER_REGEX.test(refundBankDetails.accountNumber) && IFSC_REGEX.test(refundBankDetails.ifscCode) ? (
+                        <span className="text-[10px] font-semibold text-[#16a34a] flex items-center gap-1">
+                          <Check size={11} /> Valid Bank Details
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#64748b] block mb-1">
+                          Account Holder Name <span className="text-[#dc2626]">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Ramesh Kumar"
+                          value={refundBankDetails.accountHolderName}
+                          onChange={e => setRefundBankDetails(p => ({ ...p, accountHolderName: e.target.value }))}
+                          className="w-full border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#64748b] block mb-1">
+                          Bank Name <span className="text-[#94a3b8]">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. HDFC Bank, SBI"
+                          value={refundBankDetails.bankName}
+                          onChange={e => setRefundBankDetails(p => ({ ...p, bankName: e.target.value }))}
+                          className="w-full border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#64748b] block mb-1">
+                          Account Number <span className="text-[#dc2626]">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="9 to 18 digit account number"
+                          value={refundBankDetails.accountNumber}
+                          onChange={e => setRefundBankDetails(p => ({ ...p, accountNumber: e.target.value.replace(/\D/g, '').slice(0, 18) }))}
+                          className={`w-full border rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white ${
+                            refundBankDetails.accountNumber && !ACCOUNT_NUMBER_REGEX.test(refundBankDetails.accountNumber)
+                              ? 'border-[#f87171]'
+                              : 'border-[#e2e8f0]'
+                          }`}
+                        />
+                        {refundBankDetails.accountNumber && !ACCOUNT_NUMBER_REGEX.test(refundBankDetails.accountNumber) && (
+                          <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">Account number must be 9–18 digits</p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#64748b] block mb-1">
+                          IFSC Code <span className="text-[#dc2626]">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={11}
+                          placeholder="e.g. SBIN0001234"
+                          value={refundBankDetails.ifscCode}
+                          onChange={e => setRefundBankDetails(p => ({ ...p, ifscCode: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11) }))}
+                          className={`w-full border rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white uppercase font-mono ${
+                            refundBankDetails.ifscCode && !IFSC_REGEX.test(refundBankDetails.ifscCode)
+                              ? 'border-[#f87171]'
+                              : refundBankDetails.ifscCode && IFSC_REGEX.test(refundBankDetails.ifscCode)
+                              ? 'border-[#86efac]'
+                              : 'border-[#e2e8f0]'
+                          }`}
+                        />
+                        {refundBankDetails.ifscCode && !IFSC_REGEX.test(refundBankDetails.ifscCode) && (
+                          <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">Format: 4 letters, 0, then 6 letters/digits</p>
+                        )}
+                        {refundBankDetails.ifscCode && IFSC_REGEX.test(refundBankDetails.ifscCode) && (
+                          <p className="text-[10px] text-[#16a34a] m-0 mt-0.5 flex items-center gap-1"><Check size={10} /> Valid IFSC format</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-2 my-0.5">
+                    <div className="flex-1 border-t border-[#cbd5e1]" />
+                    <span className="text-[10px] font-extrabold text-[#64748b] uppercase tracking-wider bg-[#e2e8f0] px-2 py-0.5 rounded-full">OR</span>
+                    <div className="flex-1 border-t border-[#cbd5e1]" />
+                  </div>
+
+                  {/* Option 2: UPI ID */}
+                  <div className="bg-white border border-[#e2e8f0] rounded-[8px] p-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-[#334155] uppercase tracking-wide">
+                        Option 2: Instant UPI ID
+                      </span>
+                      {refundBankDetails.upiId && UPI_REGEX.test(refundBankDetails.upiId.trim()) && (
+                        <span className="text-[10px] font-semibold text-[#16a34a] flex items-center gap-1">
+                          <Check size={11} /> Valid UPI ID
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="e.g. 9876543210@paytm or yourname@okhdfcbank"
+                        value={refundBankDetails.upiId}
+                        onChange={e => setRefundBankDetails(p => ({ ...p, upiId: e.target.value.trim() }))}
+                        className={`w-full border rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white ${
+                          refundBankDetails.upiId && !UPI_REGEX.test(refundBankDetails.upiId.trim())
+                            ? 'border-[#f87171]'
+                            : refundBankDetails.upiId && UPI_REGEX.test(refundBankDetails.upiId.trim())
+                            ? 'border-[#86efac]'
+                            : 'border-[#e2e8f0]'
+                        }`}
+                      />
+                      {refundBankDetails.upiId && !UPI_REGEX.test(refundBankDetails.upiId.trim()) && (
+                        <p className="text-[10px] text-[#dc2626] m-0 mt-0.5">Format: username@bank or mobile@upi (must include @)</p>
+                      )}
+                      {refundBankDetails.upiId && UPI_REGEX.test(refundBankDetails.upiId.trim()) && (
+                        <p className="text-[10px] text-[#16a34a] m-0 mt-0.5 flex items-center gap-1"><Check size={10} /> Valid UPI ID format</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <p className="text-[11px] text-[#64748b] m-0 leading-relaxed">
-                  Provide your account details so the supplier can issue a direct refund to you if approved.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <input
-                    type="text"
-                    placeholder="Account Holder Name"
-                    value={refundBankDetails.accountHolderName}
-                    onChange={e => setRefundBankDetails(p => ({ ...p, accountHolderName: e.target.value }))}
-                    className="border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Bank Name"
-                    value={refundBankDetails.bankName}
-                    onChange={e => setRefundBankDetails(p => ({ ...p, bankName: e.target.value }))}
-                    className="border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Account Number"
-                    value={refundBankDetails.accountNumber}
-                    onChange={e => setRefundBankDetails(p => ({ ...p, accountNumber: e.target.value }))}
-                    className="border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
-                  />
-                  <input
-                    type="text"
-                    placeholder="IFSC Code"
-                    value={refundBankDetails.ifscCode}
-                    onChange={e => setRefundBankDetails(p => ({ ...p, ifscCode: e.target.value.toUpperCase() }))}
-                    className="border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white uppercase"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold text-[#64748b] uppercase">Or UPI ID:</span>
-                  <input
-                    type="text"
-                    placeholder="e.g. mobile@upi or username@bank"
-                    value={refundBankDetails.upiId}
-                    onChange={e => setRefundBankDetails(p => ({ ...p, upiId: e.target.value }))}
-                    className="flex-1 border border-[#e2e8f0] rounded-[6px] px-2.5 py-1.5 text-xs outline-none focus:border-primary bg-white"
-                  />
-                </div>
-              </div>
+              )}
 
               <div className="flex gap-3">
                 <button onClick={() => setConfirmMode('idle')} className="flex-1 py-2.5 text-sm font-bold text-[#64748b] bg-[#f1f5f9] rounded-[8px] border-none cursor-pointer">Back</button>
@@ -2533,6 +3108,70 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             }}
             disabled={busy || !rating}
             className="py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer disabled:opacity-50">
+            {busy ? 'Submitting…' : 'Submit Rating'}
+          </button>
+        </div>
+      )}
+
+      {/* Supplier: rate buyer after completed */}
+      {isSupplier && order.status === 'completed' && !order.hasBuyerReview && !order._buyerReviewSubmitted && confirmMode !== 'buyer_rating' && (
+        <div className={`${card} p-5`}>
+          <p className={sectionTitle}>Rate Your Buyer</p>
+          <button
+            onClick={() => {
+              setRating(0);
+              setReviewComment('');
+              setConfirmMode('buyer_rating');
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-[#d97706] bg-[#fffbeb] border border-[#fcd34d] rounded-[8px] cursor-pointer hover:bg-[#fef3c7]"
+          >
+            <Star size={15} /> Leave a Rating
+          </button>
+        </div>
+      )}
+      {isSupplier && order.status === 'completed' && (order.hasBuyerReview || order._buyerReviewSubmitted) && confirmMode !== 'buyer_rating' && (
+        <div className={`${card} p-5 flex items-center gap-2 text-sm text-[#15803d]`}>
+          <CheckCircle size={16} className="text-[#16a34a]" /> You have already rated this buyer for this order.
+        </div>
+      )}
+      {isSupplier && order.status === 'completed' && confirmMode === 'buyer_rating' && (
+        <div className={`${card} p-5 flex flex-col gap-4`}>
+          <div className="flex items-center justify-between">
+            <p className={sectionTitle}>Rate Your Buyer</p>
+            <button
+              onClick={() => setConfirmMode('idle')}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 bg-transparent border-none cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+          <StarRow value={rating} onChange={setRating} />
+          <textarea
+            value={reviewComment}
+            onChange={e => setReviewComment(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="Comments about buyer collaboration/payment (optional)"
+            className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary resize-none"
+          />
+          <button
+            onClick={async () => {
+              if (!rating) { toast.error('Pick a rating'); return; }
+              setBusy(true);
+              try {
+                await orderApi.submitBuyerReview(order._id, { rating, comment: reviewComment.trim() || undefined });
+                sync({ _buyerReviewSubmitted: true, hasBuyerReview: true });
+                toast.success('Thanks for rating the buyer!');
+                setConfirmMode('idle');
+              } catch (e: any) {
+                toast.error(e?.response?.data?.message || 'Failed to submit rating');
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={busy || !rating}
+            className="py-2.5 text-sm font-bold text-white bg-[#059669] rounded-[8px] border-none cursor-pointer disabled:opacity-50 hover:bg-[#047857] transition-colors"
+          >
             {busy ? 'Submitting…' : 'Submit Rating'}
           </button>
         </div>

@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import {
   Building2, Edit2, Save, X, Loader2, CheckCircle2,
   FileText, Package, Tag, Hash, Layers, ClipboardList,
-  Briefcase, MapPin, ShieldCheck, AlignLeft, BarChart2,
+  Briefcase, MapPin, ShieldCheck, AlignLeft, BarChart2, Star,
 } from 'lucide-react';
 import { buyerProfileApi } from '../services/buyer-profile.api';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
@@ -234,6 +234,51 @@ const AccountOverviewSection: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 gap-5 mb-8">
+
+      {/* ══════════════════════════════════════════════════
+          CARD 0 — Buyer Trust & Supplier Rating
+      ══════════════════════════════════════════════════ */}
+      <div className="bg-white border border-[#eef2f6] rounded-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-6 flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-[12px] bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-500 shrink-0">
+            <Star size={24} className="fill-amber-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-[#0f172a] m-0">Buyer Platform Rating</h3>
+              {user?.buyerRating ? (
+                <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-200">
+                  {Number(user.buyerRating).toFixed(1)} / 5.0
+                </span>
+              ) : (
+                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                  New Buyer
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-1 mb-0">
+              {user?.buyerRating
+                ? `Calculated from ${user.buyerRatingsCount || 0} supplier review${user.buyerRatingsCount === 1 ? '' : 's'} across completed orders.`
+                : 'Complete orders with verified suppliers to earn high ratings and build trust on AmjStar.'}
+            </p>
+          </div>
+        </div>
+        {user?.buyerRating ? (
+          <div className="flex items-center gap-1 shrink-0 bg-amber-50/70 px-3 py-2 rounded-[10px] border border-amber-200/60">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                size={18}
+                className={
+                  star <= Math.round(Number(user.buyerRating))
+                    ? 'text-amber-400 fill-amber-400'
+                    : 'text-slate-200 fill-slate-100'
+                }
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       {/* ══════════════════════════════════════════════════
           CARD 1 — Business Verification

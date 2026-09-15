@@ -649,8 +649,16 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
               <div key={i} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-[4px] bg-[#e2e8f0] overflow-hidden shrink-0 flex items-center justify-center">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    {(item.image || item.imageUrl) ? (
+                      <img
+                        src={item.image || item.imageUrl}
+                        alt={item.name}
+                        onError={e => {
+                          (e.target as HTMLImageElement).onerror = null;
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/80x80?text=Product';
+                        }}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <Package size={14} className="text-[#94a3b8]" />
                     )}
@@ -2433,8 +2441,7 @@ const ChatInbox: React.FC = () => {
           quantity: it.quantity,
           price: Number(it.price),
           hsnCode: it.hsnCode || undefined,
-          unit: it.unit || 'pcs',
-          image: (it as any).imageUrl || (it as any).image,
+          image: (it as any).imageUrl || (it as any).image || (quoteForm.cartItems.length === 1 ? activeConv?.productId?.images?.[0] : undefined),
           gstRate: quoteForm.gstType === 'exempt' ? 0 : ((it as any).gstRate ?? quoteForm.gstRate),
         }))
         : [{
@@ -3007,24 +3014,38 @@ const ChatInbox: React.FC = () => {
                     ) : (
                       <div className={`max-w-[85%] px-4 py-3 rounded-[12px] text-sm ${isMine ? 'bg-primary text-white rounded-br-[4px]' : 'bg-white text-[#334155] border border-[#eef2f6] rounded-bl-[4px]'}`}>
                         <div className="flex flex-col gap-2.5">
-                          {(msg.metadata?.images && msg.metadata.images.length > 0) ? (
-                            <div className="flex flex-wrap gap-2">
-                              {msg.metadata.images.slice(0, 5).map((img: string, idx: number) => (
-                                <div key={idx} className={`shrink-0 rounded-[6px] overflow-hidden border ${isMine ? 'border-white/20 bg-white/10' : 'border-[#e2e8f0]/60 bg-white'} p-1 w-14 h-14 flex items-center justify-center`}>
-                                  <img src={img} alt="Product" className="max-w-full max-h-full object-contain rounded-[2px]" />
+                          {(() => {
+                            const bubbleImages = (msg.metadata?.images && msg.metadata.images.length > 0)
+                              ? msg.metadata.images
+                              : (Array.isArray(msg.metadata?.negotiationItems)
+                                ? msg.metadata.negotiationItems.map((it: any) => it.imageUrl || it.image).filter(Boolean)
+                                : (msg.metadata?.imageUrl ? [msg.metadata.imageUrl] : []));
+                            if (bubbleImages.length > 0) {
+                              return (
+                                <div className="flex flex-wrap gap-2">
+                                  {bubbleImages.slice(0, 5).map((img: string, idx: number) => (
+                                    <div key={idx} className={`shrink-0 rounded-[6px] overflow-hidden border ${isMine ? 'border-white/20 bg-white/10' : 'border-[#e2e8f0]/60 bg-white'} p-1 w-14 h-14 flex items-center justify-center`}>
+                                      <img
+                                        src={img}
+                                        alt="Product"
+                                        onError={e => {
+                                          (e.target as HTMLImageElement).onerror = null;
+                                          (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Product';
+                                        }}
+                                        className="max-w-full max-h-full object-contain rounded-[2px]"
+                                      />
+                                    </div>
+                                  ))}
+                                  {bubbleImages.length > 5 && (
+                                    <div className={`shrink-0 rounded-[6px] border ${isMine ? 'border-white/20 bg-white/10 text-white' : 'border-[#e2e8f0]/60 bg-[#f8fafc] text-[#64748b]'} w-14 h-14 flex items-center justify-center text-xs font-bold`}>
+                                      +{bubbleImages.length - 5}
+                                    </div>
+                                  )}
                                 </div>
-                              ))}
-                              {msg.metadata.images.length > 5 && (
-                                <div className={`shrink-0 rounded-[6px] border ${isMine ? 'border-white/20 bg-white/10 text-white' : 'border-[#e2e8f0]/60 bg-[#f8fafc] text-[#64748b]'} w-14 h-14 flex items-center justify-center text-xs font-bold`}>
-                                  +{msg.metadata.images.length - 5}
-                                </div>
-                              )}
-                            </div>
-                          ) : msg.metadata?.imageUrl && (
-                            <div className={`shrink-0 rounded-[6px] overflow-hidden border ${isMine ? 'border-white/20 bg-white/10' : 'border-[#e2e8f0]/60 bg-white'} p-1 w-14 h-14 flex items-center justify-center`}>
-                              <img src={msg.metadata.imageUrl} alt="Product" className="max-w-full max-h-full object-contain rounded-[2px]" />
-                            </div>
-                          )}
+                              );
+                            }
+                            return null;
+                          })()}
                           <div className="whitespace-pre-wrap leading-relaxed">
                             {msg.text}
                           </div>
@@ -3091,6 +3112,8 @@ const ChatInbox: React.FC = () => {
                                             unit: it.unit || 'pcs',
                                             hsnCode: it.hsnCode,
                                             gstRate: it.gstRate,
+                                            image: it.image || it.imageUrl,
+                                            imageUrl: it.imageUrl || it.image,
                                           })),
                                           deliveryTimeline: rawDeliveryTimeline || prev.deliveryTimeline,
                                           paymentTerms: parsedPay.paymentTerms,
@@ -3158,6 +3181,8 @@ const ChatInbox: React.FC = () => {
                                             unit: it.unit || 'pcs',
                                             hsnCode: it.hsnCode,
                                             gstRate: it.gstRate,
+                                            image: it.image || it.imageUrl,
+                                            imageUrl: it.imageUrl || it.image,
                                           })),
                                           deliveryTimeline: rawDeliveryTimeline || prev.deliveryTimeline,
                                           paymentTerms: parsedPay.paymentTerms,

@@ -268,6 +268,15 @@ export interface AdminDispute {
   description?: string;
   reason?: string;
   status: 'open' | 'validated' | 'reopened' | 'supplier_resolved' | 'exchange' | 'resolved' | 'rejected' | string;
+  requestedResolution?: 'refund' | 'replacement' | 'partial_replacement' | string;
+  affectedQuantity?: number;
+  affectedProducts?: Array<{
+    productId?: string;
+    name: string;
+    quantity?: number;
+    affectedQuantity?: number;
+    image?: string;
+  }>;
   evidence?: Array<{ url: string; type: 'image' | 'video' }>;
   commissionAmount?: number;
   createdAt: string;

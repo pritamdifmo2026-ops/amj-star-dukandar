@@ -78,6 +78,16 @@ export const orderApi = {
     await apiClient.post(ENDPOINTS.ORDERS.REVIEW(id), payload);
   },
 
+  submitBuyerReview: async (
+    id: string,
+    payload: {
+      rating: number;
+      comment?: string;
+    }
+  ): Promise<void> => {
+    await apiClient.post(ENDPOINTS.ORDERS.RATE_BUYER(id), payload);
+  },
+
   // ── Packed (supplier, optional pre-dispatch step) ──
   markPacked: async (id: string): Promise<void> => {
     await apiClient.patch(ENDPOINTS.ORDERS.PACK(id));
@@ -92,6 +102,13 @@ export const orderApi = {
       evidence: { url: string; type: 'image' | 'video' }[];
       requestedResolution?: 'refund' | 'replacement' | 'partial_replacement';
       affectedQuantity?: number;
+      affectedProducts?: {
+        productId?: string;
+        name: string;
+        quantity?: number;
+        affectedQuantity?: number;
+        image?: string;
+      }[];
       buyerRefundDetails?: {
         accountHolderName?: string;
         bankName?: string;
@@ -116,8 +133,9 @@ export const orderApi = {
     requiresReturn?: boolean,
     refundTransactionId?: string,
     returnMode?: 'buyer_ships' | 'supplier_pickup',
-  ): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote, requiresReturn, refundTransactionId, returnMode });
+  ): Promise<any> => {
+    const res = await apiClient.patch(ENDPOINTS.ORDERS.DISPUTE_SUPPLIER_RESOLVE(disputeId), { resolutionMethod, resolutionNote, requiresReturn, refundTransactionId, returnMode });
+    return res.data;
   },
 
   // ── Replacement exchange sub-flow ──
@@ -184,6 +202,15 @@ export const orderApi = {
       vehicleNumber?: string;
       driverPhone?: string;
       trackingURL?: string;
+      replacementItems?: Array<{
+        name: string;
+        productId?: string;
+        orderedQty: number;
+        affectedQty: number;
+        replacementQty: number;
+        unit?: string;
+        image?: string;
+      }>;
     },
     maybeCourier?: string,
     maybeTracking?: string

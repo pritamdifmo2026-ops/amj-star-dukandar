@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { Trash2, Plus, Minus, ShoppingBag, ShoppingCart, ArrowRight, Bookmark, MapPin, Truck, AlertTriangle } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ShoppingCart, ArrowRight, Bookmark, MapPin, Truck, AlertTriangle, Package } from 'lucide-react';
 import {
   removeFromCartAsync,
   updateQuantityAsync,
@@ -178,13 +178,20 @@ export const CartContent: React.FC = () => {
               }`}
             >
               <div className="flex gap-4">
-                <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)} className="shrink-0 relative">
-                  <img
-                    src={item.imageUrl || ''}
-                    alt={item.name}
-                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    className={`w-20 h-20 object-cover rounded-[10px] border border-[#f1f5f9] ${isItemOutOfStock ? 'grayscale opacity-60' : ''}`}
-                  />
+                <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)} className="shrink-0 relative block w-20 h-20 bg-[#f8fafc] border border-[#f1f5f9] rounded-[10px] overflow-hidden flex items-center justify-center">
+                  {(item.imageUrl || (item as any).image) ? (
+                    <img
+                      src={item.imageUrl || (item as any).image}
+                      alt={item.name}
+                      onError={e => {
+                        (e.target as HTMLImageElement).onerror = null;
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/120x120?text=Product';
+                      }}
+                      className={`w-full h-full object-cover ${isItemOutOfStock ? 'grayscale opacity-60' : ''}`}
+                    />
+                  ) : (
+                    <Package size={28} className="text-[#cbd5e1]" />
+                  )}
                   {isItemOutOfStock && (
                     <span className="absolute -top-1.5 -left-1.5 bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs">
                       Out of Stock

@@ -248,12 +248,37 @@ const AdminDisputes: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Item */}
-                  {order?.items?.[0]?.name && (
+                  {/* Item / Affected Products */}
+                  {d.affectedProducts && d.affectedProducts.length > 0 ? (
+                    <div className="flex flex-col gap-1.5 p-2.5 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px]">
+                      <span className="text-[11px] font-bold text-[#64748b] uppercase tracking-wide">
+                        Affected Products ({d.affectedProducts.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {d.affectedProducts.map((prod: any, pIdx: number) => (
+                          <div key={pIdx} className="flex items-center gap-2 bg-white px-2.5 py-1 rounded-[6px] border border-[#e2e8f0] text-xs">
+                            {prod.image ? (
+                              <img src={prod.image} alt="" className="w-5 h-5 object-cover rounded" />
+                            ) : (
+                              <Package size={12} className="text-[#94a3b8]" />
+                            )}
+                            <span className="font-semibold text-[#0f172a]">{prod.name}</span>
+                            {prod.affectedQuantity != null ? (
+                              <span className="text-[#dc2626] font-bold text-[11px]">
+                                Defective: {prod.affectedQuantity} {prod.quantity ? `/ ${prod.quantity}` : 'pcs'}
+                              </span>
+                            ) : prod.quantity != null ? (
+                              <span className="text-[#64748b] text-[11px]">({prod.quantity} qty)</span>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : order?.items?.[0]?.name ? (
                     <p className="text-sm font-semibold text-[#0f172a] m-0 flex items-center gap-1.5">
                       <Package size={14} className="text-[#94a3b8]" /> {order.items[0].name}
                     </p>
-                  )}
+                  ) : null}
 
                   {/* Description + Buyer Desired Resolution */}
                   <div className="bg-[#fef2f2] border border-[#fecaca] rounded-[8px] px-4 py-3">

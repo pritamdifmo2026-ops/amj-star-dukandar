@@ -94,8 +94,16 @@ export const POReviewModal: React.FC<POReviewModalProps> = ({
                 return (
                   <div key={idx} className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3 text-[11px] text-[#334155]">
                     <div className="flex items-center gap-3 mb-2 pb-2 border-b border-[#e2e8f0]">
-                      {item.image || item.imageUrl || product?.images?.[0] ? (
-                        <img src={item.image || item.imageUrl || product?.images?.[0]} alt={item.name} className="w-10 h-10 object-cover rounded-[6px] border border-[#cbd5e1]" />
+                      {item.image || item.imageUrl || (items.length === 1 ? product?.images?.[0] : undefined) ? (
+                        <img
+                          src={item.image || item.imageUrl || (items.length === 1 ? product?.images?.[0] : '')}
+                          alt={item.name}
+                          onError={e => {
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).src = 'https://placehold.co/100x100?text=Product';
+                          }}
+                          className="w-10 h-10 object-cover rounded-[6px] border border-[#cbd5e1]"
+                        />
                       ) : (
                         <div className="w-10 h-10 bg-[#e2e8f0] rounded-[6px] flex items-center justify-center shrink-0 border border-[#cbd5e1]">
                           <ImageIcon size={16} className="text-[#94a3b8]" />

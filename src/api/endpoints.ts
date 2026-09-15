@@ -38,6 +38,7 @@ export const ENDPOINTS = {
     CONFIRM_DELIVERY: (id: string | number) => `/orders/${id}/confirm-delivery`,
     MARK_DELIVERED: (id: string | number) => `/orders/${id}/mark-delivered`,
     REVIEW: (id: string | number) => `/orders/${id}/review`,
+    RATE_BUYER: (id: string | number) => `/orders/${id}/rate-buyer`,
     PO_DOWNLOAD: (id: string | number) => `/orders/${id}/po-download`,
     // Disputes
     RAISE_DISPUTE: (id: string | number) => `/orders/${id}/dispute`,
