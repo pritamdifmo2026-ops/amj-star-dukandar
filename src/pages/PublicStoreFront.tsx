@@ -4,12 +4,13 @@ import {
   Store, MapPin, Globe, ShieldCheck, ChevronDown, ChevronUp,
   Package, Calendar, TrendingUp, Award, Building2, ArrowUpRight,
   Factory, Star, CheckCircle, Share2, Copy, Check,
-  LayoutGrid, List, X, Instagram, Facebook, Twitter,
+  LayoutGrid, List, X, Instagram, Facebook, Twitter, Camera,
 } from 'lucide-react';
 import api from '@/api/client';
 import Button from '@/shared/components/ui/Button';
 import { useAppSelector } from '@/store/hooks';
 import { ROUTES } from '@/shared/constants/routes';
+import EditStoreBannerModal from '@/features/supplier/components/EditStoreBannerModal';
 
 /* ─── Share Modal ────────────────────────────────────────────────────── */
 const ShareModal: React.FC<{ url: string; name: string; type?: 'store' | 'product'; onClose: () => void }> = ({ url, name, type = 'store', onClose }) => {
@@ -262,6 +263,10 @@ const PublicStoreFront: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [shareData, setShareData] = useState<{ url: string; name: string; type: 'store' | 'product' } | null>(null);
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+
+  const authUser = useAppSelector((state) => state.auth.user);
+  const supplierProfile = useAppSelector((state) => state.supplier.profile);
 
   const storeUrl = window.location.href;
 
@@ -319,6 +324,16 @@ const PublicStoreFront: React.FC = () => {
   const yearsActive = estYear && !isNaN(Number(estYear))
     ? `${new Date().getFullYear() - Number(estYear)} yrs`
     : null;
+  const isOwner = Boolean(
+    authUser &&
+      authUser.role === 'supplier' &&
+      ((supplier?.userId && (authUser.id === String(supplier.userId) || authUser.id === String(supplier.userId?._id))) ||
+        (supplierProfile?._id && (supplierProfile._id === supplier?._id || supplierProfile._id === id)))
+  );
+
+  const hasCustomBanner = Boolean(
+    supplier?.banner && (supplier.banner.desktop || supplier.banner.tablet || supplier.banner.mobile)
+  );
 
   return (
     <div className="min-h-screen bg-[#f1f5f9] overflow-x-hidden">
@@ -333,21 +348,72 @@ const PublicStoreFront: React.FC = () => {
         />
       )}
 
-      {/* ── Banner ──────────────────────────────────────────────── */}
-      <div className="relative h-[170px] sm:h-[200px] md:h-[240px] overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#e65c00]" />
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(230,92,0,0.35) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,160,50,0.2) 0%, transparent 55%)' }} />
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+      {isOwner && (
+        <EditStoreBannerModal
+          isOpen={isBannerModalOpen}
+          onClose={() => setIsBannerModalOpen(false)}
+          initialBanner={supplier?.banner}
+          onBannerUpdated={(updatedBanner) => {
+            setSupplier((prev: any) => ({
+              ...prev,
+              banner: updatedBanner,
+            }));
+          }}
+        />
+      )}
 
-        <div className="absolute top-4 left-4 lg:left-8">
-          <Link to="/" className="text-white/90 font-extrabold text-lg tracking-tight no-underline hover:text-white transition-colors">AMJSTAR</Link>
+      {/* ── Banner ──────────────────────────────────────────────── */}
+      <div className="relative h-[170px] sm:h-[200px] md:h-[240px] overflow-hidden group/storebanner">
+        {hasCustomBanner ? (
+          <picture className="absolute inset-0 w-full h-full">
+            {supplier.banner?.desktop && (
+              <source media="(min-width: 1024px)" srcSet={supplier.banner.desktop} />
+            )}
+            {supplier.banner?.tablet && (
+              <source media="(min-width: 640px)" srcSet={supplier.banner.tablet} />
+            )}
+            <img
+              src={supplier.banner?.mobile || supplier.banner?.tablet || supplier.banner?.desktop}
+              alt={`${businessName} Banner`}
+              className="w-full h-full object-cover object-center"
+            />
+          </picture>
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e3a5f] to-[#e65c00]" />
+            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(230,92,0,0.35) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(255,160,50,0.2) 0%, transparent 55%)' }} />
+            <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
+          </>
+        )}
+
+        {/* Protection overlay for contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/15 to-black/45 pointer-events-none" />
+
+        <div className="absolute top-4 left-4 lg:left-8 z-10">
+          <Link to="/" className="text-white/95 font-extrabold text-lg tracking-tight no-underline hover:text-white transition-colors drop-shadow-sm">
+            AMJSTAR
+          </Link>
         </div>
-        <button
-          onClick={() => setShareData({ url: storeUrl, name: businessName, type: 'store' })}
-          className="absolute top-4 right-4 lg:right-8 flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer max-[360px]:px-2"
-        >
-          <Share2 size={13} /> Share Store
-        </button>
+
+        <div className="absolute top-4 right-4 lg:right-8 flex items-center gap-2 z-10">
+          {isOwner && (
+            <button
+              onClick={() => setIsBannerModalOpen(true)}
+              className="flex items-center gap-1.5 bg-black/55 hover:bg-black/80 text-white text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/30 transition-all cursor-pointer shadow-md hover:scale-[1.02]"
+              title="Customize store background banners"
+            >
+              <Camera size={13} className="text-[#fed7aa]" />
+              <span>Edit Banner</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setShareData({ url: storeUrl, name: businessName, type: 'store' })}
+            className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer max-[360px]:px-2"
+          >
+            <Share2 size={13} /> Share Store
+          </button>
+        </div>
       </div>
 
       {/* ── Content ─────────────────────────────────────────────── */}

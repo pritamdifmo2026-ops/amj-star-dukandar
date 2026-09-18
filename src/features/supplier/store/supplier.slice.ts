@@ -116,6 +116,12 @@ interface SupplierProfile {
   accountManagerRole?: string;
   accountManagerEmail?: string;
   accountManagerPhone?: string;
+  userId?: string;
+  banner?: {
+    desktop?: string;
+    tablet?: string;
+    mobile?: string;
+  };
 }
 
 interface SupplierState {

@@ -1,8 +1,25 @@
 import React, { useState } from 'react';
-import { Store, Copy, CheckCircle, ExternalLink, QrCode, Download, Share2, MessageCircle } from 'lucide-react';
+import {
+  Store,
+  Copy,
+  CheckCircle,
+  ExternalLink,
+  QrCode,
+  Download,
+  Share2,
+  MessageCircle,
+  Image as ImageIcon,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Sparkles,
+} from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import { QRCodeCanvas } from 'qrcode.react';
+import { useAppSelector, useAppDispatch } from '@/store/hooks';
+import { setSupplierProfile } from '../store/supplier.slice';
+import EditStoreBannerModal, { type BannerConfig } from './EditStoreBannerModal';
 
 interface SupplierStoreFrontProps {
   supplierId: string;
@@ -63,6 +80,12 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
     }
   };
 
+  const dispatch = useAppDispatch();
+  const { profile } = useAppSelector((state) => state.supplier);
+  const [showBannerModal, setShowBannerModal] = useState(false);
+
+  const bannerConfig: BannerConfig = profile?.banner || {};
+
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
       <div className="bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] max-lg:p-5 max-sm:p-4">
@@ -97,6 +120,91 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
           </div>
         </div>
       </div>
+
+      {/* ── Storefront Banners Card ────────────────────────────────────── */}
+      <div className="bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] max-lg:p-5 max-sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 max-sm:w-10 max-sm:h-10 bg-[#eff6ff] text-[#2563eb] rounded-[10px] flex items-center justify-center shrink-0">
+              <ImageIcon size={24} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-[1.25rem] max-sm:text-base text-[#1e293b] m-0 font-extrabold leading-tight">
+                  Store Background Banners
+                </h2>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0]">
+                  <Sparkles size={11} /> 3 Devices
+                </span>
+              </div>
+              <p className="text-sm text-[#64748b] mt-1 m-0">
+                Tailor separate banners for Desktop (1920×480), Tablet (1024×400), and Mobile (640×360) screens.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => setShowBannerModal(true)}
+            className="flex items-center justify-center gap-2 shrink-0 !bg-[#e65c00] hover:!bg-[#c2410c] text-white font-bold"
+          >
+            <ImageIcon size={16} /> Customize Banners
+          </Button>
+        </div>
+
+        {/* Mini device preview strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-2">
+          {([
+            { key: 'desktop' as const, label: 'Desktop', size: '1920 × 480 px', ratio: '4:1', icon: Monitor },
+            { key: 'tablet' as const, label: 'Tablet', size: '1024 × 400 px', ratio: '2.56:1', icon: Tablet },
+            { key: 'mobile' as const, label: 'Mobile', size: '640 × 360 px', ratio: '16:9', icon: Smartphone },
+          ]).map(({ key, label, size, ratio, icon: Icon }) => {
+            const img = bannerConfig[key];
+            return (
+              <div
+                key={key}
+                onClick={() => setShowBannerModal(true)}
+                className="bg-[#f8fafc] border border-[#e2e8f0] hover:border-[#e65c00]/50 rounded-[10px] p-3.5 flex flex-col justify-between gap-3 cursor-pointer transition-all hover:shadow-xs group"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#1e293b]">
+                    <Icon size={14} className="text-[#64748b] group-hover:text-[#e65c00] transition-colors" />
+                    <span>{label}</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#e65c00] bg-[#fff7ed] px-1.5 py-0.5 rounded-[4px] border border-[#fed7aa]">
+                    {ratio}
+                  </span>
+                </div>
+
+                <div className="relative w-full h-20 bg-[#0f172a] rounded-[6px] overflow-hidden border border-[#e2e8f0] flex items-center justify-center">
+                  {img ? (
+                    <img src={img} alt={label} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[11px] text-[#94a3b8] font-medium">Default Gradient</span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-[#64748b]">
+                  <span className="font-mono font-medium">{size}</span>
+                  <span className="text-primary font-semibold group-hover:underline">Edit</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {showBannerModal && (
+        <EditStoreBannerModal
+          isOpen={showBannerModal}
+          onClose={() => setShowBannerModal(false)}
+          initialBanner={bannerConfig}
+          onBannerUpdated={(updated) => {
+            if (profile) {
+              dispatch(setSupplierProfile({ ...profile, banner: updated }));
+            }
+          }}
+        />
+      )}
 
       <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-6 max-sm:p-4 text-center">
         <Store size={48} className="text-[#94a3b8] mx-auto mb-4 opacity-50 max-sm:w-10 max-sm:h-10" />
