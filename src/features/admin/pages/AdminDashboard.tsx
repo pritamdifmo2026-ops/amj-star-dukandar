@@ -67,7 +67,7 @@ const tabLabel: Record<string, string> = {
   'latest-update': 'Latest Update',
   'supplier-plans': 'Supplier Memberships',
   'meeting-requests': 'Meeting Requests',
-  'unmatched-deals': 'Unmarried Deals',
+  'unmatched-deals': 'Unmatured Deals',
 };
 
 const AdminDashboard: React.FC = () => {
@@ -142,7 +142,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'enquiry', label: 'Enquiries', icon: MessageSquare, badge: newEnquiryCount || undefined },
     { id: 'help-requests', label: 'Help Requests', icon: MessageSquare, badge: newHelpRequestsCount || undefined },
     { id: 'requirement-management', label: 'Requirements', icon: FileText },
-    { id: 'unmatched-deals', label: 'Unmarried Deals', icon: HeartCrack, badge: unmatchedCounts?.total || undefined },
+    { id: 'unmatched-deals', label: 'Unmatured Deals', icon: HeartCrack, badge: unmatchedCounts?.total || undefined },
     { id: 'earnings', label: 'AMJ Earnings', icon: TrendingUp },
     { id: 'performance', label: 'Performance', icon: BarChart3 },
     { id: 'disputes', label: 'Disputes', icon: AlertTriangle },

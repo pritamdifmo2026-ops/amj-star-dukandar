@@ -6,10 +6,10 @@ import PublicStorefrontReseller from '@/features/reseller/pages/PublicStorefront
 const StorefrontDispatcher: React.FC = () => {
   const { idOrSlug } = useParams<{ idOrSlug: string }>();
 
-  // A MongoDB ObjectId is a 24-character hex string
-  const isObjectId = /^[0-9a-fA-F]{24}$/.test(idOrSlug || '');
+  // A supplier store either is an ObjectId or ends with a 24-character hex ObjectId
+  const isSupplier = /[0-9a-fA-F]{24}$/.test(idOrSlug || '');
 
-  if (isObjectId) {
+  if (isSupplier) {
     return <PublicStoreFrontSupplier />;
   } else {
     return <PublicStorefrontReseller />;

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi, Ban, SlidersHorizontal, X, AlertCircle, Copy } from 'lucide-react';
+import { Package, Edit2, Trash2, EyeOff, Info, AlertTriangle, WifiOff, Wifi, Ban, SlidersHorizontal, X, AlertCircle, Copy, Share2 } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import LiveUpdateModal from './LiveUpdateModal';
+import ShareModal from '@/shared/components/ui/ShareModal';
+import { formatProductShareText } from '@/shared/utils/ogImage';
 
 const isLowStock = (p: any) =>
   typeof p.stock === 'number' && typeof p.moq === 'number' && p.moq > 0 && p.stock <= p.moq * 1.5;
@@ -33,6 +35,7 @@ interface ProductTableProps {
 const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, onDelete, onAdd, onUnpublish, onViewReason, onToggleLive, onProductLiveUpdated, onClone }) => {
   const [liveUpdateProduct, setLiveUpdateProduct] = useState<any | null>(null);
   const [unpublishTarget, setUnpublishTarget] = useState<any | null>(null);
+  const [shareProduct, setShareProduct] = useState<any | null>(null);
 
   if (loading) return <p>Loading products...</p>;
 
@@ -113,6 +116,15 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
                     </button>
                     {product.status === 'APPROVED' && (
                       <button
+                        onClick={() => setShareProduct(product)}
+                        title="Share on WhatsApp, Social Media, or Copy Link"
+                        className="w-[34px] h-[34px] flex items-center justify-center rounded-[10px] bg-[#f0fdf4] text-[#16a34a] border border-[#bbf7d0] cursor-pointer hover:bg-[#16a34a] hover:text-white transition-all"
+                      >
+                        <Share2 size={16} />
+                      </button>
+                    )}
+                    {product.status === 'APPROVED' && (
+                      <button
                         onClick={() => product.isDisabledBySeller ? onToggleLive(product) : setUnpublishTarget(product)}
                         title={product.isDisabledBySeller ? 'Publish (go live)' : 'Unpublish'}
                         className={`w-[34px] h-[34px] flex items-center justify-center rounded-[10px] border cursor-pointer transition-all ${product.isDisabledBySeller ? 'bg-[#f0fdf4] text-[#16a34a] border-[#bbf7d0] hover:bg-[#16a34a] hover:text-white' : 'bg-[#fff7ed] text-[#d97706] border-[#ffedd5] hover:bg-[#d97706] hover:text-white'}`}
@@ -185,6 +197,27 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
         </div>
       </div>
     )}
+
+    {shareProduct && (() => {
+      const details = formatProductShareText({
+        name: shareProduct.name,
+        price: shareProduct.basePrice || shareProduct.price,
+        unit: shareProduct.unit,
+        moq: shareProduct.moq || shareProduct.minOrderQty,
+        description: shareProduct.description,
+      });
+      return (
+        <ShareModal
+          isOpen={!!shareProduct}
+          onClose={() => setShareProduct(null)}
+          title={details.title}
+          subtitle={details.subtitle}
+          text={details.text}
+          url={`${window.location.origin}/products/${shareProduct.id || shareProduct._id}`}
+          imageUrl={shareProduct.images?.[0] || shareProduct.imageUrl}
+        />
+      );
+    })()}
     </>
   );
 };

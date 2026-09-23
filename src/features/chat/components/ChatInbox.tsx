@@ -2304,7 +2304,7 @@ const ChatInbox: React.FC = () => {
   useEffect(() => {
     if (!socket) return;
     const handleNotification = (notif: any) => {
-      if (notif.type === 'CHAT_MESSAGE' || notif.type === 'QUOTATION_UPDATE') {
+      if (notif.type === 'CHAT_MESSAGE' || notif.type === 'QUOTATION_UPDATE' || notif.type === 'QUOTATION_RELEASED') {
         loadConversations();
         if (activeConv?._id === notif.conversationId) loadMessages();
       }

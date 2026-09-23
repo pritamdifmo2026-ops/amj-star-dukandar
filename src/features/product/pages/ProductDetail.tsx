@@ -4,8 +4,10 @@ import { toast } from 'react-hot-toast';
 import {
   ShoppingCart, ArrowLeft, ShieldCheck, Star, Package, Truck, Heart,
   CreditCard, MessageCircle, MapPin, Calendar, BadgeCheck, RotateCcw, Store,
-  Facebook, Instagram, Twitter, Linkedin
+  Facebook, Instagram, Twitter, Linkedin, Share2
 } from 'lucide-react';
+import ShareModal from '@/shared/components/ui/ShareModal';
+import { toStoreSlug, formatProductShareText } from '@/shared/utils/ogImage';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
@@ -35,6 +37,7 @@ const ProductDetail: React.FC = () => {
   const [showEnquiryModal, setShowEnquiryModal] = useState(false);
   const [showProfilePrompt, setShowProfilePrompt] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'company'>('details');
 
   const { data: product, isLoading, isError, refetch } = useProduct(id || '');
@@ -228,13 +231,23 @@ const ProductDetail: React.FC = () => {
             <div className="flex flex-col gap-4 w-full max-w-[600px] mx-auto lg:max-w-none">
               <div className="relative w-full aspect-square bg-cream border border-border rounded-[var(--radius-md)] overflow-visible flex items-center justify-center">
                 <ImageMagnifier key={currentImage} src={currentImage} alt={product.name} />
-                <button
-                  onClick={handleToggleWishlist}
-                  aria-label="Add to wishlist"
-                  className="absolute top-4 right-4 bg-surface border border-border rounded-full w-11 h-11 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-md hover:scale-105 hover:border-primary z-[5]"
-                >
-                  <Heart size={22} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
-                </button>
+                <div className="absolute top-4 right-4 flex items-center gap-2 z-[5]">
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    aria-label="Share product"
+                    title="Share on WhatsApp, Social Media, or Copy Link"
+                    className="bg-surface border border-border rounded-full w-11 h-11 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-md hover:scale-105 hover:border-primary text-slate-700 hover:text-primary"
+                  >
+                    <Share2 size={19} />
+                  </button>
+                  <button
+                    onClick={handleToggleWishlist}
+                    aria-label="Add to wishlist"
+                    className="bg-surface border border-border rounded-full w-11 h-11 flex items-center justify-center cursor-pointer transition-all shrink-0 shadow-md hover:scale-105 hover:border-primary"
+                  >
+                    <Heart size={22} fill={isWishlisted ? 'var(--color-primary)' : 'none'} color={isWishlisted ? 'var(--color-primary)' : '#888'} />
+                  </button>
+                </div>
               </div>
               {galleryImages.length > 1 && (
                 <div className="flex gap-3 overflow-x-auto scrollbar-none p-1">
@@ -375,6 +388,14 @@ const ProductDetail: React.FC = () => {
                 </div>
                 <Button variant="outline" size="lg" onClick={handleContactSupplier} disabled={contactingSupplier} className="w-full h-[52px]">
                   <MessageCircle size={17} /> {contactingSupplier ? 'Opening…' : 'Negotiate Bulk Price'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setShowShareModal(true)}
+                  className="w-full h-[48px] flex items-center justify-center gap-2 border-[#cbd5e1] text-[#334155] hover:bg-[#f8fafc] font-bold text-sm"
+                >
+                  <Share2 size={17} /> Share Product (WhatsApp, Insta, FB, Copy Link)
                 </Button>
               </div>
 
@@ -593,7 +614,10 @@ const ProductDetail: React.FC = () => {
                   </div>
                   {product.supplierId && (
                     <button
-                      onClick={() => navigate(`/store/${product.supplierId}`)}
+                      onClick={() => {
+                        const slug = toStoreSlug(product.supplierName || (product.supplier as any)?.businessName, product.supplierId);
+                        navigate(`/store/${slug}`);
+                      }}
                       className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-primary bg-primary/5 border border-primary/20 rounded-[8px] cursor-pointer hover:bg-primary hover:text-white transition-colors"
                     >
                       <Store size={15} /> Visit Store
@@ -666,6 +690,27 @@ const ProductDetail: React.FC = () => {
           onClose={() => setShowEnquiryModal(false)}
         />
       )}
+
+      {product && (() => {
+        const shareDetails = formatProductShareText({
+          name: product.name,
+          price: product.price,
+          unit: product.unit,
+          minOrderQty: product.minOrderQty,
+          description: product.description,
+        });
+        return (
+          <ShareModal
+            isOpen={showShareModal}
+            onClose={() => setShowShareModal(false)}
+            title={shareDetails.title}
+            subtitle={shareDetails.subtitle}
+            text={shareDetails.text}
+            url={typeof window !== 'undefined' ? `${window.location.origin}/products/${currentProductId}` : `https://amjstar.com/products/${currentProductId}`}
+            imageUrl={currentImage}
+          />
+        );
+      })()}
 
       <Modal
         isOpen={showAdminModal}

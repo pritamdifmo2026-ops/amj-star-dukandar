@@ -26,7 +26,7 @@ const AVAILABLE_PERMISSIONS = [
   { id: 'buyer_queries', label: 'Buyer Queries' },
   { id: 'help_requests', label: 'Help Requests' },
   { id: 'supplier_plans', label: 'Supplier Memberships' },
-  { id: 'unmatched_deals', label: 'Unmarried Deals' },
+  { id: 'unmatched_deals', label: 'Unmatured Deals' },
 ];
 
 export const ControlAuthority: React.FC = () => {

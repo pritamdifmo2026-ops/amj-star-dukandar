@@ -153,7 +153,7 @@ const AdminPlatformSettings: React.FC = () => {
               className={inputCls}
             />
             <p className="text-xs text-[#94a3b8] mt-1.5">
-              Unpaid orders and unresponsive enquiries/deals will be automatically cancelled or flagged in Unmarried Deals after this many hours (default: 48).
+              Unpaid orders and unresponsive enquiries/deals will be automatically cancelled or flagged in Unmatured Deals after this many hours (default: 48).
             </p>
           </div>
 

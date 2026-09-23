@@ -316,7 +316,7 @@ export const UnmatchedDeals: React.FC = () => {
             </div>
 
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 font-sans !m-0">
-              Unmarried Deals Rescue Hub
+              Unmatured Deals Rescue Hub
             </h1>
             <p className="text-slate-500 text-xs sm:text-sm mt-1.5 max-w-2xl leading-relaxed font-sans !m-0">
               Track stalled negotiations, unresponsive participants, and cancelled quotations. Review contact

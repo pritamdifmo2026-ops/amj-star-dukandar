@@ -24,6 +24,7 @@ export interface AdminSupplier {
   commissionRate?: number;
   assignedAdminContact?: string;
   kycStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  onboardingStatus?: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | string;
   verifiedByAdmin: boolean;
   rejectionReason?: string;
   tier?: string;
@@ -76,6 +77,8 @@ export interface AdminSupplier {
     bankName: string;
     isPrimary: boolean;
   }[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AdminReseller {

@@ -122,6 +122,7 @@ interface SupplierProfile {
     tablet?: string;
     mobile?: string;
   };
+  logo?: string;
 }
 
 interface SupplierState {

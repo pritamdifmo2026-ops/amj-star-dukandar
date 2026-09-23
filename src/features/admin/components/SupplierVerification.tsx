@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink, Percent, Landmark, Phone } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, ChevronLeft, Search, Package, ExternalLink, Percent, Landmark, Phone, AlertTriangle, Mail } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import Pagination from '@/shared/components/ui/Pagination';
@@ -18,7 +18,7 @@ interface SupplierVerificationProps {
   onVerifyProduct: (id: string, status: 'APPROVED' | 'REJECTED') => void;
 }
 
-type ViewMode = 'PENDING' | 'VERIFIED' | 'REJECTED';
+type ViewMode = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'INCOMPLETE';
 
 const thCls = "text-left px-4 py-3.5 text-[#94a3b8] text-[0.7rem] font-extrabold uppercase tracking-[0.1em] border-b border-[#f1f5f9] max-md:hidden";
 const tdCls = "px-4 py-4 border-b border-[#f8fafc] text-sm text-[#334155] max-md:flex max-md:justify-between max-md:items-center max-md:border-none max-md:py-2 max-md:px-0 text-right md:text-left truncate max-w-xs";
@@ -48,7 +48,8 @@ const SupplierTable: React.FC<{
   );
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  const statusCls = (status: string) => {
+  const statusCls = (status: string, onboardingStatus?: string) => {
+    if (onboardingStatus && onboardingStatus !== 'COMPLETED') return 'bg-[#fef3c7] text-[#92400e] border border-[#fde68a]';
     if (status === 'VERIFIED') return 'bg-[#ecfdf5] text-[#059669]';
     if (status === 'REJECTED') return 'bg-[#fef2f2] text-[#dc2626]';
     return 'bg-[#fffbeb] text-[#a16207]';
@@ -77,7 +78,9 @@ const SupplierTable: React.FC<{
                   <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Contact</span> {s.phone}</td>
                   <td className={tdCls}>
                     <span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Status</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusCls(s.kycStatus)}`}>{s.kycStatus}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusCls(s.kycStatus, s.onboardingStatus)}`}>
+                      {s.onboardingStatus && s.onboardingStatus !== 'COMPLETED' ? 'DRAFT' : s.kycStatus}
+                    </span>
                   </td>
                   <td className={tdCls}><span className="md:hidden font-bold text-xs text-[#94a3b8] uppercase">Tier</span> <span className="text-xs bg-[#f0f9ff] text-[#0369a1] border border-[#bae6fd] px-2 py-0.5 rounded-full font-semibold">{s.tier}</span></td>
                   <td className={tdCls}>
@@ -343,12 +346,13 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
   const activeTab = searchParams.get('tab') || 'suppliers';
   const supplierId = searchParams.get('id');
   const selectedSupplier = suppliers.find(s => s._id === supplierId);
-  const pendingSuppliers = suppliers.filter(s => s.kycStatus === 'PENDING');
+  const pendingSuppliers = suppliers.filter(s => s.kycStatus === 'PENDING' && (s.onboardingStatus === 'COMPLETED' || !s.onboardingStatus));
+  const incompleteSuppliers = suppliers.filter(s => s.onboardingStatus && s.onboardingStatus !== 'COMPLETED');
   const verifiedSuppliers = suppliers.filter(s => s.kycStatus === 'VERIFIED');
   const rejectedSuppliers = suppliers.filter(s => s.kycStatus === 'REJECTED');
   const statusParam = searchParams.get('status');
   const initialView: ViewMode =
-    statusParam === 'VERIFIED' ? 'VERIFIED' : statusParam === 'REJECTED' ? 'REJECTED' : 'PENDING';
+    statusParam === 'VERIFIED' ? 'VERIFIED' : statusParam === 'REJECTED' ? 'REJECTED' : statusParam === 'INCOMPLETE' ? 'INCOMPLETE' : 'PENDING';
   const [viewMode, setViewMode] = useState<ViewMode>(initialView);
   const qc = useQueryClient();
 
@@ -369,7 +373,8 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
   };
 
   const listByMode: Record<ViewMode, { title: string; suppliers: AdminSupplier[] }> = {
-    PENDING: { title: 'Pending Suppliers', suppliers: pendingSuppliers },
+    PENDING: { title: 'Pending Suppliers (Awaiting Verification)', suppliers: pendingSuppliers },
+    INCOMPLETE: { title: 'Incomplete / Draft Onboarding', suppliers: incompleteSuppliers },
     VERIFIED: { title: 'Approved Suppliers', suppliers: verifiedSuppliers },
     REJECTED: { title: 'Rejected Suppliers', suppliers: rejectedSuppliers },
   };
@@ -407,7 +412,7 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
                 <Package size={16} /> View Products
               </button>
             )}
-            {selectedSupplier.kycStatus === 'PENDING' && (
+            {selectedSupplier.kycStatus === 'PENDING' && (selectedSupplier.onboardingStatus === 'COMPLETED' || !selectedSupplier.onboardingStatus) && (
               <>
                 <button
                   onClick={() => onVerify(selectedSupplier._id, 'REJECTED')}
@@ -426,6 +431,48 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
           </div>
         </div>
         <div className="bg-white border border-[#eef2f6] rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden">
+          {selectedSupplier.onboardingStatus && selectedSupplier.onboardingStatus !== 'COMPLETED' && (
+            <div className="p-6 border-2 border-[#fef3c7] bg-[#fffbeb] m-4 rounded-[10px] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle size={18} className="text-[#b45309]" />
+                  <h3 className="text-base font-extrabold text-[#92400e] m-0">Incomplete Onboarding Application (Draft)</h3>
+                </div>
+                <p className="text-sm text-[#78350f] m-0">
+                  This supplier registered but has not completed their onboarding and final KYC submission. You can view their drafted profile details below and reach out directly to assist them.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                {selectedSupplier.phone && (
+                  <a
+                    href={`tel:${selectedSupplier.phone}`}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-[8px] bg-white border border-[#fde68a] text-[#92400e] hover:bg-[#fef3c7] no-underline transition-colors shadow-sm"
+                  >
+                    <Phone size={14} /> Call: {selectedSupplier.phone}
+                  </a>
+                )}
+                {selectedSupplier.phone && (
+                  <a
+                    href={`https://wa.me/${selectedSupplier.phone.replace(/[^0-9]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-[8px] bg-[#25D366] text-white hover:bg-[#1ebe5b] no-underline transition-colors shadow-sm"
+                  >
+                    WhatsApp
+                  </a>
+                )}
+                {(selectedSupplier.businessDetails?.email || selectedSupplier.userId?.email) && (
+                  <a
+                    href={`mailto:${selectedSupplier.businessDetails?.email || selectedSupplier.userId?.email}`}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-[8px] bg-white border border-[#fde68a] text-[#92400e] hover:bg-[#fef3c7] no-underline transition-colors shadow-sm"
+                  >
+                    <Mail size={14} /> Email
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
           {selectedSupplier.kycStatus === 'REJECTED' && (
             <div className="p-6 border-2 border-[#fee2e2] bg-[#fffafb] m-4 rounded-[10px]">
               <h3 className="text-base font-extrabold text-[#ef4444] m-0 mb-2">Rejection Reason</h3>
@@ -672,11 +719,12 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
         <select
           value={viewMode}
           onChange={e => updateViewMode(e.target.value as ViewMode)}
-          className="w-full sm:w-auto border border-[#e2e8f0] rounded-[8px] px-3 py-2 focus-within:border-primary"
+          className="w-full sm:w-auto border border-[#e2e8f0] rounded-[8px] px-3.5 py-2.5 bg-white focus-within:border-primary text-sm font-semibold text-[#1e293b] shadow-sm cursor-pointer"
         >
-          <option value="PENDING">Pending Suppliers</option>
-          <option value="VERIFIED">Approved Suppliers</option>
-          <option value="REJECTED">Rejected Suppliers</option>
+          <option value="PENDING">Pending Approval ({pendingSuppliers.length})</option>
+          <option value="INCOMPLETE">Incomplete / Draft Onboarding ({incompleteSuppliers.length})</option>
+          <option value="VERIFIED">Approved Suppliers ({verifiedSuppliers.length})</option>
+          <option value="REJECTED">Rejected Suppliers ({rejectedSuppliers.length})</option>
         </select>
       </div>
       <SupplierTable
@@ -684,7 +732,7 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
         suppliers={listByMode[viewMode].suppliers}
         onVerify={onVerify}
         onView={goToDetail}
-        showActions={true}
+        showActions={viewMode === 'PENDING'}
       />
     </div>
   );

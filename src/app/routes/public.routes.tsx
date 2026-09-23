@@ -117,6 +117,10 @@ export const publicRoutes: RouteObject[] = [
     element: <ProductDetail />,
   },
   {
+    path: '/product/:id',
+    element: <ProductDetail />,
+  },
+  {
     path: '/products/add', // Temporarily public for testing
     element: <AddProduct />,
   },

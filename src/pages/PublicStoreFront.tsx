@@ -1,128 +1,19 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Store, MapPin, Globe, ShieldCheck, ChevronDown, ChevronUp,
   Package, Calendar, TrendingUp, Award, Building2, ArrowUpRight,
-  Factory, Star, CheckCircle, Share2, Copy, Check,
-  LayoutGrid, List, X, Instagram, Facebook, Twitter, Camera,
+  Factory, Star, CheckCircle, Share2,
+  LayoutGrid, List, Camera,
 } from 'lucide-react';
 import api from '@/api/client';
 import Button from '@/shared/components/ui/Button';
 import { useAppSelector } from '@/store/hooks';
 import { ROUTES } from '@/shared/constants/routes';
 import EditStoreBannerModal from '@/features/supplier/components/EditStoreBannerModal';
-
-/* ─── Share Modal ────────────────────────────────────────────────────── */
-const ShareModal: React.FC<{ url: string; name: string; type?: 'store' | 'product'; onClose: () => void }> = ({ url, name, type = 'store', onClose }) => {
-  const [copied, setCopied] = useState(false);
-  const overlayRef = useRef<HTMLDivElement>(null);
-
-  const encodedUrl = encodeURIComponent(url);
-  const title = type === 'product' ? 'Share this Product' : 'Share this Store';
-  const encodedText = encodeURIComponent(type === 'product' ? `Check out ${name} on AMJSTAR!` : `Check out ${name}'s store on AMJSTAR!`);
-
-  const platforms = [
-    {
-      label: 'WhatsApp',
-      color: '#25d366',
-      bg: '#dcfce7',
-      textColor: '#15803d',
-      href: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#25d366"/><path d="M22.5 9.5C20.8 7.8 18.5 6.9 16 6.9c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.6-1.2c1.3.7 2.8 1.1 4.3 1.1 5.1 0 9.2-4.1 9.2-9.2 0-2.5-.9-4.8-2.4-6.4zm-6.5 14.1c-1.4 0-2.7-.4-3.9-1l-.3-.2-3 .8.8-2.9-.2-.3c-.7-1.2-1.1-2.5-1.1-3.9 0-4.2 3.4-7.5 7.5-7.5 2 0 3.9.8 5.3 2.2 1.4 1.4 2.2 3.3 2.2 5.3.2 4.2-3.2 7.5-7.3 7.5zm4.1-5.6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.5.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1-.7-.3-1.4-.7-2-1.2-.5-.5-1-1.1-1.4-1.7-.1-.2 0-.4.1-.5l.4-.5c.1-.2.1-.3.2-.4 0-.2 0-.3-.1-.5-.1-.2-.5-1.3-.7-1.7-.2-.4-.4-.3-.5-.3-.1 0-.3 0-.5 0s-.5.1-.7.3c-.2.2-.9.9-.9 2.1 0 1.3.9 2.5 1.1 2.7.1.2 1.9 2.9 4.5 4 .6.3 1.1.4 1.5.5.6.2 1.2.1 1.6-.1.5-.3.8-.7.9-1.2.1-.3.1-.6 0-.8l-.2-.2z" fill="white"/></svg>
-      ),
-    },
-    {
-      label: 'Instagram',
-      color: '#e1306c',
-      bg: '#fce7f3',
-      textColor: '#be185d',
-      href: `https://www.instagram.com/`,
-      note: '(copy link & paste in bio)',
-      icon: <Instagram size={20} className="text-[#e1306c]" />,
-    },
-    {
-      label: 'Facebook',
-      color: '#1877f2',
-      bg: '#dbeafe',
-      textColor: '#1d4ed8',
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-      icon: <Facebook size={20} className="text-[#1877f2]" />,
-    },
-    {
-      label: 'X (Twitter)',
-      color: '#14171a',
-      bg: '#f1f5f9',
-      textColor: '#0f172a',
-      href: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
-      icon: <Twitter size={20} className="text-[#0f172a]" />,
-    },
-  ];
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
-  return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-[3px] p-4"
-      onClick={e => { if (e.target === overlayRef.current) onClose(); }}
-    >
-      <div className="bg-white rounded-[20px] w-full max-w-sm shadow-2xl overflow-hidden animate-slide-up">
-        {/* header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#f1f5f9]">
-          <div>
-            <h3 className="text-sm font-extrabold text-[#0f172a] m-0">{title}</h3>
-            <p className="text-xs text-[#94a3b8] m-0 mt-0.5">Spread the word about {name}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#f1f5f9] flex items-center justify-center text-[#64748b] hover:bg-[#e2e8f0] transition-colors cursor-pointer border-none"
-          >
-            <X size={15} />
-          </button>
-        </div>
-
-        {/* platform buttons */}
-        <div className="px-5 py-4 grid grid-cols-2 gap-3">
-          {platforms.map(p => (
-            <a
-              key={p.label}
-              href={p.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2.5 px-3 py-3 rounded-[12px] no-underline border border-[#e2e8f0] hover:scale-[1.02] active:scale-[0.98] transition-transform"
-              style={{ background: p.bg }}
-            >
-              <span className="shrink-0">{p.icon}</span>
-              <div className="min-w-0">
-                <span className="text-xs font-bold block leading-tight" style={{ color: p.textColor }}>{p.label}</span>
-                {p.note && <span className="text-[10px] text-[#94a3b8] leading-tight block">{p.note}</span>}
-              </div>
-            </a>
-          ))}
-        </div>
-
-        {/* copy link */}
-        <div className="px-5 pb-5">
-          <div className="flex items-center gap-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] px-3 py-2.5">
-            <span className="text-xs text-[#475569] truncate flex-1 font-mono">{url}</span>
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 text-xs font-bold text-[#475569] bg-[#f8fafc] border border-[#e2e8f0] px-3.5 py-2 rounded-[8px] hover:bg-[#f1f5f9] transition-colors cursor-pointer ml-auto"
-            >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import EditStoreLogoModal from '@/features/supplier/components/EditStoreLogoModal';
+import ShareModal from '@/shared/components/ui/ShareModal';
+import { extractSupplierId, toStoreSlug, formatProductShareText } from '@/shared/utils/ogImage';
 
 /* ─── Storefront Product Card (Enquire Now variant) ─────────────────── */
 const StorefrontProductCard: React.FC<{ product: any; onShare: (product: any) => void }> = ({ product, onShare }) => {
@@ -253,7 +144,8 @@ const Skeleton = () => (
 /* ─── main ──────────────────────────────────────────────────────────── */
 const PublicStoreFront: React.FC = () => {
   const { id: routeId, idOrSlug } = useParams<{ id?: string; idOrSlug?: string }>();
-  const id = routeId || idOrSlug;
+  const rawParam = routeId || idOrSlug || '';
+  const supplierId = extractSupplierId(rawParam);
 
   const [supplier, setSupplier] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -262,33 +154,45 @@ const PublicStoreFront: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [shareData, setShareData] = useState<{ url: string; name: string; type: 'store' | 'product' } | null>(null);
+  const [shareData, setShareData] = useState<{ url: string; title: string; subtitle?: string; text?: string; imageUrl?: string } | null>(null);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
 
   const authUser = useAppSelector((state) => state.auth.user);
   const supplierProfile = useAppSelector((state) => state.supplier.profile);
 
-  const storeUrl = window.location.href;
+  const canonicalSlug = supplier ? toStoreSlug(supplier.businessName, supplierId) : rawParam;
+  const storeUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/store/${canonicalSlug}`
+    : `https://amjstar.com/store/${canonicalSlug}`;
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const [profileRes, productsRes] = await Promise.all([
-          api.get(`/supplier/public/${id}`),
-          api.get(`/products?supplierId=${id}`),
+          api.get(`/supplier/public/${supplierId}`),
+          api.get(`/products?supplierId=${supplierId}`),
         ]);
-        setSupplier(profileRes.data.supplier);
-        document.title = `${profileRes.data.supplier.businessName || 'Store'} - AMJSTAR`;
+        const supp = profileRes.data.supplier;
+        setSupplier(supp);
+        document.title = `${supp.businessName || 'Store'} - AMJSTAR`;
         setProducts(productsRes.data.products || []);
+
+        if (typeof window !== 'undefined' && supp?.businessName) {
+          const expectedSlug = toStoreSlug(supp.businessName, supplierId);
+          if (rawParam === supplierId && expectedSlug !== supplierId) {
+            window.history.replaceState(null, '', `/store/${expectedSlug}`);
+          }
+        }
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load storefront');
       } finally {
         setLoading(false);
       }
     };
-    if (id) fetchData();
-  }, [id]);
+    if (supplierId) fetchData();
+  }, [supplierId, rawParam]);
 
   const categories = useMemo(() => {
     const cats = Array.from(new Set(products.map((p: any) => p.category).filter(Boolean)));
@@ -328,7 +232,7 @@ const PublicStoreFront: React.FC = () => {
     authUser &&
       authUser.role === 'supplier' &&
       ((supplier?.userId && (authUser.id === String(supplier.userId) || authUser.id === String(supplier.userId?._id))) ||
-        (supplierProfile?._id && (supplierProfile._id === supplier?._id || supplierProfile._id === id)))
+        (supplierProfile?._id && (supplierProfile._id === supplier?._id || supplierProfile._id === supplierId)))
   );
 
   const hasCustomBanner = Boolean(
@@ -341,9 +245,12 @@ const PublicStoreFront: React.FC = () => {
       {/* Modals */}
       {shareData && (
         <ShareModal 
-          url={shareData.url} 
-          name={shareData.name}
-          type={shareData.type}
+          isOpen={!!shareData}
+          title={shareData.title}
+          subtitle={shareData.subtitle}
+          text={shareData.text}
+          url={shareData.url}
+          imageUrl={shareData.imageUrl}
           onClose={() => setShareData(null)} 
         />
       )}
@@ -357,6 +264,21 @@ const PublicStoreFront: React.FC = () => {
             setSupplier((prev: any) => ({
               ...prev,
               banner: updatedBanner,
+            }));
+          }}
+        />
+      )}
+
+      {isOwner && (
+        <EditStoreLogoModal
+          isOpen={isLogoModalOpen}
+          onClose={() => setIsLogoModalOpen(false)}
+          currentLogo={supplier?.logo}
+          businessName={businessName}
+          onLogoUpdated={(newLogo) => {
+            setSupplier((prev: any) => ({
+              ...prev,
+              logo: newLogo,
             }));
           }}
         />
@@ -397,18 +319,34 @@ const PublicStoreFront: React.FC = () => {
 
         <div className="absolute top-4 right-4 lg:right-8 flex items-center gap-2 z-10">
           {isOwner && (
-            <button
-              onClick={() => setIsBannerModalOpen(true)}
-              className="flex items-center gap-1.5 bg-black/55 hover:bg-black/80 text-white text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/30 transition-all cursor-pointer shadow-md hover:scale-[1.02]"
-              title="Customize store background banners"
-            >
-              <Camera size={13} className="text-[#fed7aa]" />
-              <span>Edit Banner</span>
-            </button>
+            <>
+              <button
+                onClick={() => setIsLogoModalOpen(true)}
+                className="flex items-center gap-1.5 bg-black/55 hover:bg-black/80 text-white text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/30 transition-all cursor-pointer shadow-md hover:scale-[1.02]"
+                title="Change store logo"
+              >
+                <Store size={13} className="text-[#fed7aa]" />
+                <span>Edit Logo</span>
+              </button>
+              <button
+                onClick={() => setIsBannerModalOpen(true)}
+                className="flex items-center gap-1.5 bg-black/55 hover:bg-black/80 text-white text-xs font-bold px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/30 transition-all cursor-pointer shadow-md hover:scale-[1.02]"
+                title="Customize store background banners"
+              >
+                <Camera size={13} className="text-[#fed7aa]" />
+                <span>Edit Banner</span>
+              </button>
+            </>
           )}
 
           <button
-            onClick={() => setShareData({ url: storeUrl, name: businessName, type: 'store' })}
+            onClick={() => setShareData({
+              url: storeUrl,
+              title: businessName,
+              subtitle: 'Verified Wholesale Store on AMJSTAR',
+              text: `Explore wholesale products from ${businessName} on AMJSTAR.`,
+              imageUrl: supplier?.logo || supplier?.banner?.desktop,
+            })}
             className="flex items-center gap-1.5 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-sm hover:bg-white/20 transition-all cursor-pointer max-[360px]:px-2"
           >
             <Share2 size={13} /> Share Store
@@ -423,8 +361,28 @@ const PublicStoreFront: React.FC = () => {
         <div className="bg-white rounded-[16px] border border-[#eef2f6] shadow-[0_2px_12px_rgba(0,0,0,0.06)] -mt-16 mb-5 relative z-10 overflow-hidden">
           <div className="h-1 bg-gradient-to-r from-[#e65c00] to-[#f59e0b] w-full" />
           <div className="p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row gap-4 sm:gap-5 items-start">
-            <div className="w-[72px] h-[72px] md:w-[96px] md:h-[96px] rounded-[14px] bg-gradient-to-br from-[#fff7ed] to-[#fef3c7] border-2 border-[#fed7aa] flex items-center justify-center text-2xl md:text-3xl font-black text-[#d97706] shrink-0 shadow-sm select-none">
-              {initials}
+            <div className="relative group/logo w-[72px] h-[72px] md:w-[96px] md:h-[96px] rounded-[14px] bg-gradient-to-br from-[#fff7ed] to-[#fef3c7] border-2 border-[#fed7aa] flex items-center justify-center shrink-0 shadow-sm overflow-hidden select-none">
+              {supplier.logo ? (
+                <img
+                  src={supplier.logo}
+                  alt={businessName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-2xl md:text-3xl font-black text-[#d97706]">{initials}</span>
+              )}
+
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => setIsLogoModalOpen(true)}
+                  className="absolute inset-0 bg-black/50 opacity-0 group-hover/logo:opacity-100 flex flex-col items-center justify-center text-white transition-opacity cursor-pointer border-none"
+                  title="Change Store Logo"
+                >
+                  <Camera size={18} />
+                  <span className="text-[10px] font-bold mt-1">Change</span>
+                </button>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1.5">
@@ -454,7 +412,13 @@ const PublicStoreFront: React.FC = () => {
             </div>
             <div className="sm:self-center flex gap-2 shrink-0 flex-wrap w-full sm:w-auto">
               <button
-                onClick={() => setShareData({ url: storeUrl, name: businessName, type: 'store' })}
+                onClick={() => setShareData({
+                  url: storeUrl,
+                  title: businessName,
+                  subtitle: 'Verified Wholesale Store on AMJSTAR',
+                  text: `Explore wholesale products from ${businessName} on AMJSTAR.`,
+                  imageUrl: supplier?.logo || supplier?.banner?.desktop,
+                })}
                 className="flex items-center justify-center gap-1.5 bg-[#f1f5f9] text-[#475569] text-sm font-bold px-4 py-2.5 rounded-[10px] hover:bg-[#e2e8f0] transition-colors border-none cursor-pointer"
               >
                 <Share2 size={14} /> Share
@@ -524,11 +488,22 @@ const PublicStoreFront: React.FC = () => {
                     <StorefrontProductCard 
                       key={p.id || p._id} 
                       product={{...p, supplierDefaultPaymentTerms: supplier?.defaultPaymentTerms}} 
-                      onShare={(product) => setShareData({
-                        url: `${window.location.origin}/products/${product.id || product._id}`,
-                        name: product.name,
-                        type: 'product'
-                      })}
+                      onShare={(product) => {
+                        const details = formatProductShareText({
+                          name: product.name,
+                          price: product.price || product.basePrice,
+                          unit: product.unit,
+                          moq: product.minOrderQty || product.moq,
+                          description: product.description,
+                        });
+                        setShareData({
+                          url: `${window.location.origin}/products/${product.id || product._id}`,
+                          title: details.title,
+                          subtitle: details.subtitle,
+                          text: details.text,
+                          imageUrl: product.imageUrl || product.images?.[0],
+                        });
+                      }}
                     />
                   ))}
                 </div>
@@ -557,10 +532,19 @@ const PublicStoreFront: React.FC = () => {
                           onClick={(e) => { 
                             e.preventDefault(); 
                             e.stopPropagation(); 
+                            const details = formatProductShareText({
+                              name: product.name,
+                              price: product.price || product.basePrice,
+                              unit: product.unit,
+                              moq: product.minOrderQty || product.moq,
+                              description: product.description,
+                            });
                             setShareData({
                               url: `${window.location.origin}/products/${product.id || product._id}`,
-                              name: product.name,
-                              type: 'product'
+                              title: details.title,
+                              subtitle: details.subtitle,
+                              text: details.text,
+                              imageUrl: product.imageUrl || product.images?.[0],
                             });
                           }}
                           className="shrink-0 p-1.5 rounded-full text-[#64748b] bg-white border border-[#eef2f6] shadow-sm hover:text-[#e65c00] hover:border-[#fed7aa] hover:bg-[#fff7ed] transition-all cursor-pointer"
@@ -712,7 +696,13 @@ const PublicStoreFront: React.FC = () => {
               <p className="text-sm font-bold mb-1 m-0">Share this Store</p>
               <p className="text-xs text-white/60 mb-3 m-0">Help others discover this supplier</p>
               <button
-                onClick={() => setShareData({ url: storeUrl, name: businessName, type: 'store' })}
+                onClick={() => setShareData({
+                  url: storeUrl,
+                  title: businessName,
+                  subtitle: 'Verified Wholesale Store on AMJSTAR',
+                  text: `Explore wholesale products from ${businessName} on AMJSTAR.`,
+                  imageUrl: supplier?.logo || supplier?.banner?.desktop,
+                })}
                 className="w-full flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-bold py-2.5 rounded-[8px] hover:bg-white/20 transition-all cursor-pointer"
               >
                 <Share2 size={13} /> Share on Social Media

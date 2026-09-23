@@ -20,16 +20,26 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { setSupplierProfile } from '../store/supplier.slice';
 import EditStoreBannerModal, { type BannerConfig } from './EditStoreBannerModal';
+import EditStoreLogoModal from './EditStoreLogoModal';
+import ShareModal from '@/shared/components/ui/ShareModal';
+import { toStoreSlug } from '@/shared/utils/ogImage';
 
 interface SupplierStoreFrontProps {
   supplierId: string;
 }
 
 const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) => {
+  const dispatch = useAppDispatch();
+  const { profile } = useAppSelector((state) => state.supplier);
   const [copied, setCopied] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showBannerModal, setShowBannerModal] = useState(false);
+  const [showLogoModal, setShowLogoModal] = useState(false);
 
-  const storeLink = `${window.location.origin}/store/${supplierId}`;
+  const businessName = profile?.businessName || 'Store';
+  const storeSlug = toStoreSlug(businessName, supplierId);
+  const storeLink = `${window.location.origin}/store/${storeSlug}`;
 
   const copyToClipboard = async () => {
     try {
@@ -67,22 +77,23 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Our Wholesale Store',
-          text: 'Check out our wholesale store on AMJSTAR!',
+          title: `${businessName} - Wholesale Store`,
+          text: `Check out our wholesale store on AMJSTAR!`,
           url: storeLink,
         });
       } catch (err) {
         console.error('Error sharing:', err);
       }
     } else {
-      copyToClipboard();
-      alert('Link copied to clipboard. Your browser does not support native sharing.');
+      setShowShareModal(true);
     }
   };
-
-  const dispatch = useAppDispatch();
-  const { profile } = useAppSelector((state) => state.supplier);
-  const [showBannerModal, setShowBannerModal] = useState(false);
+  const initials = businessName
+    ?.split(' ')
+    .slice(0, 2)
+    .map((w: string) => w[0])
+    .join('')
+    .toUpperCase() || 'ST';
 
   const bannerConfig: BannerConfig = profile?.banner || {};
 
@@ -110,14 +121,59 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
               {copied ? <CheckCircle size={18} className="text-[#059669]" /> : <Copy size={18} />}
             </button>
           </div>
-          <div className="flex gap-2 max-md:w-full">
-            <Button variant="outline" onClick={() => setShowQRModal(true)} className="flex-1 max-md:w-full flex items-center justify-center gap-2">
+          <div className="flex gap-2 max-md:w-full flex-wrap sm:flex-nowrap">
+            <Button variant="outline" onClick={() => setShowQRModal(true)} className="flex-1 min-w-[110px] max-md:w-full flex items-center justify-center gap-2">
               <QrCode size={16} /> QR Code
             </Button>
-            <Button onClick={openStorefront} className="flex-1 max-md:w-full flex items-center justify-center gap-2">
+            <Button variant="outline" onClick={() => setShowShareModal(true)} className="flex-1 min-w-[110px] max-md:w-full flex items-center justify-center gap-2 !border-primary/30 !text-primary hover:!bg-primary/5">
+              <Share2 size={16} /> Share Store
+            </Button>
+            <Button onClick={openStorefront} className="flex-1 min-w-[110px] max-md:w-full flex items-center justify-center gap-2">
               <ExternalLink size={16} /> Visit Store
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* ── Storefront Logo Card ────────────────────────────────────────── */}
+      <div className="bg-white rounded-[10px] border border-[#eef2f6] p-7 shadow-[0_1px_3px_rgba(0,0,0,0.02)] max-lg:p-5 max-sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-[14px] bg-gradient-to-br from-[#fff7ed] to-[#fef3c7] border-2 border-[#fed7aa] p-1 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+              {profile?.logo ? (
+                <img
+                  src={profile.logo}
+                  alt={businessName}
+                  className="w-full h-full object-cover rounded-[10px]"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center text-[#d97706]">
+                  <span className="text-xl sm:text-2xl font-black">{initials}</span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-[1.25rem] max-sm:text-base text-[#1e293b] m-0 font-extrabold leading-tight">
+                  Storefront Brand Logo
+                </h2>
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#fff7ed] text-[#e65c00] border border-[#fed7aa]">
+                  <Sparkles size={11} /> 1:1 Square
+                </span>
+              </div>
+              <p className="text-sm text-[#64748b] mt-1 m-0">
+                Your brand logo represents your business on your storefront and quotes. Cropped strictly to a 1:1 square.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            onClick={() => setShowLogoModal(true)}
+            className="flex items-center justify-center gap-2 shrink-0 !bg-[#e65c00] hover:!bg-[#c2410c] text-white font-bold"
+          >
+            <Store size={16} /> {profile?.logo ? 'Change Store Logo' : 'Upload Store Logo'}
+          </Button>
         </div>
       </div>
 
@@ -206,6 +262,20 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
         />
       )}
 
+      {showLogoModal && (
+        <EditStoreLogoModal
+          isOpen={showLogoModal}
+          onClose={() => setShowLogoModal(false)}
+          currentLogo={profile?.logo}
+          businessName={businessName}
+          onLogoUpdated={(newLogo) => {
+            if (profile) {
+              dispatch(setSupplierProfile({ ...profile, logo: newLogo }));
+            }
+          }}
+        />
+      )}
+
       <div className="bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] p-6 max-sm:p-4 text-center">
         <Store size={48} className="text-[#94a3b8] mx-auto mb-4 opacity-50 max-sm:w-10 max-sm:h-10" />
         <h3 className="text-lg max-sm:text-base font-bold text-[#1e293b] mb-2">Build Trust with Buyers</h3>
@@ -242,6 +312,16 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
           </Button>
         </div>
       </Modal>
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title={businessName}
+        subtitle="Verified Wholesale Store on AMJSTAR"
+        text={`Explore wholesale products from ${businessName} directly on AMJSTAR!`}
+        url={storeLink}
+        imageUrl={profile?.logo || profile?.banner?.desktop}
+      />
     </div>
   );
 };
