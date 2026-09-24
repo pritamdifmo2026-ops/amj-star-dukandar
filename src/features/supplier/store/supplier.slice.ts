@@ -24,7 +24,8 @@ export type OnboardingStatus = (typeof OnboardingStatus)[keyof typeof Onboarding
 export const SubscriptionStatus = {
   NONE: 'NONE',
   ACTIVE: 'ACTIVE',
-  EXPIRED: 'EXPIRED'
+  EXPIRED: 'EXPIRED',
+  TRIAL: 'TRIAL'
 } as const;
 export type SubscriptionStatus = (typeof SubscriptionStatus)[keyof typeof SubscriptionStatus];
 
@@ -36,6 +37,19 @@ export interface Subscription {
   amountPaid?: number;
   startDate?: string;
   expiryDate?: string;
+  customPrice?: number;
+  customDurationMonths?: number;
+  trialEndsAt?: string;
+  trialExpiryDate?: string;
+  isTrial?: boolean;
+}
+
+export interface ListingFeeOverride {
+  perProduct?: number;
+  minMonthly?: number;
+  waived?: boolean;
+  waivedUntil?: string;
+  reason?: string;
 }
 
 export const UpgradeStatus = {
@@ -123,6 +137,7 @@ interface SupplierProfile {
     mobile?: string;
   };
   logo?: string;
+  listingFeeOverride?: ListingFeeOverride;
 }
 
 interface SupplierState {

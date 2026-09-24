@@ -6,7 +6,7 @@ import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
 import MessageModal from '@/shared/components/ui/MessageModal';
 import Sidebar, { type MenuItem } from '@/shared/components/layout/Sidebar';
-import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut, Megaphone, Briefcase, Store, HeartCrack } from 'lucide-react';
+import { ShieldCheck, Users, BarChart3, Package, Tags, Menu, Image as ImageIcon, MessageSquare, Settings, Wallet, TrendingUp, FileText, AlertTriangle, CreditCard, Video, LogOut, Megaphone, Briefcase, Store, HeartCrack, HandCoins } from 'lucide-react';
 import logo from '@/assets/logoo.png';
 import { useQuery } from '@tanstack/react-query';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
@@ -36,6 +36,8 @@ import AdminSupplierPlans from '../components/AdminSupplierPlans';
 import AdminMeetingRequests from '../components/AdminMeetingRequests';
 import AdminJobs from '../components/AdminJobs';
 import UnmatchedDeals from '../components/UnmatchedDeals';
+import AdminConcessions from '../components/AdminConcessions';
+import AdminSalesRecommendConcession from '../components/AdminSalesRecommendConcession';
 
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
@@ -68,6 +70,8 @@ const tabLabel: Record<string, string> = {
   'supplier-plans': 'Supplier Memberships',
   'meeting-requests': 'Meeting Requests',
   'unmatched-deals': 'Unmatured Deals',
+  concessions: 'Concessions',
+  'sales-recommend': 'Recommend Concession',
 };
 
 const AdminDashboard: React.FC = () => {
@@ -151,6 +155,8 @@ const AdminDashboard: React.FC = () => {
     { id: 'jobs', label: 'Manage Careers', icon: Briefcase },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
     { id: 'supplier-plans', label: 'Supplier Memberships', icon: CreditCard },
+    { id: 'concessions', label: 'Concessions', icon: HandCoins },
+    { id: 'sales-recommend', label: 'Recommend Concession', icon: Megaphone },
     { id: 'meeting-requests', label: 'Meeting Requests', icon: Video },
   ];
 
@@ -188,6 +194,8 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'jobs') return hasPermission('pages_management'); // Using pages_management for jobs as well
     if (item.id === 'platform-settings') return hasPermission('platform_settings');
     if (item.id === 'supplier-plans') return hasPermission('supplier_verify');
+    if (item.id === 'concessions') return hasPermission('supplier_verify');
+    if (item.id === 'sales-recommend') return true;
     if (item.id === 'meeting-requests') return hasPermission('meeting_requests');
     return false;
   });
@@ -223,10 +231,10 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'reseller-detail') setSearchParams({ tab: 'resellers' });
+    if (activeTab === 'reseller-detail' && !searchParams.get('id')) setSearchParams({ tab: 'resellers' });
     else if (isScopedAdmin && (activeTab === 'suppliers' || activeTab === 'supplier-detail' || activeTab === 'supplier-products')) {
       setSearchParams({ tab: 'assigned-sellers' });
-    } else if (activeTab === 'supplier-detail' || activeTab === 'supplier-products') {
+    } else if ((activeTab === 'supplier-detail' || activeTab === 'supplier-products') && !searchParams.get('id')) {
       setSearchParams({ tab: 'suppliers' });
     }
   }, [isScopedAdmin, activeTab]);
@@ -360,6 +368,8 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'supplier-plans' && (
               <AdminSupplierPlans onViewSupplier={id => setSearchParams({ tab: 'supplier-detail', id })} />
             )}
+            {activeTab === 'concessions' && <AdminConcessions />}
+            {activeTab === 'sales-recommend' && <AdminSalesRecommendConcession />}
             {activeTab === 'meeting-requests' && <AdminMeetingRequests />}
             {activeTab === 'control-authority' && user?.role === 'superadmin' && <ControlAuthority />}
           </div>

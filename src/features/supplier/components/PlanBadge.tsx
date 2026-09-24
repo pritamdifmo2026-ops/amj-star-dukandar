@@ -11,7 +11,8 @@ export interface BadgeableSupplier {
   businessDetails?: { gstin?: string };
 }
 
-const isPlanActive = (s: BadgeableSupplier) => s.subscription?.status === 'ACTIVE';
+const isPlanActive = (s: BadgeableSupplier) =>
+  s.subscription?.status === 'ACTIVE' || s.subscription?.status === 'TRIAL';
 
 /** True when the supplier has an active Verified plan and a GSTIN on file. */
 export const hasGstVerifiedBadge = (s: BadgeableSupplier): boolean =>

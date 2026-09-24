@@ -19,9 +19,12 @@ const MembershipRenewalAlert: React.FC<Props> = ({ onRenew }) => {
   if (dismissed) return null;
 
   const sub = profile?.subscription;
-  if (!sub || sub.status !== SubscriptionStatus.ACTIVE || !sub.expiryDate) return null;
+  const isTrial = sub?.status === SubscriptionStatus.TRIAL;
+  const isSubActive = sub?.status === SubscriptionStatus.ACTIVE;
+  const effectiveExpiry = sub?.trialExpiryDate || sub?.trialEndsAt || sub?.expiryDate;
+  if (!sub || (!isSubActive && !isTrial) || !effectiveExpiry) return null;
 
-  const msLeft = new Date(sub.expiryDate).getTime() - Date.now();
+  const msLeft = new Date(effectiveExpiry).getTime() - Date.now();
   const daysLeft = msLeft / 86_400_000;
 
   // Show only within the 1-day-before window (and not already expired)
@@ -29,7 +32,7 @@ const MembershipRenewalAlert: React.FC<Props> = ({ onRenew }) => {
 
   const tierKey = (sub.tier ?? 'VERIFIED') as keyof typeof PLAN_CATALOG;
   const planName = PLAN_CATALOG[tierKey]?.name ?? 'Plan';
-  const expiryStr = new Date(sub.expiryDate).toLocaleDateString('en-IN', {
+  const expiryStr = new Date(effectiveExpiry).toLocaleDateString('en-IN', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
   const hours = Math.max(0, Math.floor(msLeft / 3_600_000));

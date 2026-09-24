@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import adminService from '../services/admin.service';
 import { toast } from 'react-hot-toast';
 import { formatIndianNumber } from '@/shared/utils/formatNumber';
+import AdminSupplierBillingOverrides from './AdminSupplierBillingOverrides';
 
 import type { AdminSupplier } from '../types/admin.types';
 
@@ -709,6 +710,11 @@ const SupplierVerification: React.FC<SupplierVerificationProps> = ({ suppliers, 
             <TrustAutomationEditor supplierId={selectedSupplier._id} autoLiveActive={!!selectedSupplier.autoLiveProducts} />
           )}
         </div>
+        <AdminSupplierBillingOverrides
+          supplierId={selectedSupplier._id}
+          supplier={selectedSupplier}
+          onChanged={() => qc.invalidateQueries({ queryKey: ['admin', 'suppliers'] })}
+        />
       </div>
     );
   }

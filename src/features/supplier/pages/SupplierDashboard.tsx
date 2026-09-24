@@ -16,7 +16,7 @@ import {
   LayoutDashboard, Package, LogOut, Trash2, FileText, MessageCircle,
   Handshake, Menu, CheckCircle,
   AlertCircle, ShoppingBag, Settings as SettingsIcon, Wallet, BarChart2, Store,
-  Star, ReceiptText, Ban, Video, MailWarning
+  Star, ReceiptText, Ban, Video, MailWarning, HandCoins
 } from 'lucide-react';
 import NotificationBell from '@/features/notifications/components/NotificationBell';
 
@@ -31,6 +31,7 @@ import SupplierWallet from '../components/SupplierWallet';
 import SupplierReports from '../components/SupplierReports';
 import SupplierStoreFront from '../components/SupplierStoreFront';
 import BillingManagement from '../components/BillingManagement';
+import SupplierConcessionRequest from '../components/SupplierConcessionRequest';
 import SubscriptionActivation from '../components/SubscriptionActivation';
 import MembershipUpgrade from '../components/MembershipUpgrade';
 import MembershipRenewalAlert from '../components/MembershipRenewalAlert';
@@ -143,7 +144,7 @@ const SupplierDashboard: React.FC = () => {
 
   const isBetaActive =
     profile?.tier === 'BETA' &&
-    profile?.subscription?.status === 'ACTIVE';
+    (profile?.subscription?.status === 'ACTIVE' || profile?.subscription?.status === 'TRIAL');
 
   const supplierMenu: MenuItem[] = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
@@ -155,6 +156,7 @@ const SupplierDashboard: React.FC = () => {
     { id: 'store', label: 'Front Store', icon: Store },
     { id: 'wallet',   label: 'Wallet',             icon: Wallet },
     { id: 'billing',  label: 'Billing Management',  icon: ReceiptText },
+    { id: 'concessions', label: 'Billing Concessions', icon: HandCoins },
     { id: 'reports',  label: 'Reports',              icon: BarChart2 },
     { id: 'reviews', label: 'My Reviews', icon: Star },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
@@ -460,6 +462,7 @@ const SupplierDashboard: React.FC = () => {
         {activeView === 'store' && (profile?._id ? <SupplierStoreFront supplierId={profile._id} /> : <div className="flex items-center justify-center h-64 text-[#64748b]">Loading store…</div>)}
         {activeView === 'wallet'   && <SupplierWallet />}
         {activeView === 'billing'  && <BillingManagement setActiveView={setActiveView} />}
+        {activeView === 'concessions' && <SupplierConcessionRequest />}
         {activeView === 'reports'  && <SupplierReports />}
         {activeView === 'partnerships' && <SupplierPartnerships />}
         {activeView === 'reviews' && <div className="p-5"><SupplierReviews /></div>}

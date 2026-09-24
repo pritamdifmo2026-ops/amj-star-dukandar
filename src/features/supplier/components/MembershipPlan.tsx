@@ -19,9 +19,12 @@ const MembershipPlan: React.FC = () => {
   const currentTier = (profile.subscription?.tier || profile.tier) as SupplierTier;
   const currentPlan = getPlan(currentTier);
   const sub = profile.subscription;
+  const isTrial = sub?.status === SubscriptionStatus.TRIAL;
+  const effectiveExpiry = sub?.trialExpiryDate || sub?.trialEndsAt || sub?.expiryDate;
   const isActive =
-    sub?.status === SubscriptionStatus.ACTIVE &&
-    (!sub?.expiryDate || new Date(sub.expiryDate) > new Date());
+    (sub?.status === SubscriptionStatus.ACTIVE || isTrial) &&
+    (!effectiveExpiry || new Date(effectiveExpiry) > new Date());
+  const hasCustomPrice = sub?.customPrice != null && sub.customPrice >= 0;
   const pu = profile.pendingUpgrade;
   const verificationPending = pu?.status === UpgradeStatus.VERIFICATION_PENDING;
   const upgradeOptions = getUpgradeOptions(currentTier);
@@ -31,8 +34,8 @@ const MembershipPlan: React.FC = () => {
       <div className={cardHeaderCls}>
         <Crown size={20} className="text-primary" />
         <h3 className="text-base font-bold text-[#1e293b] m-0">Membership Plan</h3>
-        <span className={`ml-auto text-xs font-bold px-2.5 py-1 rounded-full ${isActive ? 'bg-[#ecfdf5] text-[#059669]' : 'bg-[#fff7ed] text-[#c2410c]'}`}>
-          {isActive ? 'ACTIVE' : (sub?.status || 'NONE')}
+        <span className={`ml-auto text-xs font-bold px-2.5 py-1 rounded-full ${isActive ? (isTrial ? 'bg-[#eff6ff] text-[#1d4ed8]' : 'bg-[#ecfdf5] text-[#059669]') : 'bg-[#fff7ed] text-[#c2410c]'}`}>
+          {isTrial ? 'TRIAL (ACTIVE)' : (isActive ? 'ACTIVE' : (sub?.status || 'NONE'))}
         </span>
       </div>
 
@@ -44,13 +47,31 @@ const MembershipPlan: React.FC = () => {
             <PlanBadge supplier={profile as any} />
           </div>
           <p className="text-sm text-[#64748b] m-0 mt-0.5">{currentPlan.description}</p>
-          {isActive && sub?.expiryDate && (
-            <p className="text-xs text-[#94a3b8] m-0 mt-1">Renews / expires on {new Date(sub.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+          {isActive && effectiveExpiry && (
+            <p className="text-xs text-[#94a3b8] m-0 mt-1">
+              {isTrial ? 'Trial period ends on ' : 'Renews / expires on '}
+              {new Date(effectiveExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
           )}
         </div>
         <div className="text-right">
-          <div className="text-xl font-extrabold text-[#0f172a]">{formatINR(currentPlan.price)}</div>
-          <div className="text-xs text-[#64748b]">/year + GST</div>
+          {hasCustomPrice ? (
+            <div>
+              <span className="text-xs font-bold text-[#059669] bg-[#ecfdf5] px-2 py-0.5 rounded-full inline-block mb-1">
+                Approved Renewal Discount
+              </span>
+              <div className="text-xl font-extrabold text-[#0f172a]">
+                <span className="line-through text-sm text-[#94a3b8] mr-1.5">{formatINR(currentPlan.price)}</span>
+                {formatINR(sub!.customPrice!)}
+              </div>
+              <div className="text-xs text-[#64748b]">{sub?.customDurationMonths ? `/${sub.customDurationMonths} months` : '/year'} + GST (Special Rate)</div>
+            </div>
+          ) : (
+            <div>
+              <div className="text-xl font-extrabold text-[#0f172a]">{formatINR(currentPlan.price)}</div>
+              <div className="text-xs text-[#64748b]">/year + GST</div>
+            </div>
+          )}
         </div>
       </div>
 

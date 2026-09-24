@@ -30,23 +30,36 @@ const SubscriptionActivation: React.FC = () => {
   if (!profile) return null;
 
   const isActive =
-    profile.subscription?.status === SubscriptionStatus.ACTIVE &&
+    (profile.subscription?.status === SubscriptionStatus.ACTIVE || profile.subscription?.status === SubscriptionStatus.TRIAL) &&
     (!profile.subscription?.expiryDate || new Date(profile.subscription.expiryDate) > new Date());
 
-  // Show only once the account is verified and the plan is not yet active.
+  // Show only once the account is verified and the plan is not yet active (or trial).
   if (!profile.verifiedByAdmin || isActive) return null;
 
-  const plan = getPlan(profile.tier);
+  const catalogPlan = getPlan(profile.tier);
+  const hasCustomPrice = profile.subscription?.customPrice != null && profile.subscription.customPrice >= 0;
+  const customDuration = profile.subscription?.customDurationMonths;
+  const plan = hasCustomPrice
+    ? { ...catalogPlan, price: profile.subscription!.customPrice! }
+    : catalogPlan;
   const gst = getPlanGstAmount(plan);
   const total = getPlanTotal(plan);
 
   const handleActivate = async () => {
     setPaying(true);
     try {
+      const order = await supplierService.createSubscriptionOrder();
+
+      if (order.remitted) {
+        // Fully-remitted plan (customPrice=0): activated immediately on backend
+        const res = await supplierService.getProfile();
+        if (res?.supplier) dispatch(setSupplierProfile(res.supplier));
+        toast.success(`${plan.name} activated at ₹0 special rate!`);
+        return;
+      }
+
       const loaded = await loadRazorpay();
       if (!loaded) throw new Error('Payment gateway failed to load. Check your connection.');
-
-      const order = await supplierService.createSubscriptionOrder();
 
       await new Promise<void>((resolve, reject) => {
         const rzp = new (window as any).Razorpay({
@@ -54,7 +67,7 @@ const SubscriptionActivation: React.FC = () => {
           amount: order.amount,
           currency: order.currency,
           name: 'AMJSTAR',
-          description: `${plan.name} — Annual Plan`,
+          description: `${plan.name} — ${customDuration ? `${customDuration}-Month` : 'Annual'} Plan`,
           order_id: order.razorpayOrderId,
           handler: async (response: any) => {
             try {
@@ -109,9 +122,22 @@ const SubscriptionActivation: React.FC = () => {
         </div>
 
         <div className="md:w-64 shrink-0 bg-white border border-[#e2e8f0] rounded-[12px] p-4">
+          {hasCustomPrice && (
+            <div className="mb-2 px-2 py-1.5 bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] text-xs text-[#059669] font-bold text-center">
+              Special discount applied! Original: {formatINR(catalogPlan.price)}
+            </div>
+          )}
+          {customDuration && (
+            <div className="mb-2 px-2 py-1 bg-[#eff6ff] border border-[#bfdbfe] rounded-[8px] text-[11px] text-[#1e40af] font-semibold text-center">
+              Special Duration: {customDuration} Months
+            </div>
+          )}
           <div className="flex justify-between text-sm text-[#475569]">
-            <span>Plan (annual)</span>
-            <span className="font-semibold">{formatINR(plan.price)}</span>
+            <span>Plan ({customDuration ? `${customDuration} mo` : 'annual'})</span>
+            <span className="font-semibold">
+              {hasCustomPrice && <span className="line-through text-[#94a3b8] mr-1">{formatINR(catalogPlan.price)}</span>}
+              {formatINR(plan.price)}
+            </span>
           </div>
           <div className="flex justify-between text-sm text-[#475569] mt-1">
             <span>GST ({plan.gstPercent}%)</span>
@@ -122,7 +148,7 @@ const SubscriptionActivation: React.FC = () => {
             <span>{formatINR(total)}</span>
           </div>
           <Button onClick={handleActivate} disabled={paying} className="w-full mt-3">
-            {paying ? 'Processing…' : `Pay ${formatINR(total)}`}
+            {paying ? 'Processing…' : total === 0 ? 'Activate Plan (₹0 Free)' : `Pay ${formatINR(total)}`}
           </Button>
         </div>
       </div>

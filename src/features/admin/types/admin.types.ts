@@ -31,13 +31,15 @@ export interface AdminSupplier {
   userId?: { _id?: string; name: string; email: string; phone: string; avatar?: string };
   autoLiveProducts?: boolean;
   subscription?: {
-    status?: 'NONE' | 'ACTIVE' | 'EXPIRED';
+    status?: 'NONE' | 'ACTIVE' | 'EXPIRED' | 'TRIAL';
     tier?: string;
     price?: number;
+    customPrice?: number;
     gstAmount?: number;
     amountPaid?: number;
     startDate?: string;
     expiryDate?: string;
+    trialEndsAt?: string;
   };
   pendingUpgrade?: {
     status?: 'NONE' | 'PAYMENT_PENDING' | 'VERIFICATION_PENDING';

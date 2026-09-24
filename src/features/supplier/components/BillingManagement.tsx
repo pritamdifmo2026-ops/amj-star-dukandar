@@ -205,7 +205,10 @@ const BillingManagement: React.FC<BillingManagementProps> = ({ setActiveView }) 
   });
 
   const preview = data?.preview;
-  const walletOk  = preview && preview.walletBalance >= preview.projectedCost;
+  const override = profile?.listingFeeOverride;
+  const isWaiverActive = !!(override?.waived && (!override?.waivedUntil || new Date(override.waivedUntil) > new Date()));
+  const hasCustomListingFee = !isWaiverActive && (override?.perProduct != null || override?.minMonthly != null);
+  const walletOk  = isWaiverActive || (preview && preview.walletBalance >= preview.projectedCost);
   const noProducts = preview && preview.totalBillableProducts === 0;
 
   if (isLoading) {
@@ -371,7 +374,19 @@ const BillingManagement: React.FC<BillingManagementProps> = ({ setActiveView }) 
         </div>
 
         {/* Status Alert */}
-        {noProducts ? (
+        {isWaiverActive ? (
+          <div className="flex items-start gap-3 p-4 bg-[#ecfdf5] border border-[#a7f3d0] rounded-[10px]">
+            <ShieldCheck size={18} className="text-[#059669] shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-[#065f46] text-sm">Listing Fees Waived by AMJSTAR Admin</p>
+              <p className="text-xs text-[#047857] mt-0.5">
+                Your listings are fully exempt from monthly charges
+                {override?.waivedUntil ? ` until ${new Date(override.waivedUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}.
+                All {preview.totalBillableProducts} listings stay live with no wallet deductions.
+              </p>
+            </div>
+          </div>
+        ) : noProducts ? (
           <div className="flex items-start gap-3 p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px]">
             <Info size={18} className="text-[#94a3b8] shrink-0 mt-0.5" />
             <div>
@@ -405,6 +420,17 @@ const BillingManagement: React.FC<BillingManagementProps> = ({ setActiveView }) 
               <button onClick={() => setActiveView('wallet')} className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#ea580c] hover:underline">
                 Top Up Wallet <ArrowRight size={11} />
               </button>
+            </div>
+          </div>
+        )}
+
+        {hasCustomListingFee && (
+          <div className="flex items-start gap-3 p-3.5 bg-[#eff6ff] border border-[#bfdbfe] rounded-[10px]">
+            <Info size={16} className="text-[#2563eb] shrink-0 mt-0.5" />
+            <div className="text-xs text-[#1e40af]">
+              <strong className="font-semibold">Custom Listing Rates Active: </strong>
+              {override?.perProduct != null ? `₹${override.perProduct} per product` : ''}
+              {override?.minMonthly != null ? ` · Minimum ₹${override.minMonthly}/month` : ''}
             </div>
           </div>
         )}

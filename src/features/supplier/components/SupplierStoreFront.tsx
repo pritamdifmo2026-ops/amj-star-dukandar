@@ -110,26 +110,42 @@ const SupplierStoreFront: React.FC<SupplierStoreFrontProps> = ({ supplierId }) =
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col md:flex-row gap-4 items-stretch md:items-center">
-          <div className="flex-1 w-full flex items-center gap-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-4 py-3">
-            <span className="text-[#0f172a] font-medium text-sm truncate flex-1">{storeLink}</span>
+        <div className="mt-6 flex flex-col xl:flex-row gap-3 items-stretch xl:items-center">
+          <div className="flex-1 min-w-0 flex items-center gap-2 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-3.5 py-2.5">
+            <span className="text-[#0f172a] font-medium text-sm truncate flex-1 select-all" title={storeLink}>
+              {storeLink}
+            </span>
             <button 
               onClick={copyToClipboard}
-              className="text-[#64748b] hover:text-primary transition-colors cursor-pointer p-1"
+              className="text-[#64748b] hover:text-primary transition-colors cursor-pointer p-1.5 rounded hover:bg-[#e2e8f0]/60 shrink-0"
               title="Copy Link"
             >
               {copied ? <CheckCircle size={18} className="text-[#059669]" /> : <Copy size={18} />}
             </button>
           </div>
-          <div className="flex gap-2 max-md:w-full flex-wrap sm:flex-nowrap">
-            <Button variant="outline" onClick={() => setShowQRModal(true)} className="flex-1 min-w-[110px] max-md:w-full flex items-center justify-center gap-2">
-              <QrCode size={16} /> QR Code
+          <div className="flex items-center gap-2 max-xl:w-full flex-wrap sm:flex-nowrap shrink-0">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowQRModal(true)} 
+              className="flex-1 sm:flex-initial min-w-[95px] flex items-center justify-center gap-1.5 whitespace-nowrap !py-2 !px-3 text-sm font-semibold rounded-[8px]"
+            >
+              <QrCode size={15} /> QR Code
             </Button>
-            <Button variant="outline" onClick={() => setShowShareModal(true)} className="flex-1 min-w-[110px] max-md:w-full flex items-center justify-center gap-2 !border-primary/30 !text-primary hover:!bg-primary/5">
-              <Share2 size={16} /> Share Store
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowShareModal(true)} 
+              className="flex-1 sm:flex-initial min-w-[105px] flex items-center justify-center gap-1.5 whitespace-nowrap !py-2 !px-3 text-sm font-semibold rounded-[8px] !border-primary/30 !text-primary hover:!bg-primary/5"
+            >
+              <Share2 size={15} /> Share Store
             </Button>
-            <Button onClick={openStorefront} className="flex-1 min-w-[110px] max-md:w-full flex items-center justify-center gap-2">
-              <ExternalLink size={16} /> Visit Store
+            <Button 
+              size="sm"
+              onClick={openStorefront} 
+              className="flex-1 sm:flex-initial min-w-[105px] flex items-center justify-center gap-1.5 whitespace-nowrap !py-2 !px-3.5 text-sm font-semibold rounded-[8px]"
+            >
+              <ExternalLink size={15} /> Visit Store
             </Button>
           </div>
         </div>
