@@ -496,8 +496,11 @@ const PublicStoreFront: React.FC = () => {
                           moq: product.minOrderQty || product.moq,
                           description: product.description,
                         });
+                        const shareUrl = window.location.origin.includes('amjstar.com') && !window.location.origin.includes('www.')
+                          ? `https://www.amjstar.com/products/${product.id || product._id}`
+                          : `${window.location.origin}/products/${product.id || product._id}`;
                         setShareData({
-                          url: `${window.location.origin}/products/${product.id || product._id}`,
+                          url: shareUrl,
                           title: details.title,
                           subtitle: details.subtitle,
                           text: details.text,
@@ -539,8 +542,11 @@ const PublicStoreFront: React.FC = () => {
                               moq: product.minOrderQty || product.moq,
                               description: product.description,
                             });
+                            const shareUrl = window.location.origin.includes('amjstar.com') && !window.location.origin.includes('www.')
+                              ? `https://www.amjstar.com/products/${product.id || product._id}`
+                              : `${window.location.origin}/products/${product.id || product._id}`;
                             setShareData({
-                              url: `${window.location.origin}/products/${product.id || product._id}`,
+                              url: shareUrl,
                               title: details.title,
                               subtitle: details.subtitle,
                               text: details.text,

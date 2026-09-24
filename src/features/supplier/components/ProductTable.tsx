@@ -213,7 +213,9 @@ const ProductTable: React.FC<ProductTableProps> = ({ products, loading, onEdit, 
           title={details.title}
           subtitle={details.subtitle}
           text={details.text}
-          url={`${window.location.origin}/products/${shareProduct.id || shareProduct._id}`}
+          url={window.location.origin.includes('amjstar.com') && !window.location.origin.includes('www.')
+            ? `https://www.amjstar.com/products/${shareProduct.id || shareProduct._id}`
+            : `${window.location.origin}/products/${shareProduct.id || shareProduct._id}`}
           imageUrl={shareProduct.images?.[0] || shareProduct.imageUrl}
         />
       );

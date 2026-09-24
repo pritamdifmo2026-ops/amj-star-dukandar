@@ -699,6 +699,12 @@ const ProductDetail: React.FC = () => {
           minOrderQty: product.minOrderQty,
           description: product.description,
         });
+        const shareUrl = typeof window !== 'undefined'
+          ? (window.location.origin.includes('amjstar.com') && !window.location.origin.includes('www.')
+              ? `https://www.amjstar.com/products/${currentProductId}`
+              : `${window.location.origin}/products/${currentProductId}`)
+          : `https://www.amjstar.com/products/${currentProductId}`;
+
         return (
           <ShareModal
             isOpen={showShareModal}
@@ -706,7 +712,7 @@ const ProductDetail: React.FC = () => {
             title={shareDetails.title}
             subtitle={shareDetails.subtitle}
             text={shareDetails.text}
-            url={typeof window !== 'undefined' ? `${window.location.origin}/products/${currentProductId}` : `https://amjstar.com/products/${currentProductId}`}
+            url={shareUrl}
             imageUrl={currentImage}
           />
         );

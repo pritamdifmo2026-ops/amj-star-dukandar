@@ -32,16 +32,29 @@ export default async function handler(req, res) {
         ogImage = `https://wsrv.nl/?url=${encodeURIComponent(defaultLogo)}&output=jpeg&q=80&w=1200`;
       }
 
+      const canonicalHost = host.includes('localhost') ? host : 'www.amjstar.com';
+      const canonicalUrl = `${protocol}://${canonicalHost}/store/${id}`;
+
       // 2. Fetch the raw index.html from our deployment
       const htmlRes = await fetch(`${protocol}://${host}/index.html`);
       let html = await htmlRes.text();
+
+      // Clean out ALL existing static SEO, OpenGraph and Twitter tags to prevent duplicate tag conflicts
+      html = html
+        .replace(/<title>.*?<\/title>/gis, '')
+        .replace(/<meta\s+name=["']description["'][^>]*>/gis, '')
+        .replace(/<link\s+rel=["']canonical["'][^>]*>/gis, '')
+        .replace(/<meta\s+property=["']og:[^"']+["'][^>]*>/gis, '')
+        .replace(/<meta\s+name=["']twitter:[^"']+["'][^>]*>/gis, '');
 
       // 3. Inject dynamic meta tags (WhatsApp, Telegram, Facebook, LinkedIn, Twitter/X)
       const metaTags = `
         <title>${escapeHtml(storeName)} - AMJSTAR Wholesale Store</title>
         <meta name="description" content="${escapeHtml(description)}">
+        <link rel="canonical" href="${canonicalUrl}">
         <meta property="og:type" content="website">
         <meta property="og:site_name" content="AMJSTAR - India ka Apna B2B Bazaar">
+        <meta property="og:url" content="${canonicalUrl}">
         <meta property="og:title" content="${escapeHtml(storeName)} - AMJSTAR Wholesale Store">
         <meta property="og:description" content="${escapeHtml(description)}">
         <meta property="og:image" content="${ogImage}">
@@ -51,17 +64,13 @@ export default async function handler(req, res) {
         <meta property="og:image:height" content="630">
         <meta property="og:image:alt" content="${escapeHtml(storeName)}">
         <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:url" content="${canonicalUrl}">
         <meta name="twitter:title" content="${escapeHtml(storeName)} - AMJSTAR Wholesale Store">
         <meta name="twitter:description" content="${escapeHtml(description)}">
         <meta name="twitter:image" content="${ogImage}">
       `;
 
-      // Replace title in index.html
-      if (/<title>.*?<\/title>/i.test(html)) {
-        html = html.replace(/<title>.*?<\/title>/i, metaTags);
-      } else {
-        html = html.replace('</head>', `${metaTags}\n</head>`);
-      }
+      html = html.replace(/<head>/i, `<head>\n${metaTags}\n`);
 
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 's-maxage=604800, stale-while-revalidate=86400'); // Cache for 7 days
