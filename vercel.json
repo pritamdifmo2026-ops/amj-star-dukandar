@@ -1,8 +1,41 @@
 {
   "rewrites": [
-    { "source": "/store/:id", "destination": "/api/store/[id]" },
-    { "source": "/products/:id", "destination": "/api/product/[id]" },
-    { "source": "/product/:id", "destination": "/api/product/[id]" },
+    {
+      "source": "/store/:idOrSlug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|telegrambot|facebookexternalhit|twitterbot|linkedinbot|slackbot|discordbot|applebot|googlebot|bingbot|crawler|spider).*"
+        }
+      ],
+      "destination": "https://api.amjstar.com/og/store/:idOrSlug"
+    },
+    {
+      "source": "/products/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|telegrambot|facebookexternalhit|twitterbot|linkedinbot|slackbot|discordbot|applebot|googlebot|bingbot|crawler|spider).*"
+        }
+      ],
+      "destination": "https://api.amjstar.com/og/product/:id"
+    },
+    {
+      "source": "/product/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(whatsapp|telegrambot|facebookexternalhit|twitterbot|linkedinbot|slackbot|discordbot|applebot|googlebot|bingbot|crawler|spider).*"
+        }
+      ],
+      "destination": "https://api.amjstar.com/og/product/:id"
+    },
+    { "source": "/store/:id", "destination": "/index.html" },
+    { "source": "/products/:id", "destination": "/index.html" },
+    { "source": "/product/:id", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

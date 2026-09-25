@@ -129,12 +129,11 @@ export function formatProductShareText(product: {
  * @param id    MongoDB ObjectId string
  */
 export function toOgProxyUrl(type: 'store' | 'product', id: string): string {
-  // VITE_API_BASE_URL = 'https://api.amjstar.com/api'
-  // Strip /api suffix to get server root: 'https://api.amjstar.com'
-  // Final URL: 'https://api.amjstar.com/og/store/ID'  (no double /api)
-  const apiBase =
-    (import.meta as any).env?.VITE_API_BASE_URL ||
-    'https://api.amjstar.com/api';
-  const serverRoot = apiBase.replace(/\/api\/?$/, '').replace(/\/$/, '');
-  return `${serverRoot}/og/${type}/${id}`;
+  // Returns the clean SPA URL (e.g. https://www.amjstar.com/products/:id).
+  // Vercel rewrites in vercel.json transparently proxy bot user-agents
+  // (WhatsApp, Telegram, Facebook, etc.) to the backend OG endpoint,
+  // so the correct og:image is served without exposing api.amjstar.com.
+  const frontendBase = 'https://www.amjstar.com';
+  if (type === 'store') return `${frontendBase}/store/${id}`;
+  return `${frontendBase}/products/${id}`;
 }
