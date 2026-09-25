@@ -129,12 +129,12 @@ export function formatProductShareText(product: {
  * @param id    MongoDB ObjectId string
  */
 export function toOgProxyUrl(type: 'store' | 'product', id: string): string {
-  // Derive base from the same env var used by the API client.
-  // e.g. 'http://localhost:5000/api'  ->  'http://localhost:5000/api/og/store/ID'
-  const base =
+  // VITE_API_BASE_URL = 'https://api.amjstar.com/api'
+  // Strip /api suffix to get server root: 'https://api.amjstar.com'
+  // Final URL: 'https://api.amjstar.com/og/store/ID'  (no double /api)
+  const apiBase =
     (import.meta as any).env?.VITE_API_BASE_URL ||
     'https://api.amjstar.com/api';
-  // Remove trailing slash
-  const clean = base.replace(/\/$/, '');
-  return `${clean}/og/${type}/${id}`;
+  const serverRoot = apiBase.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  return `${serverRoot}/og/${type}/${id}`;
 }
