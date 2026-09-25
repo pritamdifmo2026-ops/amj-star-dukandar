@@ -13,7 +13,8 @@ import { ROUTES } from '@/shared/constants/routes';
 import EditStoreBannerModal from '@/features/supplier/components/EditStoreBannerModal';
 import EditStoreLogoModal from '@/features/supplier/components/EditStoreLogoModal';
 import ShareModal from '@/shared/components/ui/ShareModal';
-import { extractSupplierId, toStoreSlug, formatProductShareText } from '@/shared/utils/ogImage';
+import { extractSupplierId, toStoreSlug, formatProductShareText, toOgProxyUrl } from '@/shared/utils/ogImage';
+import { setPageMeta } from '@/shared/utils/pageMeta';
 
 /* ─── Storefront Product Card (Enquire Now variant) ─────────────────── */
 const StorefrontProductCard: React.FC<{ product: any; onShare: (product: any) => void }> = ({ product, onShare }) => {
@@ -154,7 +155,7 @@ const PublicStoreFront: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [shareData, setShareData] = useState<{ url: string; title: string; subtitle?: string; text?: string; imageUrl?: string } | null>(null);
+  const [shareData, setShareData] = useState<{ url: string; ogProxyUrl?: string; title: string; subtitle?: string; text?: string; imageUrl?: string } | null>(null);
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
 
@@ -176,8 +177,28 @@ const PublicStoreFront: React.FC = () => {
         ]);
         const supp = profileRes.data.supplier;
         setSupplier(supp);
-        document.title = `${supp.businessName || 'Store'} - AMJSTAR`;
         setProducts(productsRes.data.products || []);
+
+        // ── Dynamic OG meta tags (for Google/Bing and JS-capable crawlers) ──
+        const slug = toStoreSlug(supp.businessName, supplierId);
+        const url = `${window.location.origin}/store/${slug}`;
+        const rawImg = supp?.logo || supp?.banner?.desktop || supp?.banner?.tablet || supp?.banner?.mobile;
+        const city = supp?.businessDetails?.city;
+        const state = supp?.businessDetails?.state;
+        const location = [city, state].filter(Boolean).join(', ');
+        const about = supp?.businessDetails?.about || supp?.businessDetails?.description;
+        const desc = about
+          ? about.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim().slice(0, 200)
+          : location
+          ? `Wholesale products from ${supp.businessName}, ${location}. Verified B2B supplier on AMJSTAR.`
+          : `Buy wholesale directly from ${supp.businessName} — verified B2B supplier on AMJSTAR.`;
+
+        setPageMeta({
+          title: `${supp.businessName || 'Store'} — Verified Wholesale Supplier on AMJSTAR`,
+          description: desc,
+          imageUrl: rawImg,
+          canonicalUrl: url,
+        });
 
         if (typeof window !== 'undefined' && supp?.businessName) {
           const expectedSlug = toStoreSlug(supp.businessName, supplierId);
@@ -192,6 +213,8 @@ const PublicStoreFront: React.FC = () => {
       }
     };
     if (supplierId) fetchData();
+    // Reset meta tags to site defaults when leaving this page
+    return () => { setPageMeta(); };
   }, [supplierId, rawParam]);
 
   const categories = useMemo(() => {
@@ -250,6 +273,7 @@ const PublicStoreFront: React.FC = () => {
           subtitle={shareData.subtitle}
           text={shareData.text}
           url={shareData.url}
+          ogProxyUrl={shareData.ogProxyUrl}
           imageUrl={shareData.imageUrl}
           onClose={() => setShareData(null)} 
         />
@@ -342,6 +366,7 @@ const PublicStoreFront: React.FC = () => {
           <button
             onClick={() => setShareData({
               url: storeUrl,
+              ogProxyUrl: toOgProxyUrl('store', supplierId),
               title: businessName,
               subtitle: 'Verified Wholesale Store on AMJSTAR',
               text: `Explore wholesale products from ${businessName} on AMJSTAR.`,
@@ -414,6 +439,7 @@ const PublicStoreFront: React.FC = () => {
               <button
                 onClick={() => setShareData({
                   url: storeUrl,
+                  ogProxyUrl: toOgProxyUrl('store', supplierId),
                   title: businessName,
                   subtitle: 'Verified Wholesale Store on AMJSTAR',
                   text: `Explore wholesale products from ${businessName} on AMJSTAR.`,
@@ -704,6 +730,7 @@ const PublicStoreFront: React.FC = () => {
               <button
                 onClick={() => setShareData({
                   url: storeUrl,
+                  ogProxyUrl: toOgProxyUrl('store', supplierId),
                   title: businessName,
                   subtitle: 'Verified Wholesale Store on AMJSTAR',
                   text: `Explore wholesale products from ${businessName} on AMJSTAR.`,

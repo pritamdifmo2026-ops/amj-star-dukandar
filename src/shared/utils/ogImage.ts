@@ -120,4 +120,21 @@ export function formatProductShareText(product: {
   };
 }
 
-
+/**
+ * Builds the backend OG proxy URL for a storefront or product.
+ * Social bots (WhatsApp, Telegram) crawl this URL to get the correct og:image.
+ * Real users are immediately redirected to the SPA page.
+ *
+ * @param type  'store' | 'product'
+ * @param id    MongoDB ObjectId string
+ */
+export function toOgProxyUrl(type: 'store' | 'product', id: string): string {
+  // Derive base from the same env var used by the API client.
+  // e.g. 'http://localhost:5000/api'  ->  'http://localhost:5000/api/og/store/ID'
+  const base =
+    (import.meta as any).env?.VITE_API_BASE_URL ||
+    'https://api.amjstar.com/api';
+  // Remove trailing slash
+  const clean = base.replace(/\/$/, '');
+  return `${clean}/og/${type}/${id}`;
+}

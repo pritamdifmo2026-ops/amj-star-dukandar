@@ -7,7 +7,8 @@ import {
   Facebook, Instagram, Twitter, Linkedin, Share2
 } from 'lucide-react';
 import ShareModal from '@/shared/components/ui/ShareModal';
-import { toStoreSlug, formatProductShareText } from '@/shared/utils/ogImage';
+import { toStoreSlug, formatProductShareText, toOgProxyUrl } from '@/shared/utils/ogImage';
+import { setPageMeta } from '@/shared/utils/pageMeta';
 import { useProduct } from '../hooks/useProduct';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { calculateGST } from '@/shared/utils/calculateGST';
@@ -49,6 +50,48 @@ const ProductDetail: React.FC = () => {
     if (id === 'undefined') { navigate('/'); return; }
     setSelectedImage(null);
   }, [id, navigate]);
+
+  // ── Dynamic OG meta tags: update once product data loads ──
+  React.useEffect(() => {
+    if (!product) return;
+
+    const productName: string = (product as any).name || 'Product';
+    const supplierName: string = (product as any).supplierName || (product as any).supplierId?.businessName || 'AMJSTAR Supplier';
+    const rawImage: string | undefined = (product as any).imageUrl || (product as any).images?.[0];
+    const price: number | undefined = (product as any).price ?? (product as any).basePrice;
+    const moq: number | undefined = (product as any).minOrderQty ?? (product as any).moq;
+    const unit: string = (product as any).unit || 'pcs';
+    const rawDesc: string = (product as any).description || '';
+
+    const priceStr = price !== undefined ? `₹${Number(price).toLocaleString('en-IN')}` : '';
+    const moqStr = moq ? `Min Order: ${moq} ${unit}` : '';
+    const priceLine = [priceStr, moqStr].filter(Boolean).join(' • ');
+
+    const cleanDesc = rawDesc
+      .replace(/<[^>]*>?/gm, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 160);
+
+    const description = cleanDesc
+      ? `${priceLine ? priceLine + '. ' : ''}${cleanDesc} — Supplied by ${supplierName} on AMJSTAR.`
+      : priceLine
+      ? `${priceLine}. Buy ${productName} wholesale from ${supplierName} on AMJSTAR.`
+      : `Buy ${productName} wholesale from ${supplierName} on AMJSTAR, India's B2B marketplace.`;
+
+    const productId = (product as any).id || (product as any)._id;
+    const canonicalUrl = `${window.location.origin}/products/${productId}`;
+
+    setPageMeta({
+      title: `${productName} — Buy Wholesale on AMJSTAR`,
+      description,
+      imageUrl: rawImage,
+      canonicalUrl,
+    });
+
+    // Reset to site defaults on unmount
+    return () => { setPageMeta(); };
+  }, [product]);
 
   const currentProductId = product?.id || (product as any)?._id;
   const isWishlisted = product ? wishlistItems.some(item => {
@@ -713,6 +756,7 @@ const ProductDetail: React.FC = () => {
             subtitle={shareDetails.subtitle}
             text={shareDetails.text}
             url={shareUrl}
+            ogProxyUrl={currentProductId ? toOgProxyUrl('product', String(currentProductId)) : undefined}
             imageUrl={currentImage}
           />
         );

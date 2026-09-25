@@ -21,6 +21,10 @@ interface ShareModalProps {
   title: string;
   text?: string;
   url: string;
+  /** Backend OG proxy URL — used for WhatsApp & Telegram so bots get the correct og:image preview.
+   *  e.g. https://amjstar.com/api/og/store/:id  or  https://amjstar.com/api/og/product/:id
+   *  Falls back to `url` if not provided. */
+  ogProxyUrl?: string;
   imageUrl?: string | null;
   subtitle?: string;
 }
@@ -31,6 +35,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
   title,
   text,
   url,
+  ogProxyUrl,
   imageUrl,
   subtitle,
 }) => {
@@ -74,6 +79,11 @@ const ShareModal: React.FC<ShareModalProps> = ({
     }
   };
 
+  // shareDetails for WhatsApp/Telegram uses the OG proxy URL so bots can crawl
+  // the backend endpoint and show the correct preview image.
+  // For all other platforms (copy, Facebook, LinkedIn, Twitter) we use the clean SPA URL.
+  const botUrl = ogProxyUrl || url;
+  const botShareDetails = { title, text, url: botUrl };
   const shareDetails = { title, text, url };
 
   return (
@@ -103,7 +113,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {/* WhatsApp */}
           <button
-            onClick={() => shareToWhatsApp(shareDetails)}
+            onClick={() => shareToWhatsApp(botShareDetails)}
             className="flex flex-col items-center gap-1.5 p-2.5 rounded-[12px] bg-[#f0fdf4] hover:bg-[#dcfce7] border border-[#bbf7d0] text-[#15803d] transition-all cursor-pointer group"
             title="Share to WhatsApp"
           >
@@ -115,7 +125,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
           {/* Telegram */}
           <button
-            onClick={() => shareToTelegram(shareDetails)}
+            onClick={() => shareToTelegram(botShareDetails)}
             className="flex flex-col items-center gap-1.5 p-2.5 rounded-[12px] bg-[#f0f9ff] hover:bg-[#e0f2fe] border border-[#bae6fd] text-[#0369a1] transition-all cursor-pointer group"
             title="Share to Telegram"
           >
