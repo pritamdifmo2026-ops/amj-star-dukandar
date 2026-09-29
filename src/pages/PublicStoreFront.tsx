@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Store, MapPin, Globe, ShieldCheck, ChevronDown, ChevronUp,
   Package, Calendar, TrendingUp, Award, Building2, ArrowUpRight,
-  Factory, Star, CheckCircle, Share2,
+  Factory, Star, CheckCircle, Share2, ArrowLeft,
   LayoutGrid, List, Camera,
 } from 'lucide-react';
 import api from '@/api/client';
@@ -144,6 +144,7 @@ const Skeleton = () => (
 
 /* ─── main ──────────────────────────────────────────────────────────── */
 const PublicStoreFront: React.FC = () => {
+  const navigate = useNavigate();
   const { id: routeId, idOrSlug } = useParams<{ id?: string; idOrSlug?: string }>();
   const rawParam = routeId || idOrSlug || '';
   const supplierId = extractSupplierId(rawParam);
@@ -273,8 +274,11 @@ const PublicStoreFront: React.FC = () => {
           subtitle={shareData.subtitle}
           text={shareData.text}
           url={shareData.url}
+          storeUrl={shareData.url}
+          primaryMode="store"
           ogProxyUrl={shareData.ogProxyUrl}
           imageUrl={shareData.imageUrl}
+          referralCode={supplier?.referralCode}
           onClose={() => setShareData(null)} 
         />
       )}
@@ -335,8 +339,22 @@ const PublicStoreFront: React.FC = () => {
         {/* Protection overlay for contrast */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/15 to-black/45 pointer-events-none" />
 
-        <div className="absolute top-4 left-4 lg:left-8 z-10">
-          <Link to="/" className="text-white/95 font-extrabold text-lg tracking-tight no-underline hover:text-white transition-colors drop-shadow-sm">
+        <div className="absolute top-4 left-4 lg:left-8 z-10 flex items-center gap-2.5">
+          <button
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate('/');
+              }
+            }}
+            className="flex items-center gap-1.5 bg-black/45 hover:bg-black/70 text-white text-xs font-semibold px-3 py-1.5 rounded-full backdrop-blur-md border border-white/25 transition-all cursor-pointer shadow-md hover:scale-[1.02]"
+            title="Go back"
+          >
+            <ArrowLeft size={13} />
+            <span>Back</span>
+          </button>
+          <Link to="/" className="text-white/95 font-extrabold text-lg tracking-tight no-underline hover:text-white transition-colors drop-shadow-sm flex items-center gap-1.5">
             AMJSTAR
           </Link>
         </div>

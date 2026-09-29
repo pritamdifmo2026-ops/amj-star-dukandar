@@ -32,6 +32,7 @@ export interface RegisterPayload {
   role: 'buyer' | 'reseller' | 'supplier';
   emailOtp: string;
   phoneOtp: string;
+  referralCode?: string;
 }
 
 export interface AuthResponse {
@@ -52,5 +53,10 @@ export interface AuthUser {
   gstin?: string;
   buyerRating?: number;
   buyerRatingsCount?: number;
+  referredBySupplier?: string;
+  referredSupplierStoreUrl?: string;
+  referredSupplierBusinessName?: string;
+  referredSupplierReferralCode?: string;
+  referralCodeUsed?: string;
 }
 

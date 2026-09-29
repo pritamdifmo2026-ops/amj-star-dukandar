@@ -137,6 +137,7 @@ interface SupplierProfile {
     mobile?: string;
   };
   logo?: string;
+  referralCode?: string;
   listingFeeOverride?: ListingFeeOverride;
 }
 

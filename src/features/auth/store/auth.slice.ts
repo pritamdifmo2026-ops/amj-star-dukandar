@@ -23,6 +23,11 @@ interface AuthUser {
   gstin?: string;
   buyerRating?: number;
   buyerRatingsCount?: number;
+  referredBySupplier?: string;
+  referredSupplierStoreUrl?: string;
+  referredSupplierBusinessName?: string;
+  referredSupplierReferralCode?: string;
+  referralCodeUsed?: string;
 }
 
 interface AuthState {

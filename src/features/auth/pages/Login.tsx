@@ -39,7 +39,14 @@ const Login: React.FC = () => {
       superadmin: '/admin/dashboard',
       buyer: '/',
     };
-    return <Navigate to={roleRedirect[user.role] ?? '/'} replace />;
+    const redirectParam = searchParams.get('redirect');
+    let targetUrl = roleRedirect[user.role] ?? '/';
+    if (redirectParam) {
+      targetUrl = redirectParam;
+    } else if (user.role === 'buyer' && (user.referredSupplierStoreUrl || user.referredBySupplier)) {
+      targetUrl = user.referredSupplierStoreUrl || `/store/${user.referredBySupplier}`;
+    }
+    return <Navigate to={targetUrl} replace />;
   }
 
   const handleSubmit = (e: React.FormEvent) => {

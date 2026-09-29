@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import {
   MessageCircle, Send, Facebook, Linkedin, Twitter, Instagram,
-  Copy, Check, Share2
+  Copy, Check, Share2, Store
 } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import Button from '@/shared/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import {
-  toSocialOgJpeg,
   shareToWhatsApp,
   shareToTelegram,
   shareToFacebook,
@@ -15,18 +14,24 @@ import {
   shareToTwitter
 } from '@/shared/utils/ogImage';
 
-interface ShareModalProps {
+export interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   text?: string;
   url: string;
-  /** Backend OG proxy URL — used for WhatsApp & Telegram so bots get the correct og:image preview.
-   *  e.g. https://amjstar.com/api/og/store/:id  or  https://amjstar.com/api/og/product/:id
-   *  Falls back to `url` if not provided. */
+  /** Optional: Secondary store browse URL */
+  storeUrl?: string;
+  /** Backend OG proxy URL for WhatsApp/Telegram preview */
   ogProxyUrl?: string;
   imageUrl?: string | null;
   subtitle?: string;
+  referralCode?: string;
+  /**
+   * 'store': Store link is primary (top), Referral Registration link is secondary (bottom)
+   * 'referral': Referral Registration link is primary (top), Store link is secondary (bottom)
+   */
+  primaryMode?: 'store' | 'referral';
 }
 
 const ShareModal: React.FC<ShareModalProps> = ({
@@ -35,28 +40,138 @@ const ShareModal: React.FC<ShareModalProps> = ({
   title,
   text,
   url,
+  storeUrl,
   ogProxyUrl,
   imageUrl,
   subtitle,
+  referralCode,
+  primaryMode,
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [copiedPrimary, setCopiedPrimary] = useState(false);
+  const [copiedSecondary, setCopiedSecondary] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  // Compute preview image converted to social JPEG
-  const previewImg = toSocialOgJpeg(imageUrl, 300, 80);
+  // Resolve invite URL
+  const registerInviteUrl = referralCode
+    ? (typeof window !== 'undefined'
+        ? `${window.location.origin}/register?mode=buyer&ref=${referralCode}`
+        : `https://amjstar.com/register?mode=buyer&ref=${referralCode}`)
+    : (!url.includes('/store/') ? url : '');
 
-  const handleCopy = async () => {
+  // Resolve store URL
+  const resolvedStoreUrl = storeUrl || (url.includes('/store/') ? url : '');
+
+  // Determine mode: 'store' | 'referral' | 'generic'
+  const mode: 'store' | 'referral' | 'generic' = primaryMode
+    ? primaryMode
+    : (url.includes('/store/') || storeUrl)
+    ? 'store'
+    : referralCode
+    ? 'referral'
+    : 'generic';
+
+  // Configure Primary & Secondary links based on mode
+  let primaryUrl = url;
+  let primaryLabel = 'Share Link';
+  let primaryButtonLabel = 'Copy Link';
+  let secondaryUrl = storeUrl || '';
+  let secondaryLabel = 'Store Catalog Link';
+  let secondaryButtonLabel = 'Copy Store Link';
+
+  if (mode === 'store') {
+    primaryUrl = resolvedStoreUrl || url;
+    primaryLabel = 'Store Catalog Link';
+    primaryButtonLabel = 'Copy Store Link';
+
+    secondaryUrl = registerInviteUrl;
+    secondaryLabel = 'Buyer Registration Invite Link (pre-fills referral code)';
+    secondaryButtonLabel = 'Copy Invite Link';
+  } else if (mode === 'referral') {
+    // When sharing referral: ONLY show the referral link, no store link
+    primaryUrl = registerInviteUrl || url;
+    primaryLabel = 'Buyer Registration Invite Link (pre-fills referral code)';
+    primaryButtonLabel = 'Copy Invite Link';
+
+    secondaryUrl = '';
+    secondaryLabel = '';
+    secondaryButtonLabel = '';
+  }
+
+  // Construct non-duplicated social share message
+  let formattedShareText = '';
+  let shareTargetUrl = primaryUrl;
+
+  if (mode === 'store') {
+    shareTargetUrl = referralCode
+      ? `${primaryUrl}${primaryUrl.includes('?') ? '&' : '?'}ref=${referralCode}`
+      : primaryUrl;
+
+    const lines: string[] = [
+      `🌟 *Order Directly from ${title} on AMJSTAR!*`,
+      `Browse our verified wholesale catalog, live bulk pricing, and exclusive deals.`,
+      `👉 *Visit our Store:*\n${shareTargetUrl}`,
+    ];
+    if (referralCode && registerInviteUrl) {
+      lines.push(
+        `📝 *New to AMJSTAR? Sign up with my Referral Code:*\n👉 ${registerInviteUrl}\n🔑 *Referral Code:* *${referralCode}*`
+      );
+    }
+    formattedShareText = lines.join('\n\n');
+  } else if (mode === 'referral') {
+    shareTargetUrl = registerInviteUrl || url;
+    const lines: string[] = [
+      `🌟 *Join ${title} on AMJSTAR!*`,
+      `Register as a verified buyer using my referral code to connect directly with our wholesale business.`,
+      `📝 *Register on AMJSTAR:*\n👉 ${shareTargetUrl}`,
+    ];
+    if (referralCode) {
+      lines.push(`🔑 *Referral Code:* *${referralCode}*`);
+    }
+    lines.push(`Sign up now to start ordering directly at wholesale pricing!`);
+    formattedShareText = lines.join('\n\n');
+  } else {
+    // Generic fallback (e.g. product share)
+    formattedShareText = text || '';
+  }
+
+  const handleCopyPrimary = async () => {
     try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success('Link copied to clipboard!');
-      setTimeout(() => setCopied(false), 2500);
+      await navigator.clipboard.writeText(primaryUrl);
+      setCopiedPrimary(true);
+      toast.success(`${primaryLabel} copied!`);
+      setTimeout(() => setCopiedPrimary(false), 2500);
     } catch {
       toast.error('Failed to copy link');
     }
   };
 
+  const handleCopySecondary = async () => {
+    if (!secondaryUrl) return;
+    try {
+      await navigator.clipboard.writeText(secondaryUrl);
+      setCopiedSecondary(true);
+      toast.success(`${secondaryLabel} copied!`);
+      setTimeout(() => setCopiedSecondary(false), 2500);
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (!referralCode) return;
+    try {
+      await navigator.clipboard.writeText(referralCode);
+      setCopiedCode(true);
+      toast.success('Referral code copied!');
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch {
+      toast.error('Failed to copy code');
+    }
+  };
+
   const handleInstagram = async () => {
-    await handleCopy();
+    await handleCopyPrimary();
     toast.success('Link copied! Open Instagram to paste in your story, bio, or DM.', { duration: 4000 });
     window.open('https://instagram.com', '_blank', 'noopener,noreferrer');
   };
@@ -66,25 +181,21 @@ const ShareModal: React.FC<ShareModalProps> = ({
       try {
         await navigator.share({
           title,
-          text: text ? `${title}\n${text}` : title,
-          url,
+          text: formattedShareText || title,
         });
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
-          handleCopy();
+          handleCopyPrimary();
         }
       }
     } else {
-      handleCopy();
+      handleCopyPrimary();
     }
   };
 
-  // shareDetails for WhatsApp/Telegram uses the OG proxy URL so bots can crawl
-  // the backend endpoint and show the correct preview image.
-  // For all other platforms (copy, Facebook, LinkedIn, Twitter) we use the clean SPA URL.
-  const botUrl = ogProxyUrl || url;
-  const botShareDetails = { title, text, url: botUrl };
-  const shareDetails = { title, text, url };
+  const botUrl = ogProxyUrl || shareTargetUrl;
+  const botShareDetails = { title, text: formattedShareText, url: botUrl };
+  const shareDetails = { title, text: formattedShareText, url: shareTargetUrl };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Share">
@@ -92,20 +203,40 @@ const ShareModal: React.FC<ShareModalProps> = ({
         {/* Preview Card */}
         <div className="flex items-center gap-3 p-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[12px] overflow-hidden">
           <div className="w-16 h-16 rounded-[8px] bg-white border border-[#e2e8f0] overflow-hidden shrink-0 flex items-center justify-center">
-            <img
-              src={previewImg}
-              alt={title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                // Fallback if image fails to load
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+            {imageUrl && !imgError ? (
+              <img
+                src={imageUrl}
+                alt={title}
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-[#fff7ed] to-[#fef3c7] flex flex-col items-center justify-center text-[#d97706] p-1 text-center select-none">
+                <Store size={22} className="text-[#d97706] mb-0.5" />
+                <span className="text-[11px] font-black tracking-wider leading-none">
+                  {title?.split(' ').slice(0, 2).map((w: string) => w[0]).join('').toUpperCase().slice(0, 2) || 'ST'}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h4 className="text-sm font-bold text-[#0f172a] truncate m-0">{title}</h4>
             {subtitle && <p className="text-xs font-semibold text-primary truncate mt-0.5 m-0">{subtitle}</p>}
-            {text && <p className="text-xs text-[#64748b] line-clamp-1 mt-0.5 m-0">{text}</p>}
+            {text && mode === 'generic' && <p className="text-xs text-[#64748b] line-clamp-1 mt-0.5 m-0">{text}</p>}
+            {referralCode && (
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-[11px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded font-mono tracking-wider">
+                  Code: {referralCode}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="text-[10px] text-amber-800 hover:!text-amber-950 underline bg-transparent border-none cursor-pointer font-medium"
+                >
+                  {copiedCode ? 'Copied!' : 'Copy Code'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -184,41 +315,64 @@ const ShareModal: React.FC<ShareModalProps> = ({
           </button>
         </div>
 
-        {/* Copy Link Input Bar */}
+        {/* Primary Link (Top) */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#64748b]">Share Link</label>
+          <label className="text-xs font-semibold text-[#64748b]">{primaryLabel}</label>
           <div className="flex items-center gap-2 p-1.5 pl-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] focus-within:border-primary transition-all">
             <input
               type="text"
               readOnly
-              value={url}
+              value={primaryUrl}
               className="flex-1 bg-transparent border-none text-xs text-[#334155] font-mono outline-none select-all"
             />
             <Button
               size="sm"
-              variant={copied ? 'secondary' : 'primary'}
-              onClick={handleCopy}
+              variant={copiedPrimary ? 'secondary' : 'primary'}
+              onClick={handleCopyPrimary}
               className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 h-8 text-xs font-bold"
             >
-              {copied ? (
-                <>
-                  <Check size={14} className="text-green-600" /> Copied!
-                </>
+              {copiedPrimary ? (
+                <><Check size={14} className="text-green-600" /> Copied!</>
               ) : (
-                <>
-                  <Copy size={14} /> Copy Link
-                </>
+                <><Copy size={14} /> {primaryButtonLabel}</>
               )}
             </Button>
           </div>
         </div>
+
+        {/* Secondary Link (Bottom) */}
+        {secondaryUrl && secondaryUrl !== primaryUrl && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[#64748b]">{secondaryLabel}</label>
+            <div className="flex items-center gap-2 p-1.5 pl-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[10px] focus-within:border-primary transition-all">
+              <input
+                type="text"
+                readOnly
+                value={secondaryUrl}
+                className="flex-1 bg-transparent border-none text-xs text-[#334155] font-mono outline-none select-all"
+              />
+              <Button
+                size="sm"
+                variant={copiedSecondary ? 'secondary' : 'outline'}
+                onClick={handleCopySecondary}
+                className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 h-8 text-xs font-bold !text-primary !border-primary hover:!bg-primary/10 hover:!text-primary"
+              >
+                {copiedSecondary ? (
+                  <><Check size={14} className="text-green-600" /> Copied!</>
+                ) : (
+                  <><Copy size={14} /> {secondaryButtonLabel}</>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Native device share (if available) */}
         {typeof navigator !== 'undefined' && 'share' in navigator && (
           <Button
             variant="outline"
             onClick={handleNativeShare}
-            className="w-full flex items-center justify-center gap-2 text-xs font-bold text-[#334155] border-[#cbd5e1] hover:bg-[#f8fafc]"
+            className="w-full flex items-center justify-center gap-2 text-xs font-bold !text-[#334155] !border-[#cbd5e1] hover:!bg-[#f1f5f9] hover:!text-[#0f172a]"
           >
             <Share2 size={15} /> More Sharing Options
           </Button>

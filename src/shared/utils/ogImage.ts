@@ -27,26 +27,48 @@ export interface ShareDetails {
 }
 
 export function shareToWhatsApp(details: ShareDetails): void {
-  const message = `${details.title ? `*${details.title}*\n` : ''}${details.text ? `${details.text}\n\n` : ''}${details.url}`;
+  const textClean = details.text?.trim() || '';
+  const urlClean = details.url?.trim() || '';
+  const urlAlreadyInText = urlClean && textClean.includes(urlClean);
+
+  const parts: string[] = [];
+  if (details.title?.trim()) parts.push(`*${details.title.trim()}*`);
+  if (textClean) parts.push(textClean);
+  if (urlClean && !urlAlreadyInText) parts.push(urlClean);
+
+  const message = parts.join('\n\n');
   window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
 }
 
 export function shareToTelegram(details: ShareDetails): void {
-  const text = `${details.title ? `${details.title}\n` : ''}${details.text ? `${details.text}` : ''}`.trim();
-  window.open(`https://t.me/share/url?url=${encodeURIComponent(details.url)}&text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  const textClean = details.text?.trim() || '';
+  const urlClean = details.url?.trim() || '';
+  // If text already has the URL, remove duplicate from text query param since url is passed separately
+  const textWithoutDuplicate = urlClean && textClean.includes(urlClean)
+    ? textClean.replace(urlClean, '').trim()
+    : textClean;
+
+  const text = `${details.title ? `${details.title.trim()}\n` : ''}${textWithoutDuplicate}`.trim();
+  window.open(`https://t.me/share/url?url=${encodeURIComponent(urlClean)}&text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
 }
 
 export function shareToFacebook(details: ShareDetails): void {
-  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(details.url)}`, '_blank', 'noopener,noreferrer');
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(details.url.trim())}`, '_blank', 'noopener,noreferrer');
 }
 
 export function shareToLinkedIn(details: ShareDetails): void {
-  window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(details.url)}`, '_blank', 'noopener,noreferrer');
+  window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(details.url.trim())}`, '_blank', 'noopener,noreferrer');
 }
 
 export function shareToTwitter(details: ShareDetails): void {
-  const text = `${details.title ? details.title : ''}${details.text ? `\n${details.text}` : ''}`.trim();
-  window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(details.url)}&text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+  const textClean = details.text?.trim() || '';
+  const urlClean = details.url?.trim() || '';
+  const textWithoutDuplicate = urlClean && textClean.includes(urlClean)
+    ? textClean.replace(urlClean, '').trim()
+    : textClean;
+
+  const text = `${details.title ? details.title.trim() : ''}${textWithoutDuplicate ? `\n${textWithoutDuplicate}` : ''}`.trim();
+  window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(urlClean)}&text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
 }
 
 /**

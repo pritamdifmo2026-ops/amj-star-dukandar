@@ -17,12 +17,19 @@ export function useLogin() {
     onSuccess: (data) => {
       dispatch(setCredentials({ user: data.user }));
       toast.success(`Welcome back, ${data.user.name}!`);
-      const roleRedirect: Record<string, string> = {
-        admin: ROUTES.ADMIN_DASHBOARD,
-        supplier: ROUTES.SUPPLIER_DASHBOARD,
-        reseller: ROUTES.RESELLER_DASHBOARD,
-      };
-      navigate(roleRedirect[data.user.role] || ROUTES.HOME);
+      const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+      if (redirectParam) {
+        navigate(redirectParam);
+      } else if (data.user.role === 'buyer' && (data.user.referredSupplierStoreUrl || data.user.referredBySupplier)) {
+        navigate(data.user.referredSupplierStoreUrl || `/store/${data.user.referredBySupplier}`);
+      } else {
+        const roleRedirect: Record<string, string> = {
+          admin: ROUTES.ADMIN_DASHBOARD,
+          supplier: ROUTES.SUPPLIER_DASHBOARD,
+          reseller: ROUTES.RESELLER_DASHBOARD,
+        };
+        navigate(roleRedirect[data.user.role] || ROUTES.HOME);
+      }
     },
     onError: (error) => {
       const { message } = parseApiError(error);

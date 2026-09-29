@@ -41,7 +41,7 @@ const Input: React.FC<InputProps> = ({
         {leftIcon && <span className="flex items-center px-2 text-muted">{leftIcon}</span>}
         <input
           id={inputId}
-          className="flex-1 min-w-0 border-none outline-none bg-transparent px-2.5 py-2 text-base text-heading placeholder:text-muted"
+          className="flex-1 min-w-0 border-none outline-none bg-transparent px-2.5 py-[6.5px] text-[14.5px] text-heading placeholder:text-muted"
           {...rest}
           type={inputType}
         />

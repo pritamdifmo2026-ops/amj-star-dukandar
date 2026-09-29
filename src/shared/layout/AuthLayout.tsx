@@ -111,9 +111,9 @@ const AuthLayout: React.FC = () => {
       </div>
 
       {/* ── RIGHT PANEL / FORM AREA ───────────────────────────── */}
-      <div className="flex flex-col items-center justify-start lg:justify-center relative bg-white lg:h-screen lg:overflow-y-auto flex-1">
+      <div className="flex flex-col items-center justify-start relative bg-white h-auto lg:h-screen overflow-y-auto [scrollbar-width:thin] flex-1 px-4 sm:px-6 py-6 sm:py-8 lg:py-6">
         {/* Form area wrapper */}
-        <div className="w-full max-w-[420px] px-6 sm:px-8 py-10 lg:py-0 mx-auto">
+        <div className="w-full max-w-[420px] my-auto">
           <Outlet />
 
           {/* Support footer – mobile only */}
