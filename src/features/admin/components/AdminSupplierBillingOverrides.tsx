@@ -26,9 +26,10 @@ interface AdminSupplierBillingOverridesProps {
 }
 
 const TYPE_LABEL: Record<ConcessionType, string> = {
-  subscription_trial: 'Subscription Trial',
-  subscription_price: 'Custom Subscription Price',
-  subscription_duration: 'Custom Subscription Duration',
+  subscription_trial: 'Subscription Trial (Free Trial)',
+  subscription_tier_upgrade: 'Subscription Trial (Free access to higher tier)',
+  subscription_price: 'Custom Subscription Plan (Discounted Renewal)',
+  subscription_duration: 'Custom Subscription Plan (Extended Duration)',
   listing_fee_waiver: 'Listing-Fee Waiver',
   listing_fee_custom: 'Custom Listing Fee',
 };

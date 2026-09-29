@@ -16,11 +16,20 @@ import concessionApi, {
   type ConcessionStatus,
 } from '../services/concession.api';
 import toast from 'react-hot-toast';
+import {
+  FREE_TRIAL_CRITERIA,
+  TIER_UPGRADE_CRITERIA,
+  DISCOUNTED_RENEWAL_CRITERIA,
+  EXTENDED_DURATION_CRITERIA,
+  LISTING_WAIVER_CRITERIA,
+  REDUCED_LISTING_CRITERIA,
+} from '@/features/supplier/components/SupplierConcessionRequest';
 
 const TYPE_LABEL: Record<ConcessionType, string> = {
-  subscription_trial: 'Subscription Trial',
-  subscription_price: 'Custom Subscription Price',
-  subscription_duration: 'Custom Subscription Duration',
+  subscription_trial: 'Subscription Trial (Free Trial)',
+  subscription_tier_upgrade: 'Subscription Trial (Free access to higher tier)',
+  subscription_price: 'Custom Subscription Plan (Discounted Renewal)',
+  subscription_duration: 'Custom Subscription Plan (Extended Duration)',
   listing_fee_waiver: 'Listing-Fee Waiver',
   listing_fee_custom: 'Custom Listing Fee',
 };
@@ -61,7 +70,9 @@ function fmtDateTime(d?: string) {
 function summariseProposal(p: ConcessionProposal = {}, type: ConcessionType): string {
   switch (type) {
     case 'subscription_trial':
-      return `${p.tier ?? 'VERIFIED'} · ${p.trialDays ?? 0} days free trial`;
+      return `${p.tier ?? 'VERIFIED'} · ${p.trialDays ?? 0} days free trial (max 3 mo)`;
+    case 'subscription_tier_upgrade':
+      return `${p.tier ?? 'GAMMA'} · ${p.trialDays ?? 30} days higher tier trial`;
     case 'subscription_price':
       return `₹${p.price ?? 0} for next cycle`;
     case 'subscription_duration':
@@ -91,12 +102,14 @@ export const AdminSalesRecommendConcession: React.FC = () => {
 
   // Proposal states
   const [trialTier, setTrialTier] = useState<'VERIFIED' | 'GAMMA' | 'BETA'>('VERIFIED');
+  const [tierUpgradeTier, setTierUpgradeTier] = useState<'GAMMA' | 'BETA'>('GAMMA');
   const [trialDays, setTrialDays] = useState<number | ''>(14);
   const [price, setPrice] = useState<number | ''>('');
   const [durationMonths, setDurationMonths] = useState<number | ''>(12);
   const [until, setUntil] = useState('');
   const [perProduct, setPerProduct] = useState<number | ''>('');
   const [minMonthly, setMinMonthly] = useState<number | ''>('');
+  const [criteriaOption, setCriteriaOption] = useState('');
 
   // Past recommendations filter
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
@@ -187,6 +200,14 @@ export const AdminSalesRecommendConcession: React.FC = () => {
           tier: trialTier,
           trialDays: Number(trialDays),
         };
+      } else if (type === 'subscription_tier_upgrade') {
+        if (!trialDays || Number(trialDays) < 1 || Number(trialDays) > 90) {
+          throw new Error('Trial duration must be between 1 and 90 days.');
+        }
+        proposal = {
+          tier: tierUpgradeTier,
+          trialDays: Number(trialDays),
+        };
       } else if (type === 'subscription_price') {
         if (price === '' || Number(price) < 0) {
           throw new Error('Please enter a valid price (₹0 or greater).');
@@ -239,6 +260,7 @@ export const AdminSalesRecommendConcession: React.FC = () => {
         type,
         proposal,
         reason: reason.trim(),
+        criteriaOption: criteriaOption || undefined,
       });
     },
     onSuccess: () => {
@@ -248,6 +270,7 @@ export const AdminSalesRecommendConcession: React.FC = () => {
       setUntil('');
       setPerProduct('');
       setMinMonthly('');
+      setCriteriaOption('');
       qc.invalidateQueries({ queryKey: ['admin-concessions-mine'] });
       qc.invalidateQueries({ queryKey: ['admin', 'concessions'] });
     },
@@ -355,16 +378,18 @@ export const AdminSalesRecommendConcession: React.FC = () => {
                 value={type}
                 onChange={e => {
                   setType(e.target.value as ConcessionType);
+                  setCriteriaOption('');
                   setFormError('');
                 }}
                 disabled={createMutation.isPending}
                 className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#0f172a] bg-white focus:outline-none focus:border-[#0f172a]"
               >
-                <option value="subscription_trial">Subscription Trial</option>
-                <option value="subscription_price">Custom Subscription Price</option>
-                <option value="subscription_duration">Custom Subscription Duration</option>
-                <option value="listing_fee_waiver">Listing-Fee Waiver</option>
-                <option value="listing_fee_custom">Custom Listing Fee</option>
+                <option value="subscription_trial">{TYPE_LABEL.subscription_trial}</option>
+                <option value="subscription_tier_upgrade">{TYPE_LABEL.subscription_tier_upgrade}</option>
+                <option value="subscription_price">{TYPE_LABEL.subscription_price}</option>
+                <option value="subscription_duration">{TYPE_LABEL.subscription_duration}</option>
+                <option value="listing_fee_waiver">{TYPE_LABEL.listing_fee_waiver}</option>
+                <option value="listing_fee_custom">{TYPE_LABEL.listing_fee_custom}</option>
               </select>
             </div>
 
@@ -405,6 +430,40 @@ export const AdminSalesRecommendConcession: React.FC = () => {
                       disabled={createMutation.isPending}
                       className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#0f172a] bg-white"
                       placeholder="e.g. 14"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {type === 'subscription_tier_upgrade' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-[#475569] block mb-1">
+                      Upgrade to Tier
+                    </label>
+                    <select
+                      value={tierUpgradeTier}
+                      onChange={e => setTierUpgradeTier(e.target.value as any)}
+                      disabled={createMutation.isPending}
+                      className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#0f172a] bg-white"
+                    >
+                      <option value="GAMMA">GAMMA (Advanced)</option>
+                      <option value="BETA">BETA (Enterprise)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-[#475569] block mb-1">
+                      Trial Duration (1–90 Days) <span className="text-[#b91c1c]">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={90}
+                      value={trialDays}
+                      onChange={e => setTrialDays(e.target.value === '' ? '' : Number(e.target.value))}
+                      disabled={createMutation.isPending}
+                      className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#0f172a] bg-white"
+                      placeholder="e.g. 30"
                     />
                   </div>
                 </div>
@@ -519,6 +578,30 @@ export const AdminSalesRecommendConcession: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Field: Qualifying Criteria Option */}
+            <div>
+              <label className="text-xs font-bold text-[#475569] uppercase tracking-wider block mb-1">
+                Concession Qualifying Criteria (Client Specification)
+              </label>
+              <select
+                value={criteriaOption}
+                onChange={e => setCriteriaOption(e.target.value)}
+                disabled={createMutation.isPending}
+                className="w-full border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm text-[#0f172a] bg-white focus:outline-none focus:border-[#0f172a]"
+              >
+                <option value="">-- Select Client Criteria (Optional) --</option>
+                {(type === 'subscription_trial' ? FREE_TRIAL_CRITERIA :
+                  type === 'subscription_tier_upgrade' ? TIER_UPGRADE_CRITERIA :
+                  type === 'subscription_price' ? DISCOUNTED_RENEWAL_CRITERIA :
+                  type === 'subscription_duration' ? EXTENDED_DURATION_CRITERIA :
+                  type === 'listing_fee_waiver' ? LISTING_WAIVER_CRITERIA :
+                  REDUCED_LISTING_CRITERIA
+                ).map((c, i) => (
+                  <option key={i} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
 
             {/* Field 4: Reason */}

@@ -41,6 +41,7 @@ import AdminSalesRecommendConcession from '../components/AdminSalesRecommendConc
 
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
+import concessionApi from '../services/concession.api';
 import { Navigate } from 'react-router-dom';
 
 const tabLabel: Record<string, string> = {
@@ -119,6 +120,20 @@ const AdminDashboard: React.FC = () => {
     refetchInterval: 60_000,
   });
 
+  const { data: pendingConcessionsCount = 0 } = useQuery<number>({
+    queryKey: ['admin', 'concessions', 'pending-count'],
+    queryFn: async () => {
+      try {
+        const res = await concessionApi.list('pending');
+        return res.length;
+      } catch {
+        return 0;
+      }
+    },
+    enabled: user?.role === 'superadmin',
+    refetchInterval: 60_000,
+  });
+
   const {
     stats, allSuppliers, allResellers, allUsers,
     pendingProducts, approvedProducts, loading,
@@ -155,7 +170,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'jobs', label: 'Manage Careers', icon: Briefcase },
     { id: 'platform-settings', label: 'Platform Settings', icon: Settings },
     { id: 'supplier-plans', label: 'Supplier Memberships', icon: CreditCard },
-    { id: 'concessions', label: 'Concessions', icon: HandCoins },
+    { id: 'concessions', label: 'Concessions', icon: HandCoins, badge: pendingConcessionsCount || undefined },
     { id: 'sales-recommend', label: 'Recommend Concession', icon: Megaphone },
     { id: 'meeting-requests', label: 'Meeting Requests', icon: Video },
   ];
@@ -168,6 +183,12 @@ const AdminDashboard: React.FC = () => {
   const isScopedAdmin = user?.role === 'admin' && Array.isArray(user?.assignedSuppliers) && user.assignedSuppliers.length > 0;
 
   const filteredMenu = adminMenu.filter(item => {
+    // Role-specific concession items:
+    // - SuperAdmin reviews and approves in "Concessions" queue
+    // - Sub-Admins (sales reps) fill and submit proposals in "Recommend Concession"
+    if (item.id === 'concessions') return user?.role === 'superadmin';
+    if (item.id === 'sales-recommend') return user?.role !== 'superadmin';
+
     if (user?.role === 'superadmin') return true;
     if (item.id === 'stats') return true;
     if (item.id === 'suppliers') {
@@ -193,9 +214,7 @@ const AdminDashboard: React.FC = () => {
     if (item.id === 'pages') return hasPermission('pages_management');
     if (item.id === 'jobs') return hasPermission('pages_management'); // Using pages_management for jobs as well
     if (item.id === 'platform-settings') return hasPermission('platform_settings');
-    if (item.id === 'supplier-plans') return hasPermission('supplier_verify');
-    if (item.id === 'concessions') return hasPermission('supplier_verify');
-    if (item.id === 'sales-recommend') return true;
+    if (item.id === 'supplier-plans') return hasPermission('supplier_verify') || hasPermission('supplier_plans');
     if (item.id === 'meeting-requests') return hasPermission('meeting_requests');
     return false;
   });
@@ -368,7 +387,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'supplier-plans' && (
               <AdminSupplierPlans onViewSupplier={id => setSearchParams({ tab: 'supplier-detail', id })} />
             )}
-            {activeTab === 'concessions' && <AdminConcessions />}
+            {activeTab === 'concessions' && user?.role === 'superadmin' && <AdminConcessions />}
             {activeTab === 'sales-recommend' && <AdminSalesRecommendConcession />}
             {activeTab === 'meeting-requests' && <AdminMeetingRequests />}
             {activeTab === 'control-authority' && user?.role === 'superadmin' && <ControlAuthority />}

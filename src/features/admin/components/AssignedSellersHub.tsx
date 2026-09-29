@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Store, Package, AlertTriangle, CheckCircle, XCircle, Phone, Mail,
   MessageCircle, ShieldCheck, MapPin, Eye, Building2,
-  DollarSign, Search, UserCheck
+  DollarSign, Search, UserCheck, Megaphone
 } from 'lucide-react';
 import Button from '@/shared/components/ui/Button';
 import Modal from '@/shared/components/ui/Modal';
@@ -14,6 +15,7 @@ import toast from 'react-hot-toast';
 
 export const AssignedSellersHub: React.FC = () => {
   const qc = useQueryClient();
+  const [, setSearchParams] = useSearchParams();
   const { user } = useAppSelector(state => state.auth);
 
   const [selectedSellerId, setSelectedSellerId] = useState<string | null>(null);
@@ -325,6 +327,13 @@ export const AssignedSellersHub: React.FC = () => {
                     <Mail size={14} /> Email
                   </a>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setSearchParams({ tab: 'sales-recommend', supplierId: currentSeller._id })}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 cursor-pointer transition-all"
+                >
+                  <Megaphone size={14} className="text-amber-700" /> Recommend Concession
+                </button>
               </div>
             </div>
 

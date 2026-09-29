@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Crown, Check, ArrowUpCircle, Clock, ShieldCheck } from 'lucide-react';
+import { Crown, Check, ArrowUpCircle, Clock, ShieldCheck, HandCoins } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { SubscriptionStatus, UpgradeStatus, SupplierTier } from '../store/supplier.slice';
 import { getPlan, getUpgradeOptions, formatINR } from '../constants/plans';
@@ -32,6 +32,7 @@ const MembershipPlan: React.FC = () => {
   return (
     <div className={`${cardCls} mt-6`}>
       <div className={cardHeaderCls}>
+
         <Crown size={20} className="text-primary" />
         <h3 className="text-base font-bold text-[#1e293b] m-0">Membership Plan</h3>
         <span className={`ml-auto text-xs font-bold px-2.5 py-1 rounded-full ${isActive ? (isTrial ? 'bg-[#eff6ff] text-[#1d4ed8]' : 'bg-[#ecfdf5] text-[#059669]') : 'bg-[#fff7ed] text-[#c2410c]'}`}>
@@ -97,17 +98,27 @@ const MembershipPlan: React.FC = () => {
         </div>
       )}
 
-      {/* Upgrade CTA — opens the dedicated upgrade page */}
-      {!verificationPending && isActive && upgradeOptions.length > 0 && (
-        <Button onClick={() => setSearchParams({ tab: 'upgrade-plan' })} className="flex items-center gap-2">
-          <ArrowUpCircle size={18} /> Upgrade Plan
-        </Button>
-      )}
+      {/* Plan Actions & Concessions */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {!verificationPending && isActive && upgradeOptions.length > 0 && (
+          <Button onClick={() => setSearchParams({ tab: 'upgrade-plan' })} className="flex items-center gap-2">
+            <ArrowUpCircle size={18} /> Upgrade Plan
+          </Button>
+        )}
+        <button
+          type="button"
+          onClick={() => setSearchParams({ tab: 'concessions' })}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-[8px] bg-[#fff7ed] border border-[#fed7aa] text-primary hover:bg-[#ffedd5] text-xs font-bold transition-all cursor-pointer shadow-sm"
+        >
+          <HandCoins size={16} /> Request Billing Concession
+        </button>
+      </div>
+
       {!verificationPending && isActive && upgradeOptions.length === 0 && (
-        <p className="text-sm text-[#64748b] m-0 flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-600" /> You're on our top plan.</p>
+        <p className="text-sm text-[#64748b] mt-3 mb-0 flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-600" /> You're on our top plan.</p>
       )}
       {!isActive && !verificationPending && (
-        <p className="text-sm text-[#c2410c] m-0">Activate your plan from the dashboard banner to unlock its benefits and upgrades.</p>
+        <p className="text-sm text-[#c2410c] mt-3 mb-0">Activate your plan from the dashboard banner to unlock its benefits and upgrades.</p>
       )}
     </div>
   );

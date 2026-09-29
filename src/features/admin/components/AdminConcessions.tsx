@@ -11,11 +11,12 @@ import concessionApi, {
 const STATUS_FILTERS: (ConcessionStatus | 'all')[] = ['pending', 'approved', 'rejected', 'all'];
 
 const TYPE_LABEL: Record<ConcessionType, string> = {
-  subscription_trial:    'Subscription Trial',
-  subscription_price:    'Custom Subscription Price',
-  subscription_duration: 'Custom Subscription Duration',
-  listing_fee_waiver:    'Listing-Fee Waiver',
-  listing_fee_custom:    'Custom Listing Fee',
+  subscription_trial:        'Subscription Trial (Free Trial)',
+  subscription_tier_upgrade: 'Subscription Trial (Higher Tier)',
+  subscription_price:        'Custom Subscription Plan (Discounted)',
+  subscription_duration:     'Custom Subscription Duration',
+  listing_fee_waiver:        'Listing-Fee Waiver',
+  listing_fee_custom:        'Custom Listing Fee',
 };
 
 const STATUS_STYLE: Record<ConcessionStatus, string> = {
@@ -33,10 +34,11 @@ function fmtDate(d?: string) {
 function summariseProposal(r: ConcessionRequest): string {
   const p = r.proposal || {};
   switch (r.type) {
-    case 'subscription_trial':    return `${p.tier ?? '?'} · ${p.trialDays ?? '?'} days trial`;
-    case 'subscription_price':    return `₹${p.price ?? '?'} for next cycle`;
-    case 'subscription_duration': return `${p.durationMonths ?? '?'} months`;
-    case 'listing_fee_waiver':    return `Waive until ${p.until ? new Date(p.until).toLocaleDateString('en-IN') : '?'}`;
+    case 'subscription_trial':        return `${p.tier ?? '?'} · ${p.trialDays ?? '?'} days trial (max 3 mo)`;
+    case 'subscription_tier_upgrade': return `${p.tier ?? 'GAMMA'} · ${p.trialDays ?? 30} days higher tier trial`;
+    case 'subscription_price':        return `₹${p.price ?? '?'} renewal (Basic plan, up to 50% off)`;
+    case 'subscription_duration':     return `${p.durationMonths ?? '?'} months`;
+    case 'listing_fee_waiver':        return `Waive until ${p.until ? new Date(p.until).toLocaleDateString('en-IN') : '?'}`;
     case 'listing_fee_custom': {
       const bits: string[] = [];
       if (p.perProduct != null) bits.push(`₹${p.perProduct}/product`);
@@ -62,15 +64,40 @@ const Row: React.FC<{
         </div>
       </td>
       <td className="py-3 px-4">
-        <div className="font-semibold text-[#0f172a]">{TYPE_LABEL[request.type]}</div>
+        <div className="font-semibold text-[#0f172a]">{TYPE_LABEL[request.type] || request.type}</div>
         <div className="text-xs text-[#475569] mt-0.5">{summariseProposal(request)}</div>
+        {request.isAutoApproved && (
+          <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#eff6ff] text-[#2563eb] border border-[#bfdbfe]">
+            ⚡ Auto-Approved by System
+          </span>
+        )}
       </td>
       <td className="py-3 px-4">
         <div className="text-sm text-[#0f172a]">{requester?.name ?? '—'}</div>
         <div className="text-xs text-[#64748b] mt-0.5 capitalize">{request.source}{requester?.role ? ` · ${requester.role}` : ''}</div>
       </td>
-      <td className="py-3 px-4 text-sm text-[#475569] max-w-[240px]">
-        <div className="line-clamp-2" title={request.reason}>{request.reason}</div>
+      <td className="py-3 px-4 text-sm text-[#475569] max-w-[280px]">
+        {request.criteriaOption && (
+          <div className="font-bold text-[#0f172a] text-xs mb-0.5">{request.criteriaOption}</div>
+        )}
+        <div className="line-clamp-2 text-xs" title={request.reason}>{request.reason}</div>
+        {request.salesRepVerified && request.salesRepPhone && (
+          <div className="text-[10px] text-[#059669] font-semibold mt-1">
+            ✓ Verified Rep: {request.salesRepName || 'Sales Rep'} ({request.salesRepPhone})
+          </div>
+        )}
+        {request.documentUrl && (
+          <div className="mt-1">
+            <a
+              href={request.documentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-[#2563eb] font-bold underline hover:text-[#1d4ed8] inline-flex items-center gap-1"
+            >
+              📄 View Certificate / Doc
+            </a>
+          </div>
+        )}
       </td>
       <td className="py-3 px-4">
         <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-[6px] uppercase ${STATUS_STYLE[request.status]}`}>
@@ -148,9 +175,31 @@ const DecisionDialog: React.FC<{
           {mode === 'approve' ? 'Approve concession' : 'Reject concession'}
         </h3>
         <div className="bg-[#f8fafc] rounded-[10px] p-3 text-sm">
-          <div className="font-semibold text-[#0f172a]">{TYPE_LABEL[request.type]}</div>
+          <div className="font-semibold text-[#0f172a]">{TYPE_LABEL[request.type] || request.type}</div>
           <div className="text-[#475569] mt-1">{summariseProposal(request)}</div>
-          <div className="text-xs text-[#64748b] mt-2 italic">"{request.reason}"</div>
+          {request.criteriaOption && (
+            <div className="text-xs font-bold text-[#0f172a] mt-2">
+              Criteria: {request.criteriaOption}
+            </div>
+          )}
+          <div className="text-xs text-[#64748b] mt-1 italic">"{request.reason}"</div>
+          {request.salesRepPhone && (
+            <div className="text-xs text-[#059669] font-semibold mt-2">
+              ✓ Verified Sales Representative: {request.salesRepName || 'Sales Rep'} ({request.salesRepPhone})
+            </div>
+          )}
+          {request.documentUrl && (
+            <div className="mt-2.5 pt-2 border-t border-[#e2e8f0]">
+              <a
+                href={request.documentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#eff6ff] border border-[#bfdbfe] rounded-[6px] text-xs font-bold text-[#2563eb] hover:bg-[#dbeafe]"
+              >
+                📄 Open Attached Certificate / Document
+              </a>
+            </div>
+          )}
         </div>
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-bold text-[#475569] uppercase tracking-wider">

@@ -9,7 +9,7 @@ import supplierService from '../services/supplier.service';
 import { PLAN_LIST, formatINR } from '../constants/plans';
 import SupplierOnboardingLayout from '../layout/SupplierOnboardingLayout';
 import Button from '@/shared/components/ui/Button';
-import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Handshake, XCircle, Upload, Package, Landmark, LocateFixed, Loader2 } from 'lucide-react';
+import { Check, ShieldCheck, User, Building2, Mail, Phone, ArrowRight, Handshake, XCircle, Upload, Package, Landmark, LocateFixed, Loader2, Sparkles } from 'lucide-react';
 import Modal from '@/shared/components/ui/Modal';
 import { useLocateMe } from '@/shared/hooks/useLocateMe';
 
@@ -1060,6 +1060,15 @@ const Onboarding: React.FC = () => {
               <p className="text-xs text-[#64748b] -mt-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] p-3">
                 Pick the plan you want. You'll be prompted to pay and activate it from your dashboard <strong>after AMJSTAR verifies your account</strong>.
               </p>
+              <div className="p-3.5 bg-gradient-to-r from-[#eff6ff] to-[#f8fafc] border border-[#bfdbfe] rounded-[10px] text-xs text-[#1e40af] flex items-start gap-2.5 -mt-2">
+                <Sparkles size={16} className="text-[#2563eb] shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Special Concessions & Free Trials Available:</span>
+                  <span className="block mt-0.5 text-[#334155] leading-relaxed">
+                    Startups (&lt; 1 year old), new digital e-commerce sellers, and eligible enterprises can apply for up to a <strong>3-month free trial</strong> or <strong>discounted plan</strong> via the <strong>Billing Concessions</strong> tab in your dashboard after verification or through your assigned sales representative.
+                  </span>
+                </div>
+              </div>
               <div className="flex flex-col gap-3">
                 {PLAN_LIST.map(plan => (
                   <div

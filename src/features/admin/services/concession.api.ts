@@ -2,6 +2,7 @@ import apiClient from '@/api/client';
 
 export type ConcessionType =
   | 'subscription_trial'
+  | 'subscription_tier_upgrade'
   | 'subscription_price'
   | 'subscription_duration'
   | 'listing_fee_waiver'
@@ -28,6 +29,14 @@ export interface ConcessionRequest {
   type: ConcessionType;
   proposal: ConcessionProposal;
   reason: string;
+  criteriaOption?: string;
+  criteriaComment?: string;
+  salesRepName?: string;
+  salesRepPhone?: string;
+  salesRepVerified?: boolean;
+  documentUrl?: string;
+  isAutoApproved?: boolean;
+  systemEvaluation?: Record<string, any>;
   status: ConcessionStatus;
   decidedBy?: string | { _id: string; name?: string; role?: string };
   decidedAt?: string;
@@ -42,9 +51,28 @@ export interface CreateConcessionInput {
   type: ConcessionType;
   proposal: ConcessionProposal;
   reason: string;
+  criteriaOption?: string;
+  criteriaComment?: string;
+  salesRepName?: string;
+  salesRepPhone?: string;
+  documentUrl?: string;
 }
 
 const concessionApi = {
+  // ── Sales Rep verification with OTP ──────────────────────────────────────
+  sendSalesRepOtp: async (phone: string): Promise<{ success: boolean; message: string; salesRepName?: string; devOtp?: string }> => {
+    const res = await apiClient.post('/admin/concessions/send-sales-rep-otp', { phone });
+    return res.data;
+  },
+  verifySalesRepOtp: async (phone: string, otp: string): Promise<{ success: boolean; verified: boolean; salesRep?: { name: string; phone: string; role: string }; message?: string }> => {
+    const res = await apiClient.post('/admin/concessions/verify-sales-rep-otp', { phone, otp });
+    return res.data;
+  },
+  verifySalesRep: async (phone: string): Promise<{ verified: boolean; salesRep?: { name: string; phone: string; role: string }; message?: string }> => {
+    const res = await apiClient.post('/admin/concessions/verify-sales-rep', { phone });
+    return res.data;
+  },
+
   // ── Admin queue ──────────────────────────────────────────────────────────
   list: async (status: ConcessionStatus | 'all' = 'pending'): Promise<ConcessionRequest[]> => {
     const res = await apiClient.get('/admin/concessions', { params: { status } });
