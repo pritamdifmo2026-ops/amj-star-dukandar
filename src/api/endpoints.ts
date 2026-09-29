@@ -40,6 +40,7 @@ export const ENDPOINTS = {
     REVIEW: (id: string | number) => `/orders/${id}/review`,
     RATE_BUYER: (id: string | number) => `/orders/${id}/rate-buyer`,
     PO_DOWNLOAD: (id: string | number) => `/orders/${id}/po-download`,
+    BILL_DOWNLOAD: (id: string | number) => `/orders/${id}/bill-download`,
     // Disputes
     RAISE_DISPUTE: (id: string | number) => `/orders/${id}/dispute`,
     GET_DISPUTE: (orderId: string | number) => `/orders/${orderId}/dispute`,

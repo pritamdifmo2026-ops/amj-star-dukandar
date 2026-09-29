@@ -345,7 +345,17 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
 
   const handleMarkDelivered = async () => {
     setBusy(true);
-    try { await orderApi.markDelivered(order._id); sync({ status: 'awaiting_confirmation' }); toast.success('Marked delivered. Buyer has 72h to confirm.'); }
+    try {
+      const res: any = await orderApi.markDelivered(order._id);
+      const updatedOrder = res?.data || res;
+      if (updatedOrder && typeof updatedOrder === 'object') {
+        sync(updatedOrder);
+      } else {
+        sync({ status: 'awaiting_confirmation', awaitingConfirmationAt: new Date().toISOString() });
+      }
+      toast.success('Marked delivered. Buyer has 72h to confirm.');
+      onRefresh();
+    }
     catch (e: any) { toast.error(e?.response?.data?.message || 'Failed'); }
     finally { setBusy(false); }
   };
@@ -593,7 +603,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
     const isSupplierUser = isSupplier || user?.role === 'supplier';
     const targetUrl = isSupplierUser
       ? (convId ? `/supplier/dashboard?tab=enquiry&conversationId=${convId}` : `/supplier/dashboard?tab=enquiry`)
-      : (convId ? `/buyer/profile?tab=messages&conversationId=${convId}` : `/buyer/profile?tab=messages`);
+      : (convId ? `/profile?tab=messages&conversationId=${convId}` : `/profile?tab=messages`);
     navigate(targetUrl);
   };
   const handleDispatchReplacement = async () => {
@@ -1164,6 +1174,33 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             <Download size={12} /> Download PO
           </a>
         )}
+        {Boolean(order.dispatchedAt || ['shipped', 'awaiting_confirmation', 'completed', 'delivered', 'disputed'].includes(order.status) || (order.status === 'cancelled' && (order.dispatchedAt || order.paymentStatus === 'refunded'))) && (() => {
+          const isRefundBill = order.paymentStatus === 'refunded' || Boolean(order._dispute && (order._dispute.refundTransactionId || (order._dispute.status === 'resolved' && order._dispute.resolutionMethod === 'refund')));
+          const isReplacementBill = Boolean(order._dispute && (order._dispute.exchangeStage === 'replacement_shipped' || (order._dispute.status === 'resolved' && (order._dispute.resolutionMethod === 'replacement' || order._dispute.resolutionMethod === 'partial_replacement' || order._dispute.resolutionMethod === 'partial'))));
+
+          return (
+            <div className="inline-flex items-center gap-2 mt-3 ml-2 flex-wrap">
+              {/* Always available: Original Tax Invoice */}
+              <a href={`${apiBase}/api/orders/${order._id}/bill-download?doc=original`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#15803d] bg-[#f0fdf4] border border-[#86efac] rounded-[6px] no-underline hover:bg-[#dcfce7]">
+                <Download size={12} /> {isReplacementBill || isRefundBill ? 'Original Bill' : (order.status === 'cancelled' ? 'Download Cancelled Bill' : 'Download Dispatch Bill')}
+              </a>
+
+              {/* Separate New Replacement Delivery Challan (Zero Amount, Only Replaced Items) */}
+              {isReplacementBill && (
+                <a href={`${apiBase}/api/orders/${order._id}/bill-download?doc=replacement`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#1d4ed8] bg-[#eff6ff] border border-[#93c5fd] rounded-[6px] no-underline hover:bg-[#dbeafe]">
+                  <Download size={12} /> Replacement Bill (₹0)
+                </a>
+              )}
+
+              {/* Separate New Refund Voucher */}
+              {isRefundBill && (
+                <a href={`${apiBase}/api/orders/${order._id}/bill-download?doc=refund`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#7e22ce] bg-[#faf5ff] border border-[#d8b4fe] rounded-[6px] no-underline hover:bg-[#f3e8ff]">
+                  <Download size={12} /> Refund Bill
+                </a>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Tracking / Pickup */}
@@ -2426,7 +2463,7 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
           {order.status === 'cancelled' && <p className="text-sm text-[#dc2626] m-0">This order was cancelled.</p>}
 
           {/* Supplier Payment Request Actions */}
-          {order.paymentStatus !== 'completed' && (() => {
+          {order.paymentStatus !== 'completed' && !['completed', 'delivered'].includes(order.status) && (() => {
             const paymentTerms = order.paymentTerms || '';
             const isCOD = paymentTerms.includes('COD');
             const isCredit = paymentTerms.includes('Credit');
@@ -2550,22 +2587,97 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
         </div>
       )}
 
-      {!isSupplier && order.status === 'awaiting_confirmation' && (
-        <div className={`${card} p-5`}>
-          <p className={sectionTitle}>Confirm Your Order</p>
-          <div className="flex items-center gap-2 bg-[#faf5ff] border border-[#d8b4fe] rounded-[8px] px-3 py-2 text-xs text-[#7e22ce] font-semibold mb-3">
-            <Clock size={13} /> The supplier marked this delivered. Please confirm within 72 hours.
-          </div>
-          {confirmMode === 'idle' && (
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmMode('ticket')} className="flex-1 flex flex-col items-center gap-2 p-4 border-2 border-[#fca5a5] bg-[#fef2f2] rounded-[12px] cursor-pointer hover:bg-[#fee2e2]">
-                <AlertTriangle size={26} className="text-[#dc2626]" /><span className="text-sm font-bold text-[#b91c1c]">I have an issue</span>
-              </button>
-              <button onClick={() => setConfirmMode('rating')} className="flex-1 flex flex-col items-center gap-2 p-4 border-2 border-[#86efac] bg-[#f0fdf4] rounded-[12px] cursor-pointer hover:bg-[#dcfce7]">
-                <CheckCircle size={26} className="text-[#16a34a]" /><span className="text-sm font-bold text-[#15803d]">Received, all good</span>
-              </button>
+      {!isSupplier && order.status === 'awaiting_confirmation' && (() => {
+        // Determine if a balance/COD/advance payment is still outstanding
+        const paymentTerms = order.paymentTerms || '';
+        const isCOD = /COD|Cash on Delivery/i.test(paymentTerms);
+        const isCredit = /Credit/i.test(paymentTerms);
+        const isAdvance = /Advance/i.test(paymentTerms) || (!isCOD && !isCredit && (order.advanceAmountRequired || 0) > 0);
+        const totalAmount = Number(order.totalAmount || 0);
+        const advanceAmount = Number(order.advanceAmountRequired || totalAmount);
+        const remainingAmount = Math.max(0, totalAmount - advanceAmount);
+
+        const paymentFullySettled = order.paymentStatus === 'completed';
+        const paymentRequested = !!order.paymentRequestedAt;
+        const proofUploaded = !!(order.paymentProofUrl || order.paymentUtrNumber);
+
+        // There's an unpaid balance when:
+        // - COD: payment requested but not completed
+        // - Advance + remaining > 0: advance paid, delivery done, balance not yet settled
+        // - Credit: not due yet, so no gate needed
+        const hasPendingBalance = !paymentFullySettled && paymentRequested && !proofUploaded && (
+          isCOD ||
+          (isAdvance && remainingAmount > 0) ||
+          (!isCOD && !isCredit)
+        );
+
+        // If proof uploaded but supplier hasn't confirmed yet — still gate
+        const proofPendingSupplierConfirm = !paymentFullySettled && proofUploaded && (isCOD || isAdvance || (!isCOD && !isCredit));
+
+        const pendingPaymentGate = hasPendingBalance || proofPendingSupplierConfirm;
+
+        let pendingAmount = '';
+        if (isCOD) pendingAmount = `₹${totalAmount.toLocaleString('en-IN')} (COD)`;
+        else if (isAdvance && remainingAmount > 0) pendingAmount = `₹${remainingAmount.toLocaleString('en-IN')} (Balance)`;
+        else pendingAmount = `₹${totalAmount.toLocaleString('en-IN')}`;
+
+        return (
+          <div className={`${card} p-5`}>
+            <p className={sectionTitle}>Confirm Your Order</p>
+            <div className="flex items-center gap-2 bg-[#faf5ff] border border-[#d8b4fe] rounded-[8px] px-3 py-2 text-xs text-[#7e22ce] font-semibold mb-3">
+              <Clock size={13} /> The supplier marked this delivered. Please confirm within 72 hours.
             </div>
-          )}
+
+            {/* ── Payment pending gate ──────────────────────────────────── */}
+            {pendingPaymentGate && confirmMode === 'idle' && (
+              <div className="flex flex-col gap-3 mb-3">
+                {hasPendingBalance ? (
+                  <div className="p-4 bg-[#fffbeb] border border-[#fde68a] rounded-[12px] flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#b45309]">
+                      <AlertTriangle size={17} className="text-[#d97706] shrink-0" />
+                      Payment Required Before Confirming
+                    </div>
+                    <p className="text-xs text-[#92400e] m-0 leading-relaxed">
+                      The supplier has requested payment of <strong>{pendingAmount}</strong>. Please transfer the amount and upload the payment proof in the chat. The confirmation buttons will unlock once payment is verified.
+                    </p>
+                    <button
+                      onClick={handleGoToChatForPayment}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-white bg-[#f59e0b] hover:bg-[#d97706] rounded-[10px] border-none cursor-pointer transition-colors shadow-sm"
+                    >
+                      <MessageSquare size={15} /> Pay Now — Open Chat to Upload Proof &rarr;
+                    </button>
+                  </div>
+                ) : proofPendingSupplierConfirm && (
+                  <div className="p-4 bg-[#f0fdf4] border border-[#86efac] rounded-[12px] flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#15803d]">
+                      <CheckCircle size={17} className="text-[#16a34a] shrink-0" />
+                      Payment Proof Submitted — Awaiting Supplier Confirmation
+                    </div>
+                    <p className="text-xs text-[#166534] m-0 leading-relaxed">
+                      You have uploaded your payment proof. Please wait for the supplier to verify and confirm receipt. The order confirmation buttons will unlock once the supplier accepts the payment.
+                    </p>
+                    <button
+                      onClick={handleGoToChatForPayment}
+                      className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold text-[#059669] bg-[#ecfdf5] border border-[#a7f3d0] rounded-[8px] cursor-pointer hover:bg-[#d1fae5] transition-colors"
+                    >
+                      <MessageSquare size={13} /> View in Chat &rarr;
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── GRN buttons — only when no pending payment ───────────── */}
+            {!pendingPaymentGate && confirmMode === 'idle' && (
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmMode('ticket')} className="flex-1 flex flex-col items-center gap-2 p-4 border-2 border-[#fca5a5] bg-[#fef2f2] rounded-[12px] cursor-pointer hover:bg-[#fee2e2]">
+                  <AlertTriangle size={26} className="text-[#dc2626]" /><span className="text-sm font-bold text-[#b91c1c]">I have an issue</span>
+                </button>
+                <button onClick={() => setConfirmMode('rating')} className="flex-1 flex flex-col items-center gap-2 p-4 border-2 border-[#86efac] bg-[#f0fdf4] rounded-[12px] cursor-pointer hover:bg-[#dcfce7]">
+                  <CheckCircle size={26} className="text-[#16a34a]" /><span className="text-sm font-bold text-[#15803d]">Received, all good</span>
+                </button>
+              </div>
+            )}
 
           {/* Rating (inline) */}
           {confirmMode === 'rating' && (
@@ -3075,7 +3187,9 @@ const OrderManage: React.FC<OrderManageProps> = ({ order: initialOrder, isSuppli
             </div>
           )}
         </div>
-      )}
+          );
+        })()
+      }
 
       {/* Buyer: rate after completed */}
       {!isSupplier && order.status === 'completed' && !order.hasReview && !order._reviewSubmitted && confirmMode !== 'rating' && (

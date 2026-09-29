@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User, Mail, Lock, Phone } from 'lucide-react';
 import Input from '@/shared/components/ui/Input';
 import Button from '@/shared/components/ui/Button';
@@ -9,12 +9,16 @@ import { authApi } from '../services/auth.api';
 import toast from 'react-hot-toast';
 
 const Register: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const modeParam = searchParams.get('mode') ?? 'buyer';
+  // Map URL mode → internal role: 'seller' → 'supplier'
+  const initialRole = (modeParam === 'seller' ? 'supplier' : modeParam === 'reseller' ? 'reseller' : 'buyer') as 'buyer' | 'reseller' | 'supplier';
   const [form, setForm] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
-    role: 'buyer' as 'buyer' | 'reseller' | 'supplier',
+    role: initialRole,
     emailOtp: '',
     phoneOtp: ''
   });

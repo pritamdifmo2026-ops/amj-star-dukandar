@@ -62,11 +62,12 @@ const SupplierReports: React.FC = () => {
 
   useEffect(() => { fetchOrders(); }, []);
 
-  const handleOpenInvoice = async (orderId: string) => {
+  const handleOpenInvoice = async (orderId: string, isDispatched?: boolean) => {
     if (openingInvoiceId) return;
     setOpeningInvoiceId(orderId);
     try {
-      const res = await apiClient.get(`/orders/${orderId}/po-download`, { responseType: 'blob' });
+      const endpoint = isDispatched ? `/orders/${orderId}/bill-download` : `/orders/${orderId}/po-download`;
+      const res = await apiClient.get(endpoint, { responseType: 'blob' });
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
@@ -260,13 +261,14 @@ const SupplierReports: React.FC = () => {
                   const shipping = o.shippingCost ?? 0;
                   const itemsFull = o.items.map(i => `${i.name} ×${i.quantity}`).join(', ');
                   const itemsSummary = o.items.slice(0, 2).map(i => `${i.name} ×${i.quantity}`).join(', ') + (o.items.length > 2 ? '…' : '');
+                  const isDispatched = ['shipped', 'awaiting_confirmation', 'completed', 'delivered'].includes(o.status);
                   return (
                     <tr key={o._id} className="border-t border-[#f1f5f9] hover:bg-[#fafafa]">
                       <td className="px-5 py-3">
                         <button
-                          onClick={() => handleOpenInvoice(o._id)}
+                          onClick={() => handleOpenInvoice(o._id, isDispatched)}
                           disabled={openingInvoiceId === o._id}
-                          title="Open invoice PDF"
+                          title={isDispatched ? "Open dispatch bill PDF" : "Open PO PDF"}
                           className="text-left group cursor-pointer disabled:opacity-60"
                         >
                           <div className="flex items-center gap-1.5 font-semibold text-[#0f172a] group-hover:underline">

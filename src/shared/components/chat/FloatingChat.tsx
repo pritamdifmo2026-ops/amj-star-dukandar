@@ -1593,7 +1593,7 @@ export const FloatingChat: React.FC = () => {
 
                       const anyQuoteWithOrder = messages.slice().reverse().find(m => (m.messageType === 'quotation' || m.messageType === 'buyer_counter_offer') && (m.quotationId as any)?.orderId);
                       const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
-                      const orderId = (paymentMsgContext.quotationId as any)?.orderId?._id || (paymentMsgContext.quotationId as any)?.orderId || fallbackOrderId;
+                      const orderId = paymentMsgContext.metadata?.orderId || (paymentMsgContext.quotationId as any)?.orderId?._id || (paymentMsgContext.quotationId as any)?.orderId || fallbackOrderId;
 
                       if (!orderId) throw new Error('Order ID not found in Chat');
 

@@ -328,12 +328,42 @@ const OrderList: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {!isSupplier && order.poNumber && (
+                  {order.poNumber && (
                     <a href={`${apiBase}/api/orders/${order._id}/po-download`} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#0f172a] bg-white border border-[#e2e8f0] rounded-[6px] no-underline hover:border-primary hover:text-primary">
                       <Download size={14} /> Download PO
                     </a>
                   )}
+                  {Boolean(order.dispatchedAt || ['shipped', 'awaiting_confirmation', 'completed', 'delivered', 'disputed'].includes(order.status) || (order.status === 'cancelled' && (order.dispatchedAt || order.paymentStatus === 'refunded'))) && (() => {
+                    const isRefundBill = order.paymentStatus === 'refunded' || Boolean(order._dispute && (order._dispute.refundTransactionId || (order._dispute.status === 'resolved' && order._dispute.resolutionMethod === 'refund')));
+                    const isReplacementBill = Boolean(order._dispute && (order._dispute.exchangeStage === 'replacement_shipped' || (order._dispute.status === 'resolved' && (order._dispute.resolutionMethod === 'replacement' || order._dispute.resolutionMethod === 'partial_replacement' || order._dispute.resolutionMethod === 'partial'))));
+
+                    return (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Always available: Original Tax Invoice */}
+                        <a href={`${apiBase}/api/orders/${order._id}/bill-download?doc=original`} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#15803d] bg-[#f0fdf4] border border-[#86efac] rounded-[6px] no-underline hover:bg-[#dcfce7]">
+                          <Download size={14} /> {isReplacementBill || isRefundBill ? 'Original Bill' : (order.status === 'cancelled' ? 'Cancelled Bill' : 'Download Bill')}
+                        </a>
+
+                        {/* Separate New Replacement Delivery Challan (Zero Amount, Only Replaced Items) */}
+                        {isReplacementBill && (
+                          <a href={`${apiBase}/api/orders/${order._id}/bill-download?doc=replacement`} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#1d4ed8] bg-[#eff6ff] border border-[#93c5fd] rounded-[6px] no-underline hover:bg-[#dbeafe]">
+                            <Download size={14} /> Replacement Bill (₹0)
+                          </a>
+                        )}
+
+                        {/* Separate New Refund Voucher */}
+                        {isRefundBill && (
+                          <a href={`${apiBase}/api/orders/${order._id}/bill-download?doc=refund`} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#7e22ce] bg-[#faf5ff] border border-[#d8b4fe] rounded-[6px] no-underline hover:bg-[#f3e8ff]">
+                            <Download size={14} /> Refund Bill
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {attention && <span className="text-[10px] font-bold text-[#dc2626] bg-[#fef2f2] border border-[#fca5a5] px-2 py-0.5 rounded-full">Action needed</span>}
                   <button onClick={() => setManageOrder(order)} className="flex items-center gap-1 px-3.5 py-1.5 text-xs font-bold text-white bg-primary rounded-[6px] hover:opacity-90 border-none cursor-pointer">
                     {isSupplier ? 'Manage Order' : 'View Order'} <ChevronRight size={13} />

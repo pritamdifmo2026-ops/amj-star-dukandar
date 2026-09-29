@@ -1308,13 +1308,24 @@ const QuotationCard = ({ isLatestQuoteMsg = true, msg, onActiveChange, user, soc
             )}
 
             {quote.orderId?._id ? (
-              <a
-                href={`${apiBase}/api/orders/${quote.orderId._id}/po-download`}
-                target="_blank" rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1 px-3 py-1.5 bg-[#059669] text-white text-[10px] font-bold rounded-[6px] no-underline hover:bg-[#047857]"
-              >
-                <FileText size={11} /> Download PO {quote.orderId.poNumber ? `(${quote.orderId.poNumber})` : ''}
-              </a>
+              <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                <a
+                  href={`${apiBase}/api/orders/${quote.orderId._id}/po-download`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#059669] text-white text-[10px] font-bold rounded-[6px] no-underline hover:bg-[#047857]"
+                >
+                  <FileText size={11} /> Download PO {quote.orderId.poNumber ? `(${quote.orderId.poNumber})` : ''}
+                </a>
+                {['shipped', 'awaiting_confirmation', 'completed', 'delivered'].includes(quote.orderId.status) && (
+                  <a
+                    href={`${apiBase}/api/orders/${quote.orderId._id}/bill-download`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#15803d] text-white text-[10px] font-bold rounded-[6px] no-underline hover:bg-[#166534]"
+                  >
+                    <FileText size={11} /> Download Bill
+                  </a>
+                )}
+              </div>
             ) : (
               <p className="text-[10px] text-[#6ee7b7] m-0 mt-1">Order being processed…</p>
             )}
@@ -4080,7 +4091,7 @@ const ChatInbox: React.FC = () => {
 
                     const anyQuoteWithOrder = messages.slice().reverse().find(m => m.messageType === 'quotation' && (m.quotationId as any)?.orderId);
                     const fallbackOrderId = (anyQuoteWithOrder?.quotationId as any)?.orderId?._id || (anyQuoteWithOrder?.quotationId as any)?.orderId;
-                    const orderId = (paymentMsgContext.quotationId as any)?.orderId?._id || (paymentMsgContext.quotationId as any)?.orderId || fallbackOrderId;
+                    const orderId = paymentMsgContext.metadata?.orderId || (paymentMsgContext.quotationId as any)?.orderId?._id || (paymentMsgContext.quotationId as any)?.orderId || fallbackOrderId;
 
                     if (!orderId) throw new Error('Order ID not found in Chat');
 

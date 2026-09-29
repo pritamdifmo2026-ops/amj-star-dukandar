@@ -49,8 +49,9 @@ export const orderApi = {
     return res.data.data;
   },
 
-  markDelivered: async (id: string): Promise<void> => {
-    await apiClient.patch(ENDPOINTS.ORDERS.MARK_DELIVERED(id));
+  markDelivered: async (id: string): Promise<any> => {
+    const res = await apiClient.patch(ENDPOINTS.ORDERS.MARK_DELIVERED(id));
+    return res.data?.data || res.data;
   },
 
   confirmDelivery: async (

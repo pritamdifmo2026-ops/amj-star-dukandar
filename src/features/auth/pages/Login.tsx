@@ -9,7 +9,7 @@ import Button from '@/shared/components/ui/Button';
 import ForgotPasswordForm from '../components/ForgotPasswordForm';
 
 const Login: React.FC = () => {
-  
+
   const [searchParams] = useSearchParams();
   const mode = (searchParams.get('mode') || 'buyer');
 

@@ -29,17 +29,9 @@ const Suppliers: React.FC = () => (
           <p className="text-base text-body leading-relaxed max-w-[600px] mx-auto mb-8">
             Expand your reach, streamline your wholesale operations, and connect directly with thousands of verified B2B buyers across India.
           </p>
-          {(() => {
-            const hasLoggedInBefore = localStorage.getItem('has_logged_in_before') === 'true';
-            const targetRoute = hasLoggedInBefore ? ROUTES.LOGIN : ROUTES.REGISTER;
-            const buttonText = hasLoggedInBefore ? 'Join as a Supplier' : 'Join as a Supplier';
-
-            return (
-              <Link to={`${targetRoute}?mode=seller`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
-                {buttonText}
-              </Link>
-            );
-          })()}
+          <Link to={`${ROUTES.REGISTER}?mode=seller`} className="inline-block bg-primary text-white font-bold px-8 py-3 rounded-[6px] no-underline hover:opacity-90 transition-opacity">
+            Join as a Supplier
+          </Link>
         </div>
       </section>
 
