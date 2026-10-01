@@ -124,7 +124,7 @@ const About: React.FC = () => {
                   <img
                     src="/images/kuldeep-redhu.jpg"
                     alt="Kuldeep Redhu"
-                    className="w-full h-full object-cover object-left translate-x-8 sm:translate-x-12 hover:scale-105 transition-transform duration-700"
+                    className="w-full h-full object-cover object-top hover:scale-101 transition-transform duration-700"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
