@@ -174,7 +174,7 @@ const Onboarding: React.FC = () => {
         const data = await supplierService.getProfile();
         if (data.supplier) {
           dispatch(setSupplierProfile(data.supplier));
-          if (data.supplier.isActive && data.supplier.verifiedByAdmin) {
+          if (data.supplier.isActive && data.supplier.verifiedByAdmin && data.supplier.onboardingStatus === OnboardingStatus.COMPLETED) {
             const destination = user?.role === 'reseller' ? '/reseller/dashboard' : '/supplier/dashboard';
             navigate(destination);
             return;

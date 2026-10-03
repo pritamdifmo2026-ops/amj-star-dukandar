@@ -99,6 +99,7 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
     const minBalance: number = walletData.minimumWalletBalance ?? 500;
     if (available < minBalance) {
       toastShown.current = true;
+      toast.dismiss('low-wallet');
       toast.custom(
         t => (
           <div
@@ -113,14 +114,14 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
                 ₹{available.toFixed(2)} available — minimum is ₹{minBalance}. Top up to avoid PO blocks.
               </p>
               <button
-                onClick={() => { setActiveView('wallet'); toast.dismiss(t.id); }}
+                onClick={() => { setActiveView('wallet'); toast.dismiss('low-wallet'); }}
                 className="mt-2 text-xs font-bold text-[#e65c00] bg-transparent border-none cursor-pointer p-0 hover:underline"
               >
                 Add wallet balance →
               </button>
             </div>
             <button
-              onClick={() => toast.dismiss(t.id)}
+              onClick={() => toast.dismiss('low-wallet')}
               className="text-[#94a3b8] bg-transparent border-none cursor-pointer text-lg leading-none p-0 shrink-0 hover:text-[#475569]"
               aria-label="Dismiss"
             >
@@ -128,7 +129,7 @@ const SupplierOverview: React.FC<SupplierOverviewProps> = ({
             </button>
           </div>
         ),
-        { duration: Infinity, position: 'top-right' }
+        { id: 'low-wallet', duration: Infinity, position: 'top-right' }
       );
     }
   }, [walletData]);

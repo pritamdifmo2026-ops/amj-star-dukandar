@@ -11,8 +11,9 @@ interface SupplierGuardProps {
 const SupplierGuard: React.FC<SupplierGuardProps> = ({ children }) => {
   const { profile } = useAppSelector(state => state.supplier);
   const dispatch = useAppDispatch();
+  const profileIncomplete = profile ? profile.onboardingStatus !== OnboardingStatus.COMPLETED : false;
   const [loading, setLoading] = useState(!profile);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(profileIncomplete);
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -31,7 +32,6 @@ const SupplierGuard: React.FC<SupplierGuardProps> = ({ children }) => {
           setNeedsOnboarding(true);
         }
       } catch (err) {
-        // If error (e.g. no profile yet), we should probably send them to onboarding
         setNeedsOnboarding(true);
       } finally {
         setLoading(false);
