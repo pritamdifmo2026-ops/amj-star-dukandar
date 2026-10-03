@@ -36,7 +36,7 @@ const About: React.FC = () => {
       const res = await api.get('/pages/about');
       return res.data.page;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 
   const hero = data?.sections.find(s => s.type === 'about-hero');
@@ -79,7 +79,7 @@ const About: React.FC = () => {
           <div className="rounded-[18px] overflow-hidden shadow-xl">
 
             <img
-              src={aboutImage}
+              src={hero?.url || hm.heroImage || aboutImage}
               alt={hm.heroAlt ?? 'About AMJSTAR'}
               className="w-full h-full object-cover max-h-[420px]"
             />
@@ -88,7 +88,6 @@ const About: React.FC = () => {
         </div>
       </section>
 
-      {/* ── Director's Vision & Our Story ──────────────────────────────────────────────────────── */}
       {/* ── Director's Vision & Our Story ──────────────────────────────────────────────────────── */}
       <section className="bg-white py-20 px-6">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
@@ -100,35 +99,48 @@ const About: React.FC = () => {
                 Director's Vision
               </span>
               <h2 className="text-3xl font-extrabold text-[#0f172a] mb-6">
-                Empowering Businesses to Learn and Grow
+                {story?.meta?.directorVisionTitle || 'Empowering Businesses to Learn and Grow'}
               </h2>
               <p className="text-[#475569] text-sm leading-[1.9] mb-10">
-                "AMJSTAR is built on the foundation of education and empowerment. Our vision is to create a transparent, secure, and thriving B2B ecosystem where every small business can access a national market and unlock its true potential."
+                {story?.meta?.directorVisionText || '"AMJSTAR is built on the foundation of education and empowerment. Our vision is to create a transparent, secure, and thriving B2B ecosystem where every small business can access a national market and unlock its true potential."'}
               </p>
             </div>
 
             {/* Our Story Section */}
             <div>
               <h3 className="text-2xl font-extrabold text-[#0f172a] mb-4">{story?.heading ?? 'Our Story'}</h3>
-              <p className="text-[#475569] text-sm leading-[1.9]">
-                {story?.text ?? "Founded to bridge the gap in a fragmented wholesale market, AMJSTAR is a digital ecosystem where trust is the primary currency. Today, we empower thousands of partners across India with quality, speed, and reliability."}
-              </p>
+              {story?.text && (
+                <p className="text-[#475569] text-sm leading-[1.9] mb-4">
+                  {story.text}
+                </p>
+              )}
+              {story?.body && (
+                <p className="text-[#475569] text-sm leading-[1.9]">
+                  {story.body}
+                </p>
+              )}
+              {!story?.text && !story?.body && (
+                <p className="text-[#475569] text-sm leading-[1.9]">
+                  Founded to bridge the gap in a fragmented wholesale market, AMJSTAR is a digital ecosystem where trust is the primary currency. Today, we empower thousands of partners across India with quality, speed, and reliability.
+                </p>
+              )}
             </div>
           </div>
 
           {/* Right Side: Large Photo & Details */}
           <div className="relative mt-8 lg:mt-0 flex flex-col items-center lg:items-end">
-            <div className="w-full max-w-[460px] flex flex-col items-center">
+            <div className="w-full max-w-[360px] flex flex-col items-center">
               <div className="relative mb-8">
-                <div className="relative w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] rounded-full overflow-hidden bg-white border border-gray-200 mx-auto shadow-sm">
+                <div className="relative ratio-4/5 rounded-3xl overflow-hidden bg-white border border-gray-200 mx-auto shadow-sm">
                   <img
-                    src="/images/kuldeep-redhu.jpg"
-                    alt="Kuldeep Redhu"
+                    src={story?.meta?.directorImage || story?.url || "/images/kuldeep-redhu.jpg"}
+                    alt={story?.meta?.directorName || "Kuldeep Redhu"}
                     className="w-full h-full object-cover object-top hover:scale-101 transition-transform duration-700"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.parentElement!.innerHTML = '<div class="w-full h-full flex flex-col items-center justify-center text-primary/50"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg><span class="mt-4 font-bold text-lg">Not Found</span></div>';
+                      if (!target.src.includes('kuldeep-redhu.jpg')) {
+                        target.src = '/images/kuldeep-redhu.jpg';
+                      }
                     }}
                   />
                 </div>
@@ -136,10 +148,10 @@ const About: React.FC = () => {
 
               {/* Info Text Below Image */}
               <div className="text-center mt-2 mb-5">
-                <h3 className="text-3xl font-display font-normal text-gray-900 tracking-tight m-0">Mr. Kuldeep Redhu</h3>
+                <h3 className="text-3xl font-display font-normal text-gray-900 tracking-tight m-0">{story?.meta?.directorName || 'Mr. Kuldeep Redhu'}</h3>
                 <div className="inline-flex items-center justify-center mt-4 space-x-3">
                   <span className="h-px w-8 bg-primary/30"></span>
-                  <p className="text-xs text-primary font-bold tracking-widest uppercase m-0">Director</p>
+                  <p className="text-xs text-primary font-bold tracking-widest uppercase m-0">{story?.meta?.directorRole || 'Director'}</p>
                   <span className="h-px w-8 bg-primary/30"></span>
                 </div>
               </div>
@@ -156,20 +168,26 @@ const About: React.FC = () => {
             {/* Founder Quote */}
             <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 order-2 md:order-1">
               <div className="flex-shrink-0">
-                <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 bg-white flex items-center justify-center">
-                  <img src={logo} alt="AMJSTAR Logo" className="w-full h-full object-cover scale-[2]" />
-                </div>
+                {story?.meta?.founderImage ? (
+                  <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 bg-white flex items-center justify-center">
+                    <img src={story.meta.founderImage} alt="Founder" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 bg-white flex items-center justify-center">
+                    <img src={logo} alt="AMJSTAR Logo" className="w-full h-full object-cover scale-[2]" />
+                  </div>
+                )}
               </div>
               <div className="flex-1 text-center sm:text-left">
                 <div className="flex gap-2 mb-4">
                   <Quote className="w-5 h-5 text-orange-400/40 fill-current flex-shrink-0 mt-0.5" />
                   <p className="text-[#334155] text-sm md:text-base italic font-medium leading-relaxed">
-                    We believe that every business, no matter how small, deserves a global platform to shine. AMJSTAR is that <span className="whitespace-nowrap">stage.<Quote className="w-5 h-5 text-orange-400/40 fill-current rotate-180 inline-block ml-1 -mt-1" /></span>
+                    {story?.meta?.quoteText || "We believe that every business, no matter how small, deserves a global platform to shine. AMJSTAR is that stage."}
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-[#0f172a] font-bold text-sm m-0">Mr. Manish Jangra</h4>
-                  <p className="text-primary text-xs font-semibold mt-0.5 m-0">Founder, AMJSTAR</p>
+                  <h4 className="text-[#0f172a] font-bold text-sm m-0">{story?.meta?.quoteAuthor || 'Mr. Manish Jangra'}</h4>
+                  <p className="text-primary text-xs font-semibold mt-0.5 m-0">{story?.meta?.quoteRole || 'Founder, AMJSTAR'}</p>
                 </div>
               </div>
             </div>
@@ -177,20 +195,26 @@ const About: React.FC = () => {
             {/* CFO Quote */}
             <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 sm:p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5 order-1 md:order-2">
               <div className="flex-shrink-0">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-orange-400 text-white flex items-center justify-center font-bold text-xl">
-                  U
-                </div>
+                {story?.meta?.cfoImage ? (
+                  <div className="w-14 h-14 rounded-full overflow-hidden border border-gray-100 bg-white flex items-center justify-center">
+                    <img src={story.meta.cfoImage} alt="CFO" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-orange-400 text-white flex items-center justify-center font-bold text-xl">
+                    U
+                  </div>
+                )}
               </div>
               <div className="flex-1 text-center sm:text-left">
                 <div className="flex gap-2 mb-4">
                   <Quote className="w-5 h-5 text-orange-400/40 fill-current flex-shrink-0 mt-0.5" />
                   <p className="text-[#334155] text-sm md:text-base italic font-medium leading-relaxed">
-                    Restructuring India's B2B ecosystem with a transparent, tech-driven supply chain to empower every <span className="whitespace-nowrap">stakeholder.<Quote className="w-5 h-5 text-orange-400/40 fill-current rotate-180 inline-block ml-1 -mt-1" /></span>
+                    {story?.meta?.cfoQuoteText || "Restructuring India's B2B ecosystem with a transparent, tech-driven supply chain to empower every stakeholder."}
                   </p>
                 </div>
                 <div>
-                  <h4 className="text-[#0f172a] font-bold text-sm m-0">Mrs. Umesh Jangra</h4>
-                  <p className="text-primary text-xs font-semibold mt-0.5 m-0">CFO & Director, AMJSTAR</p>
+                  <h4 className="text-[#0f172a] font-bold text-sm m-0">{story?.meta?.cfoQuoteAuthor || 'Mrs. Umesh Jangra'}</h4>
+                  <p className="text-primary text-xs font-semibold mt-0.5 m-0">{story?.meta?.cfoQuoteRole || 'CFO & Director, AMJSTAR'}</p>
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Wallet, ArrowUpCircle, ArrowDownCircle, Clock, CheckCircle, AlertCircle, RefreshCw, Plus, Building2, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -68,18 +68,27 @@ const SupplierWallet: React.FC = () => {
   const [detailWithdrawal, setDetailWithdrawal] = useState<any | null>(null);
   const navigate = useNavigate();
 
+  const walletDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedInvalidate = useCallback(() => {
+    if (walletDebounceRef.current) clearTimeout(walletDebounceRef.current);
+    walletDebounceRef.current = setTimeout(() => {
+      qc.invalidateQueries({ queryKey: ['wallet'] });
+      walletDebounceRef.current = null;
+    }, 400);
+  }, [qc]);
+
   useEffect(() => {
     if (!socket) return;
-    const invalidate = () => qc.invalidateQueries({ queryKey: ['wallet'] });
-    socket.on('wallet_updated', invalidate);
+    socket.on('wallet_updated', debouncedInvalidate);
     socket.on('new_notification', (payload: any) => {
-      if (WALLET_EVENTS.has(payload?.type)) invalidate();
+      if (WALLET_EVENTS.has(payload?.type)) debouncedInvalidate();
     });
     return () => {
-      socket.off('wallet_updated', invalidate);
+      socket.off('wallet_updated', debouncedInvalidate);
       socket.off('new_notification');
+      if (walletDebounceRef.current) { clearTimeout(walletDebounceRef.current); walletDebounceRef.current = null; }
     };
-  }, [socket, qc]);
+  }, [socket, debouncedInvalidate]);
 
   const { data: walletData, isLoading: walletLoading, refetch: refetchWallet } = useQuery({
     queryKey: ['wallet'],

@@ -84,24 +84,54 @@ const RenderSection: React.FC<{ s: Section }> = ({ s }) => {
     const m = s.meta ?? {};
     return (
       <div className="bg-white rounded-[14px] px-8 py-10 border border-[#eef2f6]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-          <div>
-            <h2 className="text-2xl font-extrabold text-[#0f172a] mb-5">{s.heading}</h2>
-            {s.text && <p className="text-[#475569] text-sm leading-[1.9] mb-4">{s.text}</p>}
-            {s.body && <p className="text-[#475569] text-sm leading-[1.9]">{s.body}</p>}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start mb-10">
+          <div className="space-y-8">
+            <div>
+              <span className="inline-block px-4 py-1.5 bg-orange-50 text-primary rounded-full text-sm font-bold mb-4">Director's Vision</span>
+              <h2 className="text-2xl font-extrabold text-[#0f172a] mb-4">{m.directorVisionTitle || 'Empowering Businesses...'}</h2>
+              <p className="text-[#475569] text-xs leading-[1.9]">{m.directorVisionText || '"AMJSTAR is built on the foundation of education and empowerment..."'}</p>
+            </div>
+            <div>
+              <h3 className="text-2xl font-extrabold text-[#0f172a] mb-4">{s.heading || 'Our Story'}</h3>
+              {s.text && <p className="text-[#475569] text-xs leading-[1.9] mb-4">{s.text}</p>}
+              {s.body && <p className="text-[#475569] text-xs leading-[1.9]">{s.body}</p>}
+            </div>
           </div>
-          <div className="bg-[#fafafa] border border-[#eef2f6] rounded-[14px] p-7">
-            {m.quoteText && (
-              <p className="text-[#1e293b] text-sm font-medium leading-relaxed italic mb-6">"{m.quoteText}"</p>
-            )}
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-xs font-extrabold shrink-0">
-                {m.quoteInitials ?? 'AV'}
+          <div className="flex flex-col items-center lg:items-end">
+            <div className="w-full max-w-[260px] flex flex-col items-center">
+              <div className="relative w-full aspect-[4/5] rounded-3xl overflow-hidden bg-[#f1f5f9] border border-gray-200 mb-6">
+                {m.directorImage || s.url ? (
+                  <img src={m.directorImage || s.url} className="w-full h-full object-cover object-top" alt="Director" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[#94a3b8] text-xs">No image</div>
+                )}
               </div>
-              <div>
-                <p className="font-bold text-[#0f172a] text-sm">{m.quoteAuthor}</p>
-                <p className="text-xs text-[#94a3b8]">{m.quoteRole}</p>
-              </div>
+              <h3 className="text-xl font-display text-gray-900 m-0">{m.directorName || 'Mr. Kuldeep Redhu'}</h3>
+              <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-2">{m.directorRole || 'Director'}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 bg-[#f1f5f9] shrink-0">
+              {m.founderImage && <img src={m.founderImage} className="w-full h-full object-cover" alt="Founder" />}
+            </div>
+            <div>
+              <p className="text-[#334155] text-xs italic font-medium leading-relaxed mb-3">"{m.quoteText || 'We believe that every business deserves a global platform...'}"</p>
+              <h4 className="text-[#0f172a] font-bold text-xs m-0">{m.quoteAuthor || 'Mr. Manish Jangra'}</h4>
+              <p className="text-primary text-[10px] font-semibold mt-0.5">{m.quoteRole || 'Founder, AMJSTAR'}</p>
+            </div>
+          </div>
+          
+          <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 flex items-start gap-4">
+            <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-100 bg-[#f1f5f9] shrink-0">
+              {m.cfoImage && <img src={m.cfoImage} className="w-full h-full object-cover" alt="CFO" />}
+            </div>
+            <div>
+              <p className="text-[#334155] text-xs italic font-medium leading-relaxed mb-3">"{m.cfoQuoteText || 'Restructuring India\'s B2B ecosystem with a transparent, tech-driven supply chain...'}"</p>
+              <h4 className="text-[#0f172a] font-bold text-xs m-0">{m.cfoQuoteAuthor || 'Mrs. Umesh Jangra'}</h4>
+              <p className="text-primary text-[10px] font-semibold mt-0.5">{m.cfoQuoteRole || 'CFO & Director, AMJSTAR'}</p>
             </div>
           </div>
         </div>
@@ -178,29 +208,96 @@ const RenderSection: React.FC<{ s: Section }> = ({ s }) => {
 
 // ── Section edit form ─────────────────────────────────────────────────────────
 
+const ImageUploader: React.FC<{
+  label: string;
+  url?: string;
+  onUpload: (url: string) => void;
+  onAutoSave?: (url: string) => void;
+}> = ({ label, url, onUpload, onAutoSave }) => {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const uploadedUrl = await adminService.uploadImage(file);
+      onUpload(uploadedUrl);
+      if (onAutoSave) {
+        onAutoSave(uploadedUrl);
+      }
+      toast.success(`${label} uploaded and saved!`);
+    } catch (err: any) {
+      console.error('Upload failed:', err);
+      toast.error(err?.response?.data?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-xs font-bold text-[#0f172a] mb-2 uppercase tracking-wide">{label}</label>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      {url ? (
+        <div className="relative mb-2 group">
+          <img src={url} alt={label} className="w-full max-h-32 object-cover rounded-[8px] border border-[#e2e8f0]" />
+          <button
+            type="button"
+            onClick={() => {
+              onUpload('');
+              if (onAutoSave) onAutoSave('');
+            }}
+            className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 shadow-md transition-colors"
+            title="Remove image"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      ) : null}
+      <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+        className="flex items-center gap-2 px-3 py-2 rounded-[8px] border border-dashed border-[#0284c7] text-[#0284c7] text-xs font-semibold cursor-pointer hover:bg-white transition-colors disabled:opacity-50 w-full justify-center"
+      >
+        {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+        {uploading ? 'Uploading…' : url ? 'Replace Image' : 'Upload Image'}
+      </button>
+      <p className="text-[10px] text-[#94a3b8] mt-2 mb-1">Or paste URL:</p>
+      <input
+        className="w-full bg-[#f8fafc] border border-[#e2e8f0] rounded-[8px] px-3 py-2 text-sm outline-none focus:border-primary focus:bg-white transition-colors"
+        value={url ?? ''}
+        onChange={e => {
+          onUpload(e.target.value);
+        }}
+        placeholder="https://…"
+      />
+    </div>
+  );
+};
+
 const SectionEditForm: React.FC<{
   section: Section;
   onChange: (s: Section) => void;
   onDone: () => void;
-}> = ({ section, onChange, onDone }) => {
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  onSave?: (currentSection: Section) => Promise<void>;
+  saving?: boolean;
+}> = ({ section, onChange, onDone, onSave, saving }) => {
+  const sectionRef = React.useRef(section);
+  sectionRef.current = section;
 
-  const set = (key: keyof Section, value: unknown) => onChange({ ...section, [key]: value });
-  const setMeta = (key: string, value: string) =>
-    onChange({ ...section, meta: { ...(section.meta ?? {}), [key]: value } });
-
-  const handleImageUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const url = await adminService.uploadImage(file);
-      set('url', url);
-      toast.success('Image uploaded');
-    } catch {
-      toast.error('Upload failed');
-    } finally {
-      setUploading(false);
-    }
+  const set = (key: keyof Section, value: unknown) => {
+    const updated = { ...sectionRef.current, [key]: value };
+    sectionRef.current = updated;
+    onChange(updated);
+  };
+  const setMeta = (key: string, value: string) => {
+    const updated = {
+      ...sectionRef.current,
+      meta: { ...(sectionRef.current.meta ?? {}), [key]: value },
+    };
+    sectionRef.current = updated;
+    onChange(updated);
   };
 
   const inputCls = "w-full px-3 py-2 rounded-[8px] border border-[#e2e8f0] focus:border-[#0284c7] text-sm outline-none transition-colors bg-white";
@@ -211,29 +308,32 @@ const SectionEditForm: React.FC<{
     <div className="bg-[#f0f9ff] border border-[#bae6fd] rounded-[10px] p-4 flex flex-col gap-3 mt-3">
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-extrabold text-[#0284c7] uppercase tracking-wide">Editing: {section.type}</span>
-        <button onClick={onDone} className="flex items-center gap-1 text-xs font-bold text-[#0284c7] cursor-pointer bg-transparent border-none hover:text-[#0369a1]">
-          <Check size={13} /> Done
+        <button
+          type="button"
+          onClick={() => {
+            if (onSave) onSave(sectionRef.current);
+            onDone();
+          }}
+          className="flex items-center gap-1 text-xs font-bold text-[#0284c7] cursor-pointer bg-transparent border-none hover:text-[#0369a1]"
+        >
+          <Check size={13} /> Save & Done
         </button>
       </div>
 
       {/* ── about-hero ───────────────────────────────────────────────────── */}
       {section.type === 'about-hero' && (
         <>
-          <div>
-            <label className={labelCls}>Hero Image</label>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
-            {section.url && (
-              <img src={section.url} alt="" className="w-full max-h-28 object-cover rounded-[8px] mb-2" />
-            )}
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-              className="flex items-center gap-2 px-3 py-2 rounded-[8px] border border-dashed border-[#0284c7] text-[#0284c7] text-xs font-semibold cursor-pointer hover:bg-white transition-colors disabled:opacity-50 w-full justify-center"
-            >
-              {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-              {uploading ? 'Uploading…' : section.url ? 'Replace Image' : 'Upload Image'}
-            </button>
-            <p className="text-[10px] text-[#94a3b8] mt-2 mb-1">Or paste URL:</p>
-            <input className={inputCls} value={section.url ?? ''} onChange={e => set('url', e.target.value)} placeholder="https://…" />
+          <div className="mb-3">
+            <ImageUploader
+              label="Hero Image"
+              url={section.url}
+              onUpload={url => set('url', url)}
+              onAutoSave={url => {
+                const updated = { ...sectionRef.current, url };
+                set('url', url);
+                if (onSave) onSave(updated);
+              }}
+            />
           </div>
           <div><label className={labelCls}>Image Alt Text</label>
             <input className={inputCls} value={m.heroAlt ?? ''} onChange={e => setMeta('heroAlt', e.target.value)} placeholder="Describe the image" /></div>
@@ -259,24 +359,94 @@ const SectionEditForm: React.FC<{
       {/* ── about-story ──────────────────────────────────────────────────── */}
       {section.type === 'about-story' && (
         <>
-          <div><label className={labelCls}>Section Title</label>
-            <input className={inputCls} value={section.heading ?? ''} onChange={e => set('heading', e.target.value)} placeholder="Our Story" /></div>
-          <div><label className={labelCls}>Paragraph 1</label>
-            <textarea className={inputCls} rows={4} value={section.text ?? ''} onChange={e => set('text', e.target.value)} /></div>
-          <div><label className={labelCls}>Paragraph 2</label>
-            <textarea className={inputCls} rows={4} value={section.body ?? ''} onChange={e => set('body', e.target.value)} /></div>
-          <div className="border-t border-[#bae6fd] pt-3">
+          <div className="mb-4">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[#0284c7] mb-3">Director's Vision Section</p>
+            <div><label className={labelCls}>Heading</label>
+              <input className={inputCls} value={m.directorVisionTitle ?? ''} onChange={e => setMeta('directorVisionTitle', e.target.value)} placeholder="Empowering Businesses to Learn and Grow" /></div>
+            <div className="mt-2"><label className={labelCls}>Text</label>
+              <textarea className={inputCls} rows={3} value={m.directorVisionText ?? ''} onChange={e => setMeta('directorVisionText', e.target.value)} placeholder="AMJSTAR is built on..." /></div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div><label className={labelCls}>Director Name</label>
+                <input className={inputCls} value={m.directorName ?? ''} onChange={e => setMeta('directorName', e.target.value)} placeholder="Mr. Kuldeep Redhu" /></div>
+              <div><label className={labelCls}>Director Role</label>
+                <input className={inputCls} value={m.directorRole ?? ''} onChange={e => setMeta('directorRole', e.target.value)} placeholder="Director" /></div>
+            </div>
+          </div>
+          
+          <div className="border-t border-[#bae6fd] pt-4 mb-4">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[#0284c7] mb-3">Our Story Section</p>
+            <div><label className={labelCls}>Section Title</label>
+              <input className={inputCls} value={section.heading ?? ''} onChange={e => set('heading', e.target.value)} placeholder="Our Story" /></div>
+            <div className="mt-2"><label className={labelCls}>Paragraph 1</label>
+              <textarea className={inputCls} rows={3} value={section.text ?? ''} onChange={e => set('text', e.target.value)} /></div>
+            <div className="mt-2"><label className={labelCls}>Paragraph 2</label>
+              <textarea className={inputCls} rows={3} value={section.body ?? ''} onChange={e => set('body', e.target.value)} /></div>
+          </div>
+          
+          <div className="border-t border-[#bae6fd] pt-4">
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#0284c7] mb-3">Founder Quote Card</p>
             <div><label className={labelCls}>Quote Text</label>
-              <textarea className={inputCls} rows={3} value={m.quoteText ?? ''} onChange={e => setMeta('quoteText', e.target.value)} /></div>
-            <div className="grid grid-cols-3 gap-3 mt-3">
-              <div><label className={labelCls}>Initials</label>
-                <input className={inputCls} value={m.quoteInitials ?? ''} onChange={e => setMeta('quoteInitials', e.target.value)} placeholder="AV" /></div>
+              <textarea className={inputCls} rows={2} value={m.quoteText ?? ''} onChange={e => setMeta('quoteText', e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
               <div><label className={labelCls}>Author Name</label>
-                <input className={inputCls} value={m.quoteAuthor ?? ''} onChange={e => setMeta('quoteAuthor', e.target.value)} placeholder="Founder's Vision" /></div>
+                <input className={inputCls} value={m.quoteAuthor ?? ''} onChange={e => setMeta('quoteAuthor', e.target.value)} placeholder="Mr. Manish Jangra" /></div>
               <div><label className={labelCls}>Role</label>
-                <input className={inputCls} value={m.quoteRole ?? ''} onChange={e => setMeta('quoteRole', e.target.value)} placeholder="CEO, AMJSTAR" /></div>
+                <input className={inputCls} value={m.quoteRole ?? ''} onChange={e => setMeta('quoteRole', e.target.value)} placeholder="Founder, AMJSTAR" /></div>
             </div>
+          </div>
+          
+          <div className="border-t border-[#bae6fd] pt-4 mt-4">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[#0284c7] mb-3">CFO Quote Card</p>
+            <div><label className={labelCls}>Quote Text</label>
+              <textarea className={inputCls} rows={2} value={m.cfoQuoteText ?? ''} onChange={e => setMeta('cfoQuoteText', e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div><label className={labelCls}>Author Name</label>
+                <input className={inputCls} value={m.cfoQuoteAuthor ?? ''} onChange={e => setMeta('cfoQuoteAuthor', e.target.value)} placeholder="Mrs. Umesh Jangra" /></div>
+              <div><label className={labelCls}>Role</label>
+                <input className={inputCls} value={m.cfoQuoteRole ?? ''} onChange={e => setMeta('cfoQuoteRole', e.target.value)} placeholder="CFO & Director, AMJSTAR" /></div>
+            </div>
+          </div>
+          
+          <div className="border-t border-[#bae6fd] pt-4 mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <ImageUploader
+              label="Director Image"
+              url={m.directorImage}
+              onUpload={url => setMeta('directorImage', url)}
+              onAutoSave={url => {
+                const updated = {
+                  ...sectionRef.current,
+                  meta: { ...(sectionRef.current.meta ?? {}), directorImage: url },
+                };
+                setMeta('directorImage', url);
+                if (onSave) onSave(updated);
+              }}
+            />
+            <ImageUploader
+              label="Founder Image"
+              url={m.founderImage}
+              onUpload={url => setMeta('founderImage', url)}
+              onAutoSave={url => {
+                const updated = {
+                  ...sectionRef.current,
+                  meta: { ...(sectionRef.current.meta ?? {}), founderImage: url },
+                };
+                setMeta('founderImage', url);
+                if (onSave) onSave(updated);
+              }}
+            />
+            <ImageUploader
+              label="CFO Image"
+              url={m.cfoImage}
+              onUpload={url => setMeta('cfoImage', url)}
+              onAutoSave={url => {
+                const updated = {
+                  ...sectionRef.current,
+                  meta: { ...(sectionRef.current.meta ?? {}), cfoImage: url },
+                };
+                setMeta('cfoImage', url);
+                if (onSave) onSave(updated);
+              }}
+            />
           </div>
         </>
       )}
@@ -330,25 +500,43 @@ const SectionEditForm: React.FC<{
 
       {section.type === 'image' && (
         <>
-          <div>
-            <label className={labelCls}>Image</label>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }} />
-            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-              className="flex items-center gap-2 px-3 py-2 rounded-[8px] border border-dashed border-[#0284c7] text-[#0284c7] text-xs font-semibold cursor-pointer hover:bg-white transition-colors disabled:opacity-50 w-full justify-center"
-            >
-              {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-              {uploading ? 'Uploading…' : section.url ? 'Replace Image' : 'Upload Image'}
-            </button>
-            <p className="text-[10px] text-[#94a3b8] mt-2 mb-1">Or paste URL:</p>
-            <input className={inputCls} value={section.url ?? ''} onChange={e => set('url', e.target.value)} placeholder="https://…" />
-          </div>
+          <ImageUploader
+            label="Image"
+            url={section.url}
+            onUpload={url => set('url', url)}
+            onAutoSave={url => {
+              const updated = { ...sectionRef.current, url };
+              set('url', url);
+              if (onSave) onSave(updated);
+            }}
+          />
           <div><label className={labelCls}>Alt Text</label>
             <input className={inputCls} value={section.alt ?? ''} onChange={e => set('alt', e.target.value)} placeholder="Describe the image" /></div>
           <div><label className={labelCls}>Caption (optional)</label>
             <input className={inputCls} value={section.caption ?? ''} onChange={e => set('caption', e.target.value)} placeholder="Caption shown below image" /></div>
         </>
       )}
+
+      <div className="flex items-center justify-between pt-4 border-t border-[#bae6fd] mt-2">
+        <button
+          type="button"
+          onClick={onDone}
+          className="flex items-center gap-1 text-xs font-semibold text-[#64748b] hover:text-[#0f172a] cursor-pointer bg-white px-3 py-1.5 rounded-[7px] border border-[#cbd5e1] hover:bg-[#f8fafc] transition-colors"
+        >
+          <X size={12} /> Close
+        </button>
+        {onSave && (
+          <button
+            type="button"
+            onClick={() => onSave(sectionRef.current)}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-[8px] cursor-pointer shadow-sm disabled:opacity-50 transition-colors"
+          >
+            {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+            {saving ? 'Publishing…' : 'Save & Publish Live'}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -361,7 +549,9 @@ const EditableSection: React.FC<{
   onToggleEdit: () => void;
   onUpdate: (s: Section) => void;
   onDelete: () => void;
-}> = ({ s, isEditing, onToggleEdit, onUpdate, onDelete }) => (
+  onSave?: (currentSection: Section) => Promise<void>;
+  saving?: boolean;
+}> = ({ s, isEditing, onToggleEdit, onUpdate, onDelete, onSave, saving }) => (
   <div className={`relative group rounded-[10px] transition-all ${isEditing ? 'ring-2 ring-[#0284c7] ring-offset-2' : ''}`}>
     <div className="px-1 py-1">
       <RenderSection s={s} />
@@ -395,7 +585,13 @@ const EditableSection: React.FC<{
 
     {isEditing && (
       <div className="px-1">
-        <SectionEditForm section={s} onChange={onUpdate} onDone={onToggleEdit} />
+        <SectionEditForm
+          section={s}
+          onChange={onUpdate}
+          onDone={onToggleEdit}
+          onSave={onSave}
+          saving={saving}
+        />
       </div>
     )}
   </div>
@@ -413,6 +609,8 @@ const AdminPages: React.FC = () => {
   const [addingType, setAddingType] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
+  const isInitialLoadedRef = useRef(false);
+
   const { data: pageData, isLoading } = useQuery<PageData>({
     queryKey: ['admin', 'page', editing],
     queryFn: async () => {
@@ -420,12 +618,19 @@ const AdminPages: React.FC = () => {
       return res.data.page;
     },
     enabled: !!editing,
+    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,
   });
 
   useEffect(() => {
-    if (pageData) {
-      setSections(pageData.sections);
-      setPageTitle(pageData.title);
+    isInitialLoadedRef.current = false;
+  }, [editing]);
+
+  useEffect(() => {
+    if (pageData && !isInitialLoadedRef.current) {
+      setSections(pageData.sections || []);
+      setPageTitle(pageData.title || '');
+      isInitialLoadedRef.current = true;
     }
   }, [pageData]);
 
@@ -465,17 +670,29 @@ const AdminPages: React.FC = () => {
     setAddingType(false);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (overrideSection?: Section) => {
     if (!editing) return;
     setSaving(true);
     try {
-      await api.put(`/pages/${editing}`, { title: pageTitle, sections });
-      qc.invalidateQueries({ queryKey: ['page', editing] });
+      let payloadSections = sections;
+      if (overrideSection && overrideSection.id) {
+        payloadSections = sections.map(s => s.id === overrideSection.id ? overrideSection : s);
+        setSections(payloadSections);
+      }
+      const res = await api.put(`/pages/${editing}`, { title: pageTitle, sections: payloadSections });
+      if (res.data?.page?.sections) {
+        setSections(res.data.page.sections);
+      }
+      if (res.data?.page?.title) {
+        setPageTitle(res.data.page.title);
+      }
+      await qc.invalidateQueries({ queryKey: ['admin', 'page', editing] });
+      await qc.invalidateQueries({ queryKey: ['page', editing] });
       setShowPublishConfirm(false);
-      handleBack();
       toast.success('Changes published live!');
-    } catch {
-      toast.error('Failed to save page');
+    } catch (err: any) {
+      console.error('Failed to save page:', err);
+      toast.error(err?.response?.data?.message || 'Failed to save page');
     } finally {
       setSaving(false);
     }
@@ -559,10 +776,12 @@ const AdminPages: React.FC = () => {
             <Eye size={12} /> View Live
           </a>
           <button
-            onClick={() => setShowPublishConfirm(true)}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#059669] text-white text-xs font-bold rounded-[7px] border-none cursor-pointer hover:bg-[#047857] transition-colors"
+            onClick={() => handleSave()}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold rounded-[7px] border-none cursor-pointer disabled:opacity-50 transition-colors shadow-sm"
           >
-            <Check size={13} /> Save Page
+            {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+            {saving ? 'Publishing…' : 'Save Page'}
           </button>
         </div>
       </div>
@@ -586,7 +805,7 @@ const AdminPages: React.FC = () => {
                 Cancel
               </button>
               <button
-                onClick={handleSave}
+                onClick={() => handleSave()}
                 disabled={saving}
                 className="flex-1 py-2.5 rounded-[10px] bg-[#059669] text-white text-sm font-bold cursor-pointer hover:bg-[#047857] disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
               >
@@ -618,6 +837,8 @@ const AdminPages: React.FC = () => {
                 onToggleEdit={() => toggleEdit(s.id)}
                 onUpdate={updateSection}
                 onDelete={() => deleteSection(s.id)}
+                onSave={handleSave}
+                saving={saving}
               />
             ))}
 

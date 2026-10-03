@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -44,15 +44,36 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ viewAllPath = '/not
     if (fetched) setLocalList(fetched);
   }, [fetched]);
 
-  // Listen for real-time socket events
+  // Listen for real-time socket events — batch rapid arrivals into a single state update
+  const bufferRef = useRef<INotification[]>([]);
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushBuffer = useCallback(() => {
+    flushTimerRef.current = null;
+    if (bufferRef.current.length === 0) return;
+    const batch = bufferRef.current;
+    bufferRef.current = [];
+    setLocalList((prev) => {
+      const existingIds = new Set(prev.map((n) => n._id));
+      const unique = batch.filter((n) => !existingIds.has(n._id));
+      return unique.length ? [...unique, ...prev] : prev;
+    });
+  }, []);
+
   useEffect(() => {
     if (!socket) return;
     const handler = (notification: INotification) => {
-      setLocalList((prev) => [notification, ...prev]);
+      bufferRef.current.push(notification);
+      if (!flushTimerRef.current) {
+        flushTimerRef.current = setTimeout(flushBuffer, 300);
+      }
     };
     socket.on('bell_notification', handler);
-    return () => { socket.off('bell_notification', handler); };
-  }, [socket]);
+    return () => {
+      socket.off('bell_notification', handler);
+      if (flushTimerRef.current) { clearTimeout(flushTimerRef.current); flushTimerRef.current = null; }
+    };
+  }, [socket, flushBuffer]);
 
   // Close on outside click
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
@@ -188,15 +188,23 @@ const SupplierDashboard: React.FC = () => {
     }).catch(() => {});
   }, []);
 
-  // Real-time wallet_low notification — persists until the supplier explicitly dismisses it
+  // Real-time wallet_low notification — debounced so rapid duplicates don't flicker the modal
+  const walletAlertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!socket) return;
     const handler = (notif: any) => {
       if (notif.type !== 'wallet_low') return;
-      setWalletAlertNotif({ _id: notif._id, body: notif.body });
+      if (walletAlertTimer.current) clearTimeout(walletAlertTimer.current);
+      walletAlertTimer.current = setTimeout(() => {
+        setWalletAlertNotif({ _id: notif._id, body: notif.body });
+        walletAlertTimer.current = null;
+      }, 500);
     };
     socket.on('bell_notification', handler);
-    return () => { socket.off('bell_notification', handler); };
+    return () => {
+      socket.off('bell_notification', handler);
+      if (walletAlertTimer.current) { clearTimeout(walletAlertTimer.current); walletAlertTimer.current = null; }
+    };
   }, [socket]);
 
   // Refresh the Orders sidebar badge instantly on any order status change
