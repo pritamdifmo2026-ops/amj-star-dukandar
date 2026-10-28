@@ -7,6 +7,7 @@ import Button from '@/shared/components/ui/Button';
 import { ROUTES } from '@/shared/constants/routes';
 import { useRegister } from '../hooks/useRegister';
 import { authApi } from '../services/auth.api';
+import type { RegisterPayload } from '../types';
 import api from '@/api/client';
 import toast from 'react-hot-toast';
 
@@ -142,14 +143,14 @@ const Register: React.FC = () => {
   };
 
   const handleSendOtp = async (type: 'email' | 'phone') => {
-    const identifier = type === 'email' ? form.email : form.phone;
+    const identifier = (type === 'email' ? form.email : form.phone).trim();
 
-    if (type === 'email' && !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email)) {
+    if (type === 'email' && !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(identifier)) {
       setErrors(prev => ({ ...prev, email: 'Please enter a valid email to send OTP' }));
       return;
     }
 
-    if (type === 'phone' && !/^\d{10}$/.test(form.phone)) {
+    if (type === 'phone' && !/^\d{10}$/.test(identifier)) {
       setErrors(prev => ({ ...prev, phone: 'Please enter a valid 10-digit phone to send OTP' }));
       return;
     }
@@ -174,11 +175,45 @@ const Register: React.FC = () => {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!form.name.trim()) newErrors.name = 'Full name is required';
-    if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email)) newErrors.email = 'Please enter a valid email address';
-    if (!/^\d{10}$/.test(form.phone)) newErrors.phone = 'Valid 10-digit phone number is required';
+
+    const isBuyer = form.role === 'buyer';
+    const hasEmail = Boolean(form.email.trim());
+    const hasPhone = Boolean(form.phone.trim());
+
+    if (isBuyer) {
+      if (!hasEmail && !hasPhone) {
+        newErrors.email = 'Please provide either an email or mobile number';
+        newErrors.phone = 'Please provide either an email or mobile number';
+      }
+      if (hasEmail) {
+        if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email.trim())) {
+          newErrors.email = 'Please enter a valid email address';
+        } else if (!emailOtpVerified) {
+          newErrors.emailOtp = 'Please verify your email OTP';
+        }
+      }
+      if (hasPhone) {
+        if (!/^\d{10}$/.test(form.phone.trim())) {
+          newErrors.phone = 'Valid 10-digit phone number is required';
+        } else if (!phoneOtpVerified) {
+          newErrors.phoneOtp = 'Please verify your phone OTP';
+        }
+      }
+    } else {
+      // Supplier & Reseller: BOTH are strictly required
+      if (!hasEmail || !/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email.trim())) {
+        newErrors.email = 'Please enter a valid email address';
+      } else if (!emailOtpVerified) {
+        newErrors.emailOtp = 'Please verify your email OTP';
+      }
+      if (!hasPhone || !/^\d{10}$/.test(form.phone.trim())) {
+        newErrors.phone = 'Valid 10-digit phone number is required';
+      } else if (!phoneOtpVerified) {
+        newErrors.phoneOtp = 'Please verify your phone OTP';
+      }
+    }
+
     if (form.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-    if (!emailOtpVerified) newErrors.emailOtp = 'Please verify your email OTP';
-    if (!phoneOtpVerified) newErrors.phoneOtp = 'Please verify your phone OTP';
     if (referralCode && !/^[A-Z0-9]{6}$/.test(referralCode)) {
       newErrors.referralCode = 'Referral code must be exactly 6 alphanumeric characters';
     }
@@ -200,6 +235,17 @@ const Register: React.FC = () => {
     setForm(prev => ({ ...prev, [field]: val }));
     if (errors[field]) setErrors(prev => { const u = { ...prev }; delete u[field]; return u; });
 
+    if (field === 'role') {
+      setErrors(prev => {
+        const u = { ...prev };
+        delete u.email;
+        delete u.phone;
+        delete u.emailOtp;
+        delete u.phoneOtp;
+        return u;
+      });
+    }
+
     if (field === 'emailOtp' && val.length === 6 && !emailOtpVerified) {
       verifyOtpInline('email', val);
     }
@@ -211,12 +257,27 @@ const Register: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
-      register({
-        ...form,
+      const emailVal = form.email.trim();
+      const phoneVal = form.phone.trim();
+      const payload: RegisterPayload = {
+        name: form.name.trim(),
+        password: form.password,
+        role: form.role,
+        ...(emailVal ? { email: emailVal, emailOtp: form.emailOtp } : {}),
+        ...(phoneVal ? { phone: phoneVal, phoneOtp: form.phoneOtp } : {}),
         ...(referralCode ? { referralCode: referralCode.trim().toUpperCase() } : {}),
-      });
+      };
+      register(payload);
     }
   };
+
+  const isBuyer = form.role === 'buyer';
+  const hasEmail = Boolean(form.email.trim());
+  const hasPhone = Boolean(form.phone.trim());
+
+  const isSubmitDisabled = isBuyer
+    ? (!hasEmail && !hasPhone) || (hasEmail && !emailOtpSent) || (hasPhone && !phoneOtpSent)
+    : (!emailOtpSent || !phoneOtpSent);
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2.5 w-full animate-in fade-in slide-in-from-right-4 duration-500">
@@ -225,12 +286,13 @@ const Register: React.FC = () => {
         <p className="text-[13px] text-muted mt-0.5 m-0">Join AMJSTAR as a buyer, reseller or supplier</p>
       </div>
 
+
       <div className="flex flex-col gap-2">
         <Input label="Full Name" type="text" name="name" autoComplete="name" placeholder="Your full name" value={form.name} onChange={set('name')} leftIcon={<User size={15} />} fullWidth required error={errors.name} />
 
         <div className="flex flex-col gap-1.5">
           <Input
-            label="Email Address"
+            label={form.role === 'buyer' ? "Email Address (Optional if phone provided)" : "Email Address"}
             type="email"
             name="email"
             autoComplete="email"
@@ -239,7 +301,7 @@ const Register: React.FC = () => {
             onChange={set('email')}
             leftIcon={<Mail size={15} />}
             fullWidth
-            required
+            required={form.role !== 'buyer'}
             error={errors.email}
             disabled={emailOtpSent}
             rightIcon={
@@ -247,7 +309,7 @@ const Register: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleSendOtp('email')}
-                  disabled={sendingEmailOtp}
+                  disabled={sendingEmailOtp || !form.email.trim()}
                   className="text-primary font-semibold text-xs whitespace-nowrap bg-transparent border-none cursor-pointer pr-1 hover:underline disabled:opacity-50"
                 >
                   {sendingEmailOtp ? 'Sending...' : 'Send OTP'}
@@ -257,16 +319,25 @@ const Register: React.FC = () => {
           />
           {emailOtpSent && (
             <div className="relative">
-              <Input placeholder="Enter 6-digit Email OTP" value={form.emailOtp} onChange={set('emailOtp')} fullWidth required error={errors.emailOtp} maxLength={6} disabled={emailOtpVerified || verifyingEmailOtp} />
+              <Input
+                placeholder="Enter 6-digit Email OTP"
+                value={form.emailOtp}
+                onChange={set('emailOtp')}
+                fullWidth
+                required={Boolean(form.email.trim())}
+                error={errors.emailOtp}
+                maxLength={6}
+                disabled={emailOtpVerified || verifyingEmailOtp}
+              />
               {verifyingEmailOtp && <span className="absolute right-3 top-[9px] w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>}
-              {emailOtpVerified && <span className="absolute right-3 top-[9px] text-green-600 font-bold text-sm">✅ Verified</span>}
+              {emailOtpVerified && <span className="absolute right-3 top-[9px] text-green-600 font-bold text-sm">Verified</span>}
             </div>
           )}
         </div>
 
         <div className="flex flex-col gap-1.5">
           <Input
-            label="Phone Number"
+            label={form.role === 'buyer' ? "Phone Number (Optional if email provided)" : "Phone Number"}
             type="tel"
             name="tel"
             autoComplete="tel"
@@ -275,7 +346,7 @@ const Register: React.FC = () => {
             onChange={set('phone')}
             leftIcon={<Phone size={15} />}
             fullWidth
-            required
+            required={form.role !== 'buyer'}
             error={errors.phone}
             maxLength={10}
             disabled={phoneOtpSent}
@@ -284,7 +355,7 @@ const Register: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleSendOtp('phone')}
-                  disabled={sendingPhoneOtp}
+                  disabled={sendingPhoneOtp || !form.phone.trim()}
                   className="text-primary font-semibold text-xs whitespace-nowrap bg-transparent border-none cursor-pointer pr-1 hover:underline disabled:opacity-50"
                 >
                   {sendingPhoneOtp ? 'Sending...' : 'Send OTP'}
@@ -294,9 +365,18 @@ const Register: React.FC = () => {
           />
           {phoneOtpSent && (
             <div className="relative">
-              <Input placeholder="Enter 6-digit Phone OTP" value={form.phoneOtp} onChange={set('phoneOtp')} fullWidth required error={errors.phoneOtp} maxLength={6} disabled={phoneOtpVerified || verifyingPhoneOtp} />
+              <Input
+                placeholder="Enter 6-digit Phone OTP"
+                value={form.phoneOtp}
+                onChange={set('phoneOtp')}
+                fullWidth
+                required={Boolean(form.phone.trim())}
+                error={errors.phoneOtp}
+                maxLength={6}
+                disabled={phoneOtpVerified || verifyingPhoneOtp}
+              />
               {verifyingPhoneOtp && <span className="absolute right-3 top-[9px] w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>}
-              {phoneOtpVerified && <span className="absolute right-3 top-[9px] text-green-600 font-bold text-sm">✅ Verified</span>}
+              {phoneOtpVerified && <span className="absolute right-3 top-[9px] text-green-600 font-bold text-sm">Verified</span>}
             </div>
           )}
         </div>
@@ -430,7 +510,7 @@ const Register: React.FC = () => {
       </div>
 
       <div className="mt-0.5">
-        <Button type="submit" fullWidth loading={isPending} disabled={!emailOtpSent || !phoneOtpSent}>
+        <Button type="submit" fullWidth loading={isPending} disabled={isSubmitDisabled}>
           Create Account
         </Button>
       </div>
@@ -440,7 +520,7 @@ const Register: React.FC = () => {
           Already have an account?{' '}
           <button
             type="button"
-            onClick={() => navigate(`${ROUTES.LOGIN}?mode=${form.role === 'supplier' ? 'seller' : form.role}`)}
+            onClick={() => navigate(`${ROUTES.LOGIN}?mode=${form.role === 'supplier' ? 'seller' : form.role}${searchParams.get('redirect') ? `&redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`)}
             className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0"
           >
             Sign in

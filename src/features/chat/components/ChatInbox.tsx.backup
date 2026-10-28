@@ -128,7 +128,7 @@ const QuotePreviewCard = ({
 const BUYER_QR = [
   { label: '📦 Order status?', text: 'Hi, could you please share the current status of my order?' },
   { label: '⏳ No update till date', text: "I haven't received any update on my order." },
-  { label: '✅ Order received', text: 'I have received my order. Thank you!' },
+  { label: 'Order received', text: 'I have received my order. Thank you!' },
   { label: '❓ Have a question', text: 'I have a question regarding my order. Could you please assist?' },
 ];
 const SUPPLIER_QR = [

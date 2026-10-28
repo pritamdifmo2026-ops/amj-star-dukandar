@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShieldCheck, Sparkles } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { addToCartAsync } from '@/features/buyer/store/cart.slice';
 import { toggleWishlistItem } from '@/features/buyer/store/wishlist.slice';
@@ -46,13 +47,13 @@ const ProductCard: React.FC<Props> = ({ product, variant = 'default', showAddToC
     if (isOutOfStock) return;
     if (isNonBuyer) { setShowNonBuyerModal(true); return; }
     if (isInCart) { navigate(ROUTES.CART); return; }
-    if (!user) { navigate(`${ROUTES.LOGIN}`); return; }
     dispatch(addToCartAsync({
       productId: currentProductId, name: product.name, price: product.price,
       quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: product.imageUrl, moq: product.minOrderQty,
       stock: product.stock,
       gstRate: product.gstRate, gstIncluded: product.gstIncluded,
     }));
+    toast.success('Added to cart!');
   };
 
   return (

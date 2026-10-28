@@ -29,6 +29,8 @@ import VerifiedManufacturers from '@/features/landing/pages/VerifiedManufacturer
 import HelpBuyers from '@/features/landing/pages/HelpBuyers';
 import HelpSuppliers from '@/features/landing/pages/HelpSuppliers';
 import HelpResellers from '@/features/landing/pages/HelpResellers';
+import Cart from '@/features/buyer/pages/Cart';
+import Checkout from '@/features/order/pages/Checkout';
 
 export const publicRoutes: RouteObject[] = [
   {
@@ -142,11 +144,11 @@ export const publicRoutes: RouteObject[] = [
   },
   {
     path: ROUTES.CART,
-    element: <Navigate to="/profile?tab=cart" replace />,
+    element: <Cart />,
   },
   {
     path: ROUTES.CHECKOUT,
-    element: <Navigate to="/profile?tab=checkout" replace />,
+    element: <Checkout />,
   },
   {
     path: ROUTES.PAYMENT,

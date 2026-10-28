@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { Trash2, Plus, Minus, ShoppingBag, ShoppingCart, ArrowRight, Bookmark, MapPin, Truck, AlertTriangle, Package } from 'lucide-react';
+import toast from 'react-hot-toast';
+import Navbar from '@/features/landing/components/Navbar';
+import Footer from '@/features/landing/components/Footer';
 import {
   removeFromCartAsync,
   updateQuantityAsync,
@@ -13,30 +16,48 @@ import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
 import { pincodeToState, normaliseState } from '@/shared/utils/pincodeToState';
 import { addressApi } from '@/features/buyer/services/address.api';
 
+const CART_PINCODE_KEY = 'amj_cart_pincode';
+
 export const CartContent: React.FC = () => {
   const cartItems = useAppSelector(state => state.cart.items);
   const user = useAppSelector(state => state.auth.user) as any;
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const [deliveryPincode, setDeliveryPincode] = useState('');
+  const [deliveryPincode, setDeliveryPincode] = useState(() => {
+    try {
+      return localStorage.getItem(CART_PINCODE_KEY) || '';
+    } catch {
+      return '';
+    }
+  });
   const buyerState = deliveryPincode.length === 6 ? pincodeToState(deliveryPincode) : null;
 
-  React.useEffect(() => {
-    if (user) dispatch(fetchCart());
+  useEffect(() => {
+    dispatch(fetchCart());
   }, [dispatch, user]);
 
-  // Auto-fill delivery pincode from primary saved address (or profile address)
-  React.useEffect(() => {
+  const handlePincodeChange = (value: string) => {
+    const cleaned = value.replace(/\D/g, '').slice(0, 6);
+    setDeliveryPincode(cleaned);
+    try {
+      localStorage.setItem(CART_PINCODE_KEY, cleaned);
+    } catch (e) {
+      console.warn('Failed to save pincode:', e);
+    }
+  };
+
+  // Auto-fill delivery pincode from primary saved address if not already set
+  useEffect(() => {
     if (!user) return;
     addressApi.getAddresses().then(data => {
       const primary = data.find((a: any) => a.isDefault) || data[0];
-      if (primary?.pincode) {
-        setDeliveryPincode(primary.pincode);
-      } else if (user?.address?.pincode) {
-        setDeliveryPincode(user.address.pincode);
+      if (primary?.pincode && !deliveryPincode) {
+        handlePincodeChange(primary.pincode);
+      } else if (user?.address?.pincode && !deliveryPincode) {
+        handlePincodeChange(user.address.pincode);
       }
     }).catch(() => {
-      if (user?.address?.pincode) setDeliveryPincode(user.address.pincode);
+      if (user?.address?.pincode && !deliveryPincode) handlePincodeChange(user.address.pincode);
     });
   }, [user]);
 
@@ -134,8 +155,12 @@ export const CartContent: React.FC = () => {
 
   const handleCheckout = () => {
     if (hasStockIssues || isMultiSupplier) return;
-    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/profile?tab=cart`); return; }
-    navigate('/profile?tab=checkout');
+    if (!user) {
+      toast('Please log in or create an account to proceed to checkout', { icon: '🔐' });
+      navigate(`${ROUTES.LOGIN}?redirect=${encodeURIComponent(ROUTES.CART)}`);
+      return;
+    }
+    navigate(ROUTES.CHECKOUT);
   };
 
 
@@ -169,13 +194,12 @@ export const CartContent: React.FC = () => {
           return (
             <div
               key={item.productId}
-              className={`bg-white border rounded-[14px] p-4 flex flex-col gap-3 transition-colors ${
-                isItemOutOfStock
+              className={`bg-white border rounded-[14px] p-4 flex flex-col gap-3 transition-colors ${isItemOutOfStock
                   ? 'border-red-300 bg-red-50/20'
                   : isItemInsufficient
-                  ? 'border-amber-300 bg-amber-50/20'
-                  : 'border-[#eef2f6]'
-              }`}
+                    ? 'border-amber-300 bg-amber-50/20'
+                    : 'border-[#eef2f6]'
+                }`}
             >
               <div className="flex gap-4">
                 <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)} className="shrink-0 relative block w-20 h-20 bg-[#f8fafc] border border-[#f1f5f9] rounded-[10px] overflow-hidden flex items-center justify-center">
@@ -301,7 +325,7 @@ export const CartContent: React.FC = () => {
                 maxLength={6}
                 placeholder="Enter 6-digit pincode"
                 value={deliveryPincode}
-                onChange={e => setDeliveryPincode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={e => handlePincodeChange(e.target.value)}
                 className="flex-1 border-none outline-none text-xs text-[#0f172a] bg-transparent placeholder:text-[#cbd5e1]"
               />
             </div>
@@ -415,16 +439,26 @@ export const CartContent: React.FC = () => {
 };
 
 const Cart: React.FC = () => (
-  <div className="min-h-screen bg-[#f8fafc]">
-    <div className="bg-white border-b border-[#f1f5f9]">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-8 py-5 flex items-center gap-3">
-        <ShoppingCart size={22} className="text-primary" />
-        <h1 className="text-lg font-extrabold text-[#0f172a] m-0">My Cart</h1>
+  <div className="min-h-screen flex flex-col bg-[#f8fafc]">
+    <Navbar />
+    <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-8 py-8">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <ShoppingCart size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-extrabold text-[#0f172a] m-0">Shopping Cart</h1>
+            <p className="text-xs text-[#64748b] m-0 mt-0.5">Review items, verify GST and delivery timeline</p>
+          </div>
+        </div>
+        <Link to="/" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+          Continue Shopping
+        </Link>
       </div>
-    </div>
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-8 py-8">
       <CartContent />
-    </div>
+    </main>
+    <Footer />
   </div>
 );
 

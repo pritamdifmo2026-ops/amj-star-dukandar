@@ -235,8 +235,28 @@ const CategorySection: React.FC<{
                   navigate(ROUTES.CART);
                   return;
                 }
-                if (!user) {
-                  navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`);
+                dispatch(addToCartAsync({
+                  productId: currentProductId,
+                  name: product.name,
+                  price: product.price,
+                  quantity: product.minOrderQty || 1,
+                  unit: product.unit || 'pcs',
+                  supplierId: product.supplierId,
+                  imageUrl: product.images?.[0] || product.imageUrl,
+                  moq: product.minOrderQty || 1,
+                  stock: product.stock,
+                  gstRate: product.gstRate,
+                  gstIncluded: product.gstIncluded,
+                }));
+                toast.success('Added to cart!');
+              };
+
+              const handleBuyNow = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (isOutOfStock) return;
+                if (isNonBuyer) {
+                  alert('This feature is for buyers only');
                   return;
                 }
                 dispatch(addToCartAsync({
@@ -252,35 +272,6 @@ const CategorySection: React.FC<{
                   gstRate: product.gstRate,
                   gstIncluded: product.gstIncluded,
                 }));
-              };
-
-              const handleBuyNow = (e: React.MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (isOutOfStock) return;
-                if (isNonBuyer) {
-                  alert('This feature is for buyers only');
-                  return;
-                }
-                if (!user) {
-                  navigate(`${ROUTES.LOGIN}?redirect=${window.location.pathname}`);
-                  return;
-                }
-                if (!isInCart) {
-                  dispatch(addToCartAsync({
-                    productId: currentProductId,
-                    name: product.name,
-                    price: product.price,
-                    quantity: product.minOrderQty || 1,
-                    unit: product.unit || 'pcs',
-                    supplierId: product.supplierId,
-                    imageUrl: product.images?.[0] || product.imageUrl,
-                    moq: product.minOrderQty || 1,
-                    stock: product.stock,
-                    gstRate: product.gstRate,
-                    gstIncluded: product.gstIncluded,
-                  }));
-                }
                 navigate(ROUTES.CART);
               };
 

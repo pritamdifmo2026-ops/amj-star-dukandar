@@ -16,12 +16,12 @@ export function attachInterceptors(client: AxiosInstance): void {
   // Response: global error handling and log
   client.interceptors.response.use(
     (response) => {
-      console.log(`✅ [API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
       return response;
     },
     (error) => {
       console.error(`❌ [API Response Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}`, error.response?.data || error.message);
-      
+
       // Redirect to the appropriate login page on 401, avoiding infinite loops
       if (error.response?.status === 401) {
         const pathname = window.location.pathname;
@@ -30,7 +30,8 @@ export function attachInterceptors(client: AxiosInstance): void {
           ? pathname.includes('/admin/login')
           : pathname.includes('/login');
         if (!alreadyOnLogin) {
-          window.location.href = isAdminPath ? '/admin/login' : '/login';
+          const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+          window.location.href = isAdminPath ? '/admin/login' : `/login?redirect=${redirect}`;
         }
       }
       return Promise.reject(error);

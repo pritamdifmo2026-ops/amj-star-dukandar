@@ -26,12 +26,12 @@ export interface LoginPayload {
 
 export interface RegisterPayload {
   name: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   password: string;
   role: 'buyer' | 'reseller' | 'supplier';
-  emailOtp: string;
-  phoneOtp: string;
+  emailOtp?: string;
+  phoneOtp?: string;
   referralCode?: string;
 }
 

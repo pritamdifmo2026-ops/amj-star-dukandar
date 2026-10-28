@@ -20,6 +20,10 @@ import { removeWhiteBackground } from '@/shared/utils/removeBackground';
 import { calculateGST, priceWithoutGST } from '@/shared/utils/calculateGST';
 import { pincodeToState, normaliseState, getShippingZone } from '@/shared/utils/pincodeToState';
 import Modal from '@/shared/components/ui/Modal';
+import { ROUTES } from '@/shared/constants/routes';
+import { indiaStates, stateCityMap } from '@/utils/indiaAddressData';
+import Navbar from '@/features/landing/components/Navbar';
+import Footer from '@/features/landing/components/Footer';
 
 interface CheckoutItem {
   productId: string;
@@ -55,6 +59,7 @@ const DELIVERY_TIMELINE_OPTIONS = [
 
 export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, onBack, onOrderPlaced }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector(state => state.cart.items);
   const user = useAppSelector(state => state.auth.user) as any;
@@ -63,6 +68,12 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
     return buyNowItem ? [buyNowItem] : (cartItems as CheckoutItem[]);
   }, [buyNowItem, cartItems]);
   const isBuyNow = !!buyNowItem;
+
+  useEffect(() => {
+    if (!user) {
+      navigate(`${ROUTES.LOGIN}?redirect=${encodeURIComponent(ROUTES.CART)}`, { replace: true });
+    }
+  }, [user, navigate]);
 
   // Stock issue validation on checkout
   const checkoutStockIssues = useMemo(() => {
@@ -114,6 +125,24 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
   const [addresses, setAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    fullName: user?.name || '',
+    phone: user?.phone || '',
+    pincode: localStorage.getItem('amj_cart_pincode') || '',
+    state: '',
+    city: '',
+    houseNo: '',
+    area: '',
+    isDefault: true,
+  });
+  const [addressErrors, setAddressErrors] = useState<Record<string, string>>({});
+  const [savingAddress, setSavingAddress] = useState(false);
+
+  const supplierIds = useMemo(() => {
+    return Array.from(new Set(items.map(it => it.supplierId).filter(Boolean)));
+  }, [items]);
+
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [placedOrders, setPlacedOrders] = useState<any[] | null>(null);
@@ -181,28 +210,201 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   }, [socket, placedOrders]);
 
 
-  // Fetch saved addresses; fall back to profile address if none saved yet
+  // Fetch saved addresses; load guest address if unauthenticated or merge if just logged in
   useEffect(() => {
-    addressApi.getAddresses().then(data => {
-      let all: any[] = data;
-      if (all.length === 0 && user?.address?.city) {
-        all = [{
-          _id: 'profile-address',
-          fullName: user.name || '',
-          phone: user.phone || '',
-          pincode: user.address.pincode || '',
-          state: user.address.state || '',
-          city: user.address.city || '',
-          houseNo: user.address.fullAddress || '',
-          area: '',
-          isDefault: true,
-        }];
+    const loadAddresses = async () => {
+      let all: any[] = [];
+      if (user) {
+        try {
+          const data = await addressApi.getAddresses();
+          all = Array.isArray(data) ? data : [];
+        } catch { }
+        if (all.length === 0 && user?.address?.city) {
+          all = [{
+            _id: 'profile-address',
+            fullName: user.name || '',
+            phone: user.phone || '',
+            pincode: user.address.pincode || '',
+            state: user.address.state || '',
+            city: user.address.city || '',
+            houseNo: user.address.fullAddress || '',
+            area: '',
+            isDefault: true,
+          }];
+        }
       }
+
+      // Check for saved guest address in localStorage
+      try {
+        const guestSaved = localStorage.getItem('amj_guest_address');
+        if (guestSaved) {
+          const parsed = JSON.parse(guestSaved);
+          if (parsed && parsed.pincode) {
+            const alreadyExists = all.some(a => a.pincode === parsed.pincode && a.houseNo === parsed.houseNo);
+            if (!alreadyExists) {
+              all = [parsed, ...all];
+              if (user) {
+                // If user is now logged in, quietly persist to backend
+                addressApi.addAddress({
+                  fullName: parsed.fullName,
+                  phone: parsed.phone,
+                  pincode: parsed.pincode,
+                  state: parsed.state,
+                  city: parsed.city,
+                  houseNo: parsed.houseNo,
+                  area: parsed.area,
+                  isDefault: all.length === 1,
+                }).catch(() => {});
+              }
+            }
+          }
+        }
+      } catch { }
+
       setAddresses(all);
       const def = all.find((a: any) => a.isDefault) || all[0];
       if (def) setSelectedAddressId(def._id);
-    }).catch(() => { });
+    };
+
+    loadAddresses();
+  }, [user]);
+
+  // Restore guest signature if exists
+  useEffect(() => {
+    if (!tempSignature) {
+      const savedGuestSig = localStorage.getItem('amj_guest_signature');
+      if (savedGuestSig) {
+        setTempSignature(savedGuestSig);
+      }
+    }
   }, []);
+
+  // Restore checkout draft and auto-trigger pending actions on login
+  useEffect(() => {
+    const draftStr = localStorage.getItem('amj_checkout_draft');
+    if (!draftStr) return;
+
+    try {
+      const draft = JSON.parse(draftStr);
+      if (!draft) return;
+
+      if (draft.transportation) setSelectedTransportation(draft.transportation);
+      if (draft.paymentTerm) setSelectedPaymentTerm(draft.paymentTerm);
+      if (draft.deliveryTimeline) setSelectedDeliveryTimeline(draft.deliveryTimeline);
+
+      if (draft.signature && !tempSignature) {
+        setTempSignature(draft.signature);
+        if (user && !user.savedSignature) {
+          apiClient.put('/user/profile', { savedSignature: draft.signature }).then(res => {
+            if (res.data?.user) {
+              import('@/features/auth/store/auth.slice').then(({ setCredentials }) => {
+                dispatch(setCredentials({ user: res.data.user }));
+              });
+            }
+          }).catch(() => {});
+        }
+      }
+
+      if (user && draft.action) {
+        const pendingAction = draft.action;
+        draft.action = null; // Clear so it only triggers once
+        localStorage.setItem('amj_checkout_draft', JSON.stringify(draft));
+
+        if (pendingAction === 'confirm') {
+          toast.success('Welcome back! Confirm your order details.');
+          setShowDealPanel(true);
+        } else if (pendingAction === 'negotiate') {
+          if (user.gstin) {
+            toast.success('Welcome back! Propose your negotiation prices.');
+            const initPrices: Record<string, number> = {};
+            items.forEach(it => { initPrices[it.productId] = it.price; });
+            setNegotiatedPrices(initPrices);
+            setShowNegotiationModal(true);
+          } else {
+            toast.error('GST number required for price negotiation. You can buy at listed price or update your profile.');
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed reading checkout draft', e);
+    }
+  }, [user, items]);
+
+  const handlePincodeChange = (pincodeVal: string) => {
+    const cleaned = pincodeVal.replace(/\D/g, '').slice(0, 6);
+    const derivedState = pincodeToState(cleaned);
+    setAddressForm(prev => ({
+      ...prev,
+      pincode: cleaned,
+      state: derivedState || prev.state,
+    }));
+    if (addressErrors.pincode) {
+      setAddressErrors(prev => {
+        const next = { ...prev };
+        delete next.pincode;
+        return next;
+      });
+    }
+  };
+
+  const handleSaveAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: Record<string, string> = {};
+    if (!addressForm.fullName.trim()) errors.fullName = 'Full name is required';
+    if (!/^\d{10}$/.test(addressForm.phone.replace(/\D/g, ''))) errors.phone = '10-digit mobile number required';
+    if (!/^\d{6}$/.test(addressForm.pincode)) errors.pincode = '6-digit pincode required';
+    if (!addressForm.state.trim()) errors.state = 'State is required';
+    if (!addressForm.city.trim()) errors.city = 'City is required';
+    if (!addressForm.houseNo.trim()) errors.houseNo = 'House / Building / Flat is required';
+    if (!addressForm.area.trim()) errors.area = 'Area / Road / Landmark is required';
+
+    if (Object.keys(errors).length > 0) {
+      setAddressErrors(errors);
+      return;
+    }
+
+    setSavingAddress(true);
+    try {
+      if (user) {
+        const saved = await addressApi.addAddress({
+          fullName: addressForm.fullName.trim(),
+          phone: addressForm.phone.trim(),
+          pincode: addressForm.pincode.trim(),
+          state: addressForm.state.trim(),
+          city: addressForm.city.trim(),
+          houseNo: addressForm.houseNo.trim(),
+          area: addressForm.area.trim(),
+          isDefault: addresses.length === 0,
+        });
+        const updatedList = [saved, ...addresses];
+        setAddresses(updatedList);
+        setSelectedAddressId(saved._id);
+        localStorage.removeItem('amj_guest_address');
+      } else {
+        const guestAddr = {
+          _id: `guest_addr_${Date.now()}`,
+          fullName: addressForm.fullName.trim(),
+          phone: addressForm.phone.trim(),
+          pincode: addressForm.pincode.trim(),
+          state: addressForm.state.trim(),
+          city: addressForm.city.trim(),
+          houseNo: addressForm.houseNo.trim(),
+          area: addressForm.area.trim(),
+          isDefault: true,
+        };
+        localStorage.setItem('amj_guest_address', JSON.stringify(guestAddr));
+        setAddresses(prev => [guestAddr, ...prev.filter(a => !a._id.startsWith('guest_addr_'))]);
+        setSelectedAddressId(guestAddr._id);
+      }
+      setShowAddressModal(false);
+      setError(null);
+      toast.success('Delivery address saved');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to save address');
+    } finally {
+      setSavingAddress(false);
+    }
+  };
 
   const selectedAddress = addresses.find(a => a._id === selectedAddressId) || addresses[0];
   const buyerState = selectedAddress?.pincode ? pincodeToState(selectedAddress.pincode) : null;
@@ -266,12 +468,57 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   const grandTotal = taxableAmount + totalGst + totalShipping + courierGST;
 
   const handleNegotiateClick = () => {
-    if (!user?.gstin) {
-      toast.error('GST not available. You cannot use this feature.');
+    // 1. Check address
+    if (!selectedAddress) {
+      setError('Please add a delivery address.');
+      setShowAddressModal(true);
       return;
     }
-    if (!selectedAddress) { setError('Please add a delivery address.'); return; }
 
+    // 2. Auto-capture signature if drawn/uploaded
+    let currentSig = tempSignature || user?.savedSignature;
+    if (!currentSig) {
+      if (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty()) {
+        try {
+          currentSig = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+        } catch {
+          currentSig = sigCanvas.current.getCanvas().toDataURL('image/png');
+        }
+        setTempSignature(currentSig);
+        if (!user) localStorage.setItem('amj_guest_signature', currentSig);
+      } else if (signatureMode === 'upload' && uploadedSignature) {
+        currentSig = uploadedSignature;
+        setTempSignature(currentSig);
+        if (!user) localStorage.setItem('amj_guest_signature', currentSig);
+      }
+    }
+
+    // 3. GUEST CHECKOUT GATE: Send for login on this button click
+    if (!user) {
+      const draft = {
+        action: 'negotiate',
+        address: selectedAddress,
+        signature: currentSig,
+        transportation: selectedTransportation,
+        paymentTerm: selectedPaymentTerm,
+        deliveryTimeline: selectedDeliveryTimeline,
+        buyNowItem: buyNowItem || null,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('amj_checkout_draft', JSON.stringify(draft));
+      if (currentSig) localStorage.setItem('amj_guest_signature', currentSig);
+      toast('Please log in or create an account to negotiate prices', { icon: '🔐' });
+      navigate(`${ROUTES.LOGIN}?redirect=${encodeURIComponent(ROUTES.CHECKOUT)}`);
+      return;
+    }
+
+    // 4. Authenticated buyer: check GSTIN
+    if (!user?.gstin) {
+      toast.error('GST number required to start a price negotiation. You can buy at listed price or update your profile.');
+      return;
+    }
+
+    setError(null);
     const initPrices: Record<string, number> = {};
     items.forEach(it => { initPrices[it.productId] = it.price; });
     setNegotiatedPrices(initPrices);
@@ -282,6 +529,12 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
     setShowNegotiationModal(false);
     handlePlaceOrder('negotiate', negotiatedPrices);
   };
+
+  useEffect(() => {
+    if ((location.state as any)?.autoOpenNegotiate && selectedAddress && user?.gstin) {
+      handleNegotiateClick();
+    }
+  }, [location.state, selectedAddress, user?.gstin]);
 
   const handlePlaceOrder = async (action: 'confirm' | 'negotiate', customPrices?: Record<string, number>) => {
     if (action === 'negotiate' && !user?.gstin) {
@@ -388,6 +641,10 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
       }
 
       if (!isBuyNow) dispatch(clearCartAsync());
+      localStorage.removeItem('amj_checkout_draft');
+      localStorage.removeItem('amj_guest_signature');
+      localStorage.removeItem('amj_guest_address');
+      localStorage.removeItem('amj_buynow_item');
       toast.success(action === 'negotiate' ? 'Negotiation started! You can chat with the supplier.' : 'Quote Request Sent! Negotiate terms with the supplier in the chat.');
       navigate('/profile?tab=messages');
     } catch (err: any) {
@@ -398,24 +655,61 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
   };
 
   const handleOpenDealPanel = () => {
+    // 1. Auto-capture signature if drawn
+    let currentSig = tempSignature || user?.savedSignature;
+    if (!currentSig) {
+      if (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty()) {
+        try {
+          currentSig = sigCanvas.current.getTrimmedCanvas().toDataURL('image/png');
+        } catch {
+          currentSig = sigCanvas.current.getCanvas().toDataURL('image/png');
+        }
+        setTempSignature(currentSig);
+        if (!user) localStorage.setItem('amj_guest_signature', currentSig);
+      } else if (signatureMode === 'upload' && uploadedSignature) {
+        currentSig = uploadedSignature;
+        setTempSignature(currentSig);
+        if (!user) localStorage.setItem('amj_guest_signature', currentSig);
+      }
+    }
+
+    // 2. Check address
     if (!selectedAddress) {
       setError('Please add a delivery address.');
+      setShowAddressModal(true);
       return;
     }
-    const currentSig = tempSignature || user?.savedSignature;
+
+    // 3. Check signature
     if (!currentSig) {
-      const hasUnsaved = (signatureMode === 'upload' && uploadedSignature) || (signatureMode === 'draw' && sigCanvas.current && !sigCanvas.current.isEmpty());
-      if (hasUnsaved) {
-        setError('Please click "Save Signature" first.');
-      } else {
-        setError('Please provide your Authorized Signature below.');
-      }
+      setError('Please provide your Authorized Signature below.');
       return;
     }
+
     if (isChangingSignature) {
       setError('Please save or cancel your signature changes.');
       return;
     }
+
+    // 4. GUEST CHECKOUT GATE: Send for login on this button click
+    if (!user) {
+      const draft = {
+        action: 'confirm',
+        address: selectedAddress,
+        signature: currentSig,
+        transportation: selectedTransportation,
+        paymentTerm: selectedPaymentTerm,
+        deliveryTimeline: selectedDeliveryTimeline,
+        buyNowItem: buyNowItem || null,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('amj_checkout_draft', JSON.stringify(draft));
+      if (currentSig) localStorage.setItem('amj_guest_signature', currentSig);
+      toast('Please log in or create an account to finalize your order', { icon: '🔐' });
+      navigate(`${ROUTES.LOGIN}?redirect=${encodeURIComponent(ROUTES.CHECKOUT)}`);
+      return;
+    }
+
     setError(null);
     setShowDealPanel(true);
   };
@@ -495,7 +789,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         <p className="text-sm text-[#64748b] m-0">Add items to your cart first.</p>
         <button
           className="px-5 py-2.5 bg-primary text-white font-bold text-sm rounded-[8px] border-none cursor-pointer hover:opacity-90"
-          onClick={() => onBack ? onBack() : navigate('/profile?tab=cart')}
+          onClick={() => onBack ? onBack() : navigate(ROUTES.CART)}
         >
           Go to Cart
         </button>
@@ -508,7 +802,7 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
     <div>
       <button
         className="flex items-center gap-2 text-sm text-[#64748b] bg-transparent border-none cursor-pointer hover:text-[#0f172a] p-0 mb-6"
-        onClick={() => onBack ? onBack() : navigate(-1)}
+        onClick={() => onBack ? onBack() : navigate(ROUTES.CART)}
       >
         <ArrowLeft size={16} /> Back to Cart
       </button>
@@ -516,6 +810,19 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
       <div className="flex gap-6 items-start max-lg:flex-col">
         {/* ── Left column ── */}
         <div className="flex-1 flex flex-col gap-5">
+
+          {/* Multi-Seller Warning Banner */}
+          {supplierIds.length > 1 && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-[12px] flex items-start gap-3 text-amber-900 text-xs">
+              <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-sm m-0 text-amber-950">Multiple Sellers in Your Order ({supplierIds.length} Sellers)</p>
+                <p className="m-0 mt-1 text-[#78350f] leading-relaxed">
+                  Your cart contains products from {supplierIds.length} different sellers. When you proceed, separate Purchase Orders and enquiry threads will be generated for each seller to maintain direct transparency and delivery coordination.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Invoice table */}
           <div className="bg-white border border-[#eef2f6] rounded-[14px] overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
@@ -695,18 +1002,30 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
               <h2 className="flex items-center gap-2 text-base font-extrabold text-[#0f172a] m-0">
                 <MapPin size={18} className="text-primary" /> Delivery Address
               </h2>
-              <button
-                className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0"
-                onClick={() => navigate('/profile?tab=addresses')}
-              >
-                Manage Addresses
-              </button>
+              <div className="flex items-center gap-3">
+                {user && (
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-[#64748b] bg-transparent border-none cursor-pointer hover:underline p-0"
+                    onClick={() => navigate('/profile?tab=addresses')}
+                  >
+                    Manage
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="text-xs font-bold text-primary bg-transparent border-none cursor-pointer hover:underline p-0 flex items-center gap-1"
+                  onClick={() => setShowAddressModal(true)}
+                >
+                  <Plus size={14} /> Add New Address
+                </button>
+              </div>
             </div>
 
             {addresses.length === 0 ? (
               <div
-                className="border-2 border-dashed border-[#e2e8f0] rounded-[8px] p-5 flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                onClick={() => navigate('/profile?tab=addresses')}
+                className="border-2 border-dashed border-[#e2e8f0] rounded-[8px] p-5 flex items-center justify-center cursor-pointer hover:border-primary transition-colors bg-[#f8fafc]"
+                onClick={() => setShowAddressModal(true)}
               >
                 <span className="flex items-center gap-2 text-sm font-bold text-primary"><Plus size={16} /> Add Delivery Address</span>
               </div>
@@ -837,6 +1156,14 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
 
                       if (!sigData) {
                         toast.error('Please provide a signature');
+                        return;
+                      }
+
+                      if (!user) {
+                        setTempSignature(sigData);
+                        localStorage.setItem('amj_guest_signature', sigData);
+                        setIsChangingSignature(false);
+                        toast.success('Signature saved for this order');
                         return;
                       }
 
@@ -1008,16 +1335,16 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
             <div className="flex flex-col gap-3 w-full">
               <button
                 onClick={handleNegotiateClick}
-                disabled={!selectedAddress || placing || hasCheckoutStockIssues}
-                className="flex-1 flex items-center justify-center gap-2 p-4 bg-white border-2 border-[#3b82f6] hover:bg-[#eff6ff] rounded-[10px] text-[#2563eb] font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={placing || hasCheckoutStockIssues}
+                className="flex-1 flex items-center justify-center gap-2 p-4 bg-white border-2 border-[#3b82f6] hover:bg-[#eff6ff] rounded-[10px] text-[#2563eb] font-bold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 <MessageSquare size={18} />
                 Negotiate Order
               </button>
               <button
                 onClick={handleOpenDealPanel}
-                disabled={!selectedAddress || placing || hasCheckoutStockIssues}
-                className="flex-[1.2] flex items-center gap-3 p-4 bg-[#f0fdf4] border-2 border-[#86efac] rounded-[10px] text-left cursor-pointer hover:border-[#22c55e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+                disabled={placing || hasCheckoutStockIssues}
+                className="flex-[1.2] flex items-center gap-3 p-4 bg-[#f0fdf4] border-2 border-[#86efac] rounded-[10px] text-left cursor-pointer hover:border-[#22c55e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed group shadow-sm"
               >
                 <div className="w-10 h-10 rounded-[8px] bg-white border border-[#86efac] flex items-center justify-center shrink-0 group-hover:border-[#22c55e]">
                   <Handshake size={18} className="text-[#16a34a]" />
@@ -1248,31 +1575,205 @@ export const CheckoutContent: React.FC<CheckoutContentProps> = ({ buyNowItem, on
         </div>,
         document.body
       )}
+      {/* Add Delivery Address Modal */}
+      <Modal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        title="Add Delivery Address"
+        widthClass="w-[90%] max-w-[540px]"
+      >
+        <form onSubmit={handleSaveAddress} className="flex flex-col gap-4 mt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold uppercase text-[#64748b] tracking-wider block mb-1">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                placeholder="Receiver or Company Name"
+                value={addressForm.fullName}
+                onChange={e => {
+                  setAddressForm(prev => ({ ...prev, fullName: e.target.value }));
+                  if (addressErrors.fullName) setAddressErrors(prev => { const n = { ...prev }; delete n.fullName; return n; });
+                }}
+                className={`w-full border ${addressErrors.fullName ? 'border-red-500 bg-red-50' : 'border-[#cbd5e1]'} rounded-[8px] px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-primary`}
+              />
+              {addressErrors.fullName && <p className="text-[11px] text-red-600 m-0 mt-0.5">{addressErrors.fullName}</p>}
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-[#64748b] tracking-wider block mb-1">
+                Mobile Number *
+              </label>
+              <input
+                type="tel"
+                maxLength={10}
+                placeholder="10-digit mobile number"
+                value={addressForm.phone}
+                onChange={e => {
+                  setAddressForm(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '') }));
+                  if (addressErrors.phone) setAddressErrors(prev => { const n = { ...prev }; delete n.phone; return n; });
+                }}
+                className={`w-full border ${addressErrors.phone ? 'border-red-500 bg-red-50' : 'border-[#cbd5e1]'} rounded-[8px] px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-primary`}
+              />
+              {addressErrors.phone && <p className="text-[11px] text-red-600 m-0 mt-0.5">{addressErrors.phone}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-bold uppercase text-[#64748b] tracking-wider block mb-1">
+                Pincode *
+              </label>
+              <input
+                type="text"
+                maxLength={6}
+                placeholder="6 digits"
+                value={addressForm.pincode}
+                onChange={e => handlePincodeChange(e.target.value)}
+                className={`w-full border ${addressErrors.pincode ? 'border-red-500 bg-red-50' : 'border-[#cbd5e1]'} rounded-[8px] px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-primary`}
+              />
+              {addressErrors.pincode && <p className="text-[11px] text-red-600 m-0 mt-0.5">{addressErrors.pincode}</p>}
+            </div>
+
+            <div>
+              <label className="text-xs font-bold uppercase text-[#64748b] tracking-wider block mb-1">
+                State *
+              </label>
+              <select
+                value={addressForm.state}
+                onChange={e => {
+                  const newState = e.target.value;
+                  setAddressForm(prev => ({ ...prev, state: newState, city: '' }));
+                  if (addressErrors.state) setAddressErrors(prev => { const n = { ...prev }; delete n.state; return n; });
+                }}
+                className={`w-full border ${addressErrors.state ? 'border-red-500 bg-red-50' : 'border-[#cbd5e1]'} rounded-[8px] px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-primary bg-white`}
+              >
+                <option value="">Select State</option>
+                {indiaStates.map(s => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              {addressErrors.state && <p className="text-[11px] text-red-600 m-0 mt-0.5">{addressErrors.state}</p>}
+            </div>
+
+            <div>
+              <label className="text-xs font-bold uppercase text-[#64748b] tracking-wider block mb-1">
+                City / District *
+              </label>
+              {addressForm.state && stateCityMap[addressForm.state]?.length ? (
+                <select
+                  value={addressForm.city}
+                  onChange={e => {
+                    setAddressForm(prev => ({ ...prev, city: e.target.value }));
+                    if (addressErrors.city) setAddressErrors(prev => { const n = { ...prev }; delete n.city; return n; });
+                  }}
+                  className={`w-full border ${addressErrors.city ? 'border-red-500 bg-red-50' : 'border-[#cbd5e1]'} rounded-[8px] px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-primary bg-white`}
+                >
+                  <option value="">Select City</option>
+                  {stateCityMap[addressForm.state].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="City name"
+                  value={addressForm.city}
+                  onChange={e => {
+                    setAddressForm(prev => ({ ...prev, city: e.target.value }));
+                    if (addressErrors.city) setAddressErrors(prev => { const n = { ...prev }; delete n.city; return n; });
+                  }}
+                  className={`w-full border ${addressErrors.city ? 'border-red-500 bg-red-50' : 'border-[#cbd5e1]'} rounded-[8px] px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-primary`}
+                />
+              )}
+              {addressErrors.city && <p className="text-[11px] text-red-600 m-0 mt-0.5">{addressErrors.city}</p>}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold uppercase text-[#64748b] tracking-wider block mb-1">
+              Flat / House / Building / Warehouse *
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Unit 4B, Shreeji Industrial Complex"
+              value={addressForm.houseNo}
+              onChange={e => {
+                setAddressForm(prev => ({ ...prev, houseNo: e.target.value }));
+                if (addressErrors.houseNo) setAddressErrors(prev => { const n = { ...prev }; delete n.houseNo; return n; });
+              }}
+              className={`w-full border ${addressErrors.houseNo ? 'border-red-500 bg-red-50' : 'border-[#cbd5e1]'} rounded-[8px] px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-primary`}
+            />
+            {addressErrors.houseNo && <p className="text-[11px] text-red-600 m-0 mt-0.5">{addressErrors.houseNo}</p>}
+          </div>
+
+          <div>
+            <label className="text-xs font-bold uppercase text-[#64748b] tracking-wider block mb-1">
+              Area / Street / Sector / Landmark *
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. GIDC Phase 2, Near Ring Road"
+              value={addressForm.area}
+              onChange={e => {
+                setAddressForm(prev => ({ ...prev, area: e.target.value }));
+                if (addressErrors.area) setAddressErrors(prev => { const n = { ...prev }; delete n.area; return n; });
+              }}
+              className={`w-full border ${addressErrors.area ? 'border-red-500 bg-red-50' : 'border-[#cbd5e1]'} rounded-[8px] px-3 py-2 text-sm text-[#0f172a] outline-none focus:border-primary`}
+            />
+            {addressErrors.area && <p className="text-[11px] text-red-600 m-0 mt-0.5">{addressErrors.area}</p>}
+          </div>
+
+          <div className="flex justify-end gap-3 mt-3 pt-3 border-t border-[#e2e8f0]">
+            <button
+              type="button"
+              onClick={() => setShowAddressModal(false)}
+              className="px-4 py-2 text-sm font-semibold text-[#64748b] bg-white border border-[#cbd5e1] rounded-[8px] hover:bg-[#f8fafc] cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={savingAddress}
+              className="px-5 py-2 text-sm font-bold text-white bg-primary rounded-[8px] border-none hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
+            >
+              {savingAddress ? 'Saving...' : 'Save Delivery Address'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
 
-// Standalone page wrapper (kept so /checkout URL still works via the redirect)
+// Standalone page wrapper for /checkout route
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const buyNowItem = location.state?.buyNowItem;
+  const buyNowItem = (location.state as any)?.buyNowItem || (() => {
+    try {
+      const saved = localStorage.getItem('amj_buynow_item');
+      return saved ? JSON.parse(saved) : undefined;
+    } catch { return undefined; }
+  })();
+
+  useEffect(() => {
+    if ((location.state as any)?.buyNowItem) {
+      localStorage.setItem('amj_buynow_item', JSON.stringify((location.state as any).buyNowItem));
+    }
+  }, [location.state]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <div className="bg-white border-b border-[#f1f5f9]">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-8 py-5 flex items-center gap-3">
-          <ShoppingBag size={22} className="text-primary" />
-          <h1 className="text-lg font-extrabold text-[#0f172a] m-0">Checkout</h1>
-        </div>
-      </div>
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-8 py-8">
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-between">
+      <Navbar />
+      <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-8 py-8">
         <CheckoutContent
           buyNowItem={buyNowItem}
-          onBack={() => navigate(-1)}
+          onBack={() => navigate(ROUTES.CART)}
           onOrderPlaced={() => navigate('/profile?tab=orders')}
         />
-      </div>
+      </main>
+      <Footer />
     </div>
   );
 };

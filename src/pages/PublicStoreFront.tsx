@@ -9,7 +9,6 @@ import {
 import api from '@/api/client';
 import Button from '@/shared/components/ui/Button';
 import { useAppSelector } from '@/store/hooks';
-import { ROUTES } from '@/shared/constants/routes';
 import EditStoreBannerModal from '@/features/supplier/components/EditStoreBannerModal';
 import EditStoreLogoModal from '@/features/supplier/components/EditStoreLogoModal';
 import ShareModal from '@/shared/components/ui/ShareModal';
@@ -19,15 +18,10 @@ import { setPageMeta } from '@/shared/utils/pageMeta';
 /* ─── Storefront Product Card (Enquire Now variant) ─────────────────── */
 const StorefrontProductCard: React.FC<{ product: any; onShare: (product: any) => void }> = ({ product, onShare }) => {
   const navigate = useNavigate();
-  const user = useAppSelector(state => state.auth.user);
   const productId = product.id || product._id;
 
   const handleEnquire = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!user) {
-      navigate(`${ROUTES.LOGIN}?redirect=/products/${productId}`);
-      return;
-    }
     navigate(`/products/${productId}`);
   };
 

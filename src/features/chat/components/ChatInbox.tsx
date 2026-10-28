@@ -297,7 +297,7 @@ const QuotePreviewCard = ({
 const BUYER_QR = [
   { label: '📦 Order status?', text: 'Hi, could you please share the current status of my order?' },
   { label: '⏳ No update till date', text: "I haven't received any update on my order." },
-  { label: '✅ Order received', text: 'I have received my order. Thank you!' },
+  { label: 'Order received', text: 'I have received my order. Thank you!' },
 ];
 const SUPPLIER_QR = [
   { label: '⏳ Processing', text: 'Your order is currently being processed. We will update you soon.' },
@@ -2802,11 +2802,10 @@ const ChatInbox: React.FC = () => {
                               {lines.map((line: string, i: number) => (
                                 <p
                                   key={i}
-                                  className={`m-0 ${
-                                    i === 0
+                                  className={`m-0 ${i === 0
                                       ? `text-xs font-extrabold ${titleColor} text-left pb-1 border-b border-black/5`
                                       : 'text-[11.5px] text-[#334155] mt-1 text-left whitespace-pre-wrap leading-relaxed'
-                                  }`}
+                                    }`}
                                 >
                                   {line || '\u00A0'}
                                 </p>

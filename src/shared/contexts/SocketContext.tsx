@@ -15,7 +15,7 @@ const SocketContext = createContext<SocketContextType>({
   socket: null,
   isConnected: false,
   activeChatId: null,
-  setActiveChatId: () => {},
+  setActiveChatId: () => { },
 });
 
 export const useSocket = () => useContext(SocketContext);
@@ -31,16 +31,16 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       // Dynamically derive the socket URL from the API_BASE_URL
       // This ensures LAN collaborators connect to your IP, not their own 'localhost'
       const socketUrl = env.API_BASE_URL.replace(/\/api\/?$/, '');
-      
+
       console.log('🔌 Connecting socket to:', socketUrl);
-      
+
       const newSocket = io(socketUrl, {
         withCredentials: true,
       });
 
       newSocket.on('connect', () => {
         setIsConnected(true);
-        console.log('✅ Socket connected');
+        console.log('Socket connected');
       });
 
       newSocket.on('disconnect', () => {

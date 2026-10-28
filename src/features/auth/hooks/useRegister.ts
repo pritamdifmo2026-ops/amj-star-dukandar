@@ -16,7 +16,9 @@ export function useRegister() {
     mutationFn: (payload: RegisterPayload) => authApi.register(payload),
     onSuccess: () => {
       toast.success('Account created successfully! Please log in.');
-      navigate(ROUTES.LOGIN);
+      const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+      const target = redirectParam ? `${ROUTES.LOGIN}?redirect=${encodeURIComponent(redirectParam)}` : ROUTES.LOGIN;
+      navigate(target);
     },
     onError: (error) => {
       const { message } = parseApiError(error);

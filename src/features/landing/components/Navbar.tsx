@@ -98,7 +98,7 @@ const Navbar: React.FC = () => {
     }
   }, [isReseller, resellerProfile, dispatch]);
 
-  React.useEffect(() => { if (isAuth) dispatch(fetchCart()); }, [isAuth, dispatch]);
+  React.useEffect(() => { dispatch(fetchCart()); }, [isAuth, dispatch]);
 
   React.useEffect(() => {
     if (mobileOpen) {
@@ -226,11 +226,13 @@ const Navbar: React.FC = () => {
                 </div>
               )}
               {isAuth && <NotificationBell />}
-              {isAuth && !isSupplier && !isReseller && !isAdmin && (
-                <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate('/profile?tab=cart')}>
+              {(!isSupplier && !isReseller && !isAdmin) && (
+                <div className="relative text-heading flex items-center cursor-pointer p-1.5 hover:text-primary transition-colors" onClick={() => navigate(ROUTES.CART)} title="View Cart">
                   <ShoppingCart size={20} />
                   {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-surface" />
+                    <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none shadow-xs">
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
                   )}
                 </div>
               )}
@@ -328,11 +330,13 @@ const Navbar: React.FC = () => {
 
                 {isAuth && <NotificationBell />}
 
-                {isAuth && !isSupplier && !isReseller && !isAdmin && (
-                  <div className="relative text-heading flex items-center cursor-pointer" onClick={() => navigate('/profile?tab=cart')}>
+                {(!isSupplier && !isReseller && !isAdmin) && (
+                  <div className="relative text-heading flex items-center cursor-pointer p-1 hover:text-primary transition-colors" onClick={() => navigate(ROUTES.CART)} title="View Cart">
                     <ShoppingCart size={18} />
                     {cartCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full border border-surface" />
+                      <span className="absolute -top-1 -right-1 bg-primary text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-0.5 leading-none shadow-xs">
+                        {cartCount > 99 ? '99+' : cartCount}
+                      </span>
                     )}
                   </div>
                 )}

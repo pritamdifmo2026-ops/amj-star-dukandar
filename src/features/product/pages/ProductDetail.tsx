@@ -200,13 +200,26 @@ const ProductDetail: React.FC = () => {
     if (!product) return;
     if (isNonBuyer) { setShowAdminModal(true); return; }
     if (isInCart) { navigate(ROUTES.CART); return; }
-    dispatch(addToCartAsync({ productId: currentProductId, name: product.name, price: product.price, quantity: product.minOrderQty, unit: product.unit, supplierId: product.supplierId, imageUrl: currentImage, moq: product.minOrderQty, stock: product.stock, hsnCode: product.hsnCode, gstRate: product.gstRate, gstIncluded: product.gstIncluded }));
+    dispatch(addToCartAsync({
+      productId: currentProductId,
+      name: product.name,
+      price: product.price,
+      quantity: product.minOrderQty,
+      unit: product.unit,
+      supplierId: product.supplierId,
+      imageUrl: currentImage,
+      moq: product.minOrderQty,
+      stock: product.stock,
+      hsnCode: product.hsnCode,
+      gstRate: product.gstRate,
+      gstIncluded: product.gstIncluded
+    }));
+    toast.success('Added to cart!');
   };
 
   const handleBuyNow = () => {
     if (!product) return;
     if (isNonBuyer) { setShowAdminModal(true); return; }
-    if (!user) { navigate(`${ROUTES.LOGIN}?redirect=/products/${product.id}`); return; }
 
     const itemToBuy = {
       productId: currentProductId,
@@ -223,7 +236,9 @@ const ProductDetail: React.FC = () => {
       gstIncluded: product.gstIncluded
     };
 
-    navigate('/profile?tab=checkout', { state: { buyNowItem: itemToBuy } });
+    // Add to cart and navigate to Cart so user can review details, quantities, pincode before login/checkout
+    dispatch(addToCartAsync(itemToBuy));
+    navigate(ROUTES.CART);
   };
 
   const gstAmount = product.gstIncluded ? 0 : calculateGST(product.price, product.gstRate);

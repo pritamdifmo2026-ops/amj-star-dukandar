@@ -24,16 +24,54 @@ interface CartState {
   error: string | null;
 }
 
+const GUEST_CART_KEY = 'amj_guest_cart';
+
+export const loadGuestCart = (): CartItem[] => {
+  try {
+    const raw = localStorage.getItem(GUEST_CART_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const saveGuestCart = (items: CartItem[]) => {
+  try {
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+  } catch (err) {
+    console.error('Failed to save guest cart', err);
+  }
+};
+
 const initialState: CartState = {
-  items: [],
+  items: typeof window !== 'undefined' ? loadGuestCart() : [],
   loading: false,
   error: null,
 };
 
-export const fetchCart = createAsyncThunk('cart/fetch', async () => {
+export const fetchCart = createAsyncThunk('cart/fetch', async (_, { getState }) => {
+  const state = getState() as any;
+  const isAuthenticated = Boolean(state.auth?.isAuthenticated && state.auth?.user);
+
+  if (!isAuthenticated) {
+    return loadGuestCart();
+  }
+
+  // Merge any pending guest cart items into the authenticated user's cart
+  const guestItems = loadGuestCart();
+  if (guestItems.length > 0) {
+    try {
+      for (const item of guestItems) {
+        await cartApi.addToCart(item);
+      }
+      localStorage.removeItem(GUEST_CART_KEY);
+    } catch (error) {
+      console.warn('Failed to merge guest cart items:', error);
+    }
+  }
+
   try {
     const response = await cartApi.getCart();
-    console.log('fetchCart response:', response.data);
     return response.data.items || [];
   } catch (error) {
     console.error('fetchCart error:', error);
@@ -41,10 +79,27 @@ export const fetchCart = createAsyncThunk('cart/fetch', async () => {
   }
 });
 
-export const addToCartAsync = createAsyncThunk('cart/add', async (item: CartItem) => {
+export const addToCartAsync = createAsyncThunk('cart/add', async (item: CartItem, { getState }) => {
+  const state = getState() as any;
+  const isAuthenticated = Boolean(state.auth?.isAuthenticated && state.auth?.user);
+
+  if (!isAuthenticated) {
+    const current = loadGuestCart();
+    const existingIndex = current.findIndex(i => i.productId === item.productId);
+    let updated: CartItem[];
+    if (existingIndex > -1) {
+      updated = current.map((it, idx) =>
+        idx === existingIndex ? { ...it, quantity: it.quantity + item.quantity } : it
+      );
+    } else {
+      updated = [...current, item];
+    }
+    saveGuestCart(updated);
+    return updated;
+  }
+
   try {
     const response = await cartApi.addToCart(item);
-    console.log('addToCart response:', response.data);
     return response.data.items || [];
   } catch (error) {
     console.error('addToCart error:', error);
@@ -54,20 +109,51 @@ export const addToCartAsync = createAsyncThunk('cart/add', async (item: CartItem
 
 export const updateQuantityAsync = createAsyncThunk(
   'cart/update',
-  async ({ productId, quantity }: { productId: string; quantity: number }) => {
+  async ({ productId, quantity }: { productId: string; quantity: number }, { getState }) => {
+    const state = getState() as any;
+    const isAuthenticated = Boolean(state.auth?.isAuthenticated && state.auth?.user);
+
+    if (!isAuthenticated) {
+      const current = loadGuestCart();
+      const updated = current.map(it => (it.productId === productId ? { ...it, quantity } : it));
+      saveGuestCart(updated);
+      return updated;
+    }
+
     const response = await cartApi.updateQuantity(productId, quantity);
     return response.data.items;
   }
 );
 
-export const removeFromCartAsync = createAsyncThunk('cart/remove', async (productId: string) => {
-  const response = await cartApi.removeFromCart(productId);
-  return response.data.items;
-});
+export const removeFromCartAsync = createAsyncThunk(
+  'cart/remove',
+  async (productId: string, { getState }) => {
+    const state = getState() as any;
+    const isAuthenticated = Boolean(state.auth?.isAuthenticated && state.auth?.user);
 
-export const clearCartAsync = createAsyncThunk('cart/clearBackend', async () => {
+    if (!isAuthenticated) {
+      const current = loadGuestCart();
+      const updated = current.filter(it => it.productId !== productId);
+      saveGuestCart(updated);
+      return updated;
+    }
+
+    const response = await cartApi.removeFromCart(productId);
+    return response.data.items;
+  }
+);
+
+export const clearCartAsync = createAsyncThunk('cart/clearBackend', async (_, { getState }) => {
+  const state = getState() as any;
+  const isAuthenticated = Boolean(state.auth?.isAuthenticated && state.auth?.user);
+
+  localStorage.removeItem(GUEST_CART_KEY);
+  if (!isAuthenticated) {
+    return [];
+  }
+
   const response = await cartApi.clearCart();
-  return response.data.items;
+  return response.data.items || [];
 });
 
 const cartSlice = createSlice({
@@ -75,6 +161,7 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     clearCart(state) {
+      localStorage.removeItem(GUEST_CART_KEY);
       state.items = [];
     },
   },

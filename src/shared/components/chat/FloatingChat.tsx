@@ -442,8 +442,8 @@ export const FloatingChat: React.FC = () => {
           <div className="flex items-center gap-1.5">
             {effectivePriceTag && (
               <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider border flex items-center gap-1 shadow-xs ${effectivePriceTag === 'Best Price'
-                  ? 'bg-amber-500 text-white border-amber-600'
-                  : 'bg-indigo-600 text-white border-indigo-700'
+                ? 'bg-amber-500 text-white border-amber-600'
+                : 'bg-indigo-600 text-white border-indigo-700'
                 }`}>
                 {effectivePriceTag === 'Best Price' ? '⚡ Best Price' : '🏷️ Last Price'}
               </span>
@@ -1267,7 +1267,7 @@ export const FloatingChat: React.FC = () => {
                       : [
                         { label: '📦 Order status?', text: 'Hi, could you please share the current status of my order?' },
                         { label: '⏳ No update yet', text: "I haven't received any update on my order yet." },
-                        { label: '✅ Order received', text: 'I have received my order. Thank you!' },
+                        { label: 'Order received', text: 'I have received my order. Thank you!' },
                         { label: '❓ Have a question', text: '' },
                       ]
                     ).map(qr => (
@@ -1448,8 +1448,8 @@ export const FloatingChat: React.FC = () => {
                       key={t || 'none'}
                       type="button"
                       className={`flex-1 py-1.5 text-xs font-bold rounded-[6px] border cursor-pointer transition-colors ${quoteForm.priceTag === t
-                          ? 'bg-orange-500 text-white border-orange-500'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-orange-400'
+                        ? 'bg-orange-500 text-white border-orange-500'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-orange-400'
                         }`}
                       onClick={() => setQuoteForm(p => ({ ...p, priceTag: t }))}
                     >

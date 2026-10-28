@@ -150,7 +150,10 @@ const Login: React.FC = () => {
       <div className="mt-4 pt-5 border-t border-slate-100 flex flex-col gap-3 text-center">
         <p className="text-[14px] text-slate-500 m-0">
           Don't have an account?{' '}
-          <Link to={`${ROUTES.REGISTER}?mode=${mode}`} className="text-primary font-semibold hover:underline">
+          <Link
+            to={`${ROUTES.REGISTER}?mode=${mode}${searchParams.get('redirect') ? `&redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`}
+            className="text-primary font-semibold hover:underline"
+          >
             Create an account
           </Link>
         </p>

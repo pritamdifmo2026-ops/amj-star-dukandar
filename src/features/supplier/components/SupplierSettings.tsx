@@ -55,8 +55,8 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
   const dispatch = useAppDispatch();
   const qc = useQueryClient();
   const sigCanvas = React.useRef<any>(null);
-  const [signatureMode, setSignatureMode] = useState<'upload'|'draw'>('draw');
-  const [uploadedSignature, setUploadedSignature] = useState<string|null>(null);
+  const [signatureMode, setSignatureMode] = useState<'upload' | 'draw'>('draw');
+  const [uploadedSignature, setUploadedSignature] = useState<string | null>(null);
 
   const updateSignatureMutation = useMutation({
     mutationFn: supplierService.updateSignature,
@@ -389,8 +389,8 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
                   <label className={labelCls}>Instagram Link</label>
                   <input type="url" value={socialForm.instagram} onChange={e => setSocialForm(p => ({ ...p, instagram: e.target.value }))} className={inputCls} placeholder="https://instagram.com/..." />
                 </div>
-                <button 
-                  className={`${primaryBtnCls} w-fit mt-2`} 
+                <button
+                  className={`${primaryBtnCls} w-fit mt-2`}
                   onClick={() => updateSocialMediaMutation.mutate(socialForm)}
                   disabled={updateSocialMediaMutation.isPending}
                 >
@@ -444,7 +444,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               { label: 'GSTIN Number', val: profile?.businessDetails?.gstin },
               { label: 'Tier', val: profile?.tier || 'FREE' },
               { label: 'PAN Number', val: profile?.businessDetails?.pan },
-              { label: 'Verification Status', val: profile?.kycStatus === 'VERIFIED' ? '✅ Approved' : `⚠️ ${profile?.kycStatus || 'In Review'}` },
+              { label: 'Verification Status', val: profile?.kycStatus === 'VERIFIED' ? 'Approved' : `⚠️ ${profile?.kycStatus || 'In Review'}` },
               { label: 'Plan Limit', val: profile?.maxProducts == null ? 'N/A' : (profile.maxProducts < 0 ? 'Unlimited' : `${profile.maxProducts.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Products`) },
             ].map(({ label, val }) => (
               <div key={label}>
@@ -834,7 +834,7 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
             <p className="text-xs text-[#64748b] m-0 mt-0.5">This signature will be attached to all generated Purchase Orders.</p>
           </div>
         </div>
-        
+
         {profile?.savedSignature ? (
           <div className="flex flex-col items-center gap-4">
             <div className="border border-[#e2e8f0] rounded-[8px] p-4 bg-white flex justify-center w-[360px] h-[100px]">
@@ -874,10 +874,10 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
                     backgroundColor="white"
                     canvasProps={{ width: 498, height: 200, className: 'cursor-crosshair bg-white block' }}
                   />
-                    <button type="button" onClick={() => sigCanvas.current?.clear()} className="absolute bottom-2 right-2 text-[10px] text-gray-500 hover:text-gray-700 bg-white shadow px-2 py-1 rounded border-none cursor-pointer z-10">
-                      Clear
-                    </button>
-                  </div>
+                  <button type="button" onClick={() => sigCanvas.current?.clear()} className="absolute bottom-2 right-2 text-[10px] text-gray-500 hover:text-gray-700 bg-white shadow px-2 py-1 rounded border-none cursor-pointer z-10">
+                    Clear
+                  </button>
+                </div>
               ) : (
                 <div className="p-4 w-full flex flex-col items-center bg-white">
                   <input
@@ -919,12 +919,12 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
                       sigData = sigCanvas.current.getCanvas().toDataURL('image/png');
                     }
                   }
-                  
+
                   if (!sigData) {
                     toast.error('Please provide a signature');
                     return;
                   }
-                  
+
                   updateSignatureMutation.mutate(sigData);
                 }}
                 disabled={updateSignatureMutation.isPending}

@@ -51,7 +51,7 @@
 ### Frontend — FloatingChat & ChatInbox
 - System messages render as centered pill with `────` separator lines (first line bold, second muted)
 - Quick Replies strip (gated behind `messages.some(m => m.messageType === 'system')` — only available after PO generated)
-- Buyer QRs: 📦 Order status?, ⏳ No update yet, ✅ Order received, ❓ Have a question (→ textarea)
+- Buyer QRs: 📦 Order status?, ⏳ No update yet, Order received, ❓ Have a question (→ textarea)
 - Supplier QRs: ⏳ Processing, 🚚 Shipped, 📬 Confirm delivery, 🕐 Update in 24 hrs, ✏️ Custom reply (→ textarea)
 - PhoneReveal animation: 3-phase CSS transition (🔒 → 🔓 rotate+scale → phone number slides in)
 - QuotePreviewCard + preview modal flow: "Preview & Send →" shows read-only preview before submitting quotation
