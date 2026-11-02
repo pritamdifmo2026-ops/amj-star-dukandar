@@ -9,7 +9,7 @@ export type ConcessionType =
   | 'listing_fee_custom';
 
 export type ConcessionStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
-export type ConcessionSource = 'sales' | 'supplier';
+export type ConcessionSource = 'sales' | 'supplier' | 'partner';
 
 export interface ConcessionProposal {
   price?: number;

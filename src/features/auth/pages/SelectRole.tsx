@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Store, ShoppingBag, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Store, ShoppingBag, Handshake, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import authService from '../services/auth.service';
 import { useAppDispatch } from '@/store/hooks';
 import { setCredentials } from '@/features/auth/store/auth.slice';
@@ -23,6 +23,7 @@ const ROLE_CONFIG = [
     btnCls: 'bg-emerald-600 hover:bg-emerald-500',
     label: 'Join as Buyer',
     sellerOnly: false,
+    partnerOnly: false,
   },
   {
     role: 'supplier' as UserRole,
@@ -40,6 +41,7 @@ const ROLE_CONFIG = [
     btnCls: 'bg-[#1A3C5E] hover:bg-blue-600',
     label: 'Join as Supplier',
     sellerOnly: true,
+    partnerOnly: false,
   },
   {
     role: 'reseller' as UserRole,
@@ -57,6 +59,25 @@ const ROLE_CONFIG = [
     btnCls: 'bg-[#D94F00] hover:bg-[#FF7A1A]',
     label: 'Join as Reseller',
     sellerOnly: true,
+    partnerOnly: false,
+  },
+  {
+    role: 'partner' as UserRole,
+    badge: 'For Agents & Networkers',
+    badgeCls: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+    iconBg: 'bg-indigo-50 border-indigo-100',
+    iconColor: '#4338CA',
+    cardActive: 'border-indigo-400 shadow-[0_0_0_3px_rgba(67,56,202,0.12)]',
+    accent: 'bg-indigo-600',
+    Icon: Handshake,
+    title: 'Wholesale Service Partner',
+    tagline: 'Bring the trade, take a cut',
+    desc: 'Introduce manufacturers and bulk buyers to AMJ Star and earn a share of the platform fee on every deal they close. No salary, no targets — you are paid on the trade you generate.',
+    perks: ['Share of every referred deal', 'Own referral links & dashboard', 'Needs AMJ Star approval'],
+    btnCls: 'bg-indigo-600 hover:bg-indigo-500',
+    label: 'Apply as Partner',
+    sellerOnly: false,
+    partnerOnly: true,
   },
 ];
 
@@ -69,9 +90,11 @@ const SelectRole: React.FC = () => {
   const mode = searchParams.get('mode');
   const dispatch = useAppDispatch();
 
-  const roles = mode === 'seller'
-    ? ROLE_CONFIG.filter(r => r.sellerOnly)
-    : ROLE_CONFIG;
+  const roles = mode === 'partner'
+    ? ROLE_CONFIG.filter(r => r.partnerOnly)
+    : mode === 'seller'
+    ? ROLE_CONFIG.filter(r => r.sellerOnly && !r.partnerOnly)
+    : ROLE_CONFIG.filter(r => !r.partnerOnly);
 
   const handleRoleSelect = async (role: UserRole) => {
     setLoadingRole(role); setError('');
@@ -81,6 +104,7 @@ const SelectRole: React.FC = () => {
       dispatch(setCredentials({ user: response.user }));
       if (role === 'supplier') navigate('/supplier/onboarding');
       else if (role === 'reseller') navigate('/reseller/onboarding');
+      else if (role === 'partner') navigate('/partner/dashboard');
       else navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to set role. Please try again.');

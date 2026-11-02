@@ -195,7 +195,12 @@ const dispatch = useAppDispatch();
         <button className="w-9 h-9 flex items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#475569] border-none cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
           <Menu size={20} />
         </button>
-        <div className="font-bold text-[#0f172a] text-sm">Reseller Hub</div>
+        <div
+          className="font-bold text-[#0f172a] text-sm cursor-pointer select-none"
+          onClick={() => setActiveView('overview')}
+        >
+          Reseller Hub
+        </div>
         <button className="w-9 h-9 flex items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#475569] border-none cursor-pointer relative">
           <Bell size={18} />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#dc2626] rounded-full" />
@@ -209,6 +214,8 @@ const dispatch = useAppDispatch();
       <Sidebar
         title="Reseller Hub"
         logoSrc={logo}
+        logoHref="/reseller/dashboard"
+        onLogoClick={() => setActiveView('overview')}
         menu={resellerMenu}
         footerMenu={resellerFooterMenu}
         activeTab={activeView}

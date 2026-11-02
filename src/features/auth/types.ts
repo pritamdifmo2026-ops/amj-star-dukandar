@@ -1,4 +1,4 @@
-export type UserRole = 'buyer' | 'supplier' | 'reseller' | 'admin';
+export type UserRole = 'buyer' | 'supplier' | 'reseller' | 'admin' | 'partner' | 'superadmin';
 
 export interface SendOtpPayload {
   phone: string;
@@ -29,10 +29,15 @@ export interface RegisterPayload {
   email?: string;
   phone?: string;
   password: string;
-  role: 'buyer' | 'reseller' | 'supplier';
+  role: 'buyer' | 'reseller' | 'supplier' | 'partner';
   emailOtp?: string;
   phoneOtp?: string;
   referralCode?: string;
+  partnerCode?: string;
+  /** Partner applications only — context the approving admin reads. */
+  applicationNote?: string;
+  city?: string;
+  state?: string;
 }
 
 export interface AuthResponse {
@@ -58,5 +63,8 @@ export interface AuthUser {
   referredSupplierBusinessName?: string;
   referredSupplierReferralCode?: string;
   referralCodeUsed?: string;
+  referredByPartner?: string;
+  partnerCodeUsed?: string;
+  partnerProfile?: any;
 }
 

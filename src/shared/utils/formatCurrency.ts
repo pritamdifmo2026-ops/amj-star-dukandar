@@ -1,12 +1,13 @@
 import appConfig from '@/config/app.config';
 
 export function formatCurrency(amount: number): string {
+  const safeAmount = Number(amount) || 0;
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(safeAmount);
 }
 
 export function formatCompact(amount: number): string {

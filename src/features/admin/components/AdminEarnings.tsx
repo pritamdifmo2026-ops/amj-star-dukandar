@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { IndianRupee, TrendingUp, Lock, Edit2, Check, X, Unlock, AlertTriangle, Package } from 'lucide-react';
+import { IndianRupee, Lock, Edit2, Check, X, Unlock, AlertTriangle, Package, Share2, Receipt, Info, ShieldCheck, Landmark } from 'lucide-react';
 import toast from 'react-hot-toast';
 import adminService from '../services/admin.service';
 import { useAppSelector } from '@/store/hooks';
@@ -120,41 +120,111 @@ const AdminEarnings: React.FC = () => {
         <p className="text-[#64748b] text-sm mt-1">Commission collected from all suppliers. Edit rates directly from this table.</p>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 h-24 animate-pulse" />
-          ))
-        ) : (
-          <>
-            <SummaryCard
-              label="Total AMJ Earnings"
-              value={`₹${fmt(totals?.totalAmjEarned ?? 0)}`}
-              sub="Commissions + Listing Fees"
-              icon={<IndianRupee size={22} />}
-              accent="#059669"
-              bg="#ecfdf5"
-            />
-            <SummaryCard
-              label="Currently Frozen"
-              value={`₹${fmt(totals?.totalFrozen ?? 0)}`}
-              sub="Pending delivery confirmation"
-              icon={<Lock size={22} />}
-              accent="#d97706"
-              bg="#fffbeb"
-            />
-            <SummaryCard
-              label="Total Supplier Earnings"
-              value={`₹${fmt(totals?.totalSupplierEarned ?? 0)}`}
-              sub="Net earnings across all suppliers"
-              icon={<TrendingUp size={22} />}
-              accent="#0284c7"
-              bg="#eff6ff"
-            />
-          </>
-        )}
+      {/* Summary cards - Two-Line Balanced Layout */}
+      <div className="flex flex-col gap-4 mb-6">
+        {/* Line 1: Platform Revenue & Taxes (3 cards) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 h-24 animate-pulse" />
+            ))
+          ) : (
+            <>
+              <SummaryCard
+                label="Net AMJ Profit"
+                value={`₹${fmt(totals?.totalAmjEarned ?? 0)}`}
+                sub="Retained profit (excl. GST liability)"
+                icon={<IndianRupee size={22} />}
+                accent="#059669"
+                bg="#ecfdf5"
+              />
+              <SummaryCard
+                label="Gross Base Fee"
+                value={`₹${fmt(totals?.grossBaseCommission ?? Math.round(((totals?.totalCollectedFromSuppliers ?? totals?.totalCommissionEarned ?? 0) / 1.18) * 100) / 100)}`}
+                sub="Platform service revenue before tax"
+                icon={<Receipt size={22} />}
+                accent="#0284c7"
+                bg="#eff6ff"
+              />
+              <SummaryCard
+                label="18% Service GST"
+                value={`₹${fmt(totals?.gstLiabilityToGovt ?? Math.round(((totals?.totalCollectedFromSuppliers ?? totals?.totalCommissionEarned ?? 0) - ((totals?.totalCollectedFromSuppliers ?? totals?.totalCommissionEarned ?? 0) / 1.18)) * 100) / 100)}`}
+                sub="Output tax for Govt (GSTR-3B)"
+                icon={<Landmark size={22} />}
+                accent="#ea580c"
+                bg="#fff7ed"
+              />
+            </>
+          )}
+        </div>
+
+        {/* Line 2: Disbursements & Escrow (2 cards) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {isLoading ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 h-24 animate-pulse" />
+            ))
+          ) : (
+            <>
+              <SummaryCard
+                label="Partner Payouts"
+                value={`₹${fmt(totals?.totalPartnerCommissionCleared ?? 0)}`}
+                sub={`+ ₹${fmt(totals?.totalPartnerCommissionPending ?? 0)} pending in escrow`}
+                icon={<Share2 size={22} />}
+                accent="#8b5cf6"
+                bg="#f5f3ff"
+              />
+              <SummaryCard
+                label="Currently Frozen"
+                value={`₹${fmt(totals?.totalFrozen ?? 0)}`}
+                sub="Supplier funds in escrow"
+                icon={<Lock size={22} />}
+                accent="#d97706"
+                bg="#fffbeb"
+              />
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Accounting Flow Banner */}
+      {!isLoading && totals && (
+        <div className="mb-8 p-4 bg-gradient-to-r from-[#f8fafc] via-[#f1f5f9] to-[#f8fafc] border border-[#e2e8f0] rounded-[12px] flex flex-col gap-3">
+          <div className="flex items-center justify-between flex-wrap gap-4 text-xs text-[#475569]">
+            <div className="flex items-center gap-2">
+              <Info size={16} className="text-[#0284c7] shrink-0" />
+              <span className="font-semibold text-[#0f172a]">Exact Accounting & Tax Formula:</span>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap font-medium">
+              <span className="bg-white px-2.5 py-1 rounded border border-[#cbd5e1] text-[#0f172a]">
+                Gross Inflow: <strong>₹{fmt(totals?.totalCollectedFromSuppliers ?? totals?.totalCommissionEarned ?? 0)}</strong>
+              </span>
+              <span className="text-[#94a3b8] font-bold">−</span>
+              <span className="bg-orange-50 px-2.5 py-1 rounded border border-orange-200 text-orange-700">
+                18% GST (Govt): <strong>₹{fmt(totals?.gstLiabilityToGovt ?? Math.round(((totals?.totalCollectedFromSuppliers ?? totals?.totalCommissionEarned ?? 0) - ((totals?.totalCollectedFromSuppliers ?? totals?.totalCommissionEarned ?? 0) / 1.18)) * 100) / 100)}</strong>
+              </span>
+              <span className="text-[#94a3b8] font-bold">−</span>
+              <span className="bg-purple-50 px-2.5 py-1 rounded border border-purple-200 text-purple-700">
+                Partner Cut: <strong>₹{fmt(totals?.totalPartnerCommissionCleared ?? 0)}</strong>
+              </span>
+              <span className="text-[#94a3b8] font-bold">+</span>
+              <span className="bg-blue-50 px-2.5 py-1 rounded border border-blue-200 text-blue-700">
+                Listing Fees: <strong>₹{fmt(totals?.totalListingFeesEarned ?? 0)}</strong>
+              </span>
+              <span className="text-[#94a3b8] font-bold">=</span>
+              <span className="bg-emerald-50 px-3 py-1 rounded border border-emerald-300 text-emerald-800 font-bold">
+                Net AMJ Profit: ₹{fmt(totals?.totalAmjEarned ?? 0)}
+              </span>
+            </div>
+          </div>
+          <div className="text-[11px] text-[#64748b] bg-white/70 p-2.5 rounded border border-[#e2e8f0]/60 flex items-center gap-2">
+            <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+            <span>
+              <strong>Zero Leakage Guarantee:</strong> Wholesale partner commissions are calculated strictly against the <em>Base Platform Fee</em> (excluding GST). The 18% GST collected from suppliers is segregated for GSTR-3B statutory filing and never paid out as commission.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Per-supplier table */}
       <div className="bg-white border border-[#eef2f6] rounded-[14px] overflow-hidden">
@@ -181,7 +251,7 @@ const AdminEarnings: React.FC = () => {
                   <th className="text-right px-4 py-3">Wallet Balance</th>
                   <th className="text-right px-4 py-3">Frozen</th>
                   <th className="text-right px-4 py-3">Listing Fees</th>
-                  <th className="text-right px-4 py-3">AMJ Earned</th>
+                  <th className="text-right px-4 py-3">Platform Fee (Base + GST)</th>
                   <th className="text-right px-6 py-3">Supplier Earned</th>
                 </tr>
               </thead>
@@ -274,8 +344,13 @@ const AdminEarnings: React.FC = () => {
                         <Package size={11} />
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-[#059669]">
-                      ₹{fmt((row.totalCommissionPaid ?? 0) + (row.totalListingFeesPaid ?? 0))}
+                    <td className="px-4 py-3 text-right">
+                      <div className="font-bold text-[#059669]">
+                        ₹{fmt((row.baseCommission ?? Math.round(((row.totalCommissionPaid ?? 0) / 1.18) * 100) / 100) + (row.totalListingFeesPaid ?? 0))}
+                      </div>
+                      <div className="text-[10px] text-[#94a3b8]" title="18% GST collected for Govt tax filing">
+                        + ₹{fmt(row.serviceGst ?? Math.round(((row.totalCommissionPaid ?? 0) - ((row.totalCommissionPaid ?? 0) / 1.18)) * 100) / 100)} GST
+                      </div>
                     </td>
                     <td className="px-6 py-3 text-right font-medium text-[#0f172a]">
                       ₹{fmt(row.totalEarned)}

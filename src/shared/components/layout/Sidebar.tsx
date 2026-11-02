@@ -27,10 +27,18 @@ interface SidebarProps {
   footerMenu?: MenuItem[];
   brandColor?: string;
   user?: { name?: string; email?: string; avatar?: string };
-  profile?: { fullName?: string; businessName?: string; storeName?: string };
+  profile?: {
+    fullName?: string;
+    businessName?: string;
+    storeName?: string;
+    user?: { email?: string };
+    businessDetails?: { email?: string };
+  };
   theme?: 'default' | 'admin' | 'dark';
   /** Hide the profile/sign-out footer on mobile — set when the page's mobile header already has its own avatar dropdown with sign-out, to avoid showing it twice. */
   hideFooterOnMobile?: boolean;
+  logoHref?: string;
+  onLogoClick?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -49,13 +57,15 @@ const Sidebar: React.FC<SidebarProps> = ({
   profile,
   theme = 'default',
   hideFooterOnMobile = false,
+  logoHref,
+  onLogoClick,
 }) => {
   const navigate = useNavigate();
   const [showSoonModal, setShowSoonModal] = React.useState(false);
   const [soonFeature, setSoonFeature] = React.useState('');
 
   const displayName = profile?.businessName || profile?.storeName || profile?.fullName || user?.name || 'User';
-  const displayEmail = user?.email || (profile as any)?.user?.email || (profile as any)?.businessDetails?.email || 'user@amjstar.com';
+  const displayEmail = user?.email || profile?.user?.email || profile?.businessDetails?.email || 'user@amjstar.com';
 
   const handleTabClick = (item: MenuItem) => {
     if (item.disabled || item.comingSoon) {
@@ -67,6 +77,24 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
     if (item.action) item.action();
     else onTabChange(item.id);
+  };
+
+  const handleLogoClick = () => {
+    if (onLogoClick) {
+      onLogoClick();
+      return;
+    }
+    if (logoHref) {
+      navigate(logoHref);
+      return;
+    }
+    // If this sidebar has an overview/dashboard tab, switch to it instead of leaving to the home screen
+    const overviewItem = menu.find((item) => item.id === 'overview' || item.id === 'dashboard');
+    if (overviewItem) {
+      onTabChange(overviewItem.id);
+      return;
+    }
+    navigate('/');
   };
 
   const isAdmin = theme === 'admin';
@@ -91,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         'flex mb-14',
         isSidebarOpen ? 'items-center justify-between px-2' : 'flex-col items-center gap-4',
       ].join(' ')}>
-        <div className="flex items-center gap-4 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-4 cursor-pointer" onClick={handleLogoClick}>
           <div className={[
             'w-[52px] h-[52px] rounded-full flex items-center justify-center p-2',
             'shadow-[0_8px_16px_rgba(0,0,0,0.2)] transition-transform duration-300',

@@ -25,7 +25,15 @@ const AdminPlatformSettings: React.FC = () => {
     queryFn: adminService.getPlatformSettings,
   });
 
-  const [form, setForm] = useState({ minimumWalletBalance: '', minimumWithdrawalAmount: '', autoCancelHours: '', contactPhone: '', announcementText: '' });
+  const [form, setForm] = useState({
+    minimumWalletBalance: '',
+    minimumWithdrawalAmount: '',
+    autoCancelHours: '',
+    contactPhone: '',
+    announcementText: '',
+    defaultPartnerSellerCommissionPercent: '15',
+    defaultPartnerBuyerCommissionPercent: '10',
+  });
   const [socialForm, setSocialForm] = useState({ facebook: '', twitter: '', linkedin: '', instagram: '' });
   const [phoneError, setPhoneError] = useState('');
 
@@ -40,6 +48,8 @@ const AdminPlatformSettings: React.FC = () => {
         autoCancelHours: String(settings.autoCancelHours ?? 48),
         contactPhone: settings.contactPhone || '',
         announcementText: settings.announcementText || '',
+        defaultPartnerSellerCommissionPercent: String(settings.defaultPartnerSellerCommissionPercent ?? 15),
+        defaultPartnerBuyerCommissionPercent: String(settings.defaultPartnerBuyerCommissionPercent ?? 10),
       });
       setSocialForm({
         facebook: settings.socialMedia?.facebook || '',
@@ -81,6 +91,8 @@ const AdminPlatformSettings: React.FC = () => {
       autoCancelHours: Number(form.autoCancelHours),
       contactPhone: form.contactPhone,
       announcementText: form.announcementText,
+      defaultPartnerSellerCommissionPercent: Number(form.defaultPartnerSellerCommissionPercent),
+      defaultPartnerBuyerCommissionPercent: Number(form.defaultPartnerBuyerCommissionPercent),
       socialMedia: socialForm,
     } as any),
     onSuccess: () => {
@@ -141,6 +153,57 @@ const AdminPlatformSettings: React.FC = () => {
               className={inputCls}
             />
             <p className="text-xs text-[#94a3b8] mt-1.5">Suppliers cannot request withdrawals below this amount</p>
+          </div>
+
+          {/* Wholesale Partner Commission Rules */}
+          <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/80">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200">
+                Partner Commission Rules
+              </span>
+              <span className="text-[11px] font-semibold text-slate-500">Auto-Applied to New Requests</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-2">
+              <div>
+                <label className={labelCls}>Default Seller Referral %</label>
+                <input
+                  type="number"
+                  step={1}
+                  min={0}
+                  max={100}
+                  value={form.defaultPartnerSellerCommissionPercent}
+                  onChange={e => setForm(p => ({ ...p, defaultPartnerSellerCommissionPercent: e.target.value.replace(/\D/g, '') }))}
+                  className={inputCls}
+                />
+                <p className="text-[10px] text-[#94a3b8] mt-1">When partner refers the Seller</p>
+              </div>
+
+              <div>
+                <label className={labelCls}>Default Buyer Referral %</label>
+                <input
+                  type="number"
+                  step={1}
+                  min={0}
+                  max={100}
+                  value={form.defaultPartnerBuyerCommissionPercent}
+                  onChange={e => setForm(p => ({ ...p, defaultPartnerBuyerCommissionPercent: e.target.value.replace(/\D/g, '') }))}
+                  className={inputCls}
+                />
+                <p className="text-[10px] text-[#94a3b8] mt-1">When partner refers the Buyer</p>
+              </div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-lg p-2.5 text-xs flex items-center justify-between mb-2">
+              <span className="text-slate-600 font-medium">Combined Default Rate (both sides referred):</span>
+              <span className="font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
+                {(parseInt(form.defaultPartnerSellerCommissionPercent, 10) || 0) + (parseInt(form.defaultPartnerBuyerCommissionPercent, 10) || 0)}%
+              </span>
+            </div>
+
+            <p className="text-[11px] text-[#64748b] m-0 leading-relaxed">
+              New wholesale partner registration requests will automatically receive this commission rule upon sign-up. Rates can also be customized per partner during approval.
+            </p>
           </div>
 
           <div>

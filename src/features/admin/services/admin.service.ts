@@ -204,7 +204,26 @@ const adminService = {
 
   getEarnings: async () => {
     const response = await api.get('/admin/earnings');
-    return response.data as { rows: any[]; totals: { totalCommissionEarned: number; totalFrozen: number; totalSupplierEarned: number; totalListingFeesEarned: number; totalAmjEarned: number } };
+    return response.data as {
+      rows: any[];
+      totals: {
+        totalCommissionEarned: number;
+        totalCollectedFromSuppliers?: number;
+        grossBaseCommission?: number;
+        gstLiabilityToGovt?: number;
+        grossCommissionEarned?: number;
+        totalFrozen: number;
+        totalSupplierEarned: number;
+        totalListingFeesEarned: number;
+        totalAmjEarned: number;
+        totalPartnerCommissionCleared?: number;
+        totalPartnerCommissionPending?: number;
+        netBaseCommission?: number;
+        netCommissionEarned?: number;
+        grossPlatformRevenue?: number;
+        grossAmjRevenue?: number;
+      };
+    };
   },
 
   setCommissionRate: async (supplierId: string, commissionRate: number) => {
@@ -273,6 +292,8 @@ const adminService = {
     autoCancelHours?: number;
     contactPhone?: string;
     announcementText?: string;
+    defaultPartnerSellerCommissionPercent?: number;
+    defaultPartnerBuyerCommissionPercent?: number;
     planPrices?: { VERIFIED?: number; GAMMA?: number; BETA?: number };
   }) => {
     const response = await api.put('/admin/platform-settings', data);

@@ -18,6 +18,9 @@ export const ROUTES = {
   RESELLER_CART: '/reseller/cart',
   RESELLER_CHECKOUT: '/reseller/checkout',
 
+  // Partner
+  PARTNER_DASHBOARD: '/partner/dashboard',
+
   // Supplier
   SUPPLIER_DASHBOARD: '/supplier/dashboard',
   SUPPLIER_INBOX: '/supplier/inbox',

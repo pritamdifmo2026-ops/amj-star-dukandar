@@ -317,6 +317,8 @@ const SupplierDashboard: React.FC = () => {
       {/* ── Normal dashboard layout (non-enquiry views) ── */}
       <Sidebar
         title="Supplier Hub" logoSrc={logo}
+        logoHref="/supplier/dashboard"
+        onLogoClick={() => setActiveView('overview')}
         menu={supplierMenu}
         activeTab={activeView} onTabChange={id => setActiveView(id as any)}
         onLogout={handleLogout} isSidebarOpen={isSidebarOpen}
@@ -336,7 +338,14 @@ const SupplierDashboard: React.FC = () => {
         </button>
 
         {/* Branding Logo & Title */}
-        <div className="flex items-center gap-1.5">
+        <div
+          onClick={() => setActiveView('overview')}
+          className="flex items-center gap-1.5 cursor-pointer select-none active:opacity-75 transition-opacity"
+          role="button"
+          tabIndex={0}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setActiveView('overview'); }}
+          title="Supplier Hub Overview"
+        >
           <img src={logo} alt="AMJ Logo" className="h-7 w-7 rounded-full object-contain" />
           <span className="font-extrabold text-[#0f172a] text-xs sm:text-sm tracking-tight">Supplier Hub</span>
         </div>

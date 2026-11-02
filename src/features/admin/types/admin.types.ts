@@ -11,7 +11,11 @@ export interface AdminStats {
   totalOrders: number;
   totalGMV: number;
   totalCommissionEarned: number;
+  grossBaseCommission?: number;
+  gstLiability?: number;
   totalListingFeesEarned: number;
+  totalPartnerCommission?: number;
+  netCommissionEarned?: number;
   ordersByStatus: { status: string; count: number }[];
   monthlyRevenue: { month: string; gmv: number; commission: number }[];
 }

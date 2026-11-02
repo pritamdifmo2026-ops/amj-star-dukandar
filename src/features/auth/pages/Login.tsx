@@ -34,9 +34,12 @@ const Login: React.FC = () => {
   if (isAuthenticated && user) {
     const roleRedirect: Record<string, string> = {
       supplier: '/supplier/dashboard',
+      seller: '/supplier/dashboard',
       reseller: '/reseller/dashboard',
+      partner: '/partner/dashboard',
       admin: '/admin/dashboard',
       superadmin: '/admin/dashboard',
+      subadmin: '/admin/dashboard',
       buyer: '/',
     };
     const redirectParam = searchParams.get('redirect');

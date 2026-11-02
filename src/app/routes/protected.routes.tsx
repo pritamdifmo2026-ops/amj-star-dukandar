@@ -13,8 +13,20 @@ import ResellerGuard from '@/features/reseller/components/ResellerGuard';
 import ForceChangePassword from '@/features/admin/pages/ForceChangePassword';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 import OrderDetailPage from '@/features/buyer/pages/OrderDetailPage';
+import PartnerDashboard from '@/features/partner/pages/PartnerDashboard';
+import PartnerGuard from '@/features/partner/components/PartnerGuard';
 
 export const protectedRoutes: RouteObject[] = [
+  {
+    path: ROUTES.PARTNER_DASHBOARD,
+    element: (
+      <ProtectedRoute allowedRoles={['partner']}>
+        <PartnerGuard>
+          <PartnerDashboard />
+        </PartnerGuard>
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '/profile',
     element: (

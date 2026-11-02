@@ -34,8 +34,13 @@ export function useVerifyLoginOtp() {
       } else {
         const roleRedirect: Record<string, string> = {
           admin: ROUTES.ADMIN_DASHBOARD,
+          superadmin: ROUTES.ADMIN_DASHBOARD,
+          subadmin: ROUTES.ADMIN_DASHBOARD,
           supplier: ROUTES.SUPPLIER_DASHBOARD,
+          seller: ROUTES.SUPPLIER_DASHBOARD,
+          partner: ROUTES.PARTNER_DASHBOARD,
           reseller: ROUTES.RESELLER_DASHBOARD,
+          buyer: ROUTES.HOME,
         };
         navigate(roleRedirect[data.user.role] || ROUTES.HOME);
       }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Store, Clock, Package, CheckCircle, TrendingUp, Shield, ShoppingBag, IndianRupee, BadgePercent } from 'lucide-react';
+import { Users, Store, Clock, Package, CheckCircle, TrendingUp, Shield, ShoppingBag, IndianRupee, BadgePercent, Share2 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, Legend
@@ -61,7 +61,15 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
 
   const revenueCards = [
     { icon: <IndianRupee size={20} />, label: 'Platform GMV', val: fmt(stats.totalGMV ?? 0), cls: 'bg-[#f0fdf4] text-[#15803d]' },
-    { icon: <BadgePercent size={20} />, label: 'Commission Earned', val: fmt(stats.totalCommissionEarned ?? 0), cls: 'bg-[#fff7ed] text-[#c2410c]' },
+    { 
+      icon: <BadgePercent size={20} />, 
+      label: stats.totalPartnerCommission ? 'Net Commission (After Partners)' : 'Commission Earned', 
+      val: fmt(stats.netCommissionEarned ?? stats.totalCommissionEarned ?? 0), 
+      cls: 'bg-[#fff7ed] text-[#c2410c]' 
+    },
+    ...(stats.totalPartnerCommission && stats.totalPartnerCommission > 0 ? [
+      { icon: <Share2 size={20} />, label: 'Partner Payouts Shared', val: fmt(stats.totalPartnerCommission), cls: 'bg-[#f5f3ff] text-[#7c3aed]' }
+    ] : []),
     { icon: <IndianRupee size={20} />, label: 'Listing Fees Earned', val: fmt(stats.totalListingFeesEarned ?? 0), cls: 'bg-[#fdf4ff] text-[#9333ea]' },
   ];
 
@@ -88,7 +96,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ stats }) => {
       </div>
 
       {/* Revenue summary cards */}
-      <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-1">
+      <div className={`grid gap-4 ${revenueCards.length >= 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : 'grid-cols-3 max-lg:grid-cols-1'}`}>
         {revenueCards.map(({ icon, label, val, cls }) => (
           <div key={label} className="bg-white border border-[#eef2f6] rounded-[12px] p-5 flex items-center gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
             <div className={`w-10 h-10 rounded-[8px] flex items-center justify-center shrink-0 ${cls}`}>{icon}</div>

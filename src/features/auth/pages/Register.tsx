@@ -18,9 +18,12 @@ const Register: React.FC = () => {
   if (isAuthenticated && user) {
     const roleRedirect: Record<string, string> = {
       supplier: '/supplier/dashboard',
+      seller: '/supplier/dashboard',
       reseller: '/reseller/dashboard',
+      partner: '/partner/dashboard',
       admin: '/admin/dashboard',
       superadmin: '/admin/dashboard',
+      subadmin: '/admin/dashboard',
       buyer: '/',
     };
     const redirectParam = searchParams.get('redirect');
@@ -33,23 +36,29 @@ const Register: React.FC = () => {
     return <Navigate to={targetUrl} replace />;
   }
   const modeParam = searchParams.get('mode') ?? 'buyer';
-  // Map URL mode → internal role: 'seller' → 'supplier'
-  const initialRole = (modeParam === 'seller' ? 'supplier' : modeParam === 'reseller' ? 'reseller' : 'buyer') as 'buyer' | 'reseller' | 'supplier';
+  // Map URL mode → internal role: 'seller' → 'supplier', 'partner' → 'partner'
+  const initialRole = (modeParam === 'seller' ? 'supplier' : modeParam === 'reseller' ? 'reseller' : modeParam === 'partner' ? 'partner' : 'buyer') as 'buyer' | 'reseller' | 'supplier' | 'partner';
 
-  // Read referral code from URL if present (?ref=... or ?referral=...)
-  const refFromUrl = (searchParams.get('ref') || searchParams.get('referral') || searchParams.get('referralCode') || '')
+  // Read referral code from URL if present (?ref=..., ?referral=..., ?partner=..., etc.)
+  const refFromUrl = (
+    searchParams.get('ref') ||
+    searchParams.get('referral') ||
+    searchParams.get('referralCode') ||
+    searchParams.get('partner') ||
+    searchParams.get('partnerCode') ||
+    ''
+  )
     .trim()
     .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '')
-    .slice(0, 6);
+    .replace(/[^A-Z0-9-_]/g, '')
+    .slice(0, 25);
 
   const [referralCode, setReferralCode] = useState(refFromUrl);
-  const [isAutoFilled, setIsAutoFilled] = useState(Boolean(refFromUrl));
-  const [showManualReferralInput, setShowManualReferralInput] = useState(Boolean(refFromUrl));
   const [referralStatus, setReferralStatus] = useState<{
     loading: boolean;
     valid?: boolean;
-    supplierName?: string;
+    type?: 'supplier' | 'partner';
+    name?: string;
     message?: string;
   }>({ loading: false });
 
@@ -63,6 +72,13 @@ const Register: React.FC = () => {
     phoneOtp: ''
   });
 
+  // Only collected on a partner application — context for the approving admin.
+  const [partnerApplication, setPartnerApplication] = useState({
+    city: '',
+    state: '',
+    applicationNote: '',
+  });
+
   const navigate = useNavigate();
   const [emailOtpSent, setEmailOtpSent] = useState(false);
   const [phoneOtpSent, setPhoneOtpSent] = useState(false);
@@ -73,46 +89,59 @@ const Register: React.FC = () => {
   const [verifyingEmailOtp, setVerifyingEmailOtp] = useState(false);
   const [verifyingPhoneOtp, setVerifyingPhoneOtp] = useState(false);
 
-  // Validate referral code in real-time when it reaches 6 alphanumeric characters
+  // Validate referral code in real-time (automatically resolves whether it is a Supplier or Partner)
   useEffect(() => {
-    if (referralCode && referralCode.length === 6) {
+    const clean = referralCode.trim().toUpperCase();
+    if (clean.length >= 3) {
       let cancelled = false;
       setReferralStatus({ loading: true });
-      api.get(`/supplier/referral/${referralCode}`)
-        .then((res) => {
-          if (!cancelled) {
-            if (res.data?.valid) {
-              setReferralStatus({
-                loading: false,
-                valid: true,
-                supplierName: res.data.supplier?.businessName,
-                message: `Connected to ${res.data.supplier?.businessName}`,
-              });
-            } else {
+      const timer = setTimeout(() => {
+        api.get(`/supplier/referral/${encodeURIComponent(clean)}`)
+          .then((res) => {
+            if (!cancelled) {
+              if (res.data?.valid) {
+                const isPartner = res.data.type === 'partner';
+                const displayName = isPartner
+                  ? (res.data.partner?.fullName || res.data.partner?.businessName || res.data.partner?.partnerCode)
+                  : res.data.supplier?.businessName;
+
+                setReferralStatus({
+                  loading: false,
+                  valid: true,
+                  type: isPartner ? 'partner' : 'supplier',
+                  name: displayName,
+                  message: isPartner
+                    ? `Referred by Wholesale Partner: ${displayName}`
+                    : `Connected to Supplier: ${displayName}`,
+                });
+              } else {
+                setReferralStatus({
+                  loading: false,
+                  valid: false,
+                  message: 'Invalid referral code',
+                });
+              }
+            }
+          })
+          .catch((err) => {
+            if (!cancelled) {
               setReferralStatus({
                 loading: false,
                 valid: false,
-                message: 'Invalid referral code',
+                message: err.response?.data?.message || 'Referral code not found',
               });
             }
-          }
-        })
-        .catch((err) => {
-          if (!cancelled) {
-            setReferralStatus({
-              loading: false,
-              valid: false,
-              message: err.response?.data?.message || 'Referral code not found',
-            });
-          }
-        });
-      return () => { cancelled = true; };
+          });
+      }, 300);
+
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
     } else {
       setReferralStatus({ loading: false });
     }
   }, [referralCode]);
-
-
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { mutate: register, isPending } = useRegister();
@@ -214,8 +243,12 @@ const Register: React.FC = () => {
     }
 
     if (form.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
-    if (referralCode && !/^[A-Z0-9]{6}$/.test(referralCode)) {
-      newErrors.referralCode = 'Referral code must be exactly 6 alphanumeric characters';
+    if (referralCode.trim()) {
+      if (!/^[A-Z0-9-_]{3,25}$/.test(referralCode.trim())) {
+        newErrors.referralCode = 'Referral code must be 3-25 alphanumeric characters';
+      } else if (referralStatus.valid === false && !referralStatus.loading) {
+        newErrors.referralCode = referralStatus.message || 'Invalid referral code';
+      }
     }
 
     setErrors(newErrors);
@@ -265,7 +298,21 @@ const Register: React.FC = () => {
         role: form.role,
         ...(emailVal ? { email: emailVal, emailOtp: form.emailOtp } : {}),
         ...(phoneVal ? { phone: phoneVal, phoneOtp: form.phoneOtp } : {}),
-        ...(referralCode ? { referralCode: referralCode.trim().toUpperCase() } : {}),
+        // Referral code is auto-resolved internally to either Supplier or Partner
+        ...(referralCode.trim()
+          ? referralStatus.type === 'partner'
+            ? { partnerCode: referralCode.trim().toUpperCase(), referralCode: referralCode.trim().toUpperCase() }
+            : { referralCode: referralCode.trim().toUpperCase() }
+          : {}),
+        ...(form.role === 'partner'
+          ? {
+              ...(partnerApplication.city.trim() ? { city: partnerApplication.city.trim() } : {}),
+              ...(partnerApplication.state.trim() ? { state: partnerApplication.state.trim() } : {}),
+              ...(partnerApplication.applicationNote.trim()
+                ? { applicationNote: partnerApplication.applicationNote.trim() }
+                : {}),
+            }
+          : {}),
       };
       register(payload);
     }
@@ -386,7 +433,7 @@ const Register: React.FC = () => {
         <div className="flex flex-col gap-1">
           <label className="text-[12.5px] font-medium text-body">I am a</label>
           <div className="flex gap-2">
-            {(['buyer', 'reseller', 'supplier'] as const).map(r => (
+            {(['buyer', 'supplier', 'reseller', 'partner'] as const).map(r => (
               <label
                 key={r}
                 className={[
@@ -397,114 +444,135 @@ const Register: React.FC = () => {
                 ].join(' ')}
               >
                 <input type="radio" name="role" value={r} checked={form.role === r} onChange={set('role')} hidden />
-                {r === 'buyer' ? 'Buyer' : r === 'reseller' ? 'Reseller' : 'Supplier'}
+                {r === 'buyer' ? 'Buyer' : r === 'supplier' ? 'Supplier' : r === 'reseller' ? 'Reseller' : 'Partner'}
               </label>
             ))}
           </div>
         </div>
 
-        {/* ── Supplier Referral Code Section (especially for Buyers) ── */}
-        {form.role === 'buyer' && (
+        {form.role === 'partner' && (
+          <div className="flex flex-col gap-2.5">
+            <div className="p-3 bg-indigo-50/80 border border-indigo-200 rounded-[8px]">
+              <span className="text-[12px] font-bold text-indigo-900 block mb-1">
+                Applying as a Wholesale Service Partner
+              </span>
+              <p className="text-[11.5px] text-indigo-800 m-0 leading-relaxed">
+                You will bring manufacturers and bulk buyers onto AMJ Star and earn a share of the
+                platform fee on every deal they close — no salary, no targets. Your account needs AMJ
+                Star's confirmation before commission starts accruing; you can sign in and set up your
+                profile straight away.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-[12.5px] font-medium text-body">City</label>
+                <input
+                  value={partnerApplication.city}
+                  onChange={(e) => setPartnerApplication({ ...partnerApplication, city: e.target.value })}
+                  placeholder="e.g. Surat"
+                  className="w-full px-3 py-2 border border-border rounded-[4px] text-[13px] outline-none focus:border-primary"
+                />
+              </div>
+              <div className="flex-1 flex flex-col gap-1">
+                <label className="text-[12.5px] font-medium text-body">State</label>
+                <input
+                  value={partnerApplication.state}
+                  onChange={(e) => setPartnerApplication({ ...partnerApplication, state: e.target.value })}
+                  placeholder="e.g. Gujarat"
+                  className="w-full px-3 py-2 border border-border rounded-[4px] text-[13px] outline-none focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[12.5px] font-medium text-body">
+                Tell us about your network <span className="text-muted font-normal">(optional)</span>
+              </label>
+              <textarea
+                value={partnerApplication.applicationNote}
+                onChange={(e) =>
+                  setPartnerApplication({ ...partnerApplication, applicationNote: e.target.value })
+                }
+                rows={3}
+                maxLength={1000}
+                placeholder="Which trade or region do you work in, and roughly how many manufacturers or buyers could you introduce? This is what our team reads when approving your account."
+                className="w-full px-3 py-2 border border-border rounded-[4px] text-[13px] outline-none focus:border-primary resize-y"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ── REFERRAL CODE (Auto-detected Supplier or Wholesale Partner) ── */}
+        {(form.role === 'buyer' || form.role === 'supplier' || form.role === 'reseller') && (
           <div className="pt-0.5">
-            {isAutoFilled && referralCode ? (
-              <div className="p-2.5 bg-emerald-50/80 border border-emerald-200 rounded-[8px] flex items-center justify-between gap-2.5 shadow-xs">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <Gift size={14} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[11.5px] font-bold text-emerald-900">Referral Code Auto-Applied</span>
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-200 font-mono font-extrabold text-[11px] text-emerald-950 tracking-wider">
-                        {referralCode}
-                      </span>
-                    </div>
-                    {referralStatus.loading ? (
-                      <span className="text-[10.5px] text-emerald-700 block mt-0.5">Verifying supplier...</span>
-                    ) : referralStatus.valid && referralStatus.supplierName ? (
-                      <span className="text-[10.5px] text-emerald-800 font-semibold block truncate mt-0.5">
-                        Connected to supplier: <strong>{referralStatus.supplierName}</strong>
-                      </span>
-                    ) : (
-                      <span className="text-[10.5px] text-emerald-700 block mt-0.5">Linked from supplier invite</span>
-                    )}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setReferralCode('');
-                    setIsAutoFilled(false);
-                    setShowManualReferralInput(true);
+            <div className="flex flex-col gap-1.5 p-3 bg-slate-50 border border-slate-200 rounded-[8px]">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                  <Gift size={13} className="text-primary" /> Referral Code (Optional)
+                </label>
+                {referralStatus.valid && referralStatus.type && (
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      referralStatus.type === 'partner'
+                        ? 'bg-indigo-100 text-indigo-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}
+                  >
+                    {referralStatus.type === 'partner' ? 'Wholesale Partner' : 'Supplier'}
+                  </span>
+                )}
+              </div>
+
+              <div className="relative">
+                <Input
+                  placeholder="Enter referral code (e.g. K8F2M9 or AMJ-P1234)"
+                  value={referralCode}
+                  onChange={(e) => {
+                    const val = e.target.value.toUpperCase().replace(/[^A-Z0-9-_]/g, '').slice(0, 25);
+                    setReferralCode(val);
+                    if (errors.referralCode) {
+                      setErrors((prev) => {
+                        const copy = { ...prev };
+                        delete copy.referralCode;
+                        return copy;
+                      });
+                    }
                   }}
-                  className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 underline bg-transparent border-none cursor-pointer shrink-0"
+                  error={errors.referralCode}
+                  fullWidth
+                />
+                {referralStatus.loading && (
+                  <span className="absolute right-3 top-[9px] w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                )}
+                {!referralStatus.loading && referralStatus.valid && (
+                  <span
+                    className={`absolute right-3 top-[9px] font-bold text-xs flex items-center gap-1 ${
+                      referralStatus.type === 'partner' ? 'text-indigo-600' : 'text-emerald-600'
+                    }`}
+                  >
+                    <CheckCircle2 size={14} /> Verified
+                  </span>
+                )}
+              </div>
+
+              {referralStatus.valid && (
+                <p
+                  className={`text-[11px] font-semibold m-0 mt-0.5 flex items-center gap-1 ${
+                    referralStatus.type === 'partner' ? 'text-indigo-700' : 'text-emerald-700'
+                  }`}
                 >
-                  Change
-                </button>
-              </div>
-            ) : showManualReferralInput ? (
-              <div className="flex flex-col gap-1 p-2.5 bg-slate-50 border border-slate-200 rounded-[8px]">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                    <Gift size={12} className="text-primary" /> Supplier Referral Code (Optional)
-                  </label>
-                  {!refFromUrl && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReferralCode('');
-                        setShowManualReferralInput(false);
-                      }}
-                      className="text-[10.5px] text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer p-0"
-                    >
-                      Hide
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <Input
-                    placeholder="Enter 6-character code (e.g. K8F2M9)"
-                    value={referralCode}
-                    onChange={(e) => {
-                      const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
-                      setReferralCode(val);
-                      if (errors.referralCode) {
-                        setErrors(prev => { const copy = { ...prev }; delete copy.referralCode; return copy; });
-                      }
-                    }}
-                    maxLength={6}
-                    error={errors.referralCode}
-                    fullWidth
-                  />
-                  {referralStatus.loading && (
-                    <span className="absolute right-3 top-[9px] w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  )}
-                  {!referralStatus.loading && referralStatus.valid && (
-                    <span className="absolute right-3 top-[9px] text-emerald-600 font-bold text-xs flex items-center gap-1">
-                      <CheckCircle2 size={14} /> Verified
-                    </span>
-                  )}
-                </div>
-                {referralStatus.valid && referralStatus.supplierName && (
-                  <p className="text-[10.5px] text-emerald-700 font-semibold m-0">
-                    ✓ Connected to store: <strong>{referralStatus.supplierName}</strong>
-                  </p>
-                )}
-                {!referralStatus.loading && referralCode.length === 6 && referralStatus.valid === false && (
-                  <p className="text-[10.5px] text-rose-600 font-medium m-0">
-                    ✕ {referralStatus.message || 'Referral code not found'}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowManualReferralInput(true)}
-                className="text-left text-xs font-semibold text-primary hover:underline bg-transparent border-none cursor-pointer p-0 flex items-center gap-1.5"
-              >
-                <Gift size={12} /> Have a Supplier Referral Code? Click here to enter
-              </button>
-            )}
+                  <CheckCircle2 size={12} />
+                  {referralStatus.message || `Connected to: ${referralStatus.name}`}
+                </p>
+              )}
+
+              {!referralStatus.loading && referralCode.trim().length >= 3 && referralStatus.valid === false && (
+                <p className="text-[11px] text-rose-600 font-medium m-0 mt-0.5">
+                  ✕ {referralStatus.message || 'Referral code not found'}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>

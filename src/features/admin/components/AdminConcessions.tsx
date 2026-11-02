@@ -10,6 +10,13 @@ import concessionApi, {
 
 const STATUS_FILTERS: (ConcessionStatus | 'all')[] = ['pending', 'approved', 'rejected', 'all'];
 
+/** Who filed the request, in words an admin can act on. */
+const SOURCE_LABEL: Record<string, string> = {
+  sales: 'AMJ Star sales team',
+  supplier: 'The supplier themselves',
+  partner: 'Wholesale Service Partner',
+};
+
 const TYPE_LABEL: Record<ConcessionType, string> = {
   subscription_trial:        'Subscription Trial (Free Trial)',
   subscription_tier_upgrade: 'Subscription Trial (Higher Tier)',
@@ -74,7 +81,12 @@ const Row: React.FC<{
       </td>
       <td className="py-3 px-4">
         <div className="text-sm text-[#0f172a]">{requester?.name ?? '—'}</div>
-        <div className="text-xs text-[#64748b] mt-0.5 capitalize">{request.source}{requester?.role ? ` · ${requester.role}` : ''}</div>
+        <div className="text-xs text-[#64748b] mt-0.5">{SOURCE_LABEL[request.source] ?? request.source}</div>
+        {request.source === 'partner' && (
+          <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#eef2ff] text-[#4338ca] border border-[#c7d2fe]">
+            External partner — always needs review
+          </span>
+        )}
       </td>
       <td className="py-3 px-4 text-sm text-[#475569] max-w-[280px]">
         {request.criteriaOption && (

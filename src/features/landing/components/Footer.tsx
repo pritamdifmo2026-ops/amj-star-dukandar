@@ -81,6 +81,7 @@ const Footer: React.FC = () => {
                 <li><FooterLink to="/careers">Careers</FooterLink></li>
                 <li><FooterLink to={ROUTES.SUPPLIERS}>Become Supplier</FooterLink></li>
                 <li><FooterLink to={ROUTES.RESELLERS}>Become Reseller</FooterLink></li>
+                <li><FooterLink to="/register?mode=partner">Wholesale Partner Program</FooterLink></li>
                 <li><FooterLink to={ROUTES.BUYERS}>Bulk Orders</FooterLink></li>
                 <li><FooterLink onClick={() => setIsHelpOpen(true)}>Help</FooterLink></li>
                 <li><FooterLink to="/contact">Contact</FooterLink></li>

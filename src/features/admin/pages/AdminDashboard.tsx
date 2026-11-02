@@ -38,10 +38,12 @@ import AdminJobs from '../components/AdminJobs';
 import UnmatchedDeals from '../components/UnmatchedDeals';
 import AdminConcessions from '../components/AdminConcessions';
 import AdminSalesRecommendConcession from '../components/AdminSalesRecommendConcession';
+import AdminPartners from '../components/AdminPartners';
 
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 import adminService from '../services/admin.service';
 import concessionApi from '../services/concession.api';
+import partnerService from '@/features/partner/services/partner.service';
 import { Navigate } from 'react-router-dom';
 
 const tabLabel: Record<string, string> = {
@@ -52,6 +54,7 @@ const tabLabel: Record<string, string> = {
   'supplier-products': 'Supplier Products',
   resellers: 'Reseller Verifications',
   'reseller-detail': 'Reseller Profile',
+  partners: 'Wholesale Service Partners',
   users: 'User Management',
   products: 'Product Queue',
   categories: 'Category Management',
@@ -90,6 +93,11 @@ const AdminDashboard: React.FC = () => {
 
   const displayName = user?.name || 'Admin';
   const displayEmail = user?.email || 'admin@amjstar.com';
+
+  const hasPermission = (perm: string) => {
+    if (user?.role === 'superadmin') return true;
+    return user?.permissions?.includes(perm) || false;
+  };
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -134,6 +142,20 @@ const AdminDashboard: React.FC = () => {
     refetchInterval: 60_000,
   });
 
+  const { data: pendingPartnersCount = 0 } = useQuery<number>({
+    queryKey: ['admin', 'partners', 'pending-count'],
+    queryFn: async () => {
+      try {
+        const res = await partnerService.adminGetAllPartners({ status: 'pending', limit: 1 });
+        return res.pendingCount ?? res.pagination?.total ?? res.partners?.length ?? 0;
+      } catch {
+        return 0;
+      }
+    },
+    enabled: user?.role === 'superadmin' || hasPermission('user_management'),
+    refetchInterval: 60_000,
+  });
+
   const {
     stats, allSuppliers, allResellers, allUsers,
     pendingProducts, approvedProducts, loading,
@@ -152,6 +174,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'stats', label: 'Overview', icon: BarChart3 },
     { id: 'suppliers', label: 'Manage Suppliers', icon: Users },
     { id: 'resellers', label: 'Manage Resellers', icon: Users },
+    { id: 'partners', label: 'Manage Partners', icon: Users, badge: pendingPartnersCount || undefined },
     { id: 'users', label: 'User Management', icon: Users },
     { id: 'products', label: 'Product Queue', icon: Package, badge: stats?.pendingProducts || undefined },
     { id: 'categories', label: 'Categories', icon: Tags },
@@ -175,11 +198,6 @@ const AdminDashboard: React.FC = () => {
     { id: 'meeting-requests', label: 'Meeting Requests', icon: Video },
   ];
 
-  const hasPermission = (perm: string) => {
-    if (user?.role === 'superadmin') return true;
-    return user?.permissions?.includes(perm) || false;
-  };
-
   const isScopedAdmin = user?.role === 'admin' && Array.isArray(user?.assignedSuppliers) && user.assignedSuppliers.length > 0;
 
   const filteredMenu = adminMenu.filter(item => {
@@ -197,6 +215,7 @@ const AdminDashboard: React.FC = () => {
       return hasPermission('supplier_verify');
     }
     if (item.id === 'resellers') return hasPermission('reseller_verify');
+    if (item.id === 'partners') return hasPermission('user_management');
     if (item.id === 'users') return hasPermission('user_management');
     if (item.id === 'products') return hasPermission('product_queue');
     if (item.id === 'categories') return hasPermission('category_management');
@@ -278,7 +297,14 @@ const AdminDashboard: React.FC = () => {
         </button>
 
         {/* Branding Logo & Title */}
-        <div className="flex items-center gap-1.5">
+        <div
+          onClick={() => { setActiveTab('overview'); setSearchParams({ tab: 'overview' }); }}
+          className="flex items-center gap-1.5 cursor-pointer select-none active:opacity-75 transition-opacity"
+          role="button"
+          tabIndex={0}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { setActiveTab('overview'); setSearchParams({ tab: 'overview' }); } }}
+          title="AMJ Admin Overview"
+        >
           <img src={logo} alt="AMJ Logo" className="h-7 w-7 rounded-full object-contain" />
           <span className="font-extrabold text-[#0f172a] text-xs sm:text-sm tracking-tight">AMJ Admin</span>
         </div>
@@ -323,6 +349,8 @@ const AdminDashboard: React.FC = () => {
       <Sidebar
         title="AMJ Admin"
         logoSrc={logo}
+        logoHref="/admin/dashboard"
+        onLogoClick={() => { setActiveTab('overview'); setSearchParams({ tab: 'overview' }); }}
         menu={filteredMenu}
         activeTab={activeTab}
         onTabChange={id => { setActiveTab(id); if (window.innerWidth <= 1024) setIsSidebarOpen(false); }}
@@ -384,6 +412,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'unmatched-deals' && <UnmatchedDeals />}
             {activeTab === 'platform-settings' && <AdminPlatformSettings />}
             {activeTab === 'withdrawals' && <AdminWithdrawals />}
+            {activeTab === 'partners' && <AdminPartners />}
             {activeTab === 'supplier-plans' && (
               <AdminSupplierPlans onViewSupplier={id => setSearchParams({ tab: 'supplier-detail', id })} />
             )}

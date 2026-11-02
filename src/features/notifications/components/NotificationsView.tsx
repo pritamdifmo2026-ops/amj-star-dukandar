@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell, CheckCheck, ShoppingBag, MessageSquare,
-  FileText, CreditCard, Clock, AlertTriangle, Sparkles,
+  FileText, CreditCard, Clock, AlertTriangle, Sparkles, Handshake,
 } from 'lucide-react';
 import { notificationApi, type INotification } from '../notificationApi';
 
@@ -38,6 +38,7 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
   subscription_expiring: <Clock size={16} />,
   admin_alert:           <AlertTriangle size={16} />,
   lead_matched:          <Sparkles size={16} />,
+  partner_update:        <Handshake size={16} />,
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -50,6 +51,7 @@ const TYPE_COLOR: Record<string, string> = {
   subscription_expiring: 'bg-amber-100 text-amber-600',
   admin_alert:           'bg-orange-100 text-orange-600',
   lead_matched:          'bg-orange-100 text-orange-600',
+  partner_update:        'bg-indigo-100 text-indigo-600',
 };
 
 const PAGE_SIZE = 20;

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, ChevronDown, Menu, X, User, LogOut,
   Store, ShoppingBag, Truck, List, LayoutDashboard, Search,
-  Info, Factory, RefreshCw, ShieldCheck
+  Info, Factory, RefreshCw, ShieldCheck, Handshake, Users
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { logout } from '@/features/auth/store/auth.slice';
@@ -68,6 +68,7 @@ const Navbar: React.FC = () => {
   const user = useAppSelector(s => s.auth.user);
   const isSupplier = user?.role === 'supplier';
   const isReseller = user?.role === 'reseller';
+  const isPartner = user?.role === 'partner';
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
   const { profile: supplierProfile } = useAppSelector(s => s.supplier);
   const { profile: resellerProfile } = useAppSelector(s => s.reseller);
@@ -188,10 +189,19 @@ const Navbar: React.FC = () => {
                         <Link to="/reseller/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <LayoutDashboard size={14} className="inline mr-2" />Dashboard
                         </Link>
-                      ) : isAdmin ? (
-                        <Link to="/admin/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
-                          <LayoutDashboard size={14} className="inline mr-2" />Control Panel
+                      ) : isPartner ? (
+                        <Link to="/partner/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <LayoutDashboard size={14} className="inline mr-2" />Partner Hub
                         </Link>
+                      ) : isAdmin ? (
+                        <>
+                          <Link to="/admin/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                            <LayoutDashboard size={14} className="inline mr-2" />Control Panel
+                          </Link>
+                          <Link to="/admin/dashboard?tab=partners" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                            <Users size={14} className="inline mr-2 text-indigo-600" />Manage Partners
+                          </Link>
+                        </>
                       ) : (
                         <Link to="/profile" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <User size={14} className="inline mr-2" />Profile
@@ -216,6 +226,9 @@ const Navbar: React.FC = () => {
                   </Link>
                   <Link to={ROUTES.SUPPLIERS} className={`${navLinkCls} flex items-center gap-1`}>
                     <Factory size={12} /> For Suppliers
+                  </Link>
+                  <Link to="/register?mode=partner" className={`${navLinkCls} flex items-center gap-1 text-indigo-600 font-bold hover:text-indigo-700`}>
+                    <Handshake size={12} /> Partner Program
                   </Link>
                   <Link
                     to="/login"
@@ -279,10 +292,19 @@ const Navbar: React.FC = () => {
                           <Link to="/reseller/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                             <LayoutDashboard size={14} className="inline mr-2" />Dashboard
                           </Link>
-                        ) : isAdmin ? (
-                          <Link to="/admin/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
-                            <LayoutDashboard size={14} className="inline mr-2" />Control Panel
+                        ) : isPartner ? (
+                          <Link to="/partner/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                            <LayoutDashboard size={14} className="inline mr-2" />Partner Hub
                           </Link>
+                        ) : isAdmin ? (
+                          <>
+                            <Link to="/admin/dashboard" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                              <LayoutDashboard size={14} className="inline mr-2" />Control Panel
+                            </Link>
+                            <Link to="/admin/dashboard?tab=partners" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                              <Users size={14} className="inline mr-2 text-indigo-600" />Manage Partners
+                            </Link>
+                          </>
                         ) : (
                           <Link to="/profile" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                             <User size={14} className="inline mr-2" />Profile
@@ -318,6 +340,9 @@ const Navbar: React.FC = () => {
                         </Link>
                         <Link to="/register?mode=seller" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <Store size={14} className="inline mr-2 text-[#8b5cf6]" />Become a Supplier
+                        </Link>
+                        <Link to="/register?mode=partner" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <Handshake size={14} className="inline mr-2 text-indigo-600" />Partner Program
                         </Link>
                         {/* <Link to="/login?mode=reseller" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <Truck size={14} className="inline mr-2 text-[#06b6d4]" />Reseller Sign In
@@ -537,15 +562,16 @@ const Navbar: React.FC = () => {
             <div className="mb-6">
               <div className="text-[11px] font-bold uppercase text-muted tracking-widest mb-3">Account & Partner</div>
               {isAuth ? (
-                <Link to={isSupplier ? "/supplier/dashboard" : isReseller ? "/reseller/dashboard" : isAdmin ? "/admin/dashboard" : "/profile"}
+                <Link to={isSupplier ? "/supplier/dashboard" : isReseller ? "/reseller/dashboard" : isPartner ? "/partner/dashboard" : isAdmin ? "/admin/dashboard" : "/profile"}
                   className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}>
-                  <User size={18} className="text-primary shrink-0" /><span>{isAdmin ? 'Control Panel' : 'My Profile'}</span>
+                  <User size={18} className="text-primary shrink-0" /><span>{isAdmin ? 'Control Panel' : isPartner ? 'Partner Hub' : 'My Profile'}</span>
                 </Link>
               ) : (
                 <>
                   <Link to={ROUTES.BUYERS} className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}><ShoppingBag size={18} className="text-muted shrink-0" /><span>For Buyers</span></Link>
                   <Link to={ROUTES.SUPPLIERS} className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}><Store size={18} className="text-muted shrink-0" /><span>For Suppliers</span></Link>
                   <Link to={ROUTES.RESELLERS} className="flex items-center gap-3 py-2.5 text-heading no-underline font-medium text-sm hover:text-primary transition-colors" onClick={() => setMobileOpen(false)}><Truck size={18} className="text-muted shrink-0" /><span>For Resellers</span></Link>
+                  <Link to="/register?mode=partner" className="flex items-center gap-3 py-2.5 text-indigo-600 no-underline font-bold text-sm hover:text-indigo-700 transition-colors" onClick={() => setMobileOpen(false)}><Handshake size={18} className="text-indigo-600 shrink-0" /><span>Become a Partner</span></Link>
                   <Link
                     to="/login"
                     onClick={() => setMobileOpen(false)}

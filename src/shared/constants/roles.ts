@@ -4,6 +4,7 @@ export const ROLES = {
   SUPPLIER: 'supplier',
   RESELLER: 'reseller',
   BUYER: 'buyer',
+  PARTNER: 'partner',
 } as const;
 
 export type UserRole = (typeof ROLES)[keyof typeof ROLES];
