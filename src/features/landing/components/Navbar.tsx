@@ -151,7 +151,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center gap-3">
               {!isAuth && (
                 <>
-                  <Link to="/register?mode=seller" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
+                  <Link to="/register?mode=supplier" className="text-[9px] text-body no-underline hover:text-primary">Sell on AMJSTAR</Link>
                   <span className="text-border">|</span>
                 </>
               )}
@@ -338,7 +338,7 @@ const Navbar: React.FC = () => {
                         <Link to="/login?mode=buyer" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <User size={14} className="inline mr-2 text-primary" />Buyer Sign In
                         </Link>
-                        <Link to="/register?mode=seller" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                        <Link to="/register?mode=supplier" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <Store size={14} className="inline mr-2 text-[#8b5cf6]" />Become a Supplier
                         </Link>
                         <Link to="/register?mode=partner" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>

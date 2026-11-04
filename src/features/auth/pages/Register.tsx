@@ -11,9 +11,17 @@ import type { RegisterPayload } from '../types';
 import api from '@/api/client';
 import toast from 'react-hot-toast';
 
+const parseModeToRole = (mode: string | null): 'buyer' | 'reseller' | 'supplier' | 'partner' => {
+  const m = mode?.toLowerCase();
+  if (m === 'supplier' || m === 'seller') return 'supplier';
+  if (m === 'reseller') return 'reseller';
+  if (m === 'partner') return 'partner';
+  return 'buyer';
+};
+
 const Register: React.FC = () => {
   const { isAuthenticated, user } = useAppSelector(s => s.auth);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   if (isAuthenticated && user) {
     const roleRedirect: Record<string, string> = {
@@ -35,9 +43,9 @@ const Register: React.FC = () => {
     }
     return <Navigate to={targetUrl} replace />;
   }
-  const modeParam = searchParams.get('mode') ?? 'buyer';
-  // Map URL mode → internal role: 'seller' → 'supplier', 'partner' → 'partner'
-  const initialRole = (modeParam === 'seller' ? 'supplier' : modeParam === 'reseller' ? 'reseller' : modeParam === 'partner' ? 'partner' : 'buyer') as 'buyer' | 'reseller' | 'supplier' | 'partner';
+  const modeParam = searchParams.get('mode');
+  // Map URL mode → internal role: 'seller' | 'supplier' → 'supplier', 'partner' → 'partner', etc.
+  const initialRole = parseModeToRole(modeParam);
 
   // Read referral code from URL if present (?ref=..., ?referral=..., ?partner=..., etc.)
   const refFromUrl = (
@@ -88,6 +96,31 @@ const Register: React.FC = () => {
   const [phoneOtpVerified, setPhoneOtpVerified] = useState(false);
   const [verifyingEmailOtp, setVerifyingEmailOtp] = useState(false);
   const [verifyingPhoneOtp, setVerifyingPhoneOtp] = useState(false);
+
+  const handleRoleChange = (newRole: 'buyer' | 'reseller' | 'supplier' | 'partner') => {
+    setForm(prev => ({ ...prev, role: newRole }));
+    setErrors(prev => {
+      const u = { ...prev };
+      delete u.email;
+      delete u.phone;
+      delete u.emailOtp;
+      delete u.phoneOtp;
+      return u;
+    });
+
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('mode', newRole);
+      return next;
+    }, { replace: true });
+  };
+
+  // Synchronize form.role if mode query param in URL changes (e.g. back/forward navigation)
+  useEffect(() => {
+    if (!modeParam) return;
+    const roleFromUrl = parseModeToRole(modeParam);
+    setForm(prev => (prev.role === roleFromUrl ? prev : { ...prev, role: roleFromUrl }));
+  }, [modeParam]);
 
   // Validate referral code in real-time (automatically resolves whether it is a Supplier or Partner)
   useEffect(() => {
@@ -257,6 +290,10 @@ const Register: React.FC = () => {
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     let val = e.target.value;
+    if (field === 'role') {
+      handleRoleChange(val as 'buyer' | 'reseller' | 'supplier' | 'partner');
+      return;
+    }
     if (field === 'email') {
       val = val.toLowerCase().replace(/[^a-z0-9@.-]/g, '');
       val = val.replace(/[@.]{2,}/g, match => match[0]);
@@ -267,17 +304,6 @@ const Register: React.FC = () => {
     }
     setForm(prev => ({ ...prev, [field]: val }));
     if (errors[field]) setErrors(prev => { const u = { ...prev }; delete u[field]; return u; });
-
-    if (field === 'role') {
-      setErrors(prev => {
-        const u = { ...prev };
-        delete u.email;
-        delete u.phone;
-        delete u.emailOtp;
-        delete u.phoneOtp;
-        return u;
-      });
-    }
 
     if (field === 'emailOtp' && val.length === 6 && !emailOtpVerified) {
       verifyOtpInline('email', val);
@@ -436,6 +462,7 @@ const Register: React.FC = () => {
             {(['buyer', 'supplier', 'reseller', 'partner'] as const).map(r => (
               <label
                 key={r}
+                onClick={() => handleRoleChange(r)}
                 className={[
                   'flex-1 py-1 px-2 border text-center text-[12.5px] cursor-pointer rounded-[4px] transition-[border-color,color] duration-150',
                   form.role === r
@@ -443,7 +470,14 @@ const Register: React.FC = () => {
                     : 'border-border text-body hover:border-primary',
                 ].join(' ')}
               >
-                <input type="radio" name="role" value={r} checked={form.role === r} onChange={set('role')} hidden />
+                <input
+                  type="radio"
+                  name="role"
+                  value={r}
+                  checked={form.role === r}
+                  onChange={() => handleRoleChange(r)}
+                  hidden
+                />
                 {r === 'buyer' ? 'Buyer' : r === 'supplier' ? 'Supplier' : r === 'reseller' ? 'Reseller' : 'Partner'}
               </label>
             ))}
@@ -588,7 +622,7 @@ const Register: React.FC = () => {
           Already have an account?{' '}
           <button
             type="button"
-            onClick={() => navigate(`${ROUTES.LOGIN}?mode=${form.role === 'supplier' ? 'seller' : form.role}${searchParams.get('redirect') ? `&redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`)}
+            onClick={() => navigate(`${ROUTES.LOGIN}?mode=${form.role}${searchParams.get('redirect') ? `&redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`)}
             className="text-primary font-semibold hover:underline bg-transparent border-none cursor-pointer p-0"
           >
             Sign in

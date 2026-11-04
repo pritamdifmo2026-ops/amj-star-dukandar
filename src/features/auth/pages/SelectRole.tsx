@@ -92,7 +92,7 @@ const SelectRole: React.FC = () => {
 
   const roles = mode === 'partner'
     ? ROLE_CONFIG.filter(r => r.partnerOnly)
-    : mode === 'seller'
+    : (mode === 'seller' || mode === 'supplier')
     ? ROLE_CONFIG.filter(r => r.sellerOnly && !r.partnerOnly)
     : ROLE_CONFIG.filter(r => !r.partnerOnly);
 
