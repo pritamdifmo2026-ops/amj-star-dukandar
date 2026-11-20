@@ -441,7 +441,7 @@ const AdminPartnerDossier: React.FC<{
                           <tr key={c._id} className="hover:bg-slate-50/70">
                             <td className={`${tdCls} font-semibold text-slate-900`}>{c.orderNumber}</td>
                             <td className={tdCls}>{shortDate(c.createdAt)}</td>
-                            <td className={tdCls}>{formatCurrency(c.amjPlatformFee)}</td>
+                            <td className={tdCls}>{formatCurrency(c.amjPlatformFee ?? 0)}</td>
                             <td className={tdCls}>{c.partnerSharePercent}%</td>
                             <td className={`${tdCls} font-black text-slate-900`}>
                               {formatCurrency(c.earnedAmount)}

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Wallet, Users, Store, TrendingUp, Clock, ArrowUpRight, ShieldAlert,
   LifeBuoy, HandCoins, Share2, Receipt, Banknote, CircleDollarSign,
+  Calculator, ChevronDown, ShoppingBag, Handshake,
 } from 'lucide-react';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import {
@@ -10,6 +11,7 @@ import {
 import { shortDate, formatPartnerMoney } from './partner.format';
 import type { PartnerDashboardData } from '../services/partner.service';
 import { isPartnerPending } from '../services/partner.service';
+import { PartnerBenchmarkTable } from './PartnerBenchmarkTable';
 
 const ATTRIBUTION_LABEL: Record<string, string> = {
   buyer_referred: 'Buyer',
@@ -27,6 +29,7 @@ const PartnerOverview: React.FC<{
   const counts = data?.counts;
   const recent = data?.recentCommissions || [];
 
+  const [showBenchmark, setShowBenchmark] = useState(false);
   const pending = isPartnerPending(partner?.status);
   const totalCustomers = (metrics?.totalBuyersOnboarded || 0) + (metrics?.totalSuppliersOnboarded || 0);
   const withdrawable = wallet?.withdrawableBalance || 0;
@@ -37,7 +40,7 @@ const PartnerOverview: React.FC<{
     <div className="flex flex-col gap-6">
       <SectionHeader
         title={`Welcome back, ${partner?.fullName?.split(' ')[0] || 'Partner'}`}
-        subtitle={`You earn ${partner?.sellerCommissionPercent ?? 15}% on sales by your referred Sellers and ${partner?.buyerCommissionPercent ?? 10}% on orders by your referred Buyers (${Math.round(((partner?.sellerCommissionPercent ?? 15) + (partner?.buyerCommissionPercent ?? 10)) * 100) / 100}% if both belong to you) from AMJ Star's platform fee.`}
+        subtitle="Earn continuous commission on every deal completed across your network of manufacturers and bulk buyers. All earnings credit directly into your wallet."
         icon={TrendingUp}
         actions={
           <button
@@ -50,29 +53,93 @@ const PartnerOverview: React.FC<{
         }
       />
 
-      {/* ── Commission Split Card ── */}
-      <Card className="p-4 bg-gradient-to-r from-indigo-50/70 via-slate-50 to-blue-50/50 border-indigo-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* ── Partner Revenue Streams Card ── */}
+      <Card className="p-5 border-[#e2e8f0]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider bg-indigo-600 text-white px-2 py-0.5 rounded-full">
-                Your Commission Rates
+              <span className="text-[10px] font-extrabold uppercase tracking-wider bg-slate-900 text-white px-2 py-0.5 rounded-[4px]">
+                Commission Model
               </span>
-              <span className="text-xs font-bold text-slate-800">Carved from AMJ Star's Platform Fee</span>
+              <span className="text-sm font-extrabold text-[#0f172a]">Three Lifetime Revenue Channels</span>
             </div>
-            <p className="text-[11px] text-slate-600 m-0 mt-1">
-              • <strong>Referred Seller sale:</strong> {partner?.sellerCommissionPercent ?? 15}% cut &nbsp;|&nbsp;
-              • <strong>Referred Buyer purchase:</strong> {partner?.buyerCommissionPercent ?? 10}% cut &nbsp;|&nbsp;
-              • <strong>Both referred by you:</strong> {Math.round(((partner?.sellerCommissionPercent ?? 15) + (partner?.buyerCommissionPercent ?? 10)) * 100) / 100}% full cut.
+            <p className="text-xs text-[#64748b] m-0 mt-1">
+              Your network generates recurring wholesale commission on every transacted order, credited straight into your wallet.
             </p>
           </div>
-          <button
-            onClick={() => onNavigate('commissions')}
-            className="self-start sm:self-auto shrink-0 text-[11px] font-bold text-indigo-700 bg-white border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 cursor-pointer"
-          >
-            View commission ledger →
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+            <button
+              onClick={() => setShowBenchmark((prev) => !prev)}
+              className="text-[11px] font-bold text-slate-800 bg-white border border-slate-300 px-3 py-1.5 rounded-[8px] hover:bg-slate-50 cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
+            >
+              <Calculator size={14} className="text-slate-600" />
+              {showBenchmark ? 'Close Benchmarks' : 'Payout Benchmarks'}
+              <ChevronDown
+                size={13}
+                className={`text-slate-500 transition-transform duration-200 ${showBenchmark ? 'rotate-180' : ''}`}
+              />
+            </button>
+            <button
+              onClick={() => onNavigate('commissions')}
+              className="text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-transparent px-3 py-1.5 rounded-[8px] cursor-pointer transition-colors"
+            >
+              Ledger →
+            </button>
+          </div>
         </div>
+
+        {/* 3 Revenue Stream Pillars */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4">
+          <div className="p-3.5 rounded-[10px] bg-slate-50/80 border border-slate-200/70 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-[8px] bg-amber-100/80 border border-amber-200/80 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+              <Store size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Channel 1</div>
+              <h4 className="text-xs font-extrabold text-[#0f172a] m-0 mt-0.5">Supplier Wholesale Sales</h4>
+              <p className="text-[11px] text-[#64748b] m-0 mt-1 leading-relaxed">
+                Earn ongoing commission on every wholesale shipment fulfilled by manufacturers and mills you refer.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-[10px] bg-slate-50/80 border border-slate-200/70 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-[8px] bg-blue-100/80 border border-blue-200/80 text-blue-800 flex items-center justify-center shrink-0 mt-0.5">
+              <ShoppingBag size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">Channel 2</div>
+              <h4 className="text-xs font-extrabold text-[#0f172a] m-0 mt-0.5">Buyer Procurement Orders</h4>
+              <p className="text-[11px] text-[#64748b] m-0 mt-1 leading-relaxed">
+                Earn on initial orders and repeat inventory restocks placed by retailers and bulk buyers in your network.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-[10px] bg-indigo-50/40 border border-indigo-200/70 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-[8px] bg-indigo-100/90 border border-indigo-200 text-indigo-800 flex items-center justify-center shrink-0 mt-0.5">
+              <Handshake size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">Channel 3 · Top Tier</div>
+              <h4 className="text-xs font-extrabold text-[#0f172a] m-0 mt-0.5">Matched Network Trades</h4>
+              <p className="text-[11px] text-[#64748b] m-0 mt-1 leading-relaxed">
+                Receive maximum dual-sided payout when a buyer you referred purchases from a seller you referred.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Expandable Benchmark Guide */}
+        {showBenchmark && (
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <PartnerBenchmarkTable
+              embedded
+              sellerRate={partner?.sellerCommissionPercent}
+              buyerRate={partner?.buyerCommissionPercent}
+            />
+          </div>
+        )}
       </Card>
 
       {/* ── Money ── */}
@@ -138,9 +205,9 @@ const PartnerOverview: React.FC<{
           onClick={() => onNavigate('customers')}
         />
         <StatCard
-          label="Gross volume referred"
-          value={formatPartnerMoney(metrics?.lifetimeGrossVolume || 0)}
-          hint={`${counts?.totalReferredOrders || 0} orders involving your network`}
+          label="Total network deals"
+          value={counts?.totalReferredOrders || metrics?.totalOrdersReferred || 0}
+          hint="Orders transacted across your network"
           icon={Receipt}
           tone="neutral"
           onClick={() => onNavigate('orders')}
@@ -267,7 +334,7 @@ const PartnerOverview: React.FC<{
                 <th className={TH}>Order</th>
                 <th className={TH}>Date</th>
                 <th className={TH}>Attribution</th>
-                <th className={TH}>Platform fee</th>
+                <th className={TH}>Deal Size</th>
                 <th className={TH}>Your share</th>
                 <th className={TH}>Status</th>
               </tr>
@@ -282,12 +349,11 @@ const PartnerOverview: React.FC<{
                       {ATTRIBUTION_LABEL[item.attributionType] || item.attributionType}
                     </Badge>
                   </td>
-                  <td className={TD}>{formatCurrency(item.amjPlatformFee)}</td>
+                  <td className={TD}>
+                    <Badge tone="neutral">{item.dealBracket || '< ₹5,000'}</Badge>
+                  </td>
                   <td className={`${TD} font-extrabold text-[#0f172a]`}>
                     {formatCurrency(item.earnedAmount)}
-                    <span className="text-[10px] text-[#94a3b8] font-semibold ml-1">
-                      @{item.partnerSharePercent}%
-                    </span>
                   </td>
                   <td className={TD}>
                     <Badge

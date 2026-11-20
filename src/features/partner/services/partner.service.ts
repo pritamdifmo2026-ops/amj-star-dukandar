@@ -66,9 +66,10 @@ export interface PartnerCommissionItem {
   partnerId: string;
   orderId: string;
   orderNumber: string;
-  orderSubtotal: number;
-  amjPlatformFee: number;
-  partnerSharePercent: number;
+  orderSubtotal?: number;
+  amjPlatformFee?: number;
+  dealBracket?: string;
+  partnerSharePercent?: number;
   earnedAmount: number;
   attributionType: 'buyer_referred' | 'supplier_referred' | 'both';
   status: 'pending' | 'cleared' | 'reversed';
@@ -123,7 +124,8 @@ export interface PartnerReferredBuyer {
   isActive?: boolean;
   createdAt: string;
   orders: number;
-  volume: number;
+  volume?: number;
+  volumeBracket?: string;
 }
 
 export interface PartnerReferredSupplier {
@@ -139,7 +141,8 @@ export interface PartnerReferredSupplier {
   isActive?: boolean;
   createdAt: string;
   orders: number;
-  volume: number;
+  volume?: number;
+  volumeBracket?: string;
 }
 
 export interface PartnerReferrals {
@@ -187,8 +190,9 @@ export interface PartnerOrderItem {
   orderNumber: string;
   status: string;
   paymentStatus?: string;
-  subtotal: number;
-  totalAmount: number;
+  subtotal?: number;
+  totalAmount?: number;
+  dealBracket?: string;
   buyerId?: PartyRef | string;
   supplierId?: PartyRef | string;
   createdAt: string;
@@ -196,7 +200,7 @@ export interface PartnerOrderItem {
 
 export interface PartnerDisputeItem {
   _id: string;
-  orderId?: { _id?: string; orderNumber?: string; totalAmount?: number; status?: string } | string;
+  orderId?: { _id?: string; orderNumber?: string; totalAmount?: number; dealBracket?: string; status?: string } | string;
   buyerId?: PartyRef | string;
   supplierId?: PartyRef | string;
   issueType: string;

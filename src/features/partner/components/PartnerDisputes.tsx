@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ShieldAlert, Info, ShieldCheck, Phone } from 'lucide-react';
-import { formatCurrency } from '@/shared/utils/formatCurrency';
 import Pagination from '@/shared/components/ui/Pagination';
 import {
   Card, SectionHeader, Badge, FilterTabs, TableWrap, TH, TD, InlineEmpty, type Tone,
@@ -133,8 +132,8 @@ const PartnerDisputes: React.FC = () => {
                     <tr key={d._id} className="hover:bg-[#f8fafc] transition-colors">
                       <td className={TD}>
                         <p className="font-bold text-[#0f172a] m-0">{order?.orderNumber || '—'}</p>
-                        {order?.totalAmount !== undefined && (
-                          <p className="text-[10px] text-[#94a3b8] m-0">{formatCurrency(order.totalAmount)}</p>
+                        {order?.dealBracket && (
+                          <span className="inline-block mt-0.5 text-[10px] text-[#64748b] font-medium">{order.dealBracket}</span>
                         )}
                       </td>
                       <td className={TD}>

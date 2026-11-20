@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Receipt, PackageSearch } from 'lucide-react';
-import { formatCurrency } from '@/shared/utils/formatCurrency';
 import Pagination from '@/shared/components/ui/Pagination';
 import {
   Card, SectionHeader, Badge, TableWrap, TH, TD, InlineEmpty, type Tone,
@@ -63,7 +62,7 @@ const PartnerOrders: React.FC = () => {
                   <th className={TH}>Date</th>
                   <th className={TH}>Buyer</th>
                   <th className={TH}>Seller</th>
-                  <th className={TH}>Order value</th>
+                  <th className={TH}>Deal Size</th>
                   <th className={TH}>Status</th>
                 </tr>
               </thead>
@@ -75,10 +74,7 @@ const PartnerOrders: React.FC = () => {
                     <td className={TD}>{refName(o.buyerId, 'Buyer')}</td>
                     <td className={TD}>{refName(o.supplierId, 'Seller')}</td>
                     <td className={TD}>
-                      <span className="font-extrabold text-[#0f172a]">{formatCurrency(o.totalAmount)}</span>
-                      <span className="block text-[10px] text-[#94a3b8]">
-                        {formatCurrency(o.subtotal)} before tax
-                      </span>
+                      <Badge tone="neutral">{o.dealBracket || '< ₹5,000'}</Badge>
                     </td>
                     <td className={TD}>
                       <Badge tone={statusTone(o.status)}>{humanise(o.status)}</Badge>

@@ -24,10 +24,7 @@ const PartnerCommissions: React.FC<{
   commissionSharePercent?: number;
   sellerCommissionPercent?: number;
   buyerCommissionPercent?: number;
-}> = ({
-  sellerCommissionPercent = 15,
-  buyerCommissionPercent = 10,
-}) => {
+}> = () => {
   const [filter, setFilter] = useState<LedgerFilter>('');
   const [page, setPage] = useState(1);
 
@@ -55,12 +52,16 @@ const PartnerCommissions: React.FC<{
       toast.error('Nothing to export');
       return;
     }
-    const header = ['Order', 'Date', 'Order value', 'Platform fee', 'Share %', 'Your earning', 'Attribution', 'Status', 'Cleared on'];
+    const header = ['Order', 'Date', 'Deal Size', 'Your earning', 'Attribution', 'Status', 'Cleared on'];
     const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const body = commissions.map((c) =>
       [
-        c.orderNumber, shortDate(c.createdAt), c.orderSubtotal, c.amjPlatformFee,
-        c.partnerSharePercent, c.earnedAmount, c.attributionType, c.status,
+        c.orderNumber,
+        shortDate(c.createdAt),
+        c.dealBracket || '< ₹5,000',
+        c.earnedAmount,
+        ATTRIBUTION_LABEL[c.attributionType] || c.attributionType,
+        c.status,
         c.clearedAt ? shortDate(c.clearedAt) : '',
       ].map(escape).join(',')
     );
@@ -79,7 +80,7 @@ const PartnerCommissions: React.FC<{
     <div className="flex flex-col gap-6">
       <SectionHeader
         title="Commission ledger"
-        subtitle={`Every deal closed by your network, with your commission (${sellerCommissionPercent}% Seller referral, ${buyerCommissionPercent}% Buyer referral, ${Math.round((sellerCommissionPercent + buyerCommissionPercent) * 100) / 100}% if both) carved from AMJ Star's platform fee line by line.`}
+        subtitle="Every deal closed by your network, with your commission credited directly to your partner wallet upon delivery confirmation."
         icon={CircleDollarSign}
         actions={
           <button
@@ -114,10 +115,8 @@ const PartnerCommissions: React.FC<{
         <Info size={15} className="text-[#64748b] shrink-0 mt-0.5" />
         <div className="text-[11px] text-[#475569] space-y-1.5 leading-relaxed">
           <p className="m-0">
-            <span className="font-bold">Commission Allocation Rules:</span> When a purchase order is generated, AMJ Star allocates commission based on referrals:
-            <span className="font-bold"> {sellerCommissionPercent}%</span> if you referred the Seller,
-            <span className="font-bold"> {buyerCommissionPercent}%</span> if you referred the Buyer, or
-            <span className="font-bold"> {sellerCommissionPercent + buyerCommissionPercent}%</span> if both parties on the order were referred by you. If only one party was referred by you and the other party joined organically without referral, you earn your full referral cut for your introduced customer.
+            <span className="font-bold">Commission Allocation Rules:</span> When a purchase order is generated, AMJ Star allocates commission based on your network:
+            you earn on sales fulfilled by your referred <span className="font-bold">Sellers</span>, purchases placed by your referred <span className="font-bold">Buyers</span>, and the maximum dual payout when <span className="font-bold">Both parties</span> were referred by you. If only one party was referred by you, you receive your full referral cut for your introduced customer.
           </p>
           <p className="m-0">
             <span className="font-bold">Commission Lifecycle:</span> Your share is initially recorded as <span className="font-bold">pending</span> (held in escrow). It transitions to <span className="font-bold">cleared</span> — and ready for bank payout — once the buyer confirms delivery. If an order is cancelled or unwound during a dispute, the pending commission is <span className="font-bold">reversed</span>. Cleared commission is never reversed.
@@ -159,9 +158,8 @@ const PartnerCommissions: React.FC<{
                 <tr>
                   <th className={TH}>Order</th>
                   <th className={TH}>Date</th>
-                  <th className={TH}>Order value</th>
-                  <th className={TH}>AMJ platform fee</th>
-                  <th className={TH}>Your share</th>
+                  <th className={TH}>Deal Size</th>
+                  <th className={TH}>Commission Earned</th>
                   <th className={TH}>Attribution</th>
                   <th className={TH}>Status</th>
                 </tr>
@@ -171,13 +169,11 @@ const PartnerCommissions: React.FC<{
                   <tr key={item._id} className="hover:bg-[#f8fafc] transition-colors">
                     <td className={`${TD} font-bold text-[#0f172a]`}>{item.orderNumber}</td>
                     <td className={TD}>{shortDate(item.createdAt)}</td>
-                    <td className={TD}>{formatCurrency(item.orderSubtotal)}</td>
-                    <td className={TD}>{formatCurrency(item.amjPlatformFee)}</td>
+                    <td className={TD}>
+                      <Badge tone="neutral">{item.dealBracket || '< ₹5,000'}</Badge>
+                    </td>
                     <td className={TD}>
                       <span className="font-extrabold text-[#0f172a]">{formatCurrency(item.earnedAmount)}</span>
-                      <span className="block text-[10px] text-[#94a3b8] font-semibold">
-                        {item.partnerSharePercent}% of platform fee
-                      </span>
                     </td>
                     <td className={TD}>
                       <Badge tone={item.attributionType === 'both' ? 'brand' : 'neutral'}>

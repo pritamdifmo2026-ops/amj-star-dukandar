@@ -59,10 +59,6 @@ const PartnerSettings: React.FC<{ partner?: PartnerProfile }> = ({ partner }) =>
     gstin: partner?.gstin || '',
   });
 
-  const sellerRate = partner?.sellerCommissionPercent ?? 15;
-  const buyerRate = partner?.buyerCommissionPercent ?? 10;
-  const totalRate = partner?.commissionSharePercent ?? (sellerRate + buyerRate);
-
   const hasBank = !!(
     partner?.bankDetails?.accountNumber &&
     partner?.bankDetails?.ifscCode &&
@@ -208,34 +204,34 @@ const PartnerSettings: React.FC<{ partner?: PartnerProfile }> = ({ partner }) =>
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#9a3412] m-0">
                   Seller Referral
                 </p>
-                <p className="text-2xl font-extrabold text-[#7c2d12] m-0 mt-0.5 leading-tight">
-                  {sellerRate}%
+                <p className="text-sm font-extrabold text-[#7c2d12] m-0 mt-1 leading-tight">
+                  Active & Accruing
                 </p>
                 <p className="text-[9px] text-[#9a3412]/80 m-0 mt-0.5 font-medium">
-                  On supplier sales
+                  On supplier wholesale sales
                 </p>
               </div>
               <div className="p-2.5 rounded-[8px] bg-[#eff6ff] border border-[#bfdbfe]/70">
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#1e40af] m-0">
                   Buyer Referral
                 </p>
-                <p className="text-2xl font-extrabold text-[#1e3a8a] m-0 mt-0.5 leading-tight">
-                  {buyerRate}%
+                <p className="text-sm font-extrabold text-[#1e3a8a] m-0 mt-1 leading-tight">
+                  Active & Accruing
                 </p>
                 <p className="text-[9px] text-[#1e40af]/80 m-0 mt-0.5 font-medium">
-                  On buyer purchases
+                  On buyer procurement orders
                 </p>
               </div>
             </div>
 
             {/* Both parties referred summary bar */}
             <div className="mt-2.5 p-2 rounded-[8px] bg-[#f8fafc] border border-[#e2e8f0] flex items-center justify-between text-xs">
-              <span className="text-[#64748b] text-[11px] font-medium">Both sides referred by you:</span>
-              <span className="font-extrabold text-[#0f172a] text-xs">{totalRate}% full share</span>
+              <span className="text-[#64748b] text-[11px] font-medium">Matched trades (both sides referred):</span>
+              <span className="font-extrabold text-[#0f172a] text-xs">Full Dual Payout</span>
             </div>
 
             <p className="text-[10px] text-[#64748b] m-0 mt-2.5 leading-relaxed">
-              Carved from AMJ Star's platform fee on deals closed by your network. Rates are set by AMJ Star admins.
+              Carved from AMJ Star's platform fee on deals closed by your network. Contract rates are approved and maintained by AMJ Star administration.
             </p>
           </div>
 
@@ -457,12 +453,10 @@ const PartnerSettings: React.FC<{ partner?: PartnerProfile }> = ({ partner }) =>
                 as they trade on AMJ Star.
               </li>
               <li>
-                <span className="font-bold text-[#0f172a]">Two-Part Split Commission:</span> You earn{' '}
-                <span className="font-bold text-[#0f172a]">{sellerRate}%</span> on sales made by your
-                referred sellers, and <span className="font-bold text-[#0f172a]">{buyerRate}%</span> on
-                purchases by your referred buyers. If you referred both sides on a deal, you earn the full{' '}
-                <span className="font-bold text-[#0f172a]">{totalRate}%</span> share. Your commission is
-                carved directly from AMJ Star's platform fee — buyers and sellers pay standard market prices.
+                <span className="font-bold text-[#0f172a]">Two-Part Split Commission:</span> You earn on sales
+                fulfilled by your referred sellers, and on purchases placed by your referred buyers. If you referred
+                both sides on a deal, you earn the combined dual-sided share. Your commission is carved directly from
+                AMJ Star's platform fee — buyers and sellers pay standard market prices.
               </li>
               <li>
                 <span className="font-bold text-[#0f172a]">Earnings Clear on Delivery:</span> Commission sits

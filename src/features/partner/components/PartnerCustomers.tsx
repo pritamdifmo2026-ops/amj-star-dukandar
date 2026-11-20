@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Users, Search, Store, ShoppingBag, LifeBuoy, Phone, Mail, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { formatCurrency } from '@/shared/utils/formatCurrency';
 import {
   Card, SectionHeader, Badge, FilterTabs, TableWrap, TH, TD, InlineEmpty, inputCls, type Tone,
 } from './partner.ui';
@@ -25,6 +24,7 @@ interface CustomerRow {
   tier?: string;
   orders: number;
   volume: number;
+  volumeBracket?: string;
   createdAt: string;
 }
 
@@ -58,6 +58,7 @@ const PartnerCustomers: React.FC<{
       statusTone: (b.isActive === false ? 'neutral' : 'success') as Tone,
       orders: b.orders || 0,
       volume: b.volume || 0,
+      volumeBracket: b.volumeBracket,
       createdAt: b.createdAt,
     }));
 
@@ -76,6 +77,7 @@ const PartnerCustomers: React.FC<{
         ...(s.tier ? { tier: s.tier } : {}),
         orders: s.orders || 0,
         volume: s.volume || 0,
+        volumeBracket: s.volumeBracket,
         createdAt: s.createdAt,
       };
     });
@@ -117,10 +119,10 @@ const PartnerCustomers: React.FC<{
       toast.error('Nothing to export');
       return;
     }
-    const header = ['Name', 'Type', 'Role', 'Phone', 'Email', 'Status', 'Orders', 'Volume (INR)', 'Joined'];
+    const header = ['Name', 'Type', 'Role', 'Phone', 'Email', 'Status', 'Orders', 'Volume Tier', 'Joined'];
     const escape = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const body = filtered.map((r) =>
-      [r.name, r.kind === 'seller' ? 'Seller' : 'Buyer', r.roleLabel, r.phone, r.email, r.statusText, r.orders, r.volume, shortDate(r.createdAt)]
+      [r.name, r.kind === 'seller' ? 'Seller' : 'Buyer', r.roleLabel, r.phone, r.email, r.statusText, r.orders, r.volumeBracket || `${r.orders} orders`, shortDate(r.createdAt)]
         .map(escape)
         .join(',')
     );
@@ -167,9 +169,9 @@ const PartnerCustomers: React.FC<{
           <p className="text-[11px] text-[#94a3b8] m-0">{totals.orders} orders between them</p>
         </Card>
         <Card className="p-4">
-          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#64748b] m-0">Volume transacted</p>
-          <p className="text-xl font-extrabold text-[#0f172a] m-0 mt-1">{formatCurrency(totals.volume)}</p>
-          <p className="text-[11px] text-[#94a3b8] m-0">Order value across your network</p>
+          <p className="text-[10px] font-extrabold uppercase tracking-wider text-[#64748b] m-0">Total Network Orders</p>
+          <p className="text-xl font-extrabold text-[#0f172a] m-0 mt-1">{totals.orders}</p>
+          <p className="text-[11px] text-[#94a3b8] m-0">Total deals completed by your clients</p>
         </Card>
       </div>
 
@@ -216,7 +218,7 @@ const PartnerCustomers: React.FC<{
                 <th className={TH}>Contact</th>
                 <th className={TH}>Status</th>
                 <th className={TH}>Orders</th>
-                <th className={TH}>Volume</th>
+                <th className={TH}>Volume Tier</th>
                 <th className={TH}>Joined</th>
                 <th className={TH}>Action</th>
               </tr>
@@ -277,8 +279,14 @@ const PartnerCustomers: React.FC<{
                     <Badge tone={row.statusTone}>{row.statusText}</Badge>
                   </td>
                   <td className={`${TD} font-bold text-[#0f172a]`}>{row.orders}</td>
-                  <td className={`${TD} font-bold text-[#0f172a]`}>
-                    {row.volume > 0 ? formatCurrency(row.volume) : '—'}
+                  <td className={TD}>
+                    {row.volumeBracket ? (
+                      <Badge tone="neutral">{row.volumeBracket}</Badge>
+                    ) : row.orders > 0 ? (
+                      <Badge tone="neutral">{row.orders} deals</Badge>
+                    ) : (
+                      '—'
+                    )}
                   </td>
                   <td className={TD}>{shortDate(row.createdAt)}</td>
                   <td className={TD}>

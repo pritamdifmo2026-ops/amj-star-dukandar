@@ -3,6 +3,7 @@ services:
     name: amjstar-frontend
     env: static
     branch: stagging
+    autoDeploy: true
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     routes:

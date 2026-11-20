@@ -4,6 +4,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import { Card, SectionHeader, Badge, FieldLabel } from './partner.ui';
 import type { PartnerProfile, PartnerReferralLinks } from '../services/partner.service';
+import { PartnerBenchmarkTable } from './PartnerBenchmarkTable';
 
 interface LinkSpec {
   key: keyof PartnerReferralLinks;
@@ -128,18 +129,11 @@ const PartnerShareLinks: React.FC<{
         </p>
       </Card>
 
-      {/* ── Referral Earning Rates ── */}
-      <div className="p-4 rounded-[12px] bg-slate-50 border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-700">
-        <div className="space-y-1">
-          <div className="font-bold text-slate-900">Your Referral Payout Rules:</div>
-          <div className="text-[11px] text-slate-600 leading-relaxed">
-            • <strong>Seller Sign-up:</strong> You earn <strong>{partner.sellerCommissionPercent ?? 15}%</strong> of AMJ's fee on their sales.<br />
-            • <strong>Buyer Sign-up:</strong> You earn <strong>{partner.buyerCommissionPercent ?? 10}%</strong> of AMJ's fee on their purchases.<br />
-            • <strong>Both parties referred by you:</strong> You earn the full <strong>{Math.round(((partner.sellerCommissionPercent ?? 15) + (partner.buyerCommissionPercent ?? 10)) * 100) / 100}%</strong> cut.<br />
-            • <strong>Only one side referred (other side organic):</strong> You receive your full rate for your side (Seller cut or Buyer cut).
-          </div>
-        </div>
-      </div>
+      {/* ── Dynamic Personalized Earning Benchmarks ── */}
+      <PartnerBenchmarkTable
+        sellerRate={partner.sellerCommissionPercent}
+        buyerRate={partner.buyerCommissionPercent}
+      />
 
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         {LINK_SPECS.map((spec) => {

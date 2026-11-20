@@ -153,8 +153,8 @@ const PartnerWalletView: React.FC<{
       openBankModal();
       return;
     }
-    if (withdrawable < MIN_PAYOUT) {
-      toast.error(`You need at least ${formatCurrency(MIN_PAYOUT)} cleared to withdraw`);
+    if (withdrawable < 1) {
+      toast.error('You need at least ₹1 cleared to withdraw');
       return;
     }
     setAmount(String(withdrawable));
@@ -163,8 +163,15 @@ const PartnerWalletView: React.FC<{
 
   const submitWithdraw = (e: React.FormEvent) => {
     e.preventDefault();
-    if (parsedAmount < MIN_PAYOUT) {
-      toast.error(`Minimum withdrawal is ${formatCurrency(MIN_PAYOUT)}`);
+    const isFullLiquidation = parsedAmount === withdrawable;
+    if (parsedAmount < 1) {
+      toast.error('Minimum withdrawal is ₹1');
+      return;
+    }
+    if (parsedAmount < MIN_PAYOUT && !isFullLiquidation) {
+      toast.error(
+        `Minimum withdrawal is ${formatCurrency(MIN_PAYOUT)} (or click "Withdraw everything" to settle your entire remaining balance)`
+      );
       return;
     }
     if (parsedAmount > withdrawable) {
@@ -460,25 +467,32 @@ const PartnerWalletView: React.FC<{
             <FieldLabel>Amount (₹)</FieldLabel>
             <input
               type="number"
-              min={MIN_PAYOUT}
+              min={1}
               max={withdrawable}
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className={inputCls}
-              placeholder={`Minimum ${MIN_PAYOUT}`}
+              placeholder={withdrawable < MIN_PAYOUT ? `Full balance (${withdrawable})` : `Minimum ${MIN_PAYOUT}`}
               autoFocus
             />
-            <button
-              type="button"
-              onClick={() => setAmount(String(withdrawable))}
-              className="mt-2 text-[11px] font-extrabold uppercase tracking-wider text-[#1d4ed8] bg-transparent border-none cursor-pointer p-0 hover:underline"
-            >
-              Withdraw everything
-            </button>
+            <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setAmount(String(withdrawable))}
+                className="text-[11px] font-extrabold uppercase tracking-wider text-[#1d4ed8] bg-transparent border-none cursor-pointer p-0 hover:underline"
+              >
+                Withdraw everything ({formatCurrency(withdrawable)})
+              </button>
+              {withdrawable < MIN_PAYOUT && withdrawable >= 1 && (
+                <span className="text-[10px] text-[#059669] font-bold">
+                  ✓ Full account settlement enabled
+                </span>
+              )}
+            </div>
           </div>
 
-          {parsedAmount >= MIN_PAYOUT && (
+          {parsedAmount >= 1 && (
             <div className="p-3.5 rounded-[10px] bg-[#eff6ff] border border-[#bfdbfe] text-xs text-[#1e40af]">
               <div className="flex items-center justify-between">
                 <span>Gross</span>
