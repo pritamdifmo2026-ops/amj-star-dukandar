@@ -28,6 +28,7 @@ import Navbar from '@/features/landing/components/Navbar';
 import Modal from '@/shared/components/ui/Modal';
 import AccountOverviewSection from '@/features/buyer/components/AccountOverviewSection';
 import MyRequirementsList from '@/features/buyer/components/MyRequirementsList';
+import BuyerHelpDeskCard from '@/features/buyer/components/BuyerHelpDeskCard';
 import { CartContent } from '@/features/buyer/pages/Cart';
 import { CheckoutContent } from '@/features/order/pages/Checkout';
 import Button from '@/shared/components/ui/Button';
@@ -1103,8 +1104,9 @@ const Profile: React.FC = () => {
 
         {activeTab === 'contactus' && (
           <div className="p-6">
-            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Contact & Raise Ticket</h3>
-            <p className="text-sm text-[#64748b] mb-6">Have a question or need help? Fill in the form and our team will reach out to you. For specific issues, use the Raise Ticket form.</p>
+            <BuyerHelpDeskCard />
+            <h3 className="text-base font-extrabold text-[#0f172a] m-0 mb-4">Send an Enquiry or Raise a Support Ticket</h3>
+            <p className="text-sm text-[#64748b] mb-6">Have a specific question or technical issue? Fill in the form and our team will reach out to you.</p>
             <div className="grid md:grid-cols-2 gap-6">
               {/* Existing Enquiry Form */}
               <div className="bg-white border border-[#eef2f6] rounded-[12px] p-6 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col gap-4">

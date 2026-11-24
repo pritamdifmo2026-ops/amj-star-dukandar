@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import logo from '@/assets/logoo.png';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ShoppingCart, ChevronDown, Menu, X, User, LogOut,
+  ShoppingCart, ChevronDown, Menu, X, User, LogOut, LogIn,
   Store, ShoppingBag, Truck, List, LayoutDashboard, Search,
   Info, Factory, RefreshCw, ShieldCheck, Handshake, Users
 } from 'lucide-react';
@@ -332,11 +332,11 @@ const Navbar: React.FC = () => {
                         onClick={e => e.stopPropagation()}
                       >
                         <div className="px-3 py-2 border-b border-gray-100 mb-1">
-                          <p className="text-xs font-bold text-heading m-0">Sign In </p>
-                          <p className="text-[10px] text-muted m-0">Choose your account portal</p>
+                          <p className="text-xs font-bold text-heading m-0">Account</p>
+                          <p className="text-[10px] text-muted m-0">Sign in or register</p>
                         </div>
-                        <Link to="/login?mode=buyer" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
-                          <User size={14} className="inline mr-2 text-primary" />Buyer Sign In
+                        <Link to="/login" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
+                          <LogIn size={14} className="inline mr-2 text-primary" />Sign In
                         </Link>
                         <Link to="/register?mode=supplier" className={dropdownItemCls} onClick={() => setUserMenuOpen(false)}>
                           <Store size={14} className="inline mr-2 text-[#8b5cf6]" />Become a Supplier

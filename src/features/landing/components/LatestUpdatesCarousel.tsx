@@ -1,21 +1,17 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/client';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
-
-interface ILatestUpdate {
-  _id: string;
-  image: string;
-  title: string;
-  description: string;
-  link: string;
-  buttonText: string;
-  isActive: boolean;
-}
+import LatestUpdateModal, { type ILatestUpdate } from './LatestUpdateModal';
 
 const LatestUpdatesCarousel: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [selectedUpdate, setSelectedUpdate] = useState<ILatestUpdate | null>(null);
+  const selectedUpdateRef = useRef<ILatestUpdate | null>(null);
+
+  useEffect(() => {
+    selectedUpdateRef.current = selectedUpdate;
+  }, [selectedUpdate]);
 
   const { data: updates, isLoading } = useQuery({
     queryKey: ['latestUpdates'],
@@ -55,7 +51,7 @@ const LatestUpdatesCarousel: React.FC = () => {
     let isPaused = false;
 
     const scroll = () => {
-      if (!isPaused) {
+      if (!isPaused && !selectedUpdateRef.current) {
         container.scrollLeft += 1; // scroll speed
 
         // Loop back to start if we hit the end
@@ -127,42 +123,54 @@ const LatestUpdatesCarousel: React.FC = () => {
             {updates.map((update) => (
               <div
                 key={update._id}
-                className="shrink-0 w-[200px] lg:w-[210px] bg-white rounded-none border-none flex flex-col overflow-hidden group transition-all duration-300"
+                onClick={() => setSelectedUpdate(update)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedUpdate(update);
+                  }
+                }}
+                className="shrink-0 w-[200px] lg:w-[210px] bg-white rounded-xl border border-slate-100 hover:border-primary/40 flex flex-col overflow-hidden group transition-colors duration-200 cursor-pointer hover:shadow-sm text-left select-none focus:outline-none focus:ring-2 focus:ring-primary/30"
               >
                 {/* Card Header / Image */}
-                <div className="h-[130px] w-full relative bg-white overflow-hidden flex items-center justify-center border-b border-slate-100 p-1">
+                <div className="h-[130px] w-full relative bg-slate-50/70 overflow-hidden flex items-center justify-center border-b border-slate-100 p-2">
                   <img
                     src={update.image}
                     alt={update.title}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).onerror = null;
+                      (e.target as HTMLImageElement).src = 'https://placehold.co/400x260?text=Update';
+                    }}
+                    className="w-full h-full object-contain"
                   />
                 </div>
 
                 {/* Card Body */}
-                <div className="p-4 flex-1 flex flex-col">
-                  <h3 className="font-bold text-sm text-primary leading-tight mb-2 line-clamp-2">
+                <div className="p-3.5 flex-1 flex flex-col">
+                  <h3 className="font-bold text-sm text-[#0f172a] group-hover:text-primary transition-colors leading-snug mb-1.5 line-clamp-2">
                     {update.title}
                   </h3>
-                  <p className="text-slate-500 text-[11px] leading-relaxed line-clamp-3 mb-4 flex-1">
+                  <p className="text-slate-500 text-[11px] leading-relaxed line-clamp-3 mb-3 flex-1">
                     {update.description}
                   </p>
-
-                  {/* Dynamic Action Link (if provided in backend) */}
-                  {/* {update.link && (
-                    <a
-                      href={update.link}
-                      target={update.link.startsWith('http') ? '_blank' : undefined}
-                      rel="noopener noreferrer"
-                      className="text-xs font-bold text-primary hover:text-primary-dark inline-flex items-center gap-1 mt-auto pt-3 border-t border-slate-100 no-underline"
-                    >
-                      {update.buttonText || 'Learn More'} &rarr;
-                    </a>
-                  )} */}
+                  
+                  <div className="mt-auto pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-primary">
+                    <span className="group-hover:underline">Read update</span>
+                    <span className="text-xs">&rarr;</span>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Modal: 80% height & 80% width with top hero image and full content */}
+        <LatestUpdateModal
+          update={selectedUpdate}
+          onClose={() => setSelectedUpdate(null)}
+        />
 
         {/* CSS for hide-scrollbar */}
         <style dangerouslySetInnerHTML={{

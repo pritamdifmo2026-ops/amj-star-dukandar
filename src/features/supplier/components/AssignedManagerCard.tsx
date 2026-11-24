@@ -11,6 +11,8 @@ import {
   Copy,
   Check,
   Building2,
+  Handshake,
+  Tag,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -22,6 +24,16 @@ interface AssignedManagerCardProps {
 export const AssignedManagerCard: React.FC<AssignedManagerCardProps> = ({ profile, compact = false }) => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
+  // Attributed Wholesale Service Partner (if supplier joined via partner code)
+  const partner = profile?.partnerContact;
+  const rawPartnerPhone = partner?.phone;
+  const partnerPhone = rawPartnerPhone && !String(rawPartnerPhone).startsWith('admin_') ? String(rawPartnerPhone) : null;
+  const partnerEmail = partner?.email;
+  const partnerName = partner?.name;
+  const partnerBiz = partner?.businessName;
+  const partnerCode = partner?.partnerCode || profile?.partnerCodeUsed;
+
+  // Designated Account Manager (internal platform sales / merchant ops)
   const managerName = profile?.accountManagerName;
   const managerRole = profile?.accountManagerRole || 'Dedicated Account Manager';
   const managerEmail = profile?.accountManagerEmail;
@@ -48,40 +60,153 @@ export const AssignedManagerCard: React.FC<AssignedManagerCardProps> = ({ profil
       <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50/40 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm shadow-blue-500/20">
-            <Headphones size={20} />
+            {partner ? <Handshake size={20} /> : <Headphones size={20} />}
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-800 m-0 leading-tight">
-              Merchant Support & Account Desk
+              {partner ? 'Assigned Partner & Merchant Care Desk' : 'Merchant Support & Account Desk'}
             </h3>
             <p className="text-xs text-slate-500 m-0 mt-0.5">
-              Direct assistance for catalog, orders, logistics, and dispute resolution
+              {partner
+                ? 'Your regional wholesale partner and central platform escalation helpline'
+                : 'Direct assistance for catalog, orders, logistics, and dispute resolution'}
             </p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100/80 text-blue-800 border border-blue-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          Active Support Tier
-        </span>
+        <div className="flex items-center gap-2">
+          {partner && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+              <Handshake size={13} className="text-indigo-600" />
+              Partner Referred Store
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100/80 text-blue-800 border border-blue-200">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Active Support Tier
+          </span>
+        </div>
       </div>
 
       <div className={`p-6 ${compact ? 'space-y-4' : 'grid grid-cols-1 lg:grid-cols-2 gap-6'}`}>
-        {/* Box 1: Assigned Account Manager (Primary) */}
-        <div className="flex flex-col justify-between p-5 rounded-xl border border-blue-100 bg-blue-50/30">
+        {/* Box 1: Primary Point of Contact (Partner if referred, or Account Manager) */}
+        <div className={`flex flex-col justify-between p-5 rounded-xl border ${partner ? 'border-indigo-100 bg-indigo-50/30' : 'border-blue-100 bg-blue-50/30'}`}>
           <div>
             <div className="flex items-center justify-between gap-2 mb-3">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-600 text-white text-[11px] font-bold tracking-wide uppercase">
-                <UserCheck size={13} />
+              <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-white text-[11px] font-bold tracking-wide uppercase ${partner ? 'bg-indigo-600' : 'bg-blue-600'}`}>
+                {partner ? <Handshake size={13} /> : <UserCheck size={13} />}
                 Primary Point of Contact
               </span>
-              {managerName && (
+              {partner ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-100/90 px-2 py-0.5 rounded border border-indigo-200">
+                  <Tag size={11} /> Code: {partnerCode || 'PARTNER'}
+                </span>
+              ) : managerName ? (
                 <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded">
                   Assigned Manager
                 </span>
-              )}
+              ) : null}
             </div>
 
-            {managerName ? (
+            {partner ? (
+              /* Wholesale Service Partner Primary View */
+              <div className="space-y-3">
+                <div>
+                  <h4 className="text-lg font-extrabold text-slate-900 m-0">
+                    {partnerName}
+                  </h4>
+                  {partnerBiz && partnerBiz !== partnerName && (
+                    <p className="text-xs font-semibold text-indigo-700 m-0 mt-0.5">
+                      {partnerBiz}
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-500 m-0 mt-0.5 flex items-center gap-1.5 font-medium">
+                    <Shield size={13} className="text-indigo-600" />
+                    Accredited Wholesale Service Partner {partner.city ? `• ${partner.city}` : ''}
+                  </p>
+                </div>
+
+                <p className="text-xs text-slate-600 m-0 leading-relaxed">
+                  You joined AMJSTAR through this accredited Wholesale Service Partner. They are your direct primary contact for onboarding, catalog listings, order dispatch, and wholesale coordination.
+                </p>
+
+                {/* Partner Contact Details */}
+                <div className="pt-2 border-t border-indigo-100/80 space-y-2">
+                  {partnerPhone ? (
+                    <div className="flex items-center justify-between text-xs text-slate-700 bg-white p-2 rounded-lg border border-indigo-100">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Phone size={14} className="text-emerald-600 shrink-0" />
+                        <span className="font-semibold text-slate-800">{partnerPhone}</span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(partnerPhone, 'Partner Phone')}
+                          className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors"
+                          title="Copy Phone"
+                        >
+                          {copiedField === 'Partner Phone' ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                        </button>
+                        <a
+                          href={`tel:${cleanPhone(partnerPhone)}`}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline px-1.5 py-0.5"
+                        >
+                          Call
+                        </a>
+                        <a
+                          href={waLink(partnerPhone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:underline px-1.5 py-0.5"
+                        >
+                          <MessageCircle size={12} />
+                          WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {partnerEmail ? (
+                    <div className="flex items-center justify-between text-xs text-slate-700 bg-white p-2 rounded-lg border border-indigo-100">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Mail size={14} className="text-indigo-600 shrink-0" />
+                        <span className="truncate font-medium">{partnerEmail}</span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(partnerEmail, 'Partner Email')}
+                          className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors"
+                          title="Copy Email"
+                        >
+                          {copiedField === 'Partner Email' ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                        </button>
+                        <a
+                          href={`mailto:${partnerEmail}`}
+                          className="text-xs font-semibold text-indigo-600 hover:underline px-1.5 py-0.5"
+                        >
+                          Mail
+                        </a>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* If supplier ALSO has an internal manager assigned */}
+                  {managerName && (
+                    <div className="mt-2 p-2 rounded-lg bg-indigo-100/50 border border-indigo-200/60 text-[11px] text-slate-600 flex items-center justify-between">
+                      <span className="font-medium">
+                        Internal Ops Manager: <strong className="text-slate-800">{managerName}</strong>
+                      </span>
+                      {managerPhone && (
+                        <a href={`tel:${cleanPhone(managerPhone)}`} className="text-indigo-700 font-bold hover:underline">
+                          Call ({managerPhone})
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : managerName ? (
+              /* Internal Dedicated Manager View */
               <div className="space-y-3">
                 <div>
                   <h4 className="text-lg font-extrabold text-slate-900 m-0">
@@ -156,45 +281,11 @@ export const AssignedManagerCard: React.FC<AssignedManagerCardProps> = ({ profil
                         </a>
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between text-xs text-slate-700 bg-white p-2 rounded-lg border border-blue-100">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Phone size={14} className="text-emerald-600 shrink-0" />
-                        <div>
-                          <span className="font-semibold text-slate-800">{ADMIN_PHONE}</span>
-                          <span className="text-[10px] text-slate-400 block font-normal">(AMJ Support Desk Helpline)</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(ADMIN_PHONE, 'Phone')}
-                          className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors"
-                          title="Copy Helpline"
-                        >
-                          {copiedField === 'Phone' ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                        </button>
-                        <a
-                          href={`tel:${cleanPhone(ADMIN_PHONE)}`}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline px-1.5 py-0.5"
-                        >
-                          Call
-                        </a>
-                        <a
-                          href={waLink(ADMIN_PHONE)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:underline px-1.5 py-0.5"
-                        >
-                          <MessageCircle size={12} />
-                          WhatsApp
-                        </a>
-                      </div>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             ) : (
+              /* Central Merchant Desk View (Fallback when neither partner nor manager) */
               <div className="space-y-3">
                 <div>
                   <h4 className="text-base font-extrabold text-slate-800 m-0">
@@ -205,7 +296,7 @@ export const AssignedManagerCard: React.FC<AssignedManagerCardProps> = ({ profil
                   </p>
                 </div>
                 <p className="text-xs text-slate-600 m-0 leading-relaxed">
-                  No individual account manager is assigned to your account yet. You are supported directly by our central merchant operations team.
+                  No individual partner or manager is assigned to your account yet. You are supported directly by our central merchant operations team.
                 </p>
                 <div className="pt-2 border-t border-blue-100/80">
                   <a
@@ -219,15 +310,15 @@ export const AssignedManagerCard: React.FC<AssignedManagerCardProps> = ({ profil
             )}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-blue-100/60 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
             <span className="flex items-center gap-1">
-              <Clock size={12} className="text-blue-500" /> Typical reply: &lt; 2 hours
+              <Clock size={12} className={partner ? 'text-indigo-500' : 'text-blue-500'} /> Typical reply: &lt; 2 hours
             </span>
             <span>Mon–Sat • 9:30 AM – 7:00 PM</span>
           </div>
         </div>
 
-        {/* Box 2: Main Website Admin & Escalation Policy */}
+        {/* Box 2: Main Website Admin & Escalation Policy (Always Secondary / Central) */}
         <div className="flex flex-col justify-between p-5 rounded-xl border border-amber-200 bg-amber-50/40">
           <div>
             <div className="flex items-center justify-between gap-2 mb-3">
@@ -245,7 +336,7 @@ export const AssignedManagerCard: React.FC<AssignedManagerCardProps> = ({ profil
               AMJSTAR Central Management
             </h4>
             <p className="text-xs text-slate-600 m-0 mt-0.5">
-              Platform administration, compliance, payouts, and leadership review.
+              Platform administration, compliance, payouts, and grievance review.
             </p>
 
             {/* Crucial Notice Required by Rule */}
@@ -256,7 +347,15 @@ export const AssignedManagerCard: React.FC<AssignedManagerCardProps> = ({ profil
                   Escalation Rule:
                 </p>
                 <p className="text-xs text-amber-800 font-medium m-0 mt-0.5 leading-relaxed">
-                  If your query or issue is <strong>not resolved by your assigned manager within 24 hours</strong>, only then please connect with the Main Admin.
+                  {partner ? (
+                    <>
+                      Please connect with your <strong>assigned partner ({partnerName}) first</strong>. If your query or issue is <strong>not resolved within 24 hours</strong>, only then please connect with the Main Admin helpline.
+                    </>
+                  ) : (
+                    <>
+                      If your query or issue is <strong>not resolved by your assigned manager within 24 hours</strong>, only then please connect with the Main Admin.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -282,6 +381,15 @@ export const AssignedManagerCard: React.FC<AssignedManagerCardProps> = ({ profil
                     className="text-xs font-bold text-amber-700 hover:underline px-1.5 py-0.5"
                   >
                     Call Admin
+                  </a>
+                  <a
+                    href={waLink(ADMIN_PHONE)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:underline px-1.5 py-0.5"
+                  >
+                    <MessageCircle size={12} />
+                    WhatsApp
                   </a>
                 </div>
               </div>

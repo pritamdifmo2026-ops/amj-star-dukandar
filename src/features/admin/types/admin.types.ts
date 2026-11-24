@@ -157,10 +157,33 @@ export interface AdminProduct {
 export interface AdminUser {
   _id: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
+  companyName?: string;
   role: string;
   isActive: boolean;
+  createdAt?: string;
+  ordersCount?: number;
+  totalVolume?: number;
+  totalSpend?: number;
+  dealsCount?: number;
+  totalSalesVolume?: number;
+  lastOrderDate?: string;
+  lastDealDate?: string;
+  lastActivityDate?: string;
+  supplierDetails?: {
+    businessName?: string;
+    tier?: string;
+    kycStatus?: string;
+    onboardingStatus?: string;
+  };
+  partnerDetails?: {
+    partnerCode?: string;
+    businessName?: string;
+    status?: string;
+    lifetimeVolume?: number;
+    lifetimeCommission?: number;
+  };
 }
 
 export interface SubAdmin {

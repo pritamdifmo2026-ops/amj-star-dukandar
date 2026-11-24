@@ -8,6 +8,7 @@ import {
 import { buyerProfileApi } from '../services/buyer-profile.api';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setCredentials } from '@/features/auth/store/auth.slice';
+import BuyerHelpDeskCard from './BuyerHelpDeskCard';
 
 // Local type definitions matching the API interfaces
 type BusinessProfileData = {
@@ -234,6 +235,13 @@ const AccountOverviewSection: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 gap-5 mb-8">
+
+      {/* ══════════════════════════════════════════════════
+          CARD: Attributed Wholesale Service Partner / Desk
+      ══════════════════════════════════════════════════ */}
+      {user?.partnerContact && (
+        <BuyerHelpDeskCard />
+      )}
 
       {/* ══════════════════════════════════════════════════
           CARD 0 — Buyer Trust & Supplier Rating

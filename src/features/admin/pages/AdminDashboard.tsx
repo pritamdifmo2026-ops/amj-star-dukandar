@@ -363,7 +363,7 @@ const AdminDashboard: React.FC = () => {
         hideFooterOnMobile
       />
 
-      <main className={`flex-1 p-8 transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] max-lg:ml-0 max-lg:pt-[calc(72px+env(safe-area-inset-top,0px))] max-lg:px-4 max-lg:pb-4 ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'}`}>
+      <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 transition-all duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] max-lg:ml-0 max-lg:pt-[calc(72px+env(safe-area-inset-top,0px))] max-lg:px-4 max-lg:pb-4 ${isSidebarOpen ? 'ml-[280px]' : 'ml-24'}`}>
         <header className="mb-6 flex items-center justify-between gap-4">
           <h2 className="text-xl font-extrabold text-[#0f172a] m-0">{tabLabel[activeTab] || ''}</h2>
           <div className="hidden lg:flex items-center gap-3">
@@ -377,7 +377,7 @@ const AdminDashboard: React.FC = () => {
         {loading ? (
           <div className="py-16 text-center text-sm text-[#64748b]">Loading...</div>
         ) : (
-          <div>
+          <div className="w-full min-w-0">
             {activeTab === 'stats' && stats && <DashboardOverview stats={stats} />}
             {activeTab === 'assigned-sellers' && <AssignedSellersHub />}
             {['suppliers', 'supplier-detail', 'supplier-products'].includes(activeTab) && (

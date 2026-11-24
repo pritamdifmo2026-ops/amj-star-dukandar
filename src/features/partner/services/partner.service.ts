@@ -264,6 +264,84 @@ export interface AdminPartnerOverview {
   totalLifetimeCommission: number;
 }
 
+export interface AdminPartnerDealProduct {
+  name: string;
+  quantity: number;
+  unit: string;
+  price: number;
+  hsnCode?: string;
+  image?: string;
+  gstRate?: number;
+  lineTotal: number;
+}
+
+export interface AdminPartnerDealBuyer {
+  _id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  companyName?: string;
+  isReferredByThisPartner: boolean;
+}
+
+export interface AdminPartnerDealSupplier {
+  _id?: string;
+  userId?: string;
+  businessName?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  tier?: string;
+  isReferredByThisPartner: boolean;
+}
+
+export interface AdminPartnerDealCommission {
+  ledgerId?: string;
+  amjPlatformFee: number;
+  partnerSharePercent: number;
+  earnedAmount: number;
+  status: 'pending' | 'cleared' | 'reversed' | string;
+  attributionType?: string;
+  clearedAt?: string;
+}
+
+export interface AdminPartnerDeal {
+  _id: string;
+  orderNumber: string;
+  createdAt: string;
+  orderStatus: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  subtotal: number;
+  shippingCost: number;
+  totalAmount: number;
+  platformFee: number;
+  buyer: AdminPartnerDealBuyer;
+  supplier: AdminPartnerDealSupplier;
+  attribution: {
+    type: 'both' | 'buyer_referred' | 'supplier_referred' | 'attributed';
+    narrative: string;
+  };
+  commission: AdminPartnerDealCommission;
+  items: AdminPartnerDealProduct[];
+  fulfillment?: {
+    courierName?: string;
+    trackingId?: string;
+    trackingURL?: string;
+    driverPhone?: string;
+    vehicleNumber?: string;
+  };
+}
+
+export interface AdminPartnerDealsSummary {
+  totalDeals: number;
+  totalVolume: number;
+  totalPlatformFee: number;
+  totalCommissionEarned: number;
+  clearedCommission: number;
+  pendingCommission: number;
+}
+
 export interface AdminPartnerDetail {
   success: boolean;
   partner: PartnerProfile;
@@ -273,6 +351,8 @@ export interface AdminPartnerDetail {
     totalBuyers: number;
     totalSuppliers: number;
   };
+  deals?: AdminPartnerDeal[];
+  dealsSummary?: AdminPartnerDealsSummary;
   commissions: PartnerCommissionItem[];
   commissionSummary: PartnerCommissionSummary;
   payouts: PartnerPayoutItem[];
@@ -411,6 +491,19 @@ export const partnerService = {
 
   async adminGetPartnerDetail(id: string): Promise<AdminPartnerDetail> {
     const res = await apiClient.get(`/admin/partners/${id}`);
+    return res.data;
+  },
+
+  async adminGetPartnerDeals(
+    id: string,
+    params?: { status?: string; attribution?: string; search?: string; page?: number; limit?: number }
+  ): Promise<{
+    success: boolean;
+    deals: AdminPartnerDeal[];
+    dealsSummary: AdminPartnerDealsSummary;
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  }> {
+    const res = await apiClient.get(`/admin/partners/${id}/deals`, { params });
     return res.data;
   },
 

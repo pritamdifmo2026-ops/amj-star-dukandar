@@ -183,9 +183,9 @@ export const CartContent: React.FC = () => {
   }
 
   return (
-    <div className="flex gap-6 items-start max-lg:flex-col">
+    <div className="flex flex-col lg:flex-row gap-6 items-stretch lg:items-start">
       {/* Items */}
-      <div className="flex-1 flex flex-col gap-3">
+      <div className="w-full flex-1 min-w-0 flex flex-col gap-3">
         {cartItems.map(item => {
           const availableStock = item.stock ?? 0;
           const isItemOutOfStock = availableStock <= 0;
@@ -194,61 +194,65 @@ export const CartContent: React.FC = () => {
           return (
             <div
               key={item.productId}
-              className={`bg-white border rounded-[14px] p-4 flex flex-col gap-3 transition-colors ${isItemOutOfStock
+              className={`w-full bg-white border rounded-[14px] p-3.5 sm:p-4 flex flex-col gap-3 transition-colors ${isItemOutOfStock
                   ? 'border-red-300 bg-red-50/20'
                   : isItemInsufficient
                     ? 'border-amber-300 bg-amber-50/20'
                     : 'border-[#eef2f6]'
                 }`}
             >
-              <div className="flex gap-4">
-                <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)} className="shrink-0 relative block w-20 h-20 bg-[#f8fafc] border border-[#f1f5f9] rounded-[10px] overflow-hidden flex items-center justify-center">
-                  {(item.imageUrl || (item as any).image) ? (
-                    <img
-                      src={item.imageUrl || (item as any).image}
-                      alt={item.name}
-                      onError={e => {
-                        (e.target as HTMLImageElement).onerror = null;
-                        (e.target as HTMLImageElement).src = 'https://placehold.co/120x120?text=Product';
-                      }}
-                      className={`w-full h-full object-cover ${isItemOutOfStock ? 'grayscale opacity-60' : ''}`}
-                    />
-                  ) : (
-                    <Package size={28} className="text-[#cbd5e1]" />
-                  )}
-                  {isItemOutOfStock && (
-                    <span className="absolute -top-1.5 -left-1.5 bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs">
-                      Out of Stock
-                    </span>
-                  )}
-                </Link>
-
-                <div className="flex-1 min-w-0 flex flex-col gap-1">
-                  <Link
-                    to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)}
-                    className="text-sm font-bold text-[#0f172a] no-underline hover:text-primary leading-snug line-clamp-2"
-                  >
-                    {item.name}
-                  </Link>
-                  <div className="flex items-center gap-2 flex-wrap text-xs text-[#94a3b8]">
-                    <span>MOQ: {item.moq} {item.unit}</span>
-                    <span>•</span>
-                    <span className={isItemOutOfStock ? 'text-red-600 font-bold' : isItemInsufficient ? 'text-amber-600 font-bold' : 'text-slate-500'}>
-                      Stock: {availableStock} {item.unit || 'pcs'}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-base font-extrabold text-[#0f172a]">₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                    <span className="text-xs text-[#94a3b8]">/ {item.unit || 'pcs'}</span>
-                    {item.gstRate !== undefined && item.gstRate > 0 && (
-                      <span className="text-[10px] font-semibold text-[#64748b] bg-[#f1f5f9] px-1.5 py-0.5 rounded-[4px]">
-                        {item.gstIncluded ? `incl. ${item.gstRate}% GST` : `+${item.gstRate}% GST`}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+                {/* Product Image & Details */}
+                <div className="flex gap-3 sm:gap-4 items-start flex-1 min-w-0">
+                  <Link to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)} className="shrink-0 relative block w-16 h-16 sm:w-20 sm:h-20 bg-[#f8fafc] border border-[#f1f5f9] rounded-[10px] overflow-hidden flex items-center justify-center">
+                    {(item.imageUrl || (item as any).image) ? (
+                      <img
+                        src={item.imageUrl || (item as any).image}
+                        alt={item.name}
+                        onError={e => {
+                          (e.target as HTMLImageElement).onerror = null;
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/120x120?text=Product';
+                        }}
+                        className={`w-full h-full object-cover ${isItemOutOfStock ? 'grayscale opacity-60' : ''}`}
+                      />
+                    ) : (
+                      <Package size={28} className="text-[#cbd5e1]" />
+                    )}
+                    {isItemOutOfStock && (
+                      <span className="absolute -top-1.5 -left-1.5 bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs">
+                        Out of Stock
                       </span>
                     )}
+                  </Link>
+
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <Link
+                      to={ROUTES.PRODUCT_DETAIL.replace(':id', item.productId)}
+                      className="text-sm font-bold text-[#0f172a] no-underline hover:text-primary leading-snug line-clamp-2"
+                    >
+                      {item.name}
+                    </Link>
+                    <div className="flex items-center gap-2 flex-wrap text-xs text-[#94a3b8]">
+                      <span>MOQ: {item.moq} {item.unit}</span>
+                      <span>•</span>
+                      <span className={isItemOutOfStock ? 'text-red-600 font-bold' : isItemInsufficient ? 'text-amber-600 font-bold' : 'text-slate-500'}>
+                        Stock: {availableStock} {item.unit || 'pcs'}
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-1 flex-wrap">
+                      <span className="text-base font-extrabold text-[#0f172a]">₹{item.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-xs text-[#94a3b8]">/ {item.unit || 'pcs'}</span>
+                      {item.gstRate !== undefined && item.gstRate > 0 && (
+                        <span className="text-[10px] font-semibold text-[#64748b] bg-[#f1f5f9] px-1.5 py-0.5 rounded-[4px]">
+                          {item.gstIncluded ? `incl. ${item.gstRate}% GST` : `+${item.gstRate}% GST`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end justify-between gap-3 shrink-0">
+                {/* Controls: On mobile, full-width bottom bar with divider; on desktop, right-side column */}
+                <div className="flex items-center justify-between sm:flex-col sm:items-end sm:justify-between gap-3 shrink-0 pt-2.5 sm:pt-0 border-t border-[#f1f5f9] sm:border-none">
                   <div className="flex items-center border border-[#e2e8f0] rounded-[8px] overflow-hidden bg-white">
                     <button
                       className={`w-8 h-8 flex items-center justify-center border-none bg-white transition-colors
@@ -258,7 +262,7 @@ export const CartContent: React.FC = () => {
                     >
                       <Minus size={13} />
                     </button>
-                    <span className={`w-10 text-center text-sm font-bold border-x border-[#e2e8f0] select-none ${isItemInsufficient ? 'text-red-600' : 'text-[#0f172a]'}`}>
+                    <span className={`w-9 sm:w-10 text-center text-sm font-bold border-x border-[#e2e8f0] select-none ${isItemInsufficient ? 'text-red-600' : 'text-[#0f172a]'}`}>
                       {item.quantity}
                     </span>
                     <button
@@ -272,16 +276,17 @@ export const CartContent: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      className="flex items-center gap-1.5 px-3 h-8 rounded-[7px] bg-[#f1f5f9] text-[#475569] border-none cursor-pointer hover:bg-[#e2e8f0] transition-colors text-[11px] font-semibold whitespace-nowrap"
+                      className="flex items-center gap-1.5 px-2.5 sm:px-3 h-8 rounded-[7px] bg-[#f1f5f9] text-[#475569] border-none cursor-pointer hover:bg-[#e2e8f0] transition-colors text-[11px] font-semibold whitespace-nowrap"
                       onClick={() => handleSaveForLater(item)}
                       title="Save for Later"
                     >
                       <Bookmark size={13} /> Save for Later
                     </button>
                     <button
-                      className="w-8 h-8 flex items-center justify-center rounded-[7px] bg-[#fef2f2] text-[#dc2626] border-none cursor-pointer hover:bg-[#fee2e2] transition-colors"
+                      className="w-8 h-8 flex items-center justify-center rounded-[7px] bg-[#fef2f2] text-[#dc2626] border-none cursor-pointer hover:bg-[#fee2e2] transition-colors shrink-0"
                       onClick={() => handleRemove(item.productId)}
                       aria-label="Remove"
+                      title="Remove from cart"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -308,7 +313,7 @@ export const CartContent: React.FC = () => {
       </div>
 
       {/* Summary */}
-      <div className="w-[280px] max-lg:w-full sticky top-6">
+      <div className="w-full lg:w-[280px] shrink-0 sticky top-6">
         <div className="bg-white border border-[#eef2f6] rounded-[14px] p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
           <h2 className="text-sm font-extrabold text-[#0f172a] m-0 mb-4">Order Summary</h2>
 
@@ -442,17 +447,17 @@ const Cart: React.FC = () => (
   <div className="min-h-screen flex flex-col bg-[#f8fafc]">
     <Navbar />
     <main className="flex-1 max-w-[1200px] w-full mx-auto px-4 sm:px-8 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
             <ShoppingCart size={20} />
           </div>
-          <div>
-            <h1 className="text-xl font-extrabold text-[#0f172a] m-0">Shopping Cart</h1>
-            <p className="text-xs text-[#64748b] m-0 mt-0.5">Review items, verify GST and delivery timeline</p>
+          <div className="min-w-0">
+            <h1 className="text-xl font-extrabold text-[#0f172a] m-0 truncate">Shopping Cart</h1>
+            <p className="text-xs text-[#64748b] m-0 mt-0.5 truncate">Review items, verify GST and delivery timeline</p>
           </div>
         </div>
-        <Link to="/" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+        <Link to="/" className="text-xs font-bold text-primary hover:underline flex items-center gap-1 shrink-0 whitespace-nowrap">
           Continue Shopping
         </Link>
       </div>

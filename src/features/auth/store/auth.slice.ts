@@ -28,6 +28,18 @@ interface AuthUser {
   referredSupplierBusinessName?: string;
   referredSupplierReferralCode?: string;
   referralCodeUsed?: string;
+  referredByPartner?: string;
+  partnerCodeUsed?: string;
+  partnerContact?: {
+    partnerId?: string;
+    partnerCode?: string;
+    name?: string;
+    businessName?: string;
+    phone?: string;
+    email?: string;
+    city?: string;
+    state?: string;
+  };
 }
 
 interface AuthState {

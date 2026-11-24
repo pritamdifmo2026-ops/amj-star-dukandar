@@ -130,6 +130,18 @@ interface SupplierProfile {
   accountManagerRole?: string;
   accountManagerEmail?: string;
   accountManagerPhone?: string;
+  partnerContact?: {
+    partnerId?: string;
+    partnerCode?: string;
+    name?: string;
+    businessName?: string;
+    phone?: string;
+    email?: string;
+    city?: string;
+    state?: string;
+  };
+  referredByPartner?: string;
+  partnerCodeUsed?: string;
   userId?: string;
   banner?: {
     desktop?: string;

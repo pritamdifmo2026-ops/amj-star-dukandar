@@ -40,6 +40,17 @@ export interface RegisterPayload {
   state?: string;
 }
 
+export interface PartnerContactInfo {
+  partnerId: string;
+  partnerCode: string;
+  name: string;
+  businessName?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  state?: string;
+}
+
 export interface AuthResponse {
   token: string;
   isNewUser?: boolean;
@@ -65,6 +76,7 @@ export interface AuthUser {
   referralCodeUsed?: string;
   referredByPartner?: string;
   partnerCodeUsed?: string;
+  partnerContact?: PartnerContactInfo;
   partnerProfile?: any;
 }
 

@@ -4,6 +4,7 @@ import { buyerProfileApi } from '../services/buyer-profile.api';
 import type { PostedRequirement } from '../services/buyer-profile.api';
 import { ClipboardList, Clock, CheckCircle, XCircle, Building2, Package, Tag, Layers, FileText, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useSocket } from '@/shared/contexts/SocketContext';
+import { useAppSelector } from '@/store/hooks';
 
 const PAGE_SIZE = 10;
 
@@ -24,6 +25,7 @@ const MyRequirementsList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const { socket } = useSocket();
+  const user = useAppSelector((s) => s.auth.user);
 
   const fetchRequirements = useCallback(async () => {
     try {
@@ -79,7 +81,29 @@ const MyRequirementsList: React.FC = () => {
           form on our home page.
         </p>
         <p className="text-xs text-[#94a3b8] mt-1 m-0">
-          Need help? Contact our helpline at 9034440673.
+          Need help?{' '}
+          {user?.partnerContact?.phone ? (
+            <>
+              Contact your assigned partner{' '}
+              <strong className="text-slate-700">{user.partnerContact.name}</strong> at{' '}
+              <a href={`tel:${user.partnerContact.phone}`} className="font-semibold text-primary underline">
+                {user.partnerContact.phone}
+              </a>{' '}
+              or platform helpline at{' '}
+              <a href="tel:9034440673" className="font-semibold text-slate-600 underline">
+                9034440673
+              </a>
+              .
+            </>
+          ) : (
+            <>
+              Contact our helpline at{' '}
+              <a href="tel:9034440673" className="font-semibold text-primary underline">
+                9034440673
+              </a>
+              .
+            </>
+          )}
         </p>
       </div>
     );
