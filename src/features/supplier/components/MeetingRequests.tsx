@@ -112,7 +112,13 @@ const MeetingRequests: React.FC = () => {
           </div>
           <div>
             <p className="text-sm font-semibold text-[#9a3412] mb-0.5">Need immediate assistance?</p>
-            <p className="text-xs text-[#c2410c] m-0">Call Admin directly at <a href={`tel:${profile?.assignedAdminContact?.replace(/\s/g, '') || '+919034440673'}`} className="font-bold underline text-[#9a3412]">{profile?.assignedAdminContact || '+91 9034440673'}</a></p>
+            {profile?.partnerContact?.phone ? (
+              <p className="text-xs text-[#c2410c] m-0">
+                Connect with your assigned partner <strong className="text-[#9a3412]">{profile.partnerContact.name}</strong> first at <a href={`tel:${String(profile.partnerContact.phone).replace(/[^\d+]/g, '')}`} className="font-bold underline text-[#9a3412]">{profile.partnerContact.phone}</a>. If unresolved, call Admin at <a href={`tel:${profile?.assignedAdminContact?.replace(/\s/g, '') || '+919034440673'}`} className="font-bold underline text-[#9a3412]">{profile?.assignedAdminContact || '+91 9034440673'}</a>.
+              </p>
+            ) : (
+              <p className="text-xs text-[#c2410c] m-0">Call Admin directly at <a href={`tel:${profile?.assignedAdminContact?.replace(/\s/g, '') || '+919034440673'}`} className="font-bold underline text-[#9a3412]">{profile?.assignedAdminContact || '+91 9034440673'}</a></p>
+            )}
           </div>
         </div>
 

@@ -75,10 +75,13 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
   });
   const { data: walletData } = useQuery({ queryKey: ['wallet'], queryFn: walletApi.getWallet });
   const { data: banksData } = useQuery({ queryKey: ['supplier', 'banks'], queryFn: supplierService.getBanks });
+  const partnerPhone = profile?.partnerContact?.phone && !String(profile.partnerContact.phone).startsWith('admin_')
+    ? profile.partnerContact.phone
+    : null;
   const managerPhone = profile?.accountManagerPhone && !profile.accountManagerPhone.startsWith('admin_')
     ? profile.accountManagerPhone
     : null;
-  const rawContactPhone = managerPhone || profile?.assignedAdminContact || (walletData as any)?.contactPhone || '9034440673';
+  const rawContactPhone = partnerPhone || managerPhone || profile?.assignedAdminContact || (walletData as any)?.contactPhone || '9034440673';
   const cleanPhoneDigits = String(rawContactPhone).replace(/[^\d+]/g, '');
   const contactHref = `tel:${cleanPhoneDigits.startsWith('+') ? cleanPhoneDigits : `+91${cleanPhoneDigits}`}`;
   const contactPhone = cleanPhoneDigits.length === 10
@@ -491,7 +494,9 @@ const SupplierSettings: React.FC<SupplierSettingsProps> = ({ profile }) => {
               className="inline-flex items-center gap-3 px-5 py-3 bg-[#e65c00] text-white rounded-[10px] font-bold text-sm no-underline hover:bg-[#c94f00] transition-colors shadow-[0_4px_12px_rgba(230,92,0,0.25)]"
             >
               <PhoneCall size={18} />
-              {profile?.accountManagerName
+              {profile?.partnerContact?.name
+                ? `Call Partner (${profile.partnerContact.name}) — ${contactPhone}`
+                : profile?.accountManagerName
                 ? `Call Manager (${profile.accountManagerName}) — ${contactPhone}`
                 : `Call AMJSTAR — ${contactPhone}`}
             </a>
