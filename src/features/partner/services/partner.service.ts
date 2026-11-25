@@ -49,6 +49,14 @@ export interface PartnerProfile {
   rejectedAt?: string;
   rejectionReason?: string;
   adminNotes?: string;
+  assignedAdminContact?: {
+    phone: string;
+    email?: string;
+    name?: string;
+  };
+  adminSupportPhone?: string;
+  adminSupportEmail?: string;
+  adminSupportName?: string;
   bankDetails?: PartnerBankDetails;
   metrics: PartnerMetrics;
   wallet: PartnerWallet;
@@ -532,9 +540,29 @@ export const partnerService = {
       sellerCommissionPercent?: number;
       buyerCommissionPercent?: number;
       adminNotes?: string;
+      assignedAdminPhone?: string;
+      assignedAdminEmail?: string;
+      assignedAdminName?: string;
+      assignedAdminContact?: {
+        phone: string;
+        email?: string;
+        name?: string;
+      };
     }
   ) {
     const res = await apiClient.post(`/admin/partners/${id}/approve`, payload || {});
+    return res.data;
+  },
+
+  async adminUpdatePartnerContact(
+    id: string,
+    payload: {
+      phone: string;
+      email?: string;
+      name?: string;
+    }
+  ) {
+    const res = await apiClient.patch(`/admin/partners/${id}/contact`, payload);
     return res.data;
   },
 

@@ -8,6 +8,7 @@ import {
 } from './partner.ui';
 import { dateTime, shortDate } from './partner.format';
 import partnerService, { isPartnerPending, type PartnerProfile } from '../services/partner.service';
+import PartnerHelplineCard from './PartnerHelplineCard';
 
 const STATUS_COPY: Record<string, { label: string; tone: Tone; blurb: string }> = {
   active: {
@@ -491,6 +492,9 @@ const PartnerSettings: React.FC<{ partner?: PartnerProfile }> = ({ partner }) =>
           </p>
         </div>
       )}
+
+      {/* ── Assigned Admin Helpline Card ── */}
+      <PartnerHelplineCard partner={partner} />
     </div>
   );
 };

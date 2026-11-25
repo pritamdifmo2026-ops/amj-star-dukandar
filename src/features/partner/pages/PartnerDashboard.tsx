@@ -309,7 +309,12 @@ const PartnerDashboard: React.FC = () => {
 
         {activeView === 'disputes' && <PartnerDisputes />}
 
-        {activeView === 'support' && <PartnerSupport onRaiseIssue={() => setIssueTarget({})} />}
+        {activeView === 'support' && (
+          <PartnerSupport
+            onRaiseIssue={() => setIssueTarget({})}
+            partner={partner}
+          />
+        )}
 
         {activeView === 'concessions' && <PartnerConcessions partner={partner} />}
 

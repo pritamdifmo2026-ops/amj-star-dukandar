@@ -21,6 +21,9 @@ import {
   CreditCard,
   ShieldCheck,
   ShoppingBag,
+  Headphones,
+  Phone,
+  Mail,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Button from '@/shared/components/ui/Button';
@@ -83,6 +86,9 @@ export const AdminPartners: React.FC = () => {
   const [approvalAction, setApprovalAction] = useState<'approve' | 'reject'>('approve');
   const [approvalSellerCommission, setApprovalSellerCommission] = useState<number>(15);
   const [approvalBuyerCommission, setApprovalBuyerCommission] = useState<number>(10);
+  const [approvalAdminPhone, setApprovalAdminPhone] = useState('');
+  const [approvalAdminEmail, setApprovalAdminEmail] = useState('');
+  const [approvalAdminName, setApprovalAdminName] = useState('');
   const [approvalNote, setApprovalNote] = useState('');
   const [approvalRejectReason, setApprovalRejectReason] = useState('');
   const [isUpdatingPartner, setIsUpdatingPartner] = useState(false);
@@ -90,6 +96,9 @@ export const AdminPartners: React.FC = () => {
   const [buyerCommissionRate, setBuyerCommissionRate] = useState<number>(10);
   const [commissionRate, setCommissionRate] = useState<number>(25);
   const [partnerStatus, setPartnerStatus] = useState<string>('active');
+  const [editingAdminPhone, setEditingAdminPhone] = useState('+91 9034440673');
+  const [editingAdminEmail, setEditingAdminEmail] = useState('');
+  const [editingAdminName, setEditingAdminName] = useState('AMJ Star Partner Support Desk');
 
   // Suspend / Block Partner Confirmation Modal
   const [suspendingPartner, setSuspendingPartner] = useState<PartnerProfile | null>(null);
@@ -196,17 +205,26 @@ export const AdminPartners: React.FC = () => {
       sellerCommissionPercent,
       buyerCommissionPercent,
       adminNotes,
+      assignedAdminPhone,
+      assignedAdminEmail,
+      assignedAdminName,
     }: {
       id: string;
       commissionSharePercent: number;
       sellerCommissionPercent: number;
       buyerCommissionPercent: number;
       adminNotes?: string;
+      assignedAdminPhone?: string;
+      assignedAdminEmail?: string;
+      assignedAdminName?: string;
     }) =>
       partnerService.adminApprovePartner(id, {
         commissionSharePercent,
         sellerCommissionPercent,
         buyerCommissionPercent,
+        assignedAdminPhone,
+        assignedAdminEmail,
+        assignedAdminName,
         ...(adminNotes ? { adminNotes } : {}),
       }),
     onSuccess: (data) => {
@@ -235,6 +253,21 @@ export const AdminPartners: React.FC = () => {
     const bRate = partner.buyerCommissionPercent ?? 10;
     setApprovalSellerCommission(sRate);
     setApprovalBuyerCommission(bRate);
+    setApprovalAdminPhone(
+      partner.assignedAdminContact?.phone ||
+      partner.adminSupportPhone ||
+      ''
+    );
+    setApprovalAdminEmail(
+      partner.assignedAdminContact?.email ||
+      partner.adminSupportEmail ||
+      ''
+    );
+    setApprovalAdminName(
+      partner.assignedAdminContact?.name ||
+      partner.adminSupportName ||
+      ''
+    );
     setApprovalNote(partner.adminNotes || '');
     setApprovalRejectReason('');
   };
@@ -243,6 +276,9 @@ export const AdminPartners: React.FC = () => {
     setApprovalTarget(null);
     setApprovalNote('');
     setApprovalRejectReason('');
+    setApprovalAdminPhone('');
+    setApprovalAdminEmail('');
+    setApprovalAdminName('');
   }
 
   const handleApprovalSubmit = (e: React.FormEvent) => {
@@ -259,11 +295,18 @@ export const AdminPartners: React.FC = () => {
         toast.error('Seller and Buyer commission rates must be between 0 and 100%');
         return;
       }
+      if (!approvalAdminPhone.trim()) {
+        toast.error('Helpline phone number is mandatory to approve this partner');
+        return;
+      }
       approveMutation.mutate({
         id: approvalTarget._id,
         commissionSharePercent: approvalSellerCommission + approvalBuyerCommission,
         sellerCommissionPercent: approvalSellerCommission,
         buyerCommissionPercent: approvalBuyerCommission,
+        assignedAdminPhone: approvalAdminPhone.trim(),
+        assignedAdminEmail: approvalAdminEmail.trim() || undefined,
+        assignedAdminName: approvalAdminName.trim() || undefined,
         ...(approvalNote.trim() ? { adminNotes: approvalNote.trim() } : {}),
       });
       return;
@@ -285,6 +328,21 @@ export const AdminPartners: React.FC = () => {
     setCommissionRate(partner.commissionSharePercent ?? (sRate + bRate));
     // 'pending' is the legacy spelling — show the canonical one in the picker.
     setPartnerStatus(partner.status === 'pending' ? 'pending_approval' : partner.status);
+    setEditingAdminPhone(
+      partner.assignedAdminContact?.phone ||
+      partner.adminSupportPhone ||
+      '+91 9034440673'
+    );
+    setEditingAdminEmail(
+      partner.assignedAdminContact?.email ||
+      partner.adminSupportEmail ||
+      ''
+    );
+    setEditingAdminName(
+      partner.assignedAdminContact?.name ||
+      partner.adminSupportName ||
+      'AMJ Star Partner Support Desk'
+    );
   };
 
   const handleSavePartnerEdit = async () => {
@@ -299,8 +357,24 @@ export const AdminPartners: React.FC = () => {
       sellerCommissionRate !== prevSRate ||
       buyerCommissionRate !== prevBRate ||
       commissionRate !== prevTotRate;
+    const prevPhone =
+      editingPartner.assignedAdminContact?.phone ||
+      editingPartner.adminSupportPhone ||
+      '+91 9034440673';
+    const prevEmail =
+      editingPartner.assignedAdminContact?.email ||
+      editingPartner.adminSupportEmail ||
+      '';
+    const prevName =
+      editingPartner.assignedAdminContact?.name ||
+      editingPartner.adminSupportName ||
+      'AMJ Star Partner Support Desk';
+    const contactChanged =
+      editingAdminPhone.trim() !== prevPhone.trim() ||
+      editingAdminEmail.trim() !== prevEmail.trim() ||
+      editingAdminName.trim() !== prevName.trim();
 
-    if (!statusChanged && !commissionChanged) {
+    if (!statusChanged && !commissionChanged && !contactChanged) {
       setEditingPartner(null);
       return;
     }
@@ -323,6 +397,18 @@ export const AdminPartners: React.FC = () => {
           sellerCommissionPercent: sellerCommissionRate,
           buyerCommissionPercent: buyerCommissionRate,
           commissionSharePercent: sellerCommissionRate + buyerCommissionRate,
+        });
+      }
+      if (contactChanged) {
+        if (!editingAdminPhone.trim()) {
+          toast.error('Partner helpline phone is required');
+          setIsUpdatingPartner(false);
+          return;
+        }
+        await partnerService.adminUpdatePartnerContact(editingPartner._id, {
+          phone: editingAdminPhone.trim(),
+          email: editingAdminEmail.trim() || undefined,
+          name: editingAdminName.trim() || undefined,
         });
       }
       toast.success('Partner details updated successfully');
@@ -1093,6 +1179,77 @@ export const AdminPartners: React.FC = () => {
                   <div>• <strong>Both referred by this partner:</strong> Partner earns {approvalSellerCommission + approvalBuyerCommission}%.</div>
                   <div>• <strong>Different partners:</strong> Seller's partner gets {approvalSellerCommission}%, Buyer's partner gets {approvalBuyerCommission}%.</div>
                 </div>
+
+                {/* Assigned Helpline & Support Contact for Partner */}
+                <div className="p-3.5 bg-blue-50/80 rounded-xl border border-blue-200 text-xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-blue-950 flex items-center gap-1.5 text-xs">
+                      <Headphones size={15} className="text-blue-700" />
+                      Assigned Admin Contact for Partner (Support Desk)
+                    </span>
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-100/90 border border-blue-200 px-2 py-0.5 rounded">
+                      Partner-Facing
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-blue-900 leading-relaxed m-0">
+                    Enter the helpline phone and email for this partner. These contact details will appear directly in their Partner Dashboard so they can contact you if any issues occur.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                        Helpline Phone <span className="text-rose-600 font-bold">*</span>
+                      </label>
+                      <div className="relative">
+                        <Phone size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          required
+                          value={approvalAdminPhone}
+                          onChange={(e) => setApprovalAdminPhone(e.target.value)}
+                          placeholder="e.g. 9876543210 or +91 9034440673"
+                          className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">
+                        Mandatory phone / WhatsApp number for this partner
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                        Support Email <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                      </label>
+                      <div className="relative">
+                        <Mail size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                        <input
+                          type="email"
+                          value={approvalAdminEmail}
+                          onChange={(e) => setApprovalAdminEmail(e.target.value)}
+                          placeholder="e.g. partner.desk@amjstar.com (optional)"
+                          className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">
+                        Optional email address
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                      Desk / Contact Person Name <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={approvalAdminName}
+                      onChange={(e) => setApprovalAdminName(e.target.value)}
+                      placeholder="e.g. AMJ Star Partner Support Desk or Specific Lead Name (optional)"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">
                     Internal note (optional)
@@ -1353,6 +1510,66 @@ export const AdminPartners: React.FC = () => {
                     Buyer {buyerCommissionRate}%
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Assigned Helpline & Support Contact for Partner */}
+            <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200/90 text-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-blue-950 flex items-center gap-1.5 text-xs">
+                  <Headphones size={15} className="text-blue-700" />
+                  Assigned Helpline for Partner (Shown in Partner Portal)
+                </span>
+                <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
+                  Direct Line
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Helpline Phone <span className="text-rose-600 font-bold">*</span>
+                  </label>
+                  <div className="relative">
+                    <Phone size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      required
+                      value={editingAdminPhone}
+                      onChange={(e) => setEditingAdminPhone(e.target.value)}
+                      placeholder="+91 9034440673"
+                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-bold text-slate-900 outline-none focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Support Email <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Mail size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+                    <input
+                      type="email"
+                      value={editingAdminEmail}
+                      onChange={(e) => setEditingAdminEmail(e.target.value)}
+                      placeholder="support@amjstar.com"
+                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 outline-none focus:border-blue-600"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Assigned Contact / Desk Title <span className="text-slate-400 font-normal lowercase">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={editingAdminName}
+                  onChange={(e) => setEditingAdminName(e.target.value)}
+                  placeholder="AMJ Star Partner Support Desk"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-900 outline-none focus:border-blue-600"
+                />
               </div>
             </div>
 

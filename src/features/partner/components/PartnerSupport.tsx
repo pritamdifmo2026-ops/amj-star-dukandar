@@ -6,7 +6,8 @@ import {
   Card, SectionHeader, Badge, FilterTabs, TableWrap, TH, TD, InlineEmpty, type Tone,
 } from './partner.ui';
 import { dateTime, refName, humanise } from './partner.format';
-import partnerService from '../services/partner.service';
+import partnerService, { type PartnerProfile } from '../services/partner.service';
+import PartnerHelplineCard from './PartnerHelplineCard';
 
 type IssueFilter = '' | 'open' | 'pending' | 'resolved' | 'closed';
 
@@ -25,7 +26,10 @@ const PRIORITY_TONE: Record<string, Tone> = {
   Low: 'neutral',
 };
 
-const PartnerSupport: React.FC<{ onRaiseIssue: () => void }> = ({ onRaiseIssue }) => {
+const PartnerSupport: React.FC<{ onRaiseIssue: () => void; partner?: PartnerProfile | null }> = ({
+  onRaiseIssue,
+  partner,
+}) => {
   const [filter, setFilter] = useState<IssueFilter>('');
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -61,6 +65,9 @@ const PartnerSupport: React.FC<{ onRaiseIssue: () => void }> = ({ onRaiseIssue }
           </button>
         }
       />
+
+      {/* ── Assigned Admin Helpline Card ── */}
+      <PartnerHelplineCard partner={partner} />
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-4">
         <Card className="p-4 border-l-[3px] border-l-[#b91c1c]">

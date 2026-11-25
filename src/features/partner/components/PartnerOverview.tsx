@@ -12,6 +12,7 @@ import { shortDate, formatPartnerMoney } from './partner.format';
 import type { PartnerDashboardData } from '../services/partner.service';
 import { isPartnerPending } from '../services/partner.service';
 import { PartnerBenchmarkTable } from './PartnerBenchmarkTable';
+import PartnerHelplineCard from './PartnerHelplineCard';
 
 const ATTRIBUTION_LABEL: Record<string, string> = {
   buyer_referred: 'Buyer',
@@ -52,6 +53,9 @@ const PartnerOverview: React.FC<{
           </button>
         }
       />
+
+      {/* ── Assigned Admin Helpline Card ── */}
+      <PartnerHelplineCard partner={partner} />
 
       {/* ── Partner Revenue Streams Card ── */}
       <Card className="p-5 border-[#e2e8f0]">

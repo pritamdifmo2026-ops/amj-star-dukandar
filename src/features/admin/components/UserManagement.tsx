@@ -272,7 +272,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onToggleStatus }
     }
 
     const headers = [
-      'User ID',
       'Name',
       'Company / Store Name',
       'Role',
@@ -301,7 +300,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onToggleStatus }
       const partnerCode = u.partnerDetails?.partnerCode || '';
 
       return [
-        escape(u._id),
         escape(u.name || 'N/A'),
         escape(u.companyName || u.supplierDetails?.businessName || ''),
         escape(u.role || 'buyer'),
