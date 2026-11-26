@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/api/client';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import LatestUpdateModal, { type ILatestUpdate } from './LatestUpdateModal';
 
 const LatestUpdatesCarousel: React.FC = () => {
@@ -145,6 +145,13 @@ const LatestUpdatesCarousel: React.FC = () => {
                     }}
                     className="w-full h-full object-contain"
                   />
+                  {update.videoUrl && (
+                    <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <span className="w-10 h-10 rounded-full bg-black/55 text-white flex items-center justify-center shadow-md backdrop-blur-sm transition-transform group-hover:scale-110">
+                        <Play size={16} fill="currentColor" />
+                      </span>
+                    </span>
+                  )}
                 </div>
 
                 {/* Card Body */}

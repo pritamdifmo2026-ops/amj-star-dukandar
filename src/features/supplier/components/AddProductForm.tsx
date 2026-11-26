@@ -219,9 +219,8 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
     if (!formData.images || formData.images.length === 0) missing.push('At least 1 product image');
     if (formData.gstRate === undefined || formData.gstRate === null) missing.push('GST Rate');
     if (!formData.packagingType) missing.push('Packaging Type');
-    if (!formData.packagingWeight?.trim()) missing.push('Package Weight');
     if (!formData.packagingSize?.trim()) missing.push('Package Size');
-    if (!formData.packagingDimensions?.trim()) missing.push('Package Dimensions');
+    // Package Weight and Dimensions are optional: courier details are captured at dispatch.
     Object.values(certDocs).forEach(d => {
       if (d.mandatory && !d.documentUrl.trim()) missing.push(`${d.name} compliance document`);
     });
@@ -682,10 +681,10 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
 
               <div className="grid grid-cols-3 gap-4 max-sm:grid-cols-1">
                 <div>
-                  <label className={labelCls}>Package Weight <span className="text-[#dc2626]">*</span></label>
+                  <label className={labelCls}>Package Weight <span className="text-[#94a3b8] font-normal normal-case">(optional)</span></label>
                   <div className="flex gap-2">
                     <input
-                      className={`${inputCls} ${publishAttempted && !formData.packagingWeight?.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`}
+                      className={inputCls}
                       type="text"
                       inputMode="decimal"
                       value={formData.packagingWeight ? formData.packagingWeight.replace(/\s*(g|kg|lbs|ton|mt)\s*$/i, '').trim() : ''}
@@ -712,9 +711,6 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                       <option value="mt">mt</option>
                     </select>
                   </div>
-                  {publishAttempted && !formData.packagingWeight?.trim() && (
-                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
-                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Package Size <span className="text-[#dc2626]">*</span></label>
@@ -769,20 +765,17 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
                   )}
                 </div>
                 <div>
-                  <label className={labelCls}>Package Dimensions <span className="text-[#dc2626]">*</span></label>
+                  <label className={labelCls}>Package Dimensions <span className="text-[#94a3b8] font-normal normal-case">(optional)</span></label>
                   <input
-                    className={`${inputCls} ${publishAttempted && !formData.packagingDimensions?.trim() ? "border-[#fca5a5] bg-[#fff5f5] focus:border-[#dc2626]" : ""}`}
+                    className={inputCls}
                     type="text"
                     value={formData.packagingDimensions ?? ''}
                     onChange={e => setFormData({ ...formData, packagingDimensions: e.target.value })}
                     placeholder="e.g. 20×15×10 cm"
                   />
-                  {publishAttempted && !formData.packagingDimensions?.trim() && (
-                    <span className="text-xs text-[#dc2626] font-semibold mt-1 block">This field is required</span>
-                  )}
                 </div>
               </div>
-              <p className="text-[11px] text-[#64748b] -mt-2">Packaging details are used for logistics and courier calculations.</p>
+              <p className="text-[11px] text-[#64748b] -mt-2">Weight and dimensions are optional — you can enter them at dispatch, when courier details are confirmed.</p>
 
               <div className="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
                 <div>
@@ -1085,7 +1078,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onSuccess, editingProdu
           {/* Required fields reminder */}
           {!isEditingPublished && (
             <div className="bg-[#fffbeb] border border-[#fde68a] rounded-[8px] px-5 py-3 mb-5 text-xs text-[#92400e]">
-              <span className="font-bold">Before publishing:</span> Name, Description, HSN Code, Category, Price &gt; 0, MOQ, Stock &gt; 0, at least 1 image, and all 4 packaging fields are required.
+              <span className="font-bold">Before publishing:</span> Name, Description, HSN Code, Category, Price &gt; 0, MOQ, Stock &gt; 0, at least 1 image, Packaging Type and Package Size are required. Package Weight and Dimensions are optional.
             </div>
           )}
         </form>

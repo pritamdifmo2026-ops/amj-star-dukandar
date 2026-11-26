@@ -1,4 +1,6 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ZoomIn } from 'lucide-react';
+import TouchImageZoom from './TouchImageZoom';
 
 interface ImageMagnifierProps {
   src: string;
@@ -6,6 +8,10 @@ interface ImageMagnifierProps {
   zoomLevel?: number;
   lensSize?: number;
 }
+
+// Tablets and phones get a tap-to-open pinch viewer instead of the hover lens, which
+// needs a pointer. Mirrors the `max-lg:hidden` breakpoint used on the lens below.
+const TOUCH_QUERY = '(hover: none), (pointer: coarse), (max-width: 1023px)';
 
 const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
   src,
@@ -18,6 +24,16 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
   const [lensPos, setLensPos] = useState({ x: 0, y: 0 });
   const [bgPos, setBgPos] = useState({ x: 0, y: 0 });
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
+  const [isTouch, setIsTouch] = useState(false);
+  const [showTouchZoom, setShowTouchZoom] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia(TOUCH_QUERY);
+    const update = () => setIsTouch(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   const handleMouseEnter = useCallback(() => {
     if (!containerRef.current) return;
@@ -55,10 +71,11 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
     <div className="relative flex flex-col items-center w-full h-full">
       <div
         ref={containerRef}
-        className="relative w-full h-full flex items-center justify-center cursor-crosshair bg-surface overflow-hidden max-lg:cursor-default"
+        className="relative w-full h-full flex items-center justify-center cursor-crosshair bg-surface overflow-hidden max-lg:cursor-zoom-in"
         onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
+        onClick={isTouch ? () => setShowTouchZoom(true) : undefined}
       >
         <img
           src={src}
@@ -78,6 +95,12 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
             }}
           />
         )}
+
+        {isTouch && (
+          <span className="absolute bottom-3 left-3 z-[5] flex items-center gap-1.5 bg-surface/90 border border-border rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-700 pointer-events-none shadow-sm">
+            <ZoomIn size={14} /> Tap to zoom
+          </span>
+        )}
       </div>
       {isHovering && imgSize.w > 0 && (
         <div
@@ -90,6 +113,10 @@ const ImageMagnifier: React.FC<ImageMagnifierProps> = ({
             backgroundPosition: `-${bgPos.x}px -${bgPos.y}px`,
           }}
         />
+      )}
+
+      {showTouchZoom && (
+        <TouchImageZoom src={src} alt={alt} onClose={() => setShowTouchZoom(false)} />
       )}
     </div>
   );

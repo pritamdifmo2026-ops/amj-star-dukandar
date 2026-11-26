@@ -2,10 +2,13 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X, ArrowRight, ExternalLink } from 'lucide-react';
+import VideoEmbed from '@/shared/components/VideoEmbed';
+import { parseVideoUrl } from '@/shared/utils/videoEmbed';
 
 export interface ILatestUpdate {
   _id: string;
   image: string;
+  videoUrl?: string;
   title: string;
   description: string;
   link?: string;
@@ -43,6 +46,8 @@ export const LatestUpdateModal: React.FC<LatestUpdateModalProps> = ({ update, on
   }, [update, onClose]);
 
   if (!update) return null;
+
+  const video = parseVideoUrl(update.videoUrl);
 
   const handleAction = (e: React.MouseEvent) => {
     if (!update.link) return;
@@ -82,25 +87,31 @@ export const LatestUpdateModal: React.FC<LatestUpdateModalProps> = ({ update, on
         {/* Unified Scrollable Container: allows scrolling anywhere with mouse wheel or visible scrollbar */}
         <div className="flex-1 w-full min-h-0 overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:bg-slate-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-400 overscroll-contain">
           
-          {/* Top Hero Image / Thumbnail Section */}
+          {/* Top Hero: video when the update has one, otherwise the banner image */}
           <div className="relative w-full h-[220px] sm:h-[260px] md:h-[280px] lg:h-[300px] shrink-0 bg-slate-900 overflow-hidden flex items-center justify-center border-b border-slate-100">
-            {/* Ambient blurred backdrop using admin image */}
-            <div
-              className="absolute inset-0 bg-cover bg-center blur-2xl opacity-40 scale-110 select-none"
-              style={{ backgroundImage: `url(${update.image})` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
+            {video ? (
+              <VideoEmbed url={update.videoUrl!} title={update.title} poster={update.image} />
+            ) : (
+              <>
+                {/* Ambient blurred backdrop using admin image */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center blur-2xl opacity-40 scale-110 select-none"
+                  style={{ backgroundImage: `url(${update.image})` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
-            {/* Foreground Crisp Image */}
-            <img
-              src={update.image}
-              alt={update.title}
-              onError={(e) => {
-                (e.target as HTMLImageElement).onerror = null;
-                (e.target as HTMLImageElement).src = 'https://placehold.co/800x450?text=AMJSTAR+Update';
-              }}
-              className="relative z-10 max-h-full max-w-full object-contain p-4 sm:p-5 drop-shadow-md select-none transition-transform duration-300"
-            />
+                {/* Foreground Crisp Image */}
+                <img
+                  src={update.image}
+                  alt={update.title}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).onerror = null;
+                    (e.target as HTMLImageElement).src = 'https://placehold.co/800x450?text=AMJSTAR+Update';
+                  }}
+                  className="relative z-10 max-h-full max-w-full object-contain p-4 sm:p-5 drop-shadow-md select-none transition-transform duration-300"
+                />
+              </>
+            )}
           </div>
 
           {/* Scrollable Content Section */}
